@@ -11,6 +11,7 @@ import CompleteProfile from "../pages/Signup/CompleteProfile";
 import Profile from "../pages/Profile/Profile";
 import EditProfile from "../components/profile/EditProfile";
 import Create from "../pages/Create/Create";
+import Camera from "../pages/Camera/Camera";
 
 export default function AppRouter() {
   const { user, loading, profileCompleted } = useAuth();
@@ -52,6 +53,11 @@ export default function AppRouter() {
           <Route
             path="/profile/edit"
             element={<EditProfile />}
+          />
+
+          <Route
+            path="/camera"
+            element={<Camera />}
           />
 
           <Route
