@@ -26,11 +26,9 @@ const [recording, setRecording] =
 const [recordTime, setRecordTime] =
   useState(0);
 
-const timerRef =
-  useRef<number>();
+const timerRef = useRef<number | null>(null);
 
-const holdTimeoutRef =
-  useRef<number>();
+const holdTimeoutRef = useRef<number | null>(null);
 
 const didRecordRef =
   useRef(false);
