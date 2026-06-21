@@ -10,7 +10,10 @@ import type { ReactNode } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import type { User } from "firebase/auth";
 
-import { doc, getDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+} from "firebase/firestore";
 
 import { auth, db } from "../firebase/firebase";
 
@@ -45,15 +48,15 @@ export function AuthProvider({
         setUser(firebaseUser);
 
         if (firebaseUser) {
-          const userDoc = await getDoc(
+          const snap = await getDoc(
             doc(db, "users", firebaseUser.uid)
           );
 
-          if (userDoc.exists()) {
-            const data = userDoc.data();
+          if (snap.exists()) {
+            const data = snap.data();
 
             setProfileCompleted(
-              data.profileCompleted === true
+              Boolean(data.profileCompleted)
             );
           } else {
             setProfileCompleted(false);

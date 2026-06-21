@@ -27,6 +27,8 @@ export async function createUserDocument(user: any) {
 
     photoURL: user.photoURL || "",
 
+    profileCompleted: false,
+
     verified: false,
 
     followers: 0,
