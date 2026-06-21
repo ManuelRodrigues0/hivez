@@ -10,11 +10,24 @@ const canvasRef = useRef<HTMLCanvasElement>(null);
 
 const streamRef = useRef<MediaStream | null>(null);
 
+const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+
+const chunksRef = useRef<Blob[]>([]);
+
 const [loading, setLoading] = useState(true);
 
 const [facingMode, setFacingMode] = useState<
   "user" | "environment"
 >("environment");
+
+const [recording, setRecording] =
+  useState(false);
+
+const [recordTime, setRecordTime] =
+  useState(0);
+
+const timerRef =
+  useRef<number>();
 
 useEffect(() => {
 async function startCamera() {
@@ -77,6 +90,73 @@ async function switchCamera() {
       ? "user"
       : "environment"
   );
+}
+
+function startRecording() {
+  if (!streamRef.current) return;
+
+  chunksRef.current = [];
+
+  const recorder = new MediaRecorder(
+    streamRef.current
+  );
+
+  mediaRecorderRef.current = recorder;
+
+  recorder.ondataavailable = (event) => {
+    if (event.data.size > 0) {
+      chunksRef.current.push(event.data);
+    }
+  };
+
+  recorder.onstop = () => {
+    const blob = new Blob(
+      chunksRef.current,
+      {
+        type: "video/webm",
+      }
+    );
+
+    const file = new File(
+      [blob],
+      `hivez-${Date.now()}.webm`,
+      {
+        type: "video/webm",
+      }
+    );
+
+    streamRef.current
+      ?.getTracks()
+      .forEach((track) => track.stop());
+
+    navigate("/create", {
+      state: {
+        media: file,
+      },
+    });
+  };
+
+  recorder.start();
+
+  setRecording(true);
+
+  setRecordTime(0);
+
+  timerRef.current = window.setInterval(() => {
+    setRecordTime((time) => time + 1);
+  }, 1000);
+}
+
+function stopRecording() {
+  if (!mediaRecorderRef.current) return;
+
+  mediaRecorderRef.current.stop();
+
+  if (timerRef.current) {
+    clearInterval(timerRef.current);
+  }
+
+  setRecording(false);
 }
 
 function capturePhoto() {
@@ -157,6 +237,12 @@ return (
     : "🤳 Front Camera"}
 </div>
 
+{recording && (
+  <div className="absolute left-1/2 top-20 -translate-x-1/2 rounded-full bg-red-600 px-5 py-2 font-semibold text-white">
+    🔴 {recordTime}s
+  </div>
+)}
+
   {loading && (  
     <div className="absolute inset-0 flex items-center justify-center text-white text-lg">  
       Opening Camera...  
@@ -185,6 +271,10 @@ return (
 
   <button
   onClick={capturePhoto}
+onMouseDown={startRecording}
+onMouseUp={stopRecording}
+onTouchStart={startRecording}
+onTouchEnd={stopRecording}
   className="absolute bottom-10 left-1/2 flex h-20 w-20 -translate-x-1/2 items-center justify-center rounded-full border-4 border-white bg-white/20 transition active:scale-90"
 >
   <div className="h-14 w-14 rounded-full bg-white" />
