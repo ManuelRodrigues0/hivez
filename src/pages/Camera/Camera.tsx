@@ -135,19 +135,27 @@ canvas.toBlob(
 }
 
 return (
-<main className="fixed inset-0 z-50 bg-black">
-<video  
-ref={videoRef}  
-autoPlay  
-playsInline  
-muted  
-className="h-full w-full object-cover"  
+<main className="fixed inset-0 z-50 overflow-hidden bg-black">
+<video
+  ref={videoRef}
+  autoPlay
+  playsInline
+  muted
+  className={`h-full w-full object-cover transition-transform duration-300 ${
+    facingMode === "user" ? "scale-x-[-1]" : ""
+  }`}
 />
 
 <canvas  
     ref={canvasRef}  
     className="hidden"  
   />  
+
+<div className="absolute left-1/2 top-6 -translate-x-1/2 rounded-full bg-black/50 px-5 py-2 text-sm font-medium text-white backdrop-blur">
+  {facingMode === "environment"
+    ? "📷 Back Camera"
+    : "🤳 Front Camera"}
+</div>
 
   {loading && (  
     <div className="absolute inset-0 flex items-center justify-center text-white text-lg">  
@@ -170,15 +178,17 @@ className="h-full w-full object-cover"
 
   <button
   onClick={switchCamera}
-  className="absolute right-5 top-5 rounded-full bg-black/60 px-4 py-2 text-white"
+  className="absolute right-5 top-5 flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-2xl text-white backdrop-blur transition active:rotate-180"
 >
   🔄
 </button>
 
-  <button  
-    onClick={capturePhoto}  
-    className="absolute bottom-10 left-1/2 h-20 w-20 -translate-x-1/2 rounded-full border-4 border-white bg-white/20 active:scale-95 transition"  
-  />  
+  <button
+  onClick={capturePhoto}
+  className="absolute bottom-10 left-1/2 flex h-20 w-20 -translate-x-1/2 items-center justify-center rounded-full border-4 border-white bg-white/20 transition active:scale-90"
+>
+  <div className="h-14 w-14 rounded-full bg-white" />
+</button>
 </main>
 
 );
