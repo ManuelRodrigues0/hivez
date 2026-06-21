@@ -29,6 +29,12 @@ const [recordTime, setRecordTime] =
 const timerRef =
   useRef<number>();
 
+const holdTimeoutRef =
+  useRef<number>();
+
+const didRecordRef =
+  useRef(false);
+
 useEffect(() => {
 async function startCamera() {
 try {
@@ -92,7 +98,7 @@ async function switchCamera() {
   );
 }
 
-function startRecording() {
+function beginRecording() {
   if (!streamRef.current) return;
 
   chunksRef.current = [];
@@ -147,7 +153,7 @@ function startRecording() {
   }, 1000);
 }
 
-function stopRecording() {
+function finishRecording() {
   if (!mediaRecorderRef.current) return;
 
   mediaRecorderRef.current.stop();
@@ -157,6 +163,31 @@ function stopRecording() {
   }
 
   setRecording(false);
+}
+
+function handlePressStart() {
+  didRecordRef.current = false;
+
+  holdTimeoutRef.current = window.setTimeout(() => {
+    didRecordRef.current = true;
+
+    beginRecording();
+  }, 350);
+}
+
+function handlePressEnd() {
+  if (holdTimeoutRef.current) {
+    clearTimeout(holdTimeoutRef.current);
+  }
+
+  if (recording) {
+    finishRecording();
+    return;
+  }
+
+  if (!didRecordRef.current) {
+    capturePhoto();
+  }
 }
 
 function capturePhoto() {
@@ -270,11 +301,11 @@ return (
 </button>
 
   <button
-  onClick={capturePhoto}
-onMouseDown={startRecording}
-onMouseUp={stopRecording}
-onTouchStart={startRecording}
-onTouchEnd={stopRecording}
+  onMouseDown={handlePressStart}
+onMouseUp={handlePressEnd}
+onMouseLeave={handlePressEnd}
+onTouchStart={handlePressStart}
+onTouchEnd={handlePressEnd}
   className="absolute bottom-10 left-1/2 flex h-20 w-20 -translate-x-1/2 items-center justify-center rounded-full border-4 border-white bg-white/20 transition active:scale-90"
 >
   <div className="h-14 w-14 rounded-full bg-white" />
