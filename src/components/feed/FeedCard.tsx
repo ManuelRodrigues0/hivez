@@ -1,4 +1,5 @@
 import { useState } from "react";
+
 import {
   Heart,
   MessageCircle,
@@ -8,10 +9,32 @@ import {
   BadgeCheck,
 } from "lucide-react";
 
-import type { Post } from "../../data/posts";
+import type { FeedPost } from "./Feed";
 
 interface Props {
-  post: Post;
+  post: FeedPost;
+}
+
+function timeAgo(timestamp: any) {
+  if (!timestamp?.toDate) return "Now";
+
+  const seconds = Math.floor(
+    (Date.now() - timestamp.toDate().getTime()) / 1000
+  );
+
+  if (seconds < 60) return "Now";
+
+  const minutes = Math.floor(seconds / 60);
+
+  if (minutes < 60) return `${minutes}m`;
+
+  const hours = Math.floor(minutes / 60);
+
+  if (hours < 24) return `${hours}h`;
+
+  const days = Math.floor(hours / 24);
+
+  return `${days}d`;
 }
 
 export default function FeedCard({ post }: Props) {
@@ -21,32 +44,21 @@ export default function FeedCard({ post }: Props) {
     <article className="border-b border-zinc-800 px-4 py-5">
       <div className="flex gap-3">
 
-        {/* Avatar */}
         <div className="flex flex-col items-center">
 
           <img
-            src={post.avatar}
+            src={
+              post.photoURL ||
+              "https://ui-avatars.com/api/?name=Hivez"
+            }
             alt={post.username}
             className="h-11 w-11 rounded-full object-cover"
           />
 
-          <div className="mt-2 flex-1 w-px bg-zinc-800"></div>
-
-          {/* Reply Avatars */}
-          <div className="-mt-1 flex -space-x-2 pb-2">
-            <img
-              src="https://i.pravatar.cc/40?img=10"
-              className="h-5 w-5 rounded-full border border-black"
-            />
-            <img
-              src="https://i.pravatar.cc/40?img=12"
-              className="h-5 w-5 rounded-full border border-black"
-            />
-          </div>
+          <div className="mt-2 w-px flex-1 bg-zinc-800" />
 
         </div>
 
-        {/* Content */}
         <div className="flex-1">
 
           <div className="flex items-center justify-between">
@@ -54,16 +66,22 @@ export default function FeedCard({ post }: Props) {
             <div className="flex items-center gap-2">
 
               <span className="font-semibold">
-                {post.username}
+                {post.displayName || post.username}
               </span>
 
-              <BadgeCheck
-                size={15}
-                className="text-sky-500"
-              />
+              {post.verified && (
+                <BadgeCheck
+                  size={15}
+                  className="text-sky-500"
+                />
+              )}
 
               <span className="text-sm text-zinc-500">
-                {post.time}
+                @{post.username}
+              </span>
+
+              <span className="text-sm text-zinc-500">
+                · {timeAgo(post.createdAt)}
               </span>
 
             </div>
@@ -75,30 +93,32 @@ export default function FeedCard({ post }: Props) {
 
           </div>
 
-          <p className="text-sm text-zinc-500">
-            {post.handle}
-          </p>
+          {post.caption && (
+            <p className="mt-3 whitespace-pre-wrap leading-6">
+              {post.caption}
+            </p>
+          )}
 
-          <p className="mt-3 whitespace-pre-wrap leading-6">
-            {post.content}
-          </p>
-
-          {post.image && (
+          {post.mediaType === "image" ? (
             <img
-              src={post.image}
+              src={post.mediaUrl}
               alt=""
               className="mt-4 w-full rounded-2xl object-cover"
             />
+          ) : (
+            <video
+              src={post.mediaUrl}
+              controls
+              className="mt-4 w-full rounded-2xl"
+            />
           )}
-
-          {/* Buttons */}
 
           <div className="mt-4 flex items-center gap-6">
 
             <Heart
               size={22}
               onClick={() => setLiked(!liked)}
-              className={`cursor-pointer transition-all duration-200 hover:scale-125 ${
+              className={`cursor-pointer transition ${
                 liked
                   ? "fill-red-500 text-red-500"
                   : ""
@@ -107,37 +127,37 @@ export default function FeedCard({ post }: Props) {
 
             <MessageCircle
               size={22}
-              className="cursor-pointer transition hover:scale-110"
+              className="cursor-pointer"
             />
 
             <Repeat2
               size={22}
-              className="cursor-pointer transition hover:scale-110"
+              className="cursor-pointer"
             />
 
             <Send
               size={22}
-              className="cursor-pointer transition hover:scale-110"
+              className="cursor-pointer"
             />
 
           </div>
 
-          <div className="mt-3 flex items-center gap-2 text-sm text-zinc-500">
+          <div className="mt-3 flex gap-2 text-sm text-zinc-500">
 
             <span>
-              {post.likes.toLocaleString()} likes
+              {post.likes} upvotes
             </span>
 
             <span>•</span>
 
             <span>
-              {post.comments} replies
+              {post.comments} comments
             </span>
 
             <span>•</span>
 
             <span>
-              {post.reposts} reposts
+              {post.shares} shares
             </span>
 
           </div>
