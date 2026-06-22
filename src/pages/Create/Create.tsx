@@ -1,12 +1,26 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useMemo, useState } from "react";
 
+import { useAuth } from "../../context/AuthContext";
+
+import { db } from "../../firebase/firebase";
+
+import {
+  addDoc,
+  collection,
+  serverTimestamp,
+} from "firebase/firestore";
+
 export default function Create() {
   const { state } = useLocation();
 
   const navigate = useNavigate();
 
+  const { user } = useAuth();
+
   const [caption, setCaption] = useState("");
+
+  const [posting, setPosting] = useState(false);
 
   const file: File | undefined = state?.media;
 
@@ -22,6 +36,53 @@ export default function Create() {
   }
 
   const isVideo = file.type.startsWith("video");
+
+  async function uploadToCloudinary() {
+    if (!file || !user) return;
+
+    try {
+      setPosting(true);
+
+      const formData = new FormData();
+
+      formData.append("file", file);
+
+      formData.append(
+        "upload_preset",
+        "hivez_upload"
+      );
+
+      const endpoint = isVideo
+        ? "https://api.cloudinary.com/v1_1/dpotccr5q/video/upload"
+        : "https://api.cloudinary.com/v1_1/dpotccr5q/image/upload";
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      await addDoc(collection(db, "posts"), {
+        uid: user.uid,
+        caption,
+        mediaUrl: data.secure_url,
+        mediaType: isVideo ? "video" : "image",
+        likes: 0,
+        comments: 0,
+        shares: 0,
+        createdAt: serverTimestamp(),
+      });
+
+      navigate("/");
+    } catch (error) {
+      console.error(error);
+
+      alert("Upload failed.");
+    } finally {
+      setPosting(false);
+    }
+  }
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -40,9 +101,11 @@ export default function Create() {
         </h1>
 
         <button
-          className="font-semibold text-blue-500"
+          onClick={uploadToCloudinary}
+          disabled={posting}
+          className="font-semibold text-blue-500 disabled:text-zinc-500"
         >
-          Post
+          {posting ? "Posting..." : "Post"}
         </button>
 
       </div>
