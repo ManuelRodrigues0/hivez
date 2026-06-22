@@ -57,7 +57,7 @@ export default function CommentCard({
         className="h-10 w-10 rounded-full object-cover"
       />
 
-      <div className="flex-1">
+      <div className="min-w-0 flex-1">
 
         <div className="flex items-center gap-2">
 
@@ -75,14 +75,17 @@ export default function CommentCard({
 
         </div>
 
-        <p className="mt-2 whitespace-pre-wrap text-white">
+        <p className="mt-2 whitespace-pre-wrap break-words text-[15px] leading-6 text-white">
           {comment.text}
         </p>
 
       </div>
 
-      <button className="self-start p-1 text-zinc-500 transition hover:text-red-500">
-        <Heart size={18} />
+      <button className="mt-1 rounded-full p-2 transition hover:bg-zinc-900 active:scale-90">
+        <Heart
+          size={18}
+          className="text-zinc-500"
+        />
       </button>
 
     </article>

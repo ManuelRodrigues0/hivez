@@ -13,19 +13,16 @@ import {
   updateDoc,
 } from "firebase/firestore";
 
-import {
-  X,
-  Send,
-  BadgeCheck,
-} from "lucide-react";
-
 import { db } from "../../firebase/firebase";
 
 import { useAuth } from "../../context/AuthContext";
 
 import type { FeedPost } from "../feed/Feed";
 
-import CommentCard from "./CommentCard";
+import CommentHeader from "./CommentHeader";
+import OriginalPost from "./OriginalPost";
+import CommentList from "./CommentList";
+import CommentComposer from "./CommentComposer";
 
 interface Props {
   post: FeedPost;
@@ -70,11 +67,13 @@ export default function CommentsSheet({
   const [text, setText] =
     useState("");
 
-  const inputRef =
+  const textareaRef =
     useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (!open) return;
+
+    setLoading(true);
 
     const q = query(
       collection(
@@ -86,10 +85,9 @@ export default function CommentsSheet({
       orderBy("createdAt", "asc")
     );
 
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const list: Comment[] =
+    const unsubscribe =
+      onSnapshot(q, (snapshot) => {
+        const data: Comment[] =
           snapshot.docs.map((doc) => ({
             id: doc.id,
             ...(doc.data() as Omit<
@@ -98,21 +96,20 @@ export default function CommentsSheet({
             >),
           }));
 
-        setComments(list);
+        setComments(data);
 
         setLoading(false);
-      }
-    );
+      });
 
     return unsubscribe;
   }, [open, post.id]);
 
   useEffect(() => {
-    if (open) {
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 250);
-    }
+    if (!open) return;
+
+    setTimeout(() => {
+      textareaRef.current?.focus();
+    }, 250);
   }, [open]);
 
   async function sendComment() {
@@ -123,12 +120,13 @@ export default function CommentsSheet({
     try {
       setSending(true);
 
-      const userDoc = await getDoc(
-        doc(db, "users", user.uid)
-      );
+      const userSnap =
+        await getDoc(
+          doc(db, "users", user.uid)
+        );
 
       const profile =
-        userDoc.data();
+        userSnap.data();
 
       await addDoc(
         collection(
@@ -169,7 +167,7 @@ export default function CommentsSheet({
 
       setText("");
 
-      inputRef.current?.focus();
+      textareaRef.current?.focus();
     } finally {
       setSending(false);
     }
@@ -180,138 +178,34 @@ export default function CommentsSheet({
     <>
       <div
         onClick={onClose}
-        className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm transition-opacity"
       />
 
-      <div className="fixed bottom-0 left-0 right-0 z-50 flex h-[88vh] flex-col rounded-t-3xl bg-black shadow-2xl animate-in slide-in-from-bottom">
+      <div className="fixed inset-x-0 bottom-0 z-[100] h-[92vh] rounded-t-[32px] border border-zinc-800 bg-black shadow-2xl">
 
-        <div className="flex justify-center py-3">
-          <div className="h-1.5 w-12 rounded-full bg-zinc-700" />
-        </div>
+        <div className="flex h-full flex-col overflow-hidden rounded-t-[32px]">
 
-        <div className="flex items-center justify-between border-b border-zinc-800 px-5 pb-4">
+          <CommentHeader
+            count={comments.length}
+            onClose={onClose}
+          />
 
-          <h2 className="text-lg font-semibold text-white">
-            Comments
-          </h2>
+          <OriginalPost
+            post={post}
+          />
 
-          <button
-            onClick={onClose}
-            className="rounded-full p-2 transition hover:bg-zinc-900"
-          >
-            <X
-              size={22}
-              className="text-white"
-            />
-          </button>
+          <CommentList
+            comments={comments}
+            loading={loading}
+          />
 
-        </div>
-
-        <div className="border-b border-zinc-800 p-5">
-
-          <div className="flex gap-3">
-
-            <img
-              src={
-                post.photoURL ||
-                "https://ui-avatars.com/api/?name=Hivez"
-              }
-              className="h-11 w-11 rounded-full object-cover"
-            />
-
-            <div className="flex-1">
-
-              <div className="flex items-center gap-2">
-
-                <span className="font-semibold text-white">
-                  {post.displayName}
-                </span>
-
-                {post.verified && (
-                  <BadgeCheck
-                    size={15}
-                    className="text-sky-500"
-                  />
-                )}
-
-                <span className="text-sm text-zinc-500">
-                  @{post.username}
-                </span>
-
-              </div>
-
-              {post.caption && (
-                <p className="mt-2 whitespace-pre-wrap text-white">
-                  {post.caption}
-                </p>
-              )}
-
-              {post.mediaType === "image" ? (
-                <img
-                  src={post.mediaUrl}
-                  className="mt-4 rounded-2xl"
-                />
-              ) : (
-                <video
-                  src={post.mediaUrl}
-                  controls
-                  className="mt-4 rounded-2xl"
-                />
-              )}
-
-            </div>
-
-          </div>
-
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-5 py-4">
-
-          {loading ? (
-            <div className="py-10 text-center text-zinc-500">
-              Loading comments...
-            </div>
-          ) : comments.length === 0 ? (
-            <div className="py-10 text-center text-zinc-500">
-              Be the first to comment.
-            </div>
-          ) : (
-            comments.map((comment) => (
-              <CommentCard
-                key={comment.id}
-                comment={comment}
-              />
-            ))
-          )}
-
-        </div>
-
-        <div className="border-t border-zinc-800 p-4">
-
-          <div className="flex items-end gap-3">
-
-            <textarea
-              ref={inputRef}
-              value={text}
-              onChange={(e) =>
-                setText(e.target.value)
-              }
-              rows={1}
-              placeholder="Write a comment..."
-              className="max-h-36 min-h-[48px] flex-1 resize-none rounded-2xl bg-zinc-900 p-3 text-white outline-none"
-            />
-
-            <button
-              onClick={sendComment}
-              disabled={
-                sending || !text.trim()
-              }
-              className="rounded-full bg-sky-500 p-3 transition disabled:opacity-40"
-            >
-              <Send size={20} />
-            </button>
-
-          </div>
+          <CommentComposer
+  ref={textareaRef}
+  value={text}
+  sending={sending}
+  onChange={setText}
+  onSend={sendComment}
+/>
 
         </div>
 
