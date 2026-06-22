@@ -9,6 +9,8 @@ import {
   addDoc,
   collection,
   serverTimestamp,
+  getDoc,
+  doc,
 } from "firebase/firestore";
 
 export default function Create() {
@@ -63,14 +65,44 @@ export default function Create() {
 
       const data = await response.json();
 
+      const userDoc = await getDoc(
+        doc(db, "users", user.uid)
+      );
+
+      const profile = userDoc.data();
+
       await addDoc(collection(db, "posts"), {
         uid: user.uid,
+
+        username: profile?.username || "",
+
+        displayName:
+          profile?.displayName ||
+          user.displayName ||
+          "",
+
+        photoURL:
+          profile?.photoURL ||
+          user.photoURL ||
+          "",
+
+        verified:
+          profile?.verified || false,
+
         caption,
+
         mediaUrl: data.secure_url,
-        mediaType: isVideo ? "video" : "image",
+
+        mediaType: isVideo
+          ? "video"
+          : "image",
+
         likes: 0,
+
         comments: 0,
+
         shares: 0,
+
         createdAt: serverTimestamp(),
       });
 
@@ -86,9 +118,7 @@ export default function Create() {
 
   return (
     <main className="min-h-screen bg-black text-white">
-
       <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-4">
-
         <button
           onClick={() => navigate("/")}
           className="text-zinc-400"
@@ -107,11 +137,9 @@ export default function Create() {
         >
           {posting ? "Posting..." : "Post"}
         </button>
-
       </div>
 
       <div className="p-5">
-
         {isVideo ? (
           <video
             src={preview}
@@ -131,9 +159,7 @@ export default function Create() {
           onChange={(e) => setCaption(e.target.value)}
           className="h-36 w-full resize-none rounded-2xl border border-zinc-800 bg-zinc-900 p-4 outline-none"
         />
-
       </div>
-
     </main>
   );
 }
