@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Image, Type, X } from "lucide-react";
+import { Type } from "lucide-react";
 
 export default function Camera() {
   const navigate = useNavigate();
@@ -17,13 +17,10 @@ export default function Camera() {
   const [recordTime, setRecordTime] = useState(0);
   const [mode, setMode] = useState<"camera" | "text">("camera");
   const [textContent, setTextContent] = useState("");
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [previews, setPreviews] = useState<string[]>([]);
 
   const timerRef = useRef<number | null>(null);
   const holdTimeoutRef = useRef<number | null>(null);
   const didRecordRef = useRef(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (mode !== "camera") return;
@@ -156,23 +153,6 @@ export default function Camera() {
     );
   }
 
-  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-
-    const newPreviews = files.map((file) => URL.createObjectURL(file));
-    setSelectedFiles((prev) => [...prev, ...files]);
-    setPreviews((prev) => [...prev, ...newPreviews]);
-  }
-
-  function removeFile(index: number) {
-    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
-    setPreviews((prev) => {
-      URL.revokeObjectURL(prev[index]);
-      return prev.filter((_, i) => i !== index);
-    });
-  }
-
   function handleTextPost() {
     if (!textContent.trim()) return;
     navigate("/create", { state: { text: textContent.trim() } });
@@ -180,20 +160,21 @@ export default function Camera() {
 
   return (
     <main className="fixed inset-0 z-50 overflow-hidden bg-black">
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        className={`h-full w-full object-cover transition-transform duration-300 ${
-          facingMode === "user" ? "scale-x-[-1]" : ""
-        }`}
-      />
-
-      <canvas ref={canvasRef} className="hidden" />
-
+      {/* Camera View */}
       {mode === "camera" && (
         <>
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className={`h-full w-full object-cover transition-transform duration-300 ${
+              facingMode === "user" ? "scale-x-[-1]" : ""
+            }`}
+          />
+
+          <canvas ref={canvasRef} className="hidden" />
+
           <div className="absolute left-1/2 top-6 -translate-x-1/2 rounded-full bg-black/50 px-5 py-2 text-sm font-medium text-white backdrop-blur">
             {facingMode === "environment" ? "📷 Back Camera" : "🤳 Front Camera"}
           </div>
@@ -240,20 +221,44 @@ export default function Camera() {
         </>
       )}
 
-      {/* Mode Selection & Actions */}
-      <div className="absolute bottom-0 left-0 right-0 border-t border-zinc-800 bg-black/95 p-4">
-        {mode === "camera" ? (
-          <div className="flex items-center justify-around">
+      {/* Text Mode - Full Screen Overlay */}
+      {mode === "text" && (
+        <div className="flex h-full flex-col bg-black p-4">
+          <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
             <button
-              onClick={() => fileInputRef.current?.click()}
-              className="flex flex-col items-center gap-1 text-white"
+              onClick={() => {
+                setMode("camera");
+                setTextContent("");
+              }}
+              className="text-sm text-zinc-400"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-800">
-                <Image size={20} />
-              </div>
-              <span className="text-xs">Gallery</span>
+              Cancel
             </button>
+            <h1 className="text-base font-semibold text-white">New Post</h1>
+            <button
+              onClick={handleTextPost}
+              disabled={!textContent.trim()}
+              className="text-sm font-semibold text-white disabled:opacity-50"
+            >
+              Post
+            </button>
+          </div>
 
+          <textarea
+            placeholder="What's on your mind?"
+            value={textContent}
+            onChange={(e) => setTextContent(e.target.value)}
+            rows={12}
+            className="mt-4 flex-1 resize-none bg-transparent text-lg text-white outline-none placeholder:text-zinc-500"
+            autoFocus
+          />
+        </div>
+      )}
+
+      {/* Bottom Actions - Only show in camera mode */}
+      {mode === "camera" && (
+        <div className="absolute bottom-0 left-0 right-0 border-t border-zinc-800 bg-black/95 p-4">
+          <div className="flex items-center justify-around">
             <button
               onClick={() => setMode("text")}
               className="flex flex-col items-center gap-1 text-white"
@@ -263,83 +268,9 @@ export default function Camera() {
               </div>
               <span className="text-xs">Text</span>
             </button>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*,video/*"
-              multiple
-              onChange={handleFileSelect}
-              className="hidden"
-            />
           </div>
-        ) : (
-          <div className="space-y-3">
-            <textarea
-              placeholder="What's on your mind?"
-              value={textContent}
-              onChange={(e) => setTextContent(e.target.value)}
-              rows={4}
-              className="w-full resize-none rounded-xl border border-zinc-700 bg-zinc-900 p-4 text-sm text-white outline-none focus:border-zinc-600"
-              autoFocus
-            />
-
-            {previews.length > 0 && (
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {previews.map((preview, index) => (
-                  <div key={index} className="relative flex-shrink-0">
-                    <img src={preview} alt="" className="h-20 w-20 rounded-lg object-cover" />
-                    <button
-                      onClick={() => removeFile(index)}
-                      className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white"
-                    >
-                      <X size={12} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="flex items-center justify-between">
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 text-sm text-zinc-400"
-              >
-                <Image size={18} />
-                Add photos
-              </button>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    setMode("camera");
-                    setTextContent("");
-                  }}
-                  className="rounded-full border border-zinc-700 px-4 py-2 text-sm text-white"
-                >
-                  Back
-                </button>
-                <button
-                  onClick={handleTextPost}
-                  disabled={!textContent.trim() && selectedFiles.length === 0}
-                  className="rounded-full bg-white px-6 py-2 text-sm font-semibold text-black disabled:opacity-50"
-                >
-                  Post
-                </button>
-              </div>
-            </div>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*,video/*"
-              multiple
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </main>
   );
 }
