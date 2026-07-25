@@ -34,9 +34,10 @@ export interface FeedPost {
 interface FeedProps {
   category?: string;
   hashtag?: string;
+  onCommentClick?: (post: FeedPost) => void;
 }
 
-export default function Feed({ category, hashtag }: FeedProps) {
+export default function Feed({ category, hashtag, onCommentClick }: FeedProps) {
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -102,6 +103,7 @@ export default function Feed({ category, hashtag }: FeedProps) {
         <FeedCard
           key={post.id}
           post={post}
+          onCommentClick={onCommentClick}
         />
       ))}
     </div>

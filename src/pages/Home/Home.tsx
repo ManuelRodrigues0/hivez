@@ -1,9 +1,34 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
+import {
+  collection,
+  doc,
+  getDoc,
+  addDoc,
+  updateDoc,
+  increment,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+} from "firebase/firestore";
+import { db } from "../../firebase/firebase";
+import { useAuth } from "../../context/AuthContext";
 import Feed from "@/components/feed/Feed";
+import type { FeedPost } from "@/components/feed/Feed";
 
 export default function Home() {
   const navigate = useNavigate();
+  const [selectedPost, setSelectedPost] = useState<FeedPost | null>(null);
+
+  function handleCommentClick(post: FeedPost) {
+    setSelectedPost(post);
+  }
+
+  function handleCloseComments() {
+    setSelectedPost(null);
+  }
 
   return (
     <div className="flex flex-col">
@@ -12,16 +37,197 @@ export default function Home() {
         <h1 className="text-center text-lg font-bold text-white">For you</h1>
       </div>
 
-      {/* Feed */}
-      <Feed />
+      {/* Either show Feed or Comments */}
+      {selectedPost ? (
+        <CommentsView post={selectedPost} onClose={handleCloseComments} />
+      ) : (
+        <>
+          <Feed onCommentClick={handleCommentClick} />
+          
+          {/* Floating + button */}
+          <button
+            onClick={() => navigate("/camera")}
+            className="fixed bottom-20 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-white text-black shadow-lg transition hover:bg-zinc-200 dark:bg-white dark:text-black lg:bottom-8 lg:right-8"
+          >
+            <Plus size={24} />
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
 
-      {/* Floating + button */}
-      <button
-        onClick={() => navigate("/camera")}
-        className="fixed bottom-20 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-white text-black shadow-lg transition hover:bg-zinc-200 dark:bg-white dark:text-black lg:bottom-8 lg:right-8"
-      >
-        <Plus size={24} />
-      </button>
+function CommentsView({ post, onClose }: { post: FeedPost; onClose: () => void }) {
+  const { user } = useAuth();
+  const [comments, setComments] = useState<any[]>([]);
+  const [text, setText] = useState("");
+  const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    const q = query(
+      collection(db, "posts", post.id, "comments"),
+      orderBy("createdAt", "asc")
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setComments(data);
+    });
+    return unsubscribe;
+  }, [post.id]);
+
+  async function sendComment() {
+    if (!user || !text.trim()) return;
+    setSending(true);
+    try {
+      const userSnap = await getDoc(doc(db, "users", user.uid));
+      const profile = userSnap.data();
+      await addDoc(collection(db, "posts", post.id, "comments"), {
+        uid: user.uid,
+        username: profile?.username || "",
+        displayName: profile?.displayName || user.displayName || "",
+        photoURL: profile?.photoURL || user.photoURL || "",
+        text: text.trim(),
+        createdAt: serverTimestamp(),
+      });
+      await updateDoc(doc(db, "posts", post.id), {
+        comments: increment(1),
+      });
+      setText("");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col">
+      {/* Header with back button */}
+      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-800 bg-black/95 px-4 py-3 backdrop-blur">
+        <button
+          onClick={onClose}
+          className="rounded-full p-2 transition hover:bg-zinc-800"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <h1 className="text-base font-semibold text-white">Replies</h1>
+        <div className="w-10" />
+      </div>
+
+      {/* Original Post */}
+      <div className="border-b border-zinc-800 p-4">
+        <div className="flex items-center gap-2.5">
+          <img
+            src={
+              post.photoURL ||
+              "https://ui-avatars.com/api/?name=Hivez&background=6366f1&color=fff"
+            }
+            alt={post.username}
+            className="h-9 w-9 rounded-full object-cover"
+          />
+          <div className="flex-1">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-semibold text-white">
+                {post.displayName || post.username}
+              </span>
+              <span className="text-sm text-zinc-500">
+                @{post.username}
+              </span>
+            </div>
+          </div>
+        </div>
+        {post.caption && (
+          <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-zinc-100">
+            {post.caption}
+          </p>
+        )}
+        {post.mediaUrl && (
+          <div className="mt-2.5">
+            {post.mediaType === "image" ? (
+              <img
+                src={post.mediaUrl}
+                alt=""
+                className="max-h-[280px] w-full rounded-xl object-cover"
+              />
+            ) : (
+              <video
+                src={post.mediaUrl}
+                controls
+                className="w-full rounded-xl"
+              />
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Scrollable Comments */}
+      <div className="flex-1 overflow-y-auto">
+        {comments.length === 0 ? (
+          <div className="py-20 text-center text-zinc-500">
+            No comments yet. Be the first to reply!
+          </div>
+        ) : (
+          comments.map((comment: any) => (
+            <div key={comment.id} className="border-b border-zinc-800 p-4">
+              <div className="flex gap-3">
+                <img
+                  src={
+                    comment.photoURL ||
+                    "https://ui-avatars.com/api/?name=Hivez&background=6366f1&color=fff"
+                  }
+                  alt={comment.username}
+                  className="h-8 w-8 rounded-full object-cover"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-semibold text-white">
+                      {comment.displayName || comment.username}
+                    </span>
+                    <span className="text-sm text-zinc-500">
+                      @{comment.username}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-zinc-100">
+                    {comment.text}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Composer */}
+      <div className="border-t border-zinc-800 p-4">
+        <div className="flex gap-3">
+          <img
+            src={user?.photoURL || "https://ui-avatars.com/api/?name=Hivez&background=6366f1&color=fff"}
+            alt=""
+            className="h-8 w-8 rounded-full object-cover"
+          />
+          <div className="flex-1">
+            <textarea
+              placeholder="Post your reply"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              rows={2}
+              className="w-full resize-none rounded-xl border border-zinc-800 bg-zinc-900 p-3 text-sm text-white outline-none focus:border-zinc-700"
+            />
+            <div className="mt-2 flex justify-end">
+              <button
+                onClick={sendComment}
+                disabled={!text.trim() || sending}
+                className="rounded-full bg-white px-5 py-1.5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:opacity-50"
+              >
+                Reply
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

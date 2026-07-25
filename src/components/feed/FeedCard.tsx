@@ -15,6 +15,7 @@ import CommentsSheet from "../comments/CommentsSheet";
 
 interface Props {
   post: FeedPost;
+  onCommentClick?: (post: FeedPost) => void;
 }
 
 function timeAgo(timestamp: any) {
@@ -37,7 +38,7 @@ function timeAgo(timestamp: any) {
   return `${years}y`;
 }
 
-export default function FeedCard({ post }: Props) {
+export default function FeedCard({ post, onCommentClick }: Props) {
   const [liked, setLiked] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
 
@@ -134,7 +135,7 @@ export default function FeedCard({ post }: Props) {
               />
             </button>
             <button
-              onClick={() => setCommentsOpen(true)}
+              onClick={() => onCommentClick?.(post)}
               className="rounded-full p-2 transition hover:bg-zinc-800"
             >
               <MessageCircle size={18} className="text-zinc-400" />
