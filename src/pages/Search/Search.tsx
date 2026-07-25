@@ -85,7 +85,10 @@ export default function SearchPage() {
       postsSnapshot.forEach((doc) => {
         const data = doc.data();
         const caption = (data.caption || "").toLowerCase();
-        if (caption.includes(trimmed)) {
+        const hashtags = (data.hashtags || []).map((t: string) => t.toLowerCase());
+        const matchesCaption = caption.includes(trimmed);
+        const matchesHashtag = hashtags.some((t: string) => t === trimmed || t === `#${trimmed}`);
+        if (matchesCaption || matchesHashtag) {
           allPosts.push({
             id: doc.id,
             caption: data.caption || "",

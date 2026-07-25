@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 
 import { useAuth } from "../../context/AuthContext";
 import { db } from "../../firebase/firebase";
@@ -15,22 +15,18 @@ import {
 
 export default function Create() {
   const { state } = useLocation();
-
   const navigate = useNavigate();
-
   const { user } = useAuth();
 
   const [caption, setCaption] = useState("");
-
   const [posting, setPosting] = useState(false);
-
   const [category, setCategory] = useState(COMMUNITIES[0].id);
+  const [location, setLocation] = useState("");
 
   const file: File | undefined = state?.media;
 
   const preview = useMemo(() => {
     if (!file) return "";
-
     return URL.createObjectURL(file);
   }, [file]);
 
@@ -41,6 +37,11 @@ export default function Create() {
 
   const isVideo = file.type.startsWith("video");
 
+  const extractHashtags = useCallback((text: string): string[] => {
+    const matches = text.match(/#[\w]+/g);
+    return matches ? matches.map(tag => tag.toLowerCase()) : [];
+  }, []);
+
   async function uploadToCloudinary() {
     if (!file || !user) return;
 
@@ -48,13 +49,8 @@ export default function Create() {
       setPosting(true);
 
       const formData = new FormData();
-
       formData.append("file", file);
-
-      formData.append(
-        "upload_preset",
-        "hivez_upload"
-      );
+      formData.append("upload_preset", "hivez_upload");
 
       const endpoint = isVideo
         ? "https://api.cloudinary.com/v1_1/dpotccr5q/video/upload"
@@ -67,53 +63,32 @@ export default function Create() {
 
       const data = await response.json();
 
-      const userDoc = await getDoc(
-        doc(db, "users", user.uid)
-      );
-
+      const userDoc = await getDoc(doc(db, "users", user.uid));
       const profile = userDoc.data();
+
+      const hashtags = extractHashtags(caption);
 
       await addDoc(collection(db, "posts"), {
         uid: user.uid,
-
         username: profile?.username || "",
-
-        displayName:
-          profile?.displayName ||
-          user.displayName ||
-          "",
-
-        photoURL:
-          profile?.photoURL ||
-          user.photoURL ||
-          "",
-
-        verified:
-          profile?.verified || false,
-
+        displayName: profile?.displayName || user.displayName || "",
+        photoURL: profile?.photoURL || user.photoURL || "",
+        verified: profile?.verified || false,
         caption,
-
+        hashtags,
         category,
-
+        location: location.trim() || null,
         mediaUrl: data.secure_url,
-
-        mediaType: isVideo
-          ? "video"
-          : "image",
-
+        mediaType: isVideo ? "video" : "image",
         likes: 0,
-
         comments: 0,
-
         shares: 0,
-
         createdAt: serverTimestamp(),
       });
 
       navigate("/");
     } catch (error) {
       console.error(error);
-
       alert("Upload failed.");
     } finally {
       setPosting(false);
@@ -121,70 +96,117 @@ export default function Create() {
   }
 
   return (
-    <main className="min-h-screen bg-black text-white">
-      <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-4">
+    <main className="min-h-screen bg-white dark:bg-black">
+      {/* Header */}
+      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-200 bg-white/95 px-4 py-3 backdrop-blur dark:border-zinc-800 dark:bg-black/95">
         <button
-          onClick={() => navigate("/")}
-          className="text-zinc-400"
+          onClick={() => navigate(-1)}
+          className="text-sm text-zinc-500 transition hover:text-zinc-700 dark:hover:text-zinc-300"
         >
           Cancel
         </button>
 
-        <h1 className="text-lg font-semibold">
-          New Hive Post
-        </h1>
+        <h1 className="text-base font-semibold">New Post</h1>
 
         <button
           onClick={uploadToCloudinary}
           disabled={posting}
-          className="font-semibold text-blue-500 disabled:text-zinc-500"
+          className="rounded-full bg-black px-5 py-1.5 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
         >
-          {posting ? "Posting..." : "Post"}
+          {posting ? "Posting..." : "Share"}
         </button>
       </div>
 
-      <div className="p-5">
-        {isVideo ? (
-          <video
-            src={preview}
-            controls
-            className="mb-5 w-full rounded-2xl"
-          />
-        ) : (
-          <img
-            src={preview}
-            alt="Preview"
-            className="mb-5 w-full rounded-2xl"
-          />
-        )}
-
-        <div className="mb-5">
-          <label className="mb-2 block text-sm font-medium text-zinc-400">
-            Select Hive
-          </label>
-
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="w-full rounded-xl border border-zinc-800 bg-zinc-900 p-3 outline-none"
-          >
-            {COMMUNITIES.map((community) => (
-              <option
-                key={community.id}
-                value={community.id}
-              >
-                {community.icon} {community.name}
-              </option>
-            ))}
-          </select>
+      <div className="mx-auto max-w-2xl">
+        {/* Media Preview */}
+        <div className="relative bg-zinc-100 dark:bg-zinc-900">
+          {isVideo ? (
+            <video
+              src={preview}
+              controls
+              className="max-h-[500px] w-full object-contain"
+            />
+          ) : (
+            <img
+              src={preview}
+              alt="Preview"
+              className="max-h-[500px] w-full object-contain"
+            />
+          )}
         </div>
 
-        <textarea
-          placeholder="What's happening?"
-          value={caption}
-          onChange={(e) => setCaption(e.target.value)}
-          className="h-36 w-full resize-none rounded-2xl border border-zinc-800 bg-zinc-900 p-4 outline-none"
-        />
+        {/* Post Details */}
+        <div className="border-b border-zinc-200 p-4 dark:border-zinc-800">
+          {/* User Info */}
+          <div className="mb-3 flex items-center gap-3">
+            <img
+              src={user?.photoURL || "https://ui-avatars.com/api/?name=Hivez&background=6366f1&color=fff"}
+              alt=""
+              className="h-10 w-10 rounded-full object-cover"
+            />
+            <div>
+              <p className="text-sm font-semibold">{user?.displayName || "Hivez User"}</p>
+              <p className="text-xs text-zinc-500">@{user?.email?.split("@")[0] || "user"}</p>
+            </div>
+          </div>
+
+          {/* Caption Input */}
+          <textarea
+            placeholder="Write a caption... Use #hashtags to categorize your post"
+            value={caption}
+            onChange={(e) => setCaption(e.target.value)}
+            rows={4}
+            className="w-full resize-none rounded-xl border border-zinc-200 bg-white p-3 text-sm outline-none transition focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus:border-zinc-600"
+          />
+
+          {/* Hashtags Preview */}
+          {extractHashtags(caption).length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {extractHashtags(caption).map((tag, idx) => (
+                <span key={idx} className="text-xs text-sky-500">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Category Selector */}
+          <div className="mt-4">
+            <label className="mb-2 block text-xs font-medium text-zinc-500 uppercase tracking-wider">
+              Add to Hive
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {COMMUNITIES.map((community) => (
+                <button
+                  key={community.id}
+                  onClick={() => setCategory(community.id)}
+                  className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition ${
+                    category === community.id
+                      ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
+                      : "border-zinc-300 hover:border-zinc-400 dark:border-zinc-700 dark:hover:border-zinc-600"
+                  }`}
+                >
+                  <span>{community.icon}</span>
+                  <span>{community.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Location Input */}
+          <div className="mt-4">
+            <label className="mb-2 block text-xs font-medium text-zinc-500 uppercase tracking-wider">
+              Add Location
+            </label>
+            <input
+              type="text"
+              placeholder="Add location..."
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus:border-zinc-600"
+            />
+          </div>
+        </div>
       </div>
     </main>
   );

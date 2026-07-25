@@ -5,6 +5,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  where,
 } from "firebase/firestore";
 
 import { db } from "../../firebase/firebase";
@@ -13,68 +14,68 @@ import FeedCard from "./FeedCard";
 
 export interface FeedPost {
   id: string;
-
   uid: string;
-
   username: string;
-
   displayName: string;
-
   photoURL: string;
-
   verified: boolean;
-
   caption: string;
-
   mediaUrl: string;
-
   mediaType: "image" | "video";
-
   likes: number;
-
   comments: number;
-
   shares: number;
-
   createdAt: any;
-
   category?: string;
+  hashtags?: string[];
+  location?: string | null;
 }
 
 interface FeedProps {
   category?: string;
+  hashtag?: string;
 }
 
-export default function Feed({ category }: FeedProps) {
+export default function Feed({ category, hashtag }: FeedProps) {
   const [posts, setPosts] = useState<FeedPost[]>([]);
-
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(
+    setLoading(true);
+
+    let q = query(
       collection(db, "posts"),
       orderBy("createdAt", "desc")
     );
 
+    if (category) {
+      q = query(
+        collection(db, "posts"),
+        where("category", "==", category),
+        orderBy("createdAt", "desc")
+      );
+    }
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data: FeedPost[] = snapshot.docs.map((doc) => ({
+      let data: FeedPost[] = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...(doc.data() as Omit<FeedPost, "id">),
       }));
 
-      if (category) {
-        setPosts(
-          data.filter((post) => post.category === category)
+      // Filter by hashtag client-side
+      if (hashtag) {
+        const tag = hashtag.toLowerCase();
+        data = data.filter((post) =>
+          post.hashtags?.some((t) => t.toLowerCase() === tag)
         );
-      } else {
-        setPosts(data);
       }
 
+      setPosts(data);
       setLoading(false);
     });
 
     return unsubscribe;
-  }, [category]);
+  }, [category, hashtag]);
 
   if (loading) {
     return (
@@ -89,6 +90,8 @@ export default function Feed({ category }: FeedProps) {
       <div className="py-20 text-center text-zinc-500">
         {category
           ? "No posts in this Hive yet."
+          : hashtag
+          ? `No posts with #${hashtag} yet.`
           : "No posts yet."}
       </div>
     );

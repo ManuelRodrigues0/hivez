@@ -117,18 +117,16 @@ export default function CommentsSheet({
 
   return (
     <>
+      {/* Backdrop */}
       <div
         onClick={onClose}
-        className="fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 z-[90] bg-black/50 backdrop-blur-sm transition-opacity"
       />
 
-      {/* Same bottom sheet for all devices */}
-      <div className="fixed inset-x-0 bottom-0 z-[100] mx-auto h-[92vh] w-full rounded-t-[32px] border border-zinc-800 bg-black shadow-2xl lg:max-w-[600px]">
+      {/* Mobile: bottom sheet */}
+      <div className="sm:hidden fixed inset-x-0 bottom-0 z-[100] mx-auto h-[92vh] w-full rounded-t-[32px] border border-zinc-800 bg-black shadow-2xl">
         <div className="flex h-full flex-col overflow-hidden rounded-t-[32px]">
-          <CommentHeader
-            count={comments.length}
-            onClose={onClose}
-          />
+          <CommentHeader count={comments.length} onClose={onClose} />
           <OriginalPost post={post} />
           <CommentList comments={comments} loading={loading} />
           <CommentComposer
@@ -139,6 +137,20 @@ export default function CommentsSheet({
             onSend={sendComment}
           />
         </div>
+      </div>
+
+      {/* Desktop: right side panel */}
+      <div className="hidden sm:flex fixed inset-y-0 right-0 z-[100] w-full max-w-[480px] flex-col border-l border-zinc-800 bg-black shadow-2xl">
+        <CommentHeader count={comments.length} onClose={onClose} />
+        <OriginalPost post={post} />
+        <CommentList comments={comments} loading={loading} />
+        <CommentComposer
+          ref={textareaRef}
+          value={text}
+          sending={sending}
+          onChange={setText}
+          onSend={sendComment}
+        />
       </div>
     </>
   );
