@@ -120,7 +120,7 @@ export default function CommentsSheet({
       {/* Backdrop */}
       <div
         onClick={onClose}
-        className="fixed inset-0 z-[90] bg-black/50 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm transition-opacity"
       />
 
       {/* Mobile: bottom sheet */}
@@ -139,18 +139,26 @@ export default function CommentsSheet({
         </div>
       </div>
 
-      {/* Desktop: right side panel */}
+      {/* Desktop: right side panel - scrollable comment feed */}
       <div className="hidden sm:flex fixed inset-y-0 right-0 z-[100] w-full max-w-[480px] flex-col border-l border-zinc-800 bg-black shadow-2xl">
         <CommentHeader count={comments.length} onClose={onClose} />
         <OriginalPost post={post} />
-        <CommentList comments={comments} loading={loading} />
-        <CommentComposer
-          ref={textareaRef}
-          value={text}
-          sending={sending}
-          onChange={setText}
-          onSend={sendComment}
-        />
+        
+        {/* Scrollable comment feed */}
+        <div className="flex-1 overflow-y-auto">
+          <CommentList comments={comments} loading={loading} />
+        </div>
+        
+        {/* Composer at bottom */}
+        <div className="border-t border-zinc-800 p-4">
+          <CommentComposer
+            ref={textareaRef}
+            value={text}
+            sending={sending}
+            onChange={setText}
+            onSend={sendComment}
+          />
+        </div>
       </div>
     </>
   );
