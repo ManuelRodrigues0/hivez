@@ -62,7 +62,6 @@ export default function Feed({ category, hashtag }: FeedProps) {
         ...(doc.data() as Omit<FeedPost, "id">),
       }));
 
-      // Filter by hashtag client-side
       if (hashtag) {
         const tag = hashtag.toLowerCase();
         data = data.filter((post) =>

@@ -44,7 +44,7 @@ export default function FeedCard({ post }: Props) {
 
   return (
     <>
-      <article className="border-b border-zinc-200 dark:border-zinc-800">
+      <article className="border-b border-zinc-800">
         <div className="p-4">
           {/* Header */}
           <div className="flex items-center justify-between">
@@ -57,40 +57,39 @@ export default function FeedCard({ post }: Props) {
                 alt={post.username}
                 className="h-10 w-10 rounded-full object-cover"
               />
-              <div>
+              <div className="flex-1">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-semibold">
+                  <span className="text-sm font-semibold text-white">
                     {post.displayName || post.username}
                   </span>
                   {post.verified && (
                     <BadgeCheck size={14} className="text-sky-500" />
                   )}
-                </div>
-                <div className="flex items-center gap-1.5 text-xs text-zinc-500">
-                  <span>@{post.username}</span>
-                  <span>·</span>
-                  <span>{timeAgo(post.createdAt)}</span>
+                  <span className="text-sm text-zinc-500">
+                    @{post.username}
+                  </span>
+                  <span className="text-sm text-zinc-500">
+                    · {timeAgo(post.createdAt)}
+                  </span>
                 </div>
               </div>
             </div>
-            <button className="rounded-full p-1.5 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
-              <MoreHorizontal size={18} className="text-zinc-600" />
+            <button className="rounded-full p-1.5 transition hover:bg-zinc-800">
+              <MoreHorizontal size={18} className="text-zinc-400" />
             </button>
           </div>
 
           {/* Caption */}
           {post.caption && (
             <div className="mt-3">
-              <p className="whitespace-pre-wrap break-words text-sm leading-6">
+              <p className="whitespace-pre-wrap break-words text-sm leading-6 text-zinc-100">
                 {post.caption}
               </p>
-              {/* Hashtags */}
               {post.hashtags && post.hashtags.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-2">
                   {post.hashtags.map((tag, idx) => (
                     <button
                       key={idx}
-                      onClick={() => {}}
                       className="text-xs text-sky-500 hover:underline"
                     >
                       {tag}
@@ -98,7 +97,6 @@ export default function FeedCard({ post }: Props) {
                   ))}
                 </div>
               )}
-              {/* Location */}
               {post.location && (
                 <div className="mt-2 flex items-center gap-1 text-xs text-zinc-500">
                   <MapPin size={12} />
@@ -128,39 +126,41 @@ export default function FeedCard({ post }: Props) {
           )}
 
           {/* Actions */}
-          <div className="mt-3 flex items-center gap-1">
-            <button
-              onClick={() => setLiked(!liked)}
-              className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
-            >
-              <Heart
-                size={22}
-                className={
-                  liked
-                    ? "fill-red-500 text-red-500"
-                    : "text-zinc-700 dark:text-zinc-300"
-                }
-              />
-            </button>
-            <button
-              onClick={() => setCommentsOpen(true)}
-              className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
-            >
-              <MessageCircle size={22} className="text-zinc-700 dark:text-zinc-300" />
-            </button>
-            <button className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
-              <Repeat2 size={22} className="text-zinc-700 dark:text-zinc-300" />
-            </button>
-            <button className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
-              <Send size={22} className="text-zinc-700 dark:text-zinc-300" />
-            </button>
+          <div className="mt-3 flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setLiked(!liked)}
+                className="rounded-full p-2 transition hover:bg-zinc-800"
+              >
+                <Heart
+                  size={20}
+                  className={
+                    liked
+                      ? "fill-red-500 text-red-500"
+                      : "text-zinc-400"
+                  }
+                />
+              </button>
+              <button
+                onClick={() => setCommentsOpen(true)}
+                className="rounded-full p-2 transition hover:bg-zinc-800"
+              >
+                <MessageCircle size={20} className="text-zinc-400" />
+              </button>
+              <button className="rounded-full p-2 transition hover:bg-zinc-800">
+                <Repeat2 size={20} className="text-zinc-400" />
+              </button>
+              <button className="rounded-full p-2 transition hover:bg-zinc-800">
+                <Send size={20} className="text-zinc-400" />
+              </button>
+            </div>
           </div>
 
           {/* Stats */}
           <div className="mt-2 flex items-center gap-3 text-sm">
-            <span className="font-semibold">{post.likes}</span>
+            <span className="font-semibold text-white">{post.likes}</span>
             <span className="text-zinc-500">likes</span>
-            <span className="text-zinc-300">·</span>
+            <span className="text-zinc-600">·</span>
             <button className="text-zinc-500 hover:underline">
               {post.comments} comments
             </button>
