@@ -3,6 +3,7 @@ import {
   useContext,
   useEffect,
   useState,
+  useCallback,
 } from "react";
 
 import type { ReactNode } from "react";
@@ -21,12 +22,14 @@ type AuthContextType = {
   user: User | null;
   loading: boolean;
   profileCompleted: boolean;
+  refreshProfileStatus: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   profileCompleted: false,
+  refreshProfileStatus: async () => {},
 });
 
 export function AuthProvider({
@@ -40,6 +43,27 @@ export function AuthProvider({
 
   const [profileCompleted, setProfileCompleted] =
     useState(false);
+
+  const refreshProfileStatus = useCallback(async () => {
+    if (!user) {
+      setProfileCompleted(false);
+      return;
+    }
+
+    const snap = await getDoc(
+      doc(db, "users", user.uid)
+    );
+
+    if (snap.exists()) {
+      const data = snap.data();
+
+      setProfileCompleted(
+        Boolean(data.profileCompleted)
+      );
+    } else {
+      setProfileCompleted(false);
+    }
+  }, [user]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(
@@ -78,6 +102,7 @@ export function AuthProvider({
         user,
         loading,
         profileCompleted,
+        refreshProfileStatus,
       }}
     >
       {children}

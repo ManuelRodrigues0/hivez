@@ -2,13 +2,13 @@ import { useState } from "react";
 import {
   doc,
   getDoc,
-  updateDoc,
+  setDoc,
 } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
 
 export default function CompleteProfile() {
-  const { user } = useAuth();
+  const { user, refreshProfileStatus } = useAuth();
 
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
@@ -36,22 +36,15 @@ export default function CompleteProfile() {
       return;
     }
 
-    await updateDoc(doc(db, "users", user.uid), {
-      username: cleanUsername,
-      bio,
-      profileCompleted: true,
-    });
-
     try {
-      await updateDoc(
-        doc(db, "usernames", cleanUsername),
+      await setDoc(
+        doc(db, "users", user.uid),
         {
-          uid: user.uid,
-        }
-      );
-    } catch {
-      const { setDoc } = await import(
-        "firebase/firestore"
+          username: cleanUsername,
+          bio,
+          profileCompleted: true,
+        },
+        { merge: true }
       );
 
       await setDoc(
@@ -60,9 +53,13 @@ export default function CompleteProfile() {
           uid: user.uid,
         }
       );
-    }
 
-    window.location.replace("/");
+      await refreshProfileStatus();
+    } catch (err: any) {
+      alert(err.message || "Failed to save profile.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
