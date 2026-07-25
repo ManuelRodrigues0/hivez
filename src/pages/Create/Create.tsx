@@ -2,8 +2,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useMemo, useState } from "react";
 
 import { useAuth } from "../../context/AuthContext";
-
 import { db } from "../../firebase/firebase";
+import { COMMUNITIES } from "../../constants/communities";
 
 import {
   addDoc,
@@ -23,6 +23,8 @@ export default function Create() {
   const [caption, setCaption] = useState("");
 
   const [posting, setPosting] = useState(false);
+
+  const [category, setCategory] = useState(COMMUNITIES[0].id);
 
   const file: File | undefined = state?.media;
 
@@ -91,6 +93,8 @@ export default function Create() {
 
         caption,
 
+        category,
+
         mediaUrl: data.secure_url,
 
         mediaType: isVideo
@@ -127,7 +131,7 @@ export default function Create() {
         </button>
 
         <h1 className="text-lg font-semibold">
-          New Thread
+          New Hive Post
         </h1>
 
         <button
@@ -149,12 +153,34 @@ export default function Create() {
         ) : (
           <img
             src={preview}
+            alt="Preview"
             className="mb-5 w-full rounded-2xl"
           />
         )}
 
+        <div className="mb-5">
+          <label className="mb-2 block text-sm font-medium text-zinc-400">
+            Select Hive
+          </label>
+
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="w-full rounded-xl border border-zinc-800 bg-zinc-900 p-3 outline-none"
+          >
+            {COMMUNITIES.map((community) => (
+              <option
+                key={community.id}
+                value={community.id}
+              >
+                {community.icon} {community.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <textarea
-          placeholder="Start a thread..."
+          placeholder="What's happening?"
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
           className="h-36 w-full resize-none rounded-2xl border border-zinc-800 bg-zinc-900 p-4 outline-none"

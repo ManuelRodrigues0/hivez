@@ -37,9 +37,15 @@ export interface FeedPost {
   shares: number;
 
   createdAt: any;
+
+  category?: string;
 }
 
-export default function Feed() {
+interface FeedProps {
+  category?: string;
+}
+
+export default function Feed({ category }: FeedProps) {
   const [posts, setPosts] = useState<FeedPost[]>([]);
 
   const [loading, setLoading] = useState(true);
@@ -56,13 +62,19 @@ export default function Feed() {
         ...(doc.data() as Omit<FeedPost, "id">),
       }));
 
-      setPosts(data);
+      if (category) {
+        setPosts(
+          data.filter((post) => post.category === category)
+        );
+      } else {
+        setPosts(data);
+      }
 
       setLoading(false);
     });
 
     return unsubscribe;
-  }, []);
+  }, [category]);
 
   if (loading) {
     return (
@@ -75,7 +87,9 @@ export default function Feed() {
   if (!posts.length) {
     return (
       <div className="py-20 text-center text-zinc-500">
-        No posts yet.
+        {category
+          ? "No posts in this Hive yet."
+          : "No posts yet."}
       </div>
     );
   }
