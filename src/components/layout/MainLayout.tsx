@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Home, Search, PlusSquare, Heart, User, Menu, Compass } from "lucide-react";
+import { Home, Search, PlusSquare, Heart, User, Menu, X, Settings, LogOut } from "lucide-react";
+import { COMMUNITIES } from "../../constants/communities";
+import { logout } from "../../services/auth";
 
 export default function MainLayout() {
   const navigate = useNavigate();
@@ -9,116 +11,100 @@ export default function MainLayout() {
 
   const isActive = (path: string) => location.pathname === path;
 
-  const navItems = [
-    { icon: Home, label: "Home", path: "/" },
-    { icon: Search, label: "Search", path: "/search" },
-    { icon: Compass, label: "Explore", path: "/explore" },
-    { icon: PlusSquare, label: "Create", path: "/camera" },
-    { icon: Heart, label: "Activity", path: "/activity" },
-    { icon: User, label: "Profile", path: "/profile" },
-  ];
+  function go(path: string) {
+    navigate(path);
+    setSidebarOpen(false);
+  }
+
+  const sidebarContent = (
+    <>
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-zinc-200 px-5 py-5 dark:border-zinc-800">
+        <div>
+          <h1 className="text-2xl font-black tracking-wide">🐝 HIVEZ</h1>
+          <p className="text-xs text-zinc-500">Report. React. Resolve.</p>
+        </div>
+        <button onClick={() => setSidebarOpen(false)} className="rounded-lg p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+          <X size={22} />
+        </button>
+      </div>
+
+      {/* Home */}
+      <button
+        onClick={() => go("/")}
+        className={`flex items-center gap-4 px-5 py-4 transition ${
+          isActive("/") ? "bg-zinc-100 font-semibold dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"
+        }`}
+      >
+        <Home size={22} /> Home
+      </button>
+
+      {/* Communities */}
+      <div className="px-5 pt-6 pb-3 text-xs uppercase tracking-widest text-zinc-500">Hives</div>
+      <div className="flex-1 overflow-y-auto">
+        {COMMUNITIES.map((community) => (
+          <button
+            key={community.id}
+            onClick={() => go(`/hive/${community.id}`)}
+            className={`flex w-full items-center gap-4 px-5 py-3.5 text-sm transition ${
+              isActive(`/hive/${community.id}`) ? "bg-zinc-100 font-semibold dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"
+            }`}
+          >
+            <span className="text-lg">{community.icon}</span>
+            <span>{community.name}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Footer */}
+      <div className="border-t border-zinc-200 dark:border-zinc-800">
+        <button onClick={() => go("/settings")} className="flex w-full items-center gap-4 px-5 py-4 hover:bg-zinc-50 dark:hover:bg-zinc-900">
+          <Settings size={20} /> Settings
+        </button>
+        <button
+          onClick={logout}
+          className="flex w-full items-center gap-4 px-5 py-4 text-red-500 hover:bg-red-50 dark:hover:bg-red-950"
+        >
+          <LogOut size={20} /> Logout
+        </button>
+      </div>
+    </>
+  );
 
   return (
     <div className="mx-auto flex min-h-screen bg-white text-black dark:bg-black dark:text-white">
-      {/* Desktop Sidebar (left) - Instagram/Threads style */}
-      <aside className="hidden border-r border-zinc-200 dark:border-zinc-800 lg:flex lg:w-[72px] xl:w-[244px] flex-col fixed left-0 top-0 h-screen py-4 bg-white dark:bg-black z-50">
-        <div className="mb-6 px-4">
-          <h1 className="text-xl font-bold tracking-tight xl:block hidden">🐝 HIVEZ</h1>
-          <h1 className="text-xl font-bold tracking-tight xl:hidden block text-center">🐝</h1>
-        </div>
-
-        <nav className="flex flex-col gap-1 px-2">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.path);
-            return (
-              <button
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                className={`flex items-center gap-4 rounded-xl px-3 py-3 transition ${
-                  active
-                    ? "font-semibold bg-zinc-100 dark:bg-zinc-900"
-                    : "hover:bg-zinc-100 dark:hover:bg-zinc-900"
-                }`}
-              >
-                <Icon size={24} className={active ? "text-black dark:text-white" : "text-zinc-600 dark:text-zinc-400"} />
-                <span className="hidden xl:block text-sm">{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-
-        <div className="mt-auto px-2">
-          <button
-            onClick={() => navigate("/settings")}
-            className="flex w-full items-center gap-4 rounded-xl px-3 py-3 transition hover:bg-zinc-100 dark:hover:bg-zinc-900"
-          >
-            <Menu size={24} className="text-zinc-600 dark:text-zinc-400" />
-            <span className="hidden xl:block text-sm">More</span>
-          </button>
-        </div>
+      {/* Desktop Sidebar - Always visible */}
+      <aside className="hidden lg:flex lg:w-[280px] lg:flex-col lg:border-r lg:border-zinc-200 lg:fixed lg:left-0 lg:top-0 lg:h-screen lg:bg-white dark:lg:border-zinc-800 dark:lg:bg-black">
+        {sidebarContent}
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex w-full flex-col lg:ml-[72px] xl:ml-[244px]">
+      <div className="flex w-full flex-col lg:ml-[280px]">
         {/* Mobile Top Bar */}
         <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-black/95 lg:hidden">
           <div className="flex items-center justify-between px-4 py-3">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
-            >
+            <button onClick={() => setSidebarOpen(true)} className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
               <Menu size={22} />
             </button>
-
             <h1 className="text-lg font-bold tracking-wide">🐝 HIVEZ</h1>
-
-            <button
-              onClick={() => navigate("/search")}
-              className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
-            >
+            <button onClick={() => navigate("/search")} className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
               <Search size={22} />
             </button>
           </div>
         </header>
 
-        {/* Mobile Sidebar Overlay */}
+        {/* Mobile Sidebar */}
         {sidebarOpen && (
           <>
-            <div
-              className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-              onClick={() => setSidebarOpen(false)}
-            />
-            <div className="fixed left-0 top-0 z-50 h-full w-64 border-r border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-black lg:hidden">
-              <div className="mb-6">
-                <h1 className="text-xl font-bold">🐝 HIVEZ</h1>
-              </div>
-              <nav className="flex flex-col gap-1">
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  const active = isActive(item.path);
-                  return (
-                    <button
-                      key={item.path}
-                      onClick={() => { navigate(item.path); setSidebarOpen(false); }}
-                      className={`flex items-center gap-4 rounded-xl px-3 py-3 transition ${
-                        active
-                          ? "font-semibold bg-zinc-100 dark:bg-zinc-900"
-                          : "hover:bg-zinc-100 dark:hover:bg-zinc-900"
-                      }`}
-                    >
-                      <Icon size={22} />
-                      <span className="text-sm">{item.label}</span>
-                    </button>
-                  );
-                })}
-              </nav>
+            <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
+            <div className="fixed left-0 top-0 z-50 flex h-screen w-80 max-w-[85%] flex-col border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 lg:hidden">
+              {sidebarContent}
             </div>
           </>
         )}
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto pb-20 lg:pb-0 max-w-2xl mx-auto w-full">
+        {/* Page Content - full width */}
+        <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
           <Outlet />
         </main>
 
