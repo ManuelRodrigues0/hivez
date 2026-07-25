@@ -1,24 +1,16 @@
 import { useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
 import Feed from "@/components/feed/Feed";
-import Composer from "@/components/feed/Composer";
 
 export default function Home() {
   const navigate = useNavigate();
 
-  function handlePost(text: string) {
-    navigate("/camera", { state: { text } });
-  }
-
   return (
     <div className="flex flex-col">
-      {/* "For you" header */}
+      {/* "For you" header - centered */}
       <div className="sticky top-0 z-10 border-b border-zinc-800 bg-black/95 px-4 py-3 backdrop-blur">
-        <h1 className="text-lg font-bold text-white">For you</h1>
+        <h1 className="text-center text-lg font-bold text-white">For you</h1>
       </div>
-
-      {/* Composer at top */}
-      <Composer onPost={handlePost} />
 
       {/* Feed */}
       <Feed />

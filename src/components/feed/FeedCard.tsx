@@ -7,7 +7,6 @@ import {
   Send,
   MoreHorizontal,
   BadgeCheck,
-  MapPin,
 } from "lucide-react";
 
 import type { FeedPost } from "./Feed";
@@ -44,8 +43,8 @@ export default function FeedCard({ post }: Props) {
 
   return (
     <>
-      <article className="border-b border-zinc-800">
-        <div className="p-4">
+      <article className="border-y border-zinc-800">
+        <div className="mx-auto max-w-2xl px-4 py-3">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -55,7 +54,7 @@ export default function FeedCard({ post }: Props) {
                   "https://ui-avatars.com/api/?name=Hivez&background=6366f1&color=fff"
                 }
                 alt={post.username}
-                className="h-10 w-10 rounded-full object-cover"
+                className="h-9 w-9 rounded-full object-cover"
               />
               <div className="flex-1">
                 <div className="flex items-center gap-1.5">
@@ -81,12 +80,12 @@ export default function FeedCard({ post }: Props) {
 
           {/* Caption */}
           {post.caption && (
-            <div className="mt-3">
+            <div className="mt-2.5">
               <p className="whitespace-pre-wrap break-words text-sm leading-6 text-zinc-100">
                 {post.caption}
               </p>
               {post.hashtags && post.hashtags.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mt-1.5 flex flex-wrap gap-2">
                   {post.hashtags.map((tag, idx) => (
                     <button
                       key={idx}
@@ -97,67 +96,59 @@ export default function FeedCard({ post }: Props) {
                   ))}
                 </div>
               )}
-              {post.location && (
-                <div className="mt-2 flex items-center gap-1 text-xs text-zinc-500">
-                  <MapPin size={12} />
-                  <span>{post.location}</span>
-                </div>
-              )}
             </div>
           )}
 
-          {/* Media */}
+          {/* Media - smaller */}
           {post.mediaUrl && (
-            <div className="mt-3">
+            <div className="mt-2.5">
               {post.mediaType === "image" ? (
                 <img
                   src={post.mediaUrl}
                   alt=""
-                  className="w-full rounded-2xl object-cover"
+                  className="max-h-[280px] w-full rounded-xl object-cover"
                 />
               ) : (
                 <video
                   src={post.mediaUrl}
                   controls
-                  className="w-full rounded-2xl"
+                  className="w-full rounded-xl"
                 />
               )}
             </div>
           )}
 
           {/* Actions */}
-          <div className="mt-3 flex items-center justify-between">
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setLiked(!liked)}
-                className="rounded-full p-2 transition hover:bg-zinc-800"
-              >
-                <Heart
-                  size={20}
-                  className={
-                    liked
-                      ? "fill-red-500 text-red-500"
-                      : "text-zinc-400"
-                  }
-                />
-              </button>
-              <button
-                onClick={() => setCommentsOpen(true)}
-                className="rounded-full p-2 transition hover:bg-zinc-800"
-              >
-                <MessageCircle size={20} className="text-zinc-400" />
-              </button>
-              <button className="rounded-full p-2 transition hover:bg-zinc-800">
-                <Repeat2 size={20} className="text-zinc-400" />
-              </button>
-              <button className="rounded-full p-2 transition hover:bg-zinc-800">
-                <Send size={20} className="text-zinc-400" />
-              </button>
-            </div>
+          <div className="mt-3 flex items-center gap-1">
+            <button
+              onClick={() => setLiked(!liked)}
+              className="rounded-full p-2 transition hover:bg-zinc-800"
+            >
+              <Heart
+                size={18}
+                className={
+                  liked
+                    ? "fill-red-500 text-red-500"
+                    : "text-zinc-400"
+                }
+              />
+            </button>
+            <button
+              onClick={() => setCommentsOpen(true)}
+              className="rounded-full p-2 transition hover:bg-zinc-800"
+            >
+              <MessageCircle size={18} className="text-zinc-400" />
+            </button>
+            <button className="rounded-full p-2 transition hover:bg-zinc-800">
+              <Repeat2 size={18} className="text-zinc-400" />
+            </button>
+            <button className="rounded-full p-2 transition hover:bg-zinc-800">
+              <Send size={18} className="text-zinc-400" />
+            </button>
           </div>
 
           {/* Stats */}
-          <div className="mt-2 flex items-center gap-3 text-sm">
+          <div className="mt-1.5 flex items-center gap-2 text-sm">
             <span className="font-semibold text-white">{post.likes}</span>
             <span className="text-zinc-500">likes</span>
             <span className="text-zinc-600">·</span>
