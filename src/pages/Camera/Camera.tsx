@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function Camera() {
   const navigate = useNavigate();
+  const { state } = useLocation();
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -19,7 +20,11 @@ export default function Camera() {
   const holdTimeoutRef = useRef<number | null>(null);
   const didRecordRef = useRef(false);
 
+  const isTextMode = state?.mode === "text";
+
   useEffect(() => {
+    if (isTextMode) return;
+    
     async function startCamera() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -56,7 +61,7 @@ export default function Camera() {
     return () => {
       streamRef.current?.getTracks().forEach((track) => track.stop());
     };
-  }, [navigate, facingMode]);
+  }, [navigate, facingMode, isTextMode]);
 
   function switchCamera() {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -145,6 +150,35 @@ export default function Camera() {
       },
       "image/jpeg",
       1
+    );
+  }
+
+  // Text mode view
+  if (isTextMode) {
+    return (
+      <main className="fixed inset-0 z-50 flex flex-col bg-black">
+        <div className="flex items-center justify-between border-b border-zinc-800 p-4">
+          <button
+            onClick={() => navigate("/")}
+            className="text-sm text-zinc-400"
+          >
+            Cancel
+          </button>
+          <h1 className="text-base font-semibold text-white">New Post</h1>
+          <button
+            onClick={() => navigate("/create", { state: { text: "" } })}
+            className="text-sm font-semibold text-white"
+          >
+            Next
+          </button>
+        </div>
+
+        <textarea
+          placeholder="What's on your mind?"
+          autoFocus
+          className="mt-4 flex-1 resize-none bg-transparent p-4 text-lg text-white outline-none placeholder:text-zinc-500"
+        />
+      </main>
     );
   }
 
