@@ -12,6 +12,7 @@ import Settings from "@/pages/Settings/Settings";
 
 import Camera from "@/pages/Camera/Camera";
 import Create from "@/pages/Create/Create";
+import EditProfile from "@/components/profile/EditProfile";
 
 import Login from "@/pages/Login/Login";
 import Signup from "@/pages/Signup/Signup";
@@ -91,6 +92,11 @@ export default function AppRouter() {
         <Route
           path="/settings"
           element={<Settings />}
+        />
+
+        <Route
+          path="/profile/edit"
+          element={<EditProfile />}
         />
 
       </Route>

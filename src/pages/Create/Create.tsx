@@ -23,49 +23,99 @@ export default function Create() {
   const [category, setCategory] = useState(COMMUNITIES[0].id);
   const [location, setLocation] = useState("");
 
-  const file: File | undefined = state?.media;
+  // Support both single file and multiple files
+  const media: File | File[] | undefined = state?.media;
+  const textContent: string | undefined = state?.text;
 
-  const preview = useMemo(() => {
-    if (!file) return "";
-    return URL.createObjectURL(file);
-  }, [file]);
+  const isTextOnly = !media && textContent;
+  const isMultiple = Array.isArray(media);
+  const singleFile = !isMultiple ? media : undefined;
 
-  if (!file) {
+  const previews = useMemo(() => {
+    if (!media) return [];
+    if (isMultiple) {
+      return media.map((file) => URL.createObjectURL(file));
+    }
+    return [URL.createObjectURL(singleFile!)];
+  }, [media, isMultiple, singleFile]);
+
+  const isVideo = useMemo(() => {
+    if (isTextOnly) return false;
+    if (isMultiple) {
+      return media[0].type.startsWith("video");
+    }
+    return singleFile!.type.startsWith("video");
+  }, [media, isMultiple, singleFile, isTextOnly]);
+
+  if (!media && !textContent) {
     navigate("/");
     return null;
   }
 
-  const isVideo = file.type.startsWith("video");
-
   const extractHashtags = useCallback((text: string): string[] => {
     const matches = text.match(/#[\w]+/g);
-    return matches ? matches.map(tag => tag.toLowerCase()) : [];
+    return matches ? matches.map((tag) => tag.toLowerCase()) : [];
   }, []);
 
   async function uploadToCloudinary() {
-    if (!file || !user) return;
+    if (!user) return;
 
     try {
       setPosting(true);
 
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("upload_preset", "hivez_upload");
+      // For text-only posts, skip upload
+      if (isTextOnly) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        const profile = userDoc.data();
+        const hashtags = extractHashtags(caption);
 
-      const endpoint = isVideo
-        ? "https://api.cloudinary.com/v1_1/dpotccr5q/video/upload"
-        : "https://api.cloudinary.com/v1_1/dpotccr5q/image/upload";
+        await addDoc(collection(db, "posts"), {
+          uid: user.uid,
+          username: profile?.username || "",
+          displayName: profile?.displayName || user.displayName || "",
+          photoURL: profile?.photoURL || user.photoURL || "",
+          verified: profile?.verified || false,
+          caption,
+          hashtags,
+          category,
+          location: location.trim() || null,
+          mediaUrl: "",
+          mediaType: "text",
+          likes: 0,
+          comments: 0,
+          shares: 0,
+          createdAt: serverTimestamp(),
+        });
 
-      const response = await fetch(endpoint, {
-        method: "POST",
-        body: formData,
-      });
+        navigate("/");
+        return;
+      }
 
-      const data = await response.json();
+      // Upload media
+      const filesToUpload = isMultiple ? media : (singleFile ? [singleFile] : []);
+      const uploadPromises = filesToUpload.map(async (file) => {
+        if (!file) return null;
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", "hivez_upload");
+
+        const endpoint = file.type.startsWith("video")
+          ? "https://api.cloudinary.com/v1_1/dpotccr5q/video/upload"
+          : "https://api.cloudinary.com/v1_1/dpotccr5q/image/upload";
+
+        const response = await fetch(endpoint, {
+          method: "POST",
+          body: formData,
+        });
+
+        return response.json();
+      }).filter(Boolean);
+
+      const uploadResults = await Promise.all(uploadPromises);
+      const mediaUrls = uploadResults.map((result) => result.secure_url);
 
       const userDoc = await getDoc(doc(db, "users", user.uid));
       const profile = userDoc.data();
-
       const hashtags = extractHashtags(caption);
 
       await addDoc(collection(db, "posts"), {
@@ -78,7 +128,8 @@ export default function Create() {
         hashtags,
         category,
         location: location.trim() || null,
-        mediaUrl: data.secure_url,
+        mediaUrl: mediaUrls[0], // Primary media
+        mediaUrls: mediaUrls, // All media URLs
         mediaType: isVideo ? "video" : "image",
         likes: 0,
         comments: 0,
@@ -119,21 +170,34 @@ export default function Create() {
 
       <div className="mx-auto max-w-2xl">
         {/* Media Preview */}
-        <div className="relative bg-zinc-100 dark:bg-zinc-900">
-          {isVideo ? (
-            <video
-              src={preview}
-              controls
-              className="max-h-[500px] w-full object-contain"
-            />
-          ) : (
-            <img
-              src={preview}
-              alt="Preview"
-              className="max-h-[500px] w-full object-contain"
-            />
-          )}
-        </div>
+        {!isTextOnly && (
+          <div className="relative bg-zinc-100 dark:bg-zinc-900">
+            {isVideo ? (
+              <video
+                src={previews[0]}
+                controls
+                className="max-h-[500px] w-full object-contain"
+              />
+            ) : isMultiple ? (
+              <div className="grid grid-cols-2 gap-1 p-1">
+                {previews.map((preview, idx) => (
+                  <img
+                    key={idx}
+                    src={preview}
+                    alt={`Preview ${idx + 1}`}
+                    className="h-48 w-full rounded-lg object-cover"
+                  />
+                ))}
+              </div>
+            ) : (
+              <img
+                src={previews[0]}
+                alt="Preview"
+                className="max-h-[500px] w-full object-contain"
+              />
+            )}
+          </div>
+        )}
 
         {/* Post Details */}
         <div className="border-b border-zinc-200 p-4 dark:border-zinc-800">
@@ -152,10 +216,10 @@ export default function Create() {
 
           {/* Caption Input */}
           <textarea
-            placeholder="Write a caption... Use #hashtags to categorize your post"
+            placeholder={isTextOnly ? "What's on your mind?" : "Write a caption... Use #hashtags to categorize your post"}
             value={caption}
             onChange={(e) => setCaption(e.target.value)}
-            rows={4}
+            rows={isTextOnly ? 6 : 4}
             className="w-full resize-none rounded-xl border border-zinc-200 bg-white p-3 text-sm outline-none transition focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus:border-zinc-600"
           />
 
@@ -171,41 +235,45 @@ export default function Create() {
           )}
 
           {/* Category Selector */}
-          <div className="mt-4">
-            <label className="mb-2 block text-xs font-medium text-zinc-500 uppercase tracking-wider">
-              Add to Hive
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {COMMUNITIES.map((community) => (
-                <button
-                  key={community.id}
-                  onClick={() => setCategory(community.id)}
-                  className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition ${
-                    category === community.id
-                      ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
-                      : "border-zinc-300 hover:border-zinc-400 dark:border-zinc-700 dark:hover:border-zinc-600"
-                  }`}
-                >
-                  <span>{community.icon}</span>
-                  <span>{community.name}</span>
-                </button>
-              ))}
+          {!isTextOnly && (
+            <div className="mt-4">
+              <label className="mb-2 block text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                Add to Hive
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {COMMUNITIES.map((community) => (
+                  <button
+                    key={community.id}
+                    onClick={() => setCategory(community.id)}
+                    className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition ${
+                      category === community.id
+                        ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
+                        : "border-zinc-300 hover:border-zinc-400 dark:border-zinc-700 dark:hover:border-zinc-600"
+                    }`}
+                  >
+                    <span>{community.icon}</span>
+                    <span>{community.name}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Location Input */}
-          <div className="mt-4">
-            <label className="mb-2 block text-xs font-medium text-zinc-500 uppercase tracking-wider">
-              Add Location
-            </label>
-            <input
-              type="text"
-              placeholder="Add location..."
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus:border-zinc-600"
-            />
-          </div>
+          {!isTextOnly && (
+            <div className="mt-4">
+              <label className="mb-2 block text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                Add Location
+              </label>
+              <input
+                type="text"
+                placeholder="Add location..."
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus:border-zinc-600"
+              />
+            </div>
+          )}
         </div>
       </div>
     </main>
