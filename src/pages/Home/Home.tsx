@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
 import {
   collection,
@@ -16,11 +15,12 @@ import {
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
 import Feed from "@/components/feed/Feed";
+import CreateModal from "@/components/feed/CreateModal";
 import type { FeedPost } from "@/components/feed/Feed";
 
 export default function Home() {
-  const navigate = useNavigate();
   const [selectedPost, setSelectedPost] = useState<FeedPost | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   function handleCommentClick(post: FeedPost) {
     setSelectedPost(post);
@@ -46,11 +46,17 @@ export default function Home() {
           
           {/* Floating + button */}
           <button
-            onClick={() => navigate("/camera")}
+            onClick={() => setShowCreateModal(true)}
             className="fixed bottom-20 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-white text-black shadow-lg transition hover:bg-zinc-200 dark:bg-white dark:text-black lg:bottom-8 lg:right-8"
           >
             <Plus size={24} />
           </button>
+
+          {/* Create Modal */}
+          <CreateModal
+            open={showCreateModal}
+            onClose={() => setShowCreateModal(false)}
+          />
         </>
       )}
     </div>
