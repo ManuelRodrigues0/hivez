@@ -72,14 +72,14 @@ export default function MainLayout() {
   );
 
   return (
-    <div className="mx-auto flex min-h-screen bg-white text-black dark:bg-black dark:text-white">
-      {/* Desktop Sidebar - Always visible */}
-      <aside className="hidden lg:flex lg:w-[280px] lg:flex-col lg:border-r lg:border-zinc-200 lg:fixed lg:left-0 lg:top-0 lg:h-screen lg:bg-white dark:lg:border-zinc-800 dark:lg:bg-black">
+    <div className="flex min-h-screen bg-white text-black dark:bg-black dark:text-white">
+      {/* Desktop Sidebar - Icon only (Twitter/Threads style) */}
+      <aside className="hidden lg:flex lg:w-[72px] xl:w-[280px] lg:flex-col lg:border-r lg:border-zinc-200 lg:fixed lg:left-0 lg:top-0 lg:h-screen lg:bg-white dark:lg:border-zinc-800 dark:lg:bg-black">
         {sidebarContent}
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex w-full flex-col lg:ml-[280px]">
+      <div className="flex w-full flex-col lg:ml-[72px] xl:ml-[280px]">
         {/* Mobile Top Bar */}
         <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-black/95 lg:hidden">
           <div className="flex items-center justify-between px-4 py-3">
@@ -103,9 +103,11 @@ export default function MainLayout() {
           </>
         )}
 
-        {/* Page Content - full width */}
+        {/* Page Content - constrained width on desktop */}
         <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
-          <Outlet />
+          <div className="mx-auto max-w-2xl">
+            <Outlet />
+          </div>
         </main>
 
         {/* Mobile Bottom Nav */}
