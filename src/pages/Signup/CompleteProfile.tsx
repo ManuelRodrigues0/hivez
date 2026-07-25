@@ -17,7 +17,9 @@ export default function CompleteProfile() {
   async function saveProfile() {
     if (!user) return;
 
-    const cleanUsername = username.trim().toLowerCase();
+    const rawUsername = username.trim();
+    // Strip @ if user typed it in the username field
+    const cleanUsername = rawUsername.replace(/^@+/, "").toLowerCase();
 
     if (cleanUsername.length < 3) {
       alert("Username must be at least 3 characters.");
