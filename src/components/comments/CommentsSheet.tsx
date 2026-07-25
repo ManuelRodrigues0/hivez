@@ -139,25 +139,41 @@ export default function CommentsSheet({
         </div>
       </div>
 
-      {/* Desktop: right side panel - scrollable comment feed */}
-      <div className="hidden sm:flex fixed inset-y-0 right-0 z-[100] w-full max-w-[480px] flex-col border-l border-zinc-800 bg-black shadow-2xl">
-        <CommentHeader count={comments.length} onClose={onClose} />
-        <OriginalPost post={post} />
-        
-        {/* Scrollable comment feed */}
-        <div className="flex-1 overflow-y-auto">
-          <CommentList comments={comments} loading={loading} />
-        </div>
-        
-        {/* Composer at bottom */}
-        <div className="border-t border-zinc-800 p-4">
-          <CommentComposer
-            ref={textareaRef}
-            value={text}
-            sending={sending}
-            onChange={setText}
-            onSend={sendComment}
-          />
+      {/* Desktop: full-screen overlay that replaces the feed */}
+      <div className="hidden sm:flex fixed inset-0 z-[100] bg-black">
+        <div className="flex w-full max-w-2xl flex-col mx-auto">
+          {/* Header */}
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-800 bg-black/95 px-4 py-3 backdrop-blur">
+            <button
+              onClick={onClose}
+              className="rounded-full p-2 transition hover:bg-zinc-800"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <h1 className="text-base font-semibold text-white">Replies</h1>
+            <div className="w-10" />
+          </div>
+
+          {/* Original Post */}
+          <OriginalPost post={post} />
+
+          {/* Scrollable comment feed */}
+          <div className="flex-1 overflow-y-auto">
+            <CommentList comments={comments} loading={loading} />
+          </div>
+
+          {/* Composer at bottom */}
+          <div className="border-t border-zinc-800 p-4">
+            <CommentComposer
+              ref={textareaRef}
+              value={text}
+              sending={sending}
+              onChange={setText}
+              onSend={sendComment}
+            />
+          </div>
         </div>
       </div>
     </>
