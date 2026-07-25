@@ -15,6 +15,7 @@ export default function Camera() {
   const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
   const [recording, setRecording] = useState(false);
   const [recordTime, setRecordTime] = useState(0);
+  const [textContent, setTextContent] = useState("");
 
   const timerRef = useRef<number | null>(null);
   const holdTimeoutRef = useRef<number | null>(null);
@@ -166,15 +167,18 @@ export default function Camera() {
           </button>
           <h1 className="text-base font-semibold text-white">New Post</h1>
           <button
-            onClick={() => navigate("/create", { state: { text: "" } })}
-            className="text-sm font-semibold text-white"
+            onClick={() => navigate("/create", { state: { text: textContent } })}
+            disabled={!textContent.trim()}
+            className="text-sm font-semibold text-white disabled:opacity-50"
           >
-            Next
+            Post
           </button>
         </div>
 
         <textarea
           placeholder="What's on your mind?"
+          value={textContent}
+          onChange={(e) => setTextContent(e.target.value)}
           autoFocus
           className="mt-4 flex-1 resize-none bg-transparent p-4 text-lg text-white outline-none placeholder:text-zinc-500"
         />

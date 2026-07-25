@@ -44,10 +44,10 @@ export default function Home() {
         <>
           <Feed onCommentClick={handleCommentClick} />
           
-          {/* Floating + button */}
+          {/* Floating + button - desktop only */}
           <button
             onClick={() => setShowCreateModal(true)}
-            className="fixed bottom-20 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-white text-black shadow-lg transition hover:bg-zinc-200 dark:bg-white dark:text-black lg:bottom-8 lg:right-8"
+            className="fixed bottom-20 right-4 z-30 hidden h-14 w-14 items-center justify-center rounded-full bg-white text-black shadow-lg transition hover:bg-zinc-200 dark:bg-white dark:text-black sm:flex lg:bottom-8 lg:right-8"
           >
             <Plus size={24} />
           </button>
