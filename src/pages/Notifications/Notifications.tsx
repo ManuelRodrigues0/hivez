@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Heart, Loader2, MessageCircle, MessagesSquare } from "lucide-react";
+import { Heart, Loader2, MessageCircle, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -26,14 +26,14 @@ function timeAgo(timestamp: any) {
 
 function iconFor(type: NotificationDoc["type"]) {
   if (type === "comment") return <MessageCircle size={18} className="text-sky-500" />;
-  if (type === "message") return <MessagesSquare size={18} className="text-emerald-500" />;
+  if (type === "follow") return <UserPlus size={18} className="text-emerald-500" />;
   return <Heart size={18} className="fill-red-500 text-red-500" />;
 }
 
 function titleFor(notification: NotificationDoc) {
   const name = notification.actorDisplayName || notification.actorUsername || "Someone";
   if (notification.type === "comment") return `${name} commented on your post`;
-  if (notification.type === "message") return `${name} sent you a message`;
+  if (notification.type === "follow") return `${name} followed you`;
   return `${name} liked your post`;
 }
 

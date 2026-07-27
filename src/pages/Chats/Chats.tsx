@@ -32,7 +32,6 @@ import { toast } from "sonner";
 
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/firebase/firebase";
-import { createNotification } from "@/services/notifications";
 
 interface ChatUser {
   uid: string;
@@ -462,20 +461,6 @@ export default function Chats() {
         senderId: user.uid,
         createdAt: serverTimestamp(),
         readBy: [user.uid],
-      });
-
-      await createNotification({
-        recipientId,
-        actor: {
-          uid: user.uid,
-          username: me?.username || user.email?.split("@")[0] || "",
-          displayName: me?.displayName || user.displayName || "Hivez User",
-          photoURL: me?.photoURL || user.photoURL || "",
-        },
-        type: "message",
-        text,
-        link: `/chats`,
-        chatId: selectedChat.id,
       });
 
       await updateDoc(doc(db, "chats", selectedChat.id), {

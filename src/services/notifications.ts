@@ -15,7 +15,7 @@ import {
 
 import { db } from "@/firebase/firebase";
 
-export type NotificationType = "comment" | "like" | "message";
+export type NotificationType = "comment" | "like" | "follow";
 
 export interface NotificationActor {
   uid: string;

@@ -1,11 +1,14 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Bell, Home, Search, PlusSquare, User, Menu, X, Settings, LogOut, HandHeart, MessageCircle } from "lucide-react";
+import { collection, onSnapshot } from "firebase/firestore";
+import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
 import { COMMUNITIES } from "../../constants/communities";
 import { logout } from "../../services/auth";
 import CreateModal from "../../components/feed/CreateModal";
-import { listenToUnreadNotificationsCount } from "@/services/notifications";
+import { db } from "@/firebase/firebase";
+import { listenToNotifications, listenToUnreadNotificationsCount, markNotificationRead } from "@/services/notifications";
 
 export default function MainLayout() {
   const navigate = useNavigate();
@@ -15,6 +18,10 @@ export default function MainLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const seenNotificationIds = useRef<Set<string>>(new Set());
+  const notificationsReady = useRef(false);
+  const seenChatTimes = useRef<Record<string, number>>({});
+  const chatsReady = useRef(false);
   const layoutVars = {
     "--layout-left": sidebarCollapsed ? "72px" : "280px",
     "--layout-right": "384px",
@@ -31,6 +38,80 @@ export default function MainLayout() {
       console.error("Unread notifications listener failed:", error);
     });
   }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    notificationsReady.current = false;
+    seenNotificationIds.current = new Set();
+
+    return listenToNotifications(user.uid, (notifications) => {
+      if (!notificationsReady.current) {
+        seenNotificationIds.current = new Set(notifications.map((notification) => notification.id));
+        notificationsReady.current = true;
+        return;
+      }
+
+      notifications.forEach((notification) => {
+        if (seenNotificationIds.current.has(notification.id)) return;
+        seenNotificationIds.current.add(notification.id);
+        const actorName = notification.actorDisplayName || notification.actorUsername || "Someone";
+        const message =
+          notification.type === "comment"
+            ? `${actorName} commented on your post`
+            : notification.type === "follow"
+            ? `${actorName} followed you`
+            : `${actorName} liked your post`;
+
+        toast(message, {
+          description: notification.type === "follow" ? `@${notification.actorUsername}` : notification.text,
+          action: {
+            label: "Open",
+            onClick: async () => {
+              await markNotificationRead(notification.id);
+              navigate(notification.link || "/notifications");
+            },
+          },
+        });
+      });
+    });
+  }, [navigate, user]);
+
+  useEffect(() => {
+    if (!user) return;
+    chatsReady.current = false;
+    seenChatTimes.current = {};
+
+    return onSnapshot(collection(db, "chats"), (snapshot) => {
+      const chats = snapshot.docs
+        .map((chatDoc) => ({ id: chatDoc.id, ...(chatDoc.data() as any) }))
+        .filter((chat) => chat.participants?.includes(user.uid));
+
+      if (!chatsReady.current) {
+        seenChatTimes.current = Object.fromEntries(
+          chats.map((chat) => [chat.id, chat.lastMessageAt?.toDate?.().getTime?.() || 0])
+        );
+        chatsReady.current = true;
+        return;
+      }
+
+      chats.forEach((chat) => {
+        const lastTime = chat.lastMessageAt?.toDate?.().getTime?.() || 0;
+        const previousTime = seenChatTimes.current[chat.id] || 0;
+        seenChatTimes.current[chat.id] = lastTime;
+        if (!lastTime || lastTime <= previousTime || chat.lastMessageSenderId === user.uid) return;
+
+        const otherId = chat.participants.find((id: string) => id !== user.uid);
+        const sender = otherId ? chat.participantProfiles?.[otherId] : null;
+        toast(`${sender?.displayName || sender?.username || "Someone"} sent you a message`, {
+          description: chat.lastMessage || "New message",
+          action: {
+            label: "Open",
+            onClick: () => navigate("/chats"),
+          },
+        });
+      });
+    });
+  }, [navigate, user]);
 
   function getPageTitle(pathname: string): string {
     switch (pathname) {

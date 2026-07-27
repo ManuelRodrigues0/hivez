@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, BadgeCheck, MessageCircle, UserPlus } from "lucide-react";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, increment, onSnapshot, serverTimestamp, writeBatch } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
+import { createNotification } from "@/services/notifications";
 
 interface UserProfile {
   uid: string;
@@ -25,6 +26,8 @@ export default function Profile() {
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [following, setFollowing] = useState(false);
+  const [followBusy, setFollowBusy] = useState(false);
   const [activeTab, setActiveTab] = useState<"threads" | "replies" | "media">("threads");
 
   const isOwnProfile = !uid || uid === currentUser?.uid;
@@ -49,6 +52,78 @@ export default function Profile() {
     }
     loadProfile();
   }, [profileUid]);
+
+  useEffect(() => {
+    if (!currentUser || !profileUid || isOwnProfile) {
+      setFollowing(false);
+      return;
+    }
+
+    return onSnapshot(doc(db, "follows", `${currentUser.uid}_${profileUid}`), (snap) => {
+      setFollowing(snap.exists());
+    });
+  }, [currentUser, isOwnProfile, profileUid]);
+
+  async function toggleFollow() {
+    if (!currentUser || !profile || isOwnProfile || followBusy) return;
+    setFollowBusy(true);
+
+    try {
+      const followRef = doc(db, "follows", `${currentUser.uid}_${profile.uid}`);
+      const followerRef = doc(db, "users", profile.uid, "followers", currentUser.uid);
+      const followingRef = doc(db, "users", currentUser.uid, "following", profile.uid);
+      const mySnap = await getDoc(doc(db, "users", currentUser.uid));
+      const myProfile = mySnap.data();
+      const batch = writeBatch(db);
+
+      if (following) {
+        batch.delete(followRef);
+        batch.delete(followerRef);
+        batch.delete(followingRef);
+        batch.update(doc(db, "users", profile.uid), { followers: increment(-1) });
+        batch.update(doc(db, "users", currentUser.uid), { following: increment(-1) });
+      } else {
+        const followData = {
+          followerId: currentUser.uid,
+          followingId: profile.uid,
+          createdAt: serverTimestamp(),
+        };
+        batch.set(followRef, followData);
+        batch.set(followerRef, followData);
+        batch.set(followingRef, followData);
+        batch.update(doc(db, "users", profile.uid), { followers: increment(1) });
+        batch.update(doc(db, "users", currentUser.uid), { following: increment(1) });
+      }
+
+      await batch.commit();
+
+      setProfile((current) =>
+        current
+          ? {
+              ...current,
+              followers: Math.max(0, current.followers + (following ? -1 : 1)),
+            }
+          : current
+      );
+
+      if (!following) {
+        await createNotification({
+          recipientId: profile.uid,
+          actor: {
+            uid: currentUser.uid,
+            username: myProfile?.username || currentUser.email?.split("@")[0] || "",
+            displayName: myProfile?.displayName || currentUser.displayName || "Hivez User",
+            photoURL: myProfile?.photoURL || currentUser.photoURL || "",
+          },
+          type: "follow",
+          text: "started following you",
+          link: `/profile?uid=${currentUser.uid}`,
+        });
+      }
+    } finally {
+      setFollowBusy(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -133,8 +208,8 @@ export default function Profile() {
             </>
           ) : (
             <>
-              <button className="app-primary-button flex-1">
-                Follow
+              <button onClick={toggleFollow} disabled={followBusy} className="app-primary-button flex-1">
+                {following ? "Following" : "Follow"}
               </button>
               <button className="app-secondary-button px-3">
                 <MessageCircle size={18} />

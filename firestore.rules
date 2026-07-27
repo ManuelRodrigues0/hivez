@@ -13,7 +13,29 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if signedIn();
-      allow create, update: if signedIn() && request.auth.uid == userId;
+      allow create: if signedIn() && request.auth.uid == userId;
+      allow update: if signedIn() && (
+        request.auth.uid == userId
+        || request.resource.data.diff(resource.data).changedKeys().hasOnly(["followers", "following"])
+      );
+
+      match /followers/{followerId} {
+        allow read: if signedIn();
+        allow create, delete: if signedIn() && request.auth.uid == followerId;
+      }
+
+      match /following/{followingId} {
+        allow read: if signedIn() && request.auth.uid == userId;
+        allow create, delete: if signedIn() && request.auth.uid == userId;
+      }
+    }
+
+    match /follows/{followId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.followerId == request.auth.uid;
+      allow delete: if signedIn()
+        && resource.data.followerId == request.auth.uid;
     }
 
     match /usernames/{username} {
