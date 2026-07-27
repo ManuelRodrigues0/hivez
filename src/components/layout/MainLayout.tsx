@@ -139,24 +139,24 @@ export default function MainLayout() {
       <aside 
         className="hidden lg:flex lg:flex-col lg:fixed lg:left-0 lg:top-16 lg:h-[calc(100vh-64px)] lg:bg-white dark:lg:bg-black lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800 lg:z-40 transition-all duration-300"
       >
-        <div className="flex-1">
-          {sidebarCollapsed ? (
-            <div className="flex flex-col items-center py-4">
-              <button onClick={() => go("/")} className={`p-3 transition ${isActive("/") ? "bg-zinc-100 dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"}`}>
-                <Home size={22} className="text-zinc-900 dark:text-white" />
+        {sidebarCollapsed ? (
+          <div className="flex flex-col items-center py-4">
+            <button onClick={() => go("/")} className={`p-3 transition ${isActive("/") ? "bg-zinc-100 dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"}`}>
+              <Home size={22} className="text-zinc-900 dark:text-white" />
+            </button>
+            {COMMUNITIES.map((community) => (
+              <button key={community.id} onClick={() => go(`/hive/${community.id}`)} className={`p-3 transition ${isActive(`/hive/${community.id}`) ? "bg-zinc-100 dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"}`} title={community.name}>
+                <span className="text-lg">{community.icon}</span>
               </button>
-              {COMMUNITIES.map((community) => (
-                <button key={community.id} onClick={() => go(`/hive/${community.id}`)} className={`p-3 transition ${isActive(`/hive/${community.id}`) ? "bg-zinc-100 dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"}`} title={community.name}>
-                  <span className="text-lg">{community.icon}</span>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="overflow-y-auto">
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col h-full">
+            <div className="flex-1 overflow-y-auto">
               {sidebarContent}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </aside>
 
       {/* Main Content Area */}
