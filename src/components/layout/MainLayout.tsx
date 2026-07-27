@@ -27,7 +27,7 @@ export default function MainLayout() {
       {/* Home */}
       <button
         onClick={() => go("/")}
-        className={`flex items-center gap-4 px-5 py-4 transition ${
+        className={`flex w-full items-center gap-4 px-5 py-4 transition ${
           isActive("/") ? "bg-zinc-100 font-semibold dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"
         }`}
       >
