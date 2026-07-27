@@ -35,6 +35,9 @@ export default function AppRouter() {
   if (!user) {
     return (
       <Routes>
+        {/* Public post view - anyone can see a post */}
+        <Route path="/post/:id" element={<PostPage />} />
+
         <Route element={<MobileLayout />}>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
@@ -48,10 +51,7 @@ export default function AppRouter() {
   if (!profileCompleted) {
     return (
       <Routes>
-        <Route
-          path="*"
-          element={<CompleteProfile />}
-        />
+        <Route path="*" element={<CompleteProfile />} />
       </Routes>
     );
   }
@@ -59,67 +59,36 @@ export default function AppRouter() {
   return (
     <Routes>
 
-      {/* Main Application */}
+      {/* Post page - standalone, outside any layout */}
+      <Route path="/post/:id" element={<PostPage />} />
 
+      {/* Main Application with sidebar */}
       <Route element={<MainLayout />}>
 
         <Route index element={<Home />} />
 
-        <Route
-          path="/hive/:id"
-          element={<Community />}
-        />
+        <Route path="/hive/:id" element={<Community />} />
 
-        <Route
-          path="/profile"
-          element={<Profile />}
-        />
+        <Route path="/profile" element={<Profile />} />
 
-        <Route
-          path="/activity"
-          element={<Activity />}
-        />
+        <Route path="/activity" element={<Activity />} />
 
-        <Route
-          path="/search"
-          element={<Search />}
-        />
+        <Route path="/search" element={<Search />} />
 
-        <Route
-          path="/notifications"
-          element={<Notifications />}
-        />
+        <Route path="/notifications" element={<Notifications />} />
 
-        <Route
-          path="/settings"
-          element={<Settings />}
-        />
+        <Route path="/settings" element={<Settings />} />
 
-        <Route
-          path="/profile/edit"
-          element={<EditProfile />}
-        />
+        <Route path="/profile/edit" element={<EditProfile />} />
 
       </Route>
 
-      {/* Standalone Pages */}
-
+      {/* Standalone Pages without sidebar */}
       <Route element={<MobileLayout />}>
 
-        <Route
-          path="/camera"
-          element={<Camera />}
-        />
+        <Route path="/camera" element={<Camera />} />
 
-        <Route
-          path="/create"
-          element={<Create />}
-        />
-
-        <Route
-          path="/post/:id"
-          element={<PostPage />}
-        />
+        <Route path="/create" element={<Create />} />
 
       </Route>
 
