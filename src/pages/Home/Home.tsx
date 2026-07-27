@@ -31,11 +31,6 @@ export default function Home() {
 
   return (
     <div className="flex flex-col">
-      {/* "For you" header - centered */}
-      <div className="sticky top-0 z-10 border-b border-zinc-800 dark:border-zinc-800 border-zinc-200 bg-white dark:bg-black/95 px-4 py-3 backdrop-blur">
-        <h1 className="text-center text-lg font-bold text-zinc-900 dark:text-white">For you</h1>
-      </div>
-
       {/* Either show Feed or Comments */}
       {selectedPost ? (
         <CommentsView post={selectedPost} onClose={handleCloseComments} />

@@ -17,6 +17,30 @@ export default function MainLayout() {
 
   const isActive = (path: string) => location.pathname === path;
 
+  function getPageTitle(pathname: string): string {
+    switch (pathname) {
+      case "/":
+        return "For you";
+      case "/search":
+        return "Search";
+      case "/profile":
+        return "Profile";
+      case "/activity":
+        return "Activity";
+      case "/notifications":
+        return "Notifications";
+      case "/settings":
+        return "Settings";
+      case "/profile/edit":
+        return "Edit Profile";
+      default:
+        if (pathname.startsWith("/hive/")) {
+          return "Community";
+        }
+        return "HIVEZ";
+    }
+  }
+
   function go(path: string) {
     navigate(path);
     setSidebarOpen(false);
@@ -92,21 +116,11 @@ export default function MainLayout() {
           </button>
         </div>
 
-        {/* Center - Search bar */}
-        <div className="flex-1 max-w-2xl mx-8">
-          <div className="relative">
-            <Search 
-              onClick={() => searchInputRef.current?.focus()}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" 
-              size={20}
-            />
-            <input
-              type="text"
-              placeholder="Find anything"
-              className="w-full rounded-full border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-900 py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-zinc-400 dark:focus:border-zinc-600"
-              ref={searchInputRef}
-            />
-          </div>
+        {/* Center - Page Title */}
+        <div className="flex-1">
+          <h1 className="text-center text-lg font-bold text-zinc-900 dark:text-white">
+            {getPageTitle(location.pathname)}
+          </h1>
         </div>
 
         {/* Right side - Actions */}
