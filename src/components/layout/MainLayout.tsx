@@ -191,7 +191,7 @@ export default function MainLayout() {
 
         {/* Page Content - left aligned, same width */}
         <main className="flex-1 overflow-y-auto pb-20 lg:pb-0 lg:pt-16">
-          <div className={`${sidebarCollapsed ? "max-w-2xl" : "max-w-2xl lg:max-w-[560px]"}`}>
+          <div className={`${sidebarCollapsed ? "max-w-2xl mx-auto" : "max-w-none"}`}>
             <Outlet />
           </div>
         </main>
