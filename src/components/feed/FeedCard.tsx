@@ -284,7 +284,7 @@ export default function FeedCard({ post, onCommentClick }: Props) {
                   <img
                     src={post.mediaUrl}
                     alt=""
-                    className="max-h-[300px] w-full rounded-2xl border border-zinc-200 dark:border-zinc-700 object-cover"
+                    className="max-h-[620px] w-full rounded-2xl border border-zinc-200 bg-zinc-100 object-contain dark:border-zinc-700 dark:bg-zinc-900"
                   />
                 ) : (
                   <video

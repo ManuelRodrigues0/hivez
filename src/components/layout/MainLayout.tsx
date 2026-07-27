@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Home, Search, PlusSquare, Heart, User, Menu, X, Settings, LogOut } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
@@ -13,6 +13,12 @@ export default function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const layoutVars = {
+    "--layout-left": sidebarCollapsed ? "72px" : "280px",
+    "--layout-right": "320px",
+    "--layout-gap": sidebarCollapsed ? "24px" : "32px",
+    "--feed-max": sidebarCollapsed ? "820px" : "720px",
+  } as CSSProperties;
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -93,7 +99,10 @@ export default function MainLayout() {
   );
 
   return (
-    <div className="flex min-h-screen bg-white dark:bg-black text-zinc-900 dark:text-white">
+    <div
+      className="flex min-h-screen bg-white dark:bg-black text-zinc-900 dark:text-white"
+      style={layoutVars}
+    >
       {/* Desktop Header - Fixed at top */}
       <header className="hidden lg:fixed lg:top-0 lg:left-0 lg:right-0 lg:z-50 lg:flex lg:items-center lg:justify-between lg:border-b lg:border-zinc-200 dark:lg:border-zinc-800 lg:bg-white dark:lg:bg-black lg:px-4 lg:h-16">
         {/* Left side - Menu + Logo */}
@@ -154,7 +163,7 @@ export default function MainLayout() {
 
       {/* Desktop Sidebar - Below header */}
       <aside 
-        className="hidden lg:flex lg:flex-col lg:fixed lg:left-0 lg:top-16 lg:h-[calc(100vh-64px)] lg:bg-white dark:lg:bg-black lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800 lg:z-40 transition-all duration-300"
+        className="hidden lg:fixed lg:left-0 lg:top-16 lg:z-40 lg:flex lg:h-[calc(100vh-64px)] lg:w-[var(--layout-left)] lg:flex-col lg:border-r lg:border-zinc-200 lg:bg-white transition-[width] duration-300 dark:lg:border-zinc-800 dark:lg:bg-black"
       >
         {sidebarCollapsed ? (
           <div className="flex flex-col items-center py-4">
@@ -177,40 +186,47 @@ export default function MainLayout() {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex w-full flex-col transition-all duration-300 lg:ml-[280px]">
+      <div className="flex w-full flex-col transition-[margin] duration-300 lg:ml-[var(--layout-left)]">
         {/* Updates Sidebar - Desktop only */}
-        <aside className="fixed right-0 top-16 hidden h-[calc(100vh-64px)] w-80 overflow-y-auto border-l border-zinc-200 dark:border-zinc-800 p-4 lg:block">
-          <h2 className="mb-4 text-lg font-bold text-zinc-900 dark:text-white">Updates</h2>
-          <div className="space-y-3">
-            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                <p className="text-sm font-semibold text-zinc-900 dark:text-white">System Update</p>
-              </div>
-              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">New features have been deployed</p>
-              <p className="mt-1 text-xs text-zinc-400">2 hours ago</p>
+        <aside className="fixed right-0 top-16 hidden h-[calc(100vh-64px)] w-[var(--layout-right)] overflow-y-auto px-4 py-6 lg:block">
+          <div className="rounded-2xl bg-zinc-100 p-4 dark:bg-zinc-950">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Updates</h2>
+              <button className="text-sm font-medium text-sky-600 transition hover:text-sky-500 dark:text-sky-400">
+                Clear
+              </button>
             </div>
-            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-blue-500"></div>
-                <p className="text-sm font-semibold text-zinc-900 dark:text-white">Community Growth</p>
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-white">System Update</p>
+                </div>
+                <p className="mt-1 text-sm leading-5 text-zinc-600 dark:text-zinc-300">New features have been deployed</p>
+                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-500">2 hours ago</p>
               </div>
-              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">100 new members joined this week</p>
-              <p className="mt-1 text-xs text-zinc-400">5 hours ago</p>
-            </div>
-            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
-                <p className="text-sm font-semibold text-zinc-900 dark:text-white">Maintenance</p>
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-white">Community Growth</p>
+                </div>
+                <p className="mt-1 text-sm leading-5 text-zinc-600 dark:text-zinc-300">100 new members joined this week</p>
+                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-500">5 hours ago</p>
               </div>
-              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Scheduled maintenance tonight</p>
-              <p className="mt-1 text-xs text-zinc-400">1 day ago</p>
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-white">Maintenance</p>
+                </div>
+                <p className="mt-1 text-sm leading-5 text-zinc-600 dark:text-zinc-300">Scheduled maintenance tonight</p>
+                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-500">1 day ago</p>
+              </div>
             </div>
           </div>
         </aside>
 
         {/* Content wrapper */}
-        <div className={`flex w-full flex-col transition-all duration-300 ${sidebarCollapsed ? "lg:mr-[72px]" : "lg:mr-[320px]"}`}>
+        <div className="flex w-full flex-col transition-[padding] duration-300 lg:pr-[var(--layout-right)]">
           {/* Mobile Top Bar */}
           <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-black/95 lg:hidden">
             <div className="flex items-center justify-between px-4 py-3">
@@ -240,7 +256,7 @@ export default function MainLayout() {
 
         {/* Page Content - left aligned, same width */}
         <main className="flex-1 overflow-y-auto pb-20 lg:pb-0 lg:pt-16">
-          <div className={`${sidebarCollapsed ? "max-w-2xl" : "w-full"}`}>
+          <div className="mx-auto w-full max-w-[var(--feed-max)] px-0 transition-[max-width] duration-300 lg:px-[var(--layout-gap)]">
             <Outlet />
           </div>
         </main>
