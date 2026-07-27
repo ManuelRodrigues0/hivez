@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Home, Search, PlusSquare, Heart, User, Menu, X, Settings, LogOut } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
@@ -13,7 +13,6 @@ export default function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const isActive = (path: string) => location.pathname === path;
 
