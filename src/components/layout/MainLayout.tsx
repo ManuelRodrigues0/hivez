@@ -15,8 +15,8 @@ export default function MainLayout() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const layoutVars = {
     "--layout-left": sidebarCollapsed ? "72px" : "280px",
-    "--layout-right": "352px",
-    "--layout-gap": sidebarCollapsed ? "16px" : "14px",
+    "--layout-right": "384px",
+    "--layout-gap": sidebarCollapsed ? "8px" : "10px",
     "--feed-max": sidebarCollapsed ? "820px" : "720px",
   } as CSSProperties;
 
@@ -256,7 +256,7 @@ export default function MainLayout() {
 
         {/* Page Content - left aligned, same width */}
         <main className="flex-1 overflow-y-auto pb-20 lg:pb-0 lg:pt-16">
-          <div className="mx-auto w-full max-w-[var(--feed-max)] px-0 transition-[max-width] duration-300 lg:px-[var(--layout-gap)]">
+          <div className="mr-auto w-full max-w-[var(--feed-max)] px-0 transition-[max-width] duration-300 lg:px-[var(--layout-gap)]">
             <Outlet />
           </div>
         </main>
