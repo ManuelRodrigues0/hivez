@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, BadgeCheck, Heart, MessageCircle, Repeat2, Send, ShieldX } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Heart, MessageCircle, Repeat2, Send, ShieldX, LogIn, UserPlus } from "lucide-react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 import { toast } from "sonner";
+import { useAuth } from "../../context/AuthContext";
 import type { FeedPost } from "../../components/feed/Feed";
 
 function timeAgo(timestamp: any) {
@@ -25,6 +26,7 @@ function timeAgo(timestamp: any) {
 export default function PostPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [post, setPost] = useState<FeedPost | null>(null);
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState(false);
@@ -59,7 +61,7 @@ export default function PostPage() {
     loadPost();
   }, [id]);
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white dark:bg-black">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-transparent dark:border-zinc-600" />
@@ -128,6 +130,31 @@ export default function PostPage() {
         </div>
       </div>
 
+      {/* Login/Signup prompt for unauthenticated users */}
+      {!user && (
+        <div className="border-b border-zinc-200 bg-gradient-to-r from-sky-50 to-blue-50 px-4 py-3 dark:border-zinc-800 dark:from-sky-950/30 dark:to-blue-950/30">
+          <p className="text-sm text-zinc-700 dark:text-zinc-300">
+            Join Hivez to like, comment, and connect with creators.
+          </p>
+          <div className="mt-2 flex gap-2">
+            <button
+              onClick={() => navigate("/login")}
+              className="flex items-center gap-1.5 rounded-full bg-zinc-900 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+            >
+              <LogIn size={14} />
+              Log in
+            </button>
+            <button
+              onClick={() => navigate("/signup")}
+              className="flex items-center gap-1.5 rounded-full border border-zinc-300 px-4 py-1.5 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-white dark:hover:bg-zinc-800"
+            >
+              <UserPlus size={14} />
+              Sign up
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Post */}
       <div className="px-4 py-4">
         <div className="flex gap-3">
@@ -162,7 +189,7 @@ export default function PostPage() {
 
             <div className="mt-4 flex items-center gap-4 border-b border-zinc-200 pb-4 dark:border-zinc-800">
               <button
-                onClick={() => setLiked(!liked)}
+                onClick={() => user && setLiked(!liked)}
                 className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-red-50 dark:hover:bg-red-950/30"
               >
                 <Heart size={18} className={liked ? "fill-red-500 text-red-500" : "text-zinc-500 dark:text-zinc-400"} />
@@ -170,15 +197,24 @@ export default function PostPage() {
                   {post.likes + (liked ? 1 : 0)}
                 </span>
               </button>
-              <button className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-sky-50 dark:hover:bg-sky-950/30">
+              <button
+                onClick={() => user && toast.info("Please log in to comment")}
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-sky-50 dark:hover:bg-sky-950/30"
+              >
                 <MessageCircle size={18} className="text-zinc-500 dark:text-zinc-400" />
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">{post.comments}</span>
               </button>
-              <button className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-green-50 dark:hover:bg-green-950/30">
+              <button
+                onClick={() => user && toast.info("Please log in to repost")}
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-green-50 dark:hover:bg-green-950/30"
+              >
                 <Repeat2 size={18} className="text-zinc-500 dark:text-zinc-400" />
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">{post.shares}</span>
               </button>
-              <button className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-blue-50 dark:hover:bg-blue-950/30">
+              <button
+                onClick={() => user && toast.info("Please log in to share")}
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-blue-50 dark:hover:bg-blue-950/30"
+              >
                 <Send size={18} className="text-zinc-500 dark:text-zinc-400" />
               </button>
             </div>
