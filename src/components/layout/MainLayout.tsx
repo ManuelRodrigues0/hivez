@@ -212,65 +212,66 @@ export default function MainLayout() {
         {/* Content wrapper */}
         <div className={`flex w-full flex-col transition-all duration-300 ${sidebarCollapsed ? "lg:mr-[72px]" : "lg:mr-[320px]"}`}>
           {/* Mobile Top Bar */}
-        <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-black/95 lg:hidden">
-          <div className="flex items-center justify-between px-4 py-3">
-            <button onClick={() => setSidebarOpen(true)} className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
-              <Menu size={22} className="text-zinc-900 dark:text-white" />
-            </button>
-            <h1 className="text-lg font-bold tracking-wide text-zinc-900 dark:text-white">🐝 HIVEZ</h1>
-            <button onClick={() => navigate("/search")} className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
-              <Search size={22} className="text-zinc-900 dark:text-white" />
-            </button>
-          </div>
-        </header>
-
-        {/* Mobile Sidebar */}
-        {sidebarOpen && (
-          <>
-            <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
-            <div className="fixed left-0 top-0 z-50 flex h-screen w-80 max-w-[85%] flex-col border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 lg:hidden">
-              <div className="border-b border-zinc-200 dark:border-zinc-800 px-5 pt-4 pb-2">
-                <h1 className="text-2xl font-black tracking-wide text-zinc-900 dark:text-white">🐝 HIVEZ</h1>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">Report. React. Resolve.</p>
-              </div>
-              {sidebarContent}
+          <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-black/95 lg:hidden">
+            <div className="flex items-center justify-between px-4 py-3">
+              <button onClick={() => setSidebarOpen(true)} className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                <Menu size={22} className="text-zinc-900 dark:text-white" />
+              </button>
+              <h1 className="text-lg font-bold tracking-wide text-zinc-900 dark:text-white">🐝 HIVEZ</h1>
+              <button onClick={() => navigate("/search")} className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                <Search size={22} className="text-zinc-900 dark:text-white" />
+              </button>
             </div>
-          </>
-        )}
+          </header>
 
-        {/* Page Content - left aligned, same width */}
-        <main className="flex-1 overflow-y-auto pb-20 lg:pb-0 lg:pt-16">
-          <div className={`${sidebarCollapsed ? "max-w-2xl" : "max-w-2xl lg:max-w-xl"}`}>
-            <Outlet />
-          </div>
-        </main>
-
-        {/* Mobile Bottom Nav */}
-        <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-200 bg-white dark:border-zinc-800 dark:bg-black lg:hidden">
-          <div className="flex items-center justify-around py-2">
-            <button onClick={() => navigate("/")} className="flex flex-col items-center gap-0.5 px-3 py-1">
-              <Home size={22} className={isActive("/") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
-            </button>
-            <button onClick={() => navigate("/search")} className="flex flex-col items-center gap-0.5 px-3 py-1">
-              <Search size={22} className={isActive("/search") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
-            </button>
-            <button onClick={() => setCreateModalOpen(true)} className="flex flex-col items-center gap-0.5 px-3 py-1">
-              <div className="rounded-full border-2 border-zinc-500 dark:border-zinc-400 p-1">
-                <PlusSquare size={18} className="text-zinc-500 dark:text-zinc-400" />
+          {/* Mobile Sidebar */}
+          {sidebarOpen && (
+            <>
+              <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
+              <div className="fixed left-0 top-0 z-50 flex h-screen w-80 max-w-[85%] flex-col border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 lg:hidden">
+                <div className="border-b border-zinc-200 dark:border-zinc-800 px-5 pt-4 pb-2">
+                  <h1 className="text-2xl font-black tracking-wide text-zinc-900 dark:text-white">🐝 HIVEZ</h1>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">Report. React. Resolve.</p>
+                </div>
+                {sidebarContent}
               </div>
-            </button>
-            <button onClick={() => navigate("/activity")} className="flex flex-col items-center gap-0.5 px-3 py-1">
-              <Heart size={22} className={isActive("/activity") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
-            </button>
-            <button onClick={() => navigate("/profile")} className="flex flex-col items-center gap-0.5 px-3 py-1">
-              <User size={22} className={isActive("/profile") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
-            </button>
-          </div>
-        </nav>
+            </>
+          )}
+
+          {/* Page Content - left aligned, same width */}
+          <main className="flex-1 overflow-y-auto pb-20 lg:pb-0 lg:pt-16">
+            <div className={`${sidebarCollapsed ? "max-w-2xl" : "max-w-2xl lg:max-w-xl"}`}>
+              <Outlet />
+            </div>
+          </main>
+
+          {/* Mobile Bottom Nav */}
+          <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-200 bg-white dark:border-zinc-800 dark:bg-black lg:hidden">
+            <div className="flex items-center justify-around py-2">
+              <button onClick={() => navigate("/")} className="flex flex-col items-center gap-0.5 px-3 py-1">
+                <Home size={22} className={isActive("/") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
+              </button>
+              <button onClick={() => navigate("/search")} className="flex flex-col items-center gap-0.5 px-3 py-1">
+                <Search size={22} className={isActive("/search") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
+              </button>
+              <button onClick={() => setCreateModalOpen(true)} className="flex flex-col items-center gap-0.5 px-3 py-1">
+                <div className="rounded-full border-2 border-zinc-500 dark:border-zinc-400 p-1">
+                  <PlusSquare size={18} className="text-zinc-500 dark:text-zinc-400" />
+                </div>
+              </button>
+              <button onClick={() => navigate("/activity")} className="flex flex-col items-center gap-0.5 px-3 py-1">
+                <Heart size={22} className={isActive("/activity") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
+              </button>
+              <button onClick={() => navigate("/profile")} className="flex flex-col items-center gap-0.5 px-3 py-1">
+                <User size={22} className={isActive("/profile") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
+              </button>
+            </div>
+          </nav>
+        </div>
+        
+        {/* Create Modal */}
+        <CreateModal open={createModalOpen} onClose={() => setCreateModalOpen(false)} />
       </div>
-      
-      {/* Create Modal */}
-      <CreateModal open={createModalOpen} onClose={() => setCreateModalOpen(false)} />
     </div>
   );
 }
