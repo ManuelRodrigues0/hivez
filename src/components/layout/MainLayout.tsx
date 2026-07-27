@@ -67,7 +67,7 @@ export default function MainLayout() {
 
   return (
     <div className="flex min-h-screen bg-white dark:bg-black text-zinc-900 dark:text-white">
-      {/* Desktop Header - Static */}
+      {/* Desktop Header */}
       <header className="hidden lg:flex lg:items-center lg:justify-between lg:border-b lg:border-zinc-200 dark:lg:border-zinc-800 lg:bg-white dark:lg:bg-black lg:px-4 lg:h-16">
         {/* Left side - Menu + Logo */}
         <div className="flex items-center gap-4">
