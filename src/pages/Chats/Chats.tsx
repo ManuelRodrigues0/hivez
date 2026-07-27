@@ -80,12 +80,31 @@ function formatListTime(timestamp: any) {
   return date.toLocaleDateString([], { month: "short", day: "numeric" });
 }
 
+function localTimestamp(date = new Date()) {
+  return {
+    seconds: Math.floor(date.getTime() / 1000),
+    toDate: () => date,
+  };
+}
+
+function serializeTimestamp(timestamp: any) {
+  return timestamp?.toDate ? timestamp.toDate().getTime() : null;
+}
+
+function restoreTimestamp(value: any) {
+  if (!value) return null;
+  if (value?.toDate) return value;
+  return localTimestamp(new Date(value));
+}
+
 export default function Chats() {
   const { user } = useAuth();
   const [me, setMe] = useState<ChatUser | null>(null);
   const [chats, setChats] = useState<ChatDoc[]>([]);
+  const [localChats, setLocalChats] = useState<ChatDoc[]>([]);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [messages, setMessages] = useState<MessageDoc[]>([]);
+  const [localMessages, setLocalMessages] = useState<Record<string, MessageDoc[]>>({});
   const [draftChat, setDraftChat] = useState<ChatDoc | null>(null);
   const [pendingMessages, setPendingMessages] = useState<Record<string, MessageDoc[]>>({});
   const [messageText, setMessageText] = useState("");
@@ -95,6 +114,90 @@ export default function Chats() {
   const [people, setPeople] = useState<ChatUser[]>([]);
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  function localChatsKey(uid = user?.uid) {
+    return uid ? `hivez-local-chats:${uid}` : "";
+  }
+
+  function localMessagesKey(uid = user?.uid) {
+    return uid ? `hivez-local-messages:${uid}` : "";
+  }
+
+  function persistLocalChats(nextChats: ChatDoc[]) {
+    if (!user) return;
+    setLocalChats(nextChats);
+    localStorage.setItem(
+      localChatsKey(),
+      JSON.stringify(
+        nextChats.map((chat) => ({
+          ...chat,
+          lastMessageAt: serializeTimestamp(chat.lastMessageAt),
+        }))
+      )
+    );
+  }
+
+  function upsertLocalChat(chat: ChatDoc) {
+    const nextChats = [chat, ...localChats.filter((item) => item.id !== chat.id)];
+    persistLocalChats(nextChats);
+  }
+
+  function persistLocalMessages(nextMessages: Record<string, MessageDoc[]>) {
+    if (!user) return;
+    setLocalMessages(nextMessages);
+    localStorage.setItem(
+      localMessagesKey(),
+      JSON.stringify(
+        Object.fromEntries(
+          Object.entries(nextMessages).map(([chatId, chatMessages]) => [
+            chatId,
+            chatMessages.map((message) => ({
+              ...message,
+              createdAt: serializeTimestamp(message.createdAt),
+            })),
+          ])
+        )
+      )
+    );
+  }
+
+  function addLocalMessage(chatId: string, message: MessageDoc) {
+    persistLocalMessages({
+      ...localMessages,
+      [chatId]: [...(localMessages[chatId] || []).filter((item) => item.id !== message.id), message],
+    });
+  }
+
+  useEffect(() => {
+    if (!user) return;
+
+    const storedChats = localStorage.getItem(localChatsKey(user.uid));
+    if (storedChats) {
+      const parsedChats = JSON.parse(storedChats) as ChatDoc[];
+      const restoredChats = parsedChats.map((chat) => ({
+        ...chat,
+        lastMessageAt: restoreTimestamp(chat.lastMessageAt),
+      }));
+      setLocalChats(restoredChats);
+      setSelectedChatId((current) => current || restoredChats[0]?.id || null);
+    }
+
+    const storedMessages = localStorage.getItem(localMessagesKey(user.uid));
+    if (storedMessages) {
+      const parsedMessages = JSON.parse(storedMessages) as Record<string, MessageDoc[]>;
+      setLocalMessages(
+        Object.fromEntries(
+          Object.entries(parsedMessages).map(([chatId, chatMessages]) => [
+            chatId,
+            chatMessages.map((message) => ({
+              ...message,
+              createdAt: restoreTimestamp(message.createdAt),
+            })),
+          ])
+        )
+      );
+    }
+  }, [user]);
 
   useEffect(() => {
     async function loadMe() {
@@ -201,9 +304,16 @@ export default function Chats() {
   }, [userSearch, user?.uid]);
 
   const displayChats = useMemo(() => {
-    if (!draftChat || chats.some((chat) => chat.id === draftChat.id)) return chats;
-    return [draftChat, ...chats];
-  }, [chats, draftChat]);
+    const byId = new Map<string, ChatDoc>();
+    localChats.forEach((chat) => byId.set(chat.id, chat));
+    chats.forEach((chat) => byId.set(chat.id, chat));
+    if (draftChat) byId.set(draftChat.id, { ...(byId.get(draftChat.id) || {}), ...draftChat });
+    return Array.from(byId.values()).sort((a, b) => {
+      const aTime = a.lastMessageAt?.toDate?.().getTime?.() || 0;
+      const bTime = b.lastMessageAt?.toDate?.().getTime?.() || 0;
+      return bTime - aTime;
+    });
+  }, [chats, draftChat, localChats]);
 
   const selectedChat = displayChats.find((chat) => chat.id === selectedChatId) || null;
   const otherUser = useMemo(() => {
@@ -240,6 +350,7 @@ export default function Chats() {
     };
 
     setDraftChat(optimisticChat);
+    upsertLocalChat(optimisticChat);
     setSelectedChatId(id);
     setSearchOpen(false);
     setUserSearch("");
@@ -276,9 +387,10 @@ export default function Chats() {
       id: `local-${Date.now()}`,
       text,
       senderId: user.uid,
-      createdAt: { toDate: () => new Date(), seconds: Math.floor(Date.now() / 1000) },
+      createdAt: localTimestamp(),
       readBy: [user.uid],
     };
+    addLocalMessage(selectedChat.id, optimisticMessage);
 
     setPendingMessages((current) => ({
       ...current,
@@ -297,6 +409,7 @@ export default function Chats() {
       },
     };
     setDraftChat(optimisticChat);
+    upsertLocalChat(optimisticChat);
 
     try {
       const { id: _id, ...chatData } = selectedChat;
@@ -431,7 +544,12 @@ export default function Chats() {
               </div>
 
               <div className="flex-1 space-y-2 overflow-y-auto rounded-t-[28px] bg-zinc-50 px-4 py-4 dark:bg-zinc-950/60">
-                {[...messages, ...(pendingMessages[selectedChat.id] || [])].map((message, index, visibleMessages) => {
+                {[
+                  ...new Map(
+                    [...messages, ...(localMessages[selectedChat.id] || []), ...(pendingMessages[selectedChat.id] || [])]
+                      .map((message) => [message.id, message])
+                  ).values(),
+                ].map((message, index, visibleMessages) => {
                   const mine = message.senderId === user?.uid;
                   const previous = visibleMessages[index - 1];
                   const showTime = !previous || (message.createdAt?.seconds || 0) - (previous.createdAt?.seconds || 0) > 900;
