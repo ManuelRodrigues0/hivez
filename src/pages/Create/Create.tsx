@@ -34,14 +34,6 @@ export default function Create() {
   const isMultiple = Array.isArray(media);
   const singleFile = !isMultiple ? media : undefined;
 
-  const previews = useMemo(() => {
-    if (!media) return [];
-    if (isMultiple) {
-      return media.map((file) => URL.createObjectURL(file));
-    }
-    return [URL.createObjectURL(singleFile!)];
-  }, [media, isMultiple, singleFile]);
-
   const isVideo = useMemo(() => {
     if (isTextOnly) return false;
     if (isMultiple) {

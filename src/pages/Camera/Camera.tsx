@@ -1,13 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import { db } from "../../firebase/firebase";
-import { addDoc, collection, serverTimestamp, getDoc, doc } from "firebase/firestore";
+import { useNavigate } from "react-router-dom";
 
 export default function Camera() {
   const navigate = useNavigate();
-  const { state } = useLocation();
-  const { user } = useAuth();
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -19,7 +14,6 @@ export default function Camera() {
   const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
   const [recording, setRecording] = useState(false);
   const [recordTime, setRecordTime] = useState(0);
-  const [textContent, setTextContent] = useState("");
 
   const timerRef = useRef<number | null>(null);
   const holdTimeoutRef = useRef<number | null>(null);
