@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, BadgeCheck, Heart, MessageCircle, Repeat2, Send } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Heart, MessageCircle, Repeat2, Send, ShieldX } from "lucide-react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
+import { toast } from "sonner";
 import type { FeedPost } from "../../components/feed/Feed";
 
 function timeAgo(timestamp: any) {
@@ -27,17 +28,30 @@ export default function PostPage() {
   const [post, setPost] = useState<FeedPost | null>(null);
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadPost() {
-      if (!id) return;
+      if (!id) {
+        setLoading(false);
+        return;
+      }
       try {
         const snap = await getDoc(doc(db, "posts", id));
         if (snap.exists()) {
           setPost({ id: snap.id, ...snap.data() } as FeedPost);
+        } else {
+          setError("This post doesn't exist.");
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to load post:", err);
+        if (err?.code === "permission-denied") {
+          setError("Unable to load this post. It may not be publicly accessible. Check your Firestore security rules.");
+          toast.error("Permission denied. Update Firestore rules to allow public read access.");
+        } else {
+          setError("Failed to load this post. Please try again.");
+          toast.error("Failed to load post.");
+        }
       } finally {
         setLoading(false);
       }
@@ -57,11 +71,37 @@ export default function PostPage() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-white px-6 dark:bg-black">
         <div className="text-center max-w-md">
-          <h1 className="text-6xl font-bold text-zinc-200 dark:text-zinc-800">404</h1>
-          <h2 className="mt-4 text-2xl font-semibold text-zinc-900 dark:text-white">Post not found</h2>
-          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-            This post may have been deleted or the link is invalid.
-          </p>
+          {error?.includes("Permission") ? (
+            <>
+              <ShieldX size={48} className="mx-auto mb-4 text-zinc-400" />
+              <h2 className="text-2xl font-semibold text-zinc-900 dark:text-white">Access Denied</h2>
+              <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">{error}</p>
+              <div className="mt-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800 dark:border-yellow-900 dark:bg-yellow-950 dark:text-yellow-200">
+                <p className="font-medium">Fix this in Firebase Console:</p>
+                <ol className="mt-2 list-decimal space-y-1 text-left pl-4">
+                  <li>Go to Firebase Console → Firestore → Rules</li>
+                  <li>Replace current rules with:
+                    <code className="mt-1 block rounded bg-yellow-100 p-2 text-xs dark:bg-yellow-900">
+                      match /posts/&#123;postId&#125; &#123;<br/>
+                      &nbsp;&nbsp;allow read: if true;<br/>
+                      &nbsp;&nbsp;allow write: if request.auth != null;<br/>
+                      &#125;
+                    </code>
+                  </li>
+                  <li>Click Publish</li>
+                  <li>Refresh this page</li>
+                </ol>
+              </div>
+            </>
+          ) : (
+            <>
+              <h1 className="text-6xl font-bold text-zinc-200 dark:text-zinc-800">404</h1>
+              <h2 className="mt-4 text-2xl font-semibold text-zinc-900 dark:text-white">Post not found</h2>
+              <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+                {error || "This post may have been deleted or the link is invalid."}
+              </p>
+            </>
+          )}
           <button
             onClick={() => navigate("/")}
             className="mt-6 rounded-full bg-zinc-900 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
