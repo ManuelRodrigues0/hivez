@@ -73,10 +73,16 @@ export default function MainLayout() {
         {/* Left side - Menu + Logo */}
         <div className="flex items-center gap-4">
           <button 
-            onClick={() => setSidebarOpen(!sidebarOpen)} 
+            onClick={() => {
+              if (window.innerWidth >= 1024) {
+                setSidebarCollapsed(!sidebarCollapsed);
+              } else {
+                setSidebarOpen(!sidebarOpen);
+              }
+            }} 
             className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
           >
-            <Menu size={24} className="text-zinc-900 dark:text-white" />
+            {sidebarCollapsed ? <Menu size={24} className="text-zinc-900 dark:text-white" /> : <X size={24} className="text-zinc-900 dark:text-white" />}
           </button>
           <button onClick={() => navigate("/")} className="flex items-center gap-2">
             <h1 className="text-2xl font-black tracking-wide text-zinc-900 dark:text-white">🐝 HIVEZ</h1>
@@ -123,12 +129,6 @@ export default function MainLayout() {
       <aside 
         className="hidden lg:flex lg:flex-col lg:fixed lg:left-0 lg:top-16 lg:h-[calc(100vh-64px)] lg:bg-white dark:lg:bg-black lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800 lg:z-40 transition-all duration-300"
       >
-        <button
-          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="flex items-center justify-center border-b border-zinc-200 dark:border-zinc-800 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-900"
-        >
-          {sidebarCollapsed ? <Menu size={20} className="text-zinc-900 dark:text-white" /> : <X size={20} className="text-zinc-900 dark:text-white" />}
-        </button>
         <div className="flex-1 overflow-hidden">
           {sidebarCollapsed ? (
             <div className="flex flex-col items-center py-4">
