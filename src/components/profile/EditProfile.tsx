@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Camera, Save } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { db } from "../../firebase/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "../../firebase/firebase";
 
 export default function EditProfile() {
   const { user, refreshProfileStatus } = useAuth();
@@ -15,6 +17,9 @@ export default function EditProfile() {
   const [photoURL, setPhotoURL] = useState("");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     async function load() {
@@ -36,6 +41,43 @@ export default function EditProfile() {
     }
     load();
   }, [user]);
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image file");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image must be less than 5MB");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      // Create a reference to the storage location
+      const imageRef = ref(storage, `profile-pictures/${user.uid}/${Date.now()}_${file.name}`);
+
+      // Upload the file
+      await uploadBytes(imageRef, file);
+
+      // Get the download URL
+      const downloadURL = await getDownloadURL(imageRef);
+
+      // Update the photoURL state
+      setPhotoURL(downloadURL);
+    } catch (err) {
+      console.error("Failed to upload image:", err);
+      alert("Failed to upload image. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function save() {
     if (!user) return;
@@ -105,11 +147,31 @@ export default function EditProfile() {
               alt="Profile"
               className="h-24 w-24 rounded-full border-2 border-zinc-200 object-cover dark:border-zinc-700"
             />
-            <button className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-black text-white dark:bg-white dark:text-black">
-              <Camera size={14} />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-black text-white transition hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+            >
+              {uploading ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent dark:border-black" />
+              ) : (
+                <Camera size={14} />
+              )}
             </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+            />
           </div>
         </div>
+
+        {/* Upload hint */}
+        <p className="mb-6 text-center text-xs text-zinc-500 dark:text-zinc-400">
+          Click the camera icon to upload a profile picture from your gallery
+        </p>
 
         {/* Form */}
         <div className="space-y-5">
@@ -148,8 +210,11 @@ export default function EditProfile() {
             <p className="mt-1 text-right text-xs text-zinc-400">{bio.length}/160</p>
           </div>
 
+          {/* Profile Picture URL - Optional fallback */}
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Profile Picture URL</label>
+            <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+              Profile Picture URL <span className="text-zinc-400">(optional - use upload instead)</span>
+            </label>
             <input
               value={photoURL}
               onChange={(e) => setPhotoURL(e.target.value)}

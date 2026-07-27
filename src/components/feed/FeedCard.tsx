@@ -13,10 +13,11 @@ import {
   Share2,
   ExternalLink,
 } from "lucide-react";
+import { motion } from "framer-motion";
 
 import { useAuth } from "../../context/AuthContext";
 import { db } from "../../firebase/firebase";
-import { doc, updateDoc, deleteDoc, setDoc, increment } from "firebase/firestore";
+import { doc, updateDoc, deleteDoc, setDoc, increment, onSnapshot } from "firebase/firestore";
 import { toast } from "sonner";
 import type { FeedPost } from "./Feed";
 
@@ -55,6 +56,7 @@ export default function FeedCard({ post, onCommentClick }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [shareMenuOpen, setShareMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [liking, setLiking] = useState(false);
 
   const menuRef = useRef<HTMLDivElement>(null);
   const shareMenuRef = useRef<HTMLDivElement>(null);
@@ -73,41 +75,54 @@ export default function FeedCard({ post, onCommentClick }: Props) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Listen to like count changes in real-time
+  useEffect(() => {
+    const postRef = doc(db, "posts", post.id);
+    const unsubscribe = onSnapshot(postRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setLikesCount(data.likes || 0);
+      }
+    });
+    return () => unsubscribe();
+  }, [post.id]);
+
   async function handleLike() {
-    if (!user) {
-      toast.info("Please log in to like posts");
+    if (!user || liking) {
+      if (!user) toast.info("Please log in to like posts");
       return;
     }
+
+    setLiking(true);
 
     const postRef = doc(db, "posts", post.id);
     const likeRef = doc(db, "posts", post.id, "likes", user.uid);
 
     try {
+      // Optimistic update - update UI immediately
       if (liked) {
         // Unlike
+        await deleteDoc(likeRef);
         await updateDoc(postRef, {
           likes: increment(-1),
         });
-        // Delete the like document
-        await deleteDoc(likeRef);
         setLiked(false);
-        setLikesCount(prev => prev - 1);
       } else {
         // Like
-        await updateDoc(postRef, {
-          likes: increment(1),
-        });
-        // Create a like document
         await setDoc(likeRef, {
           userId: user.uid,
           createdAt: new Date(),
         });
+        await updateDoc(postRef, {
+          likes: increment(1),
+        });
         setLiked(true);
-        setLikesCount(prev => prev + 1);
       }
     } catch (err) {
       console.error("Failed to update like:", err);
       toast.error("Failed to update like");
+    } finally {
+      setLiking(false);
     }
   }
 
@@ -268,16 +283,22 @@ export default function FeedCard({ post, onCommentClick }: Props) {
             <div className="mt-2 -ml-2 flex items-center gap-1">
               <button
                 onClick={handleLike}
+                disabled={liking}
                 className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-red-50 dark:hover:bg-red-950/30 group"
               >
-                <Heart
-                  size={18}
-                  className={
-                    liked
-                      ? "fill-red-500 text-red-500"
-                      : "text-zinc-500 dark:text-zinc-400 group-hover:text-red-500"
-                  }
-                />
+                <motion.div
+                  animate={liked ? { scale: [1, 1.3, 1] } : { scale: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Heart
+                    size={18}
+                    className={
+                      liked
+                        ? "fill-red-500 text-red-500"
+                        : "text-zinc-500 dark:text-zinc-400 group-hover:text-red-500"
+                    }
+                  />
+                </motion.div>
                 <span className={`text-xs ${liked ? "text-red-500" : "text-zinc-500 dark:text-zinc-400 group-hover:text-red-500"}`}>
                   {likesCount}
                 </span>
