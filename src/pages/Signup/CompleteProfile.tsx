@@ -65,37 +65,40 @@ export default function CompleteProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black text-zinc-900 dark:text-white flex items-center justify-center px-6">
+    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 text-zinc-900 dark:bg-black dark:text-white">
       <div className="w-full max-w-sm">
-        <h1 className="mb-8 text-center text-4xl font-bold text-zinc-900 dark:text-white">
+        <h1 className="mb-2 text-center text-3xl font-black tracking-tight text-zinc-900 dark:text-white">
           Complete Profile
         </h1>
+        <p className="mb-8 text-center text-sm text-zinc-500 dark:text-zinc-400">Choose the identity people will see in the feed.</p>
 
-        <input
-          className="mb-4 w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 text-zinc-900 dark:text-white"
-          placeholder="Username"
-          value={username}
-          onChange={(e) =>
-            setUsername(e.target.value)
-          }
-        />
+        <div className="app-surface space-y-4 p-4">
+          <input
+            className="app-field"
+            placeholder="Username"
+            value={username}
+            onChange={(e) =>
+              setUsername(e.target.value)
+            }
+          />
 
-        <textarea
-          className="mb-6 h-28 w-full resize-none rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 text-zinc-900 dark:text-white"
-          placeholder="Bio"
-          value={bio}
-          onChange={(e) =>
-            setBio(e.target.value)
-          }
-        />
+          <textarea
+            className="app-field h-28 resize-none"
+            placeholder="Bio"
+            value={bio}
+            onChange={(e) =>
+              setBio(e.target.value)
+            }
+          />
 
-        <button
-          onClick={saveProfile}
-          disabled={loading}
-          className="w-full rounded-xl bg-zinc-900 dark:bg-white p-4 font-semibold text-white dark:text-black transition hover:bg-zinc-800 dark:hover:bg-zinc-200 disabled:opacity-50"
-        >
-          {loading ? "Saving..." : "Continue"}
-        </button>
+          <button
+            onClick={saveProfile}
+            disabled={loading}
+            className="app-primary-button w-full py-3"
+          >
+            {loading ? "Saving..." : "Continue"}
+          </button>
+        </div>
       </div>
     </div>
   );

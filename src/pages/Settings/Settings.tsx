@@ -111,13 +111,13 @@ export default function Settings() {
   ];
 
   return (
-    <div className="min-h-full bg-white dark:bg-black">
+    <div className="app-page">
       {/* Header */}
-      <div className="sticky top-0 z-10 border-b border-zinc-200 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-black/95">
+      <div className="app-sticky-header">
         <div className="flex items-center gap-3 px-4 py-3">
           <button
             onClick={() => navigate(-1)}
-            className="rounded-full p-1 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className="app-icon-button"
           >
             <ArrowLeft size={20} />
           </button>
@@ -129,7 +129,7 @@ export default function Settings() {
       <div className="border-b border-zinc-200 px-4 py-5 dark:border-zinc-800">
         <button
           onClick={() => navigate("/profile/edit")}
-          className="flex w-full items-center gap-3"
+          className="app-surface flex w-full items-center gap-3 p-3 text-left transition hover:bg-zinc-50 dark:hover:bg-zinc-900"
         >
           <img
             src={user?.photoURL || "https://ui-avatars.com/api/?name=Hivez&background=6366f1&color=fff"}
@@ -148,10 +148,10 @@ export default function Settings() {
       <div className="px-4 py-4">
         {settingsSections.map((section) => (
           <div key={section.title} className="mb-6">
-            <h2 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            <h2 className="app-section-label mb-2 px-1">
               {section.title}
             </h2>
-            <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
+            <div className="app-surface overflow-hidden">
               {section.items.map((item, index) => {
                 const Icon = item.icon;
                 const hasToggle = item.toggle !== undefined;
@@ -165,7 +165,7 @@ export default function Settings() {
                         : ""
                     }`}
                   >
-                    <div className={`flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-900 ${item.color}`}>
+                    <div className={`flex h-9 w-9 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-900 ${item.color}`}>
                       <Icon size={18} />
                     </div>
                     <div className="flex-1">
@@ -202,7 +202,7 @@ export default function Settings() {
         <button
           onClick={handleLogout}
           disabled={loggingOut}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-3 text-sm font-medium text-red-500 transition hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:hover:bg-red-950"
+          className="flex w-full items-center justify-center gap-2 rounded-full border border-red-200 px-4 py-3 text-sm font-semibold text-red-500 transition hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:hover:bg-red-950"
         >
           <LogOut size={18} />
           {loggingOut ? "Logging out..." : "Log Out"}

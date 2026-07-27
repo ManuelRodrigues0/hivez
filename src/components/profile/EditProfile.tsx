@@ -121,13 +121,13 @@ export default function EditProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black">
+    <div className="app-page">
       {/* Header */}
-      <div className="sticky top-0 z-10 border-b border-zinc-200 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-black/95">
+      <div className="app-sticky-header">
         <div className="flex items-center justify-between px-4 py-3">
           <button
             onClick={() => navigate(-1)}
-            className="rounded-full p-1 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className="app-icon-button"
           >
             <ArrowLeft size={20} />
           </button>
@@ -135,7 +135,7 @@ export default function EditProfile() {
           <button
             onClick={save}
             disabled={saving}
-            className="flex items-center gap-1.5 rounded-lg bg-black px-4 py-1.5 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+            className="app-primary-button py-1.5"
           >
             <Save size={16} />
             {saving ? "Saving..." : "Save"}
@@ -156,7 +156,7 @@ export default function EditProfile() {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-black text-white transition hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+              className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-zinc-900 text-white shadow-lg transition hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
             >
               {uploading ? (
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent dark:border-black" />
@@ -174,11 +174,6 @@ export default function EditProfile() {
           </div>
         </div>
 
-        {/* Upload hint */}
-        <p className="mb-6 text-center text-xs text-zinc-500 dark:text-zinc-400">
-          Click the camera icon to upload a profile picture from your gallery
-        </p>
-
         {/* Form */}
         <div className="space-y-5">
           <div>
@@ -187,7 +182,7 @@ export default function EditProfile() {
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="Your display name"
-              className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus:border-zinc-500"
+              className="app-field"
             />
           </div>
 
@@ -199,7 +194,7 @@ export default function EditProfile() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value.replace(/^@+/, ""))}
                 placeholder="username"
-                className="w-full rounded-xl border border-zinc-300 bg-white py-3 pl-8 pr-4 text-sm outline-none transition focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus:border-zinc-500"
+                className="app-field pl-8"
               />
             </div>
           </div>
@@ -211,7 +206,7 @@ export default function EditProfile() {
               onChange={(e) => setBio(e.target.value)}
               placeholder="Tell us about yourself"
               rows={4}
-              className="w-full resize-none rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus:border-zinc-500"
+              className="app-field resize-none"
             />
             <p className="mt-1 text-right text-xs text-zinc-400">{bio.length}/160</p>
           </div>
@@ -225,7 +220,7 @@ export default function EditProfile() {
               value={photoURL}
               onChange={(e) => setPhotoURL(e.target.value)}
               placeholder="https://example.com/avatar.jpg"
-              className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus:border-zinc-500"
+              className="app-field"
             />
           </div>
         </div>

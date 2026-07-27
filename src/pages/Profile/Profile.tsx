@@ -79,12 +79,12 @@ export default function Profile() {
   ];
 
   return (
-    <div className="min-h-full">
+    <div className="app-page">
       {/* Header with back button */}
       {!isOwnProfile && (
-        <div className="sticky top-0 z-10 border-b border-zinc-200 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-black/95">
+        <div className="app-sticky-header">
           <div className="flex items-center gap-3 px-4 py-3">
-            <button onClick={() => navigate(-1)} className="rounded-full p-1 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
+            <button onClick={() => navigate(-1)} className="app-icon-button">
               <ArrowLeft size={20} />
             </button>
             <h1 className="text-base font-semibold">{profile.displayName || "Profile"}</h1>
@@ -124,25 +124,22 @@ export default function Profile() {
         <div className="mt-4 flex gap-2">
           {isOwnProfile ? (
             <>
-              <button
-                onClick={() => navigate("/profile/edit")}
-                className="flex-1 rounded-lg border border-zinc-300 py-2 text-sm font-medium transition hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
-              >
+              <button onClick={() => navigate("/profile/edit")} className="app-secondary-button flex-1">
                 Edit Profile
               </button>
-              <button className="flex-1 rounded-lg border border-zinc-300 py-2 text-sm font-medium transition hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900">
+              <button className="app-secondary-button flex-1">
                 Share Profile
               </button>
             </>
           ) : (
             <>
-              <button className="flex-1 rounded-lg bg-black py-2 text-sm font-medium text-white transition hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200">
+              <button className="app-primary-button flex-1">
                 Follow
               </button>
-              <button className="rounded-lg border border-zinc-300 p-2 transition hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900">
+              <button className="app-secondary-button px-3">
                 <MessageCircle size={18} />
               </button>
-              <button className="rounded-lg border border-zinc-300 p-2 transition hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900">
+              <button className="app-secondary-button px-3">
                 <UserPlus size={18} />
               </button>
             </>
@@ -157,11 +154,7 @@ export default function Profile() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex-1 py-3 text-center text-sm font-medium transition ${
-                activeTab === tab.key
-                  ? "border-b-2 border-black text-black dark:border-white dark:text-white"
-                  : "text-zinc-500"
-              }`}
+              className={`app-tab ${activeTab === tab.key ? "app-tab-active" : ""}`}
             >
               {tab.label}
             </button>
@@ -170,7 +163,7 @@ export default function Profile() {
       </div>
 
       {/* Content */}
-      <div className="flex flex-col items-center justify-center py-24 text-center">
+      <div className="app-empty-state">
         <h2 className="text-base font-semibold text-zinc-900 dark:text-white">No {activeTab} yet</h2>
         <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
           {isOwnProfile ? "Your posts will appear here." : "This user hasn't posted anything yet."}

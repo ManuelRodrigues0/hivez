@@ -135,13 +135,13 @@ export default function PostPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black">
+    <div className="app-page">
       {/* Header */}
-      <div className="sticky top-0 z-10 border-b border-zinc-200 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-black/95">
+      <div className="app-sticky-header">
         <div className="flex items-center gap-3 px-4 py-3">
           <button
             onClick={handleBack}
-            className="rounded-full p-1 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className="app-icon-button"
           >
             <ArrowLeft size={20} />
           </button>
@@ -199,7 +199,7 @@ export default function PostPage() {
             {post.mediaUrl && (
               <div className="mt-3">
                 {post.mediaType === "image" ? (
-                  <img src={post.mediaUrl} alt="" className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-700" />
+                  <img src={post.mediaUrl} alt="" className="max-h-[720px] w-full rounded-2xl border border-zinc-200 bg-zinc-100 object-contain dark:border-zinc-700 dark:bg-zinc-900" />
                 ) : (
                   <video src={post.mediaUrl} controls className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-700" />
                 )}

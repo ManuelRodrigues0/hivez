@@ -118,14 +118,11 @@ export default function CommentsSheet({
   return (
     <>
       {/* Backdrop */}
-      <div
-        onClick={onClose}
-        className="fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm transition-opacity"
-      />
+      <div onClick={onClose} className="fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm transition-opacity" />
 
       {/* Mobile: bottom sheet */}
-      <div className="sm:hidden fixed inset-x-0 bottom-0 z-[100] mx-auto h-[92vh] w-full rounded-t-[32px] border border-zinc-800 dark:border-zinc-800 border-zinc-200 bg-white dark:bg-black shadow-2xl">
-        <div className="flex h-full flex-col overflow-hidden rounded-t-[32px]">
+      <div className="fixed inset-x-0 bottom-0 z-[100] mx-auto h-[92vh] w-full rounded-t-[28px] border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-black sm:hidden">
+        <div className="flex h-full flex-col overflow-hidden rounded-t-[28px]">
           <CommentHeader count={comments.length} onClose={onClose} />
           <OriginalPost post={post} />
           <CommentList comments={comments} loading={loading} />
@@ -140,13 +137,13 @@ export default function CommentsSheet({
       </div>
 
       {/* Desktop: full-screen overlay that replaces the feed */}
-      <div className="hidden sm:flex fixed inset-0 z-[100] bg-white dark:bg-black">
-        <div className="flex w-full max-w-2xl flex-col mx-auto">
+      <div className="fixed inset-0 z-[100] hidden bg-white dark:bg-black sm:flex">
+        <div className="mx-auto flex w-full max-w-2xl flex-col border-x border-zinc-200 dark:border-zinc-800">
           {/* Header */}
-          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-800 dark:border-zinc-800 border-zinc-200 bg-white dark:bg-black/95 px-4 py-3 backdrop-blur">
+          <div className="app-sticky-header flex items-center justify-between px-4 py-3">
             <button
               onClick={onClose}
-              className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              className="app-icon-button"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-900 dark:text-white">
                 <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -165,7 +162,7 @@ export default function CommentsSheet({
           </div>
 
           {/* Composer at bottom */}
-          <div className="border-t border-zinc-800 dark:border-zinc-800 border-zinc-200 p-4">
+          <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
             <CommentComposer
               ref={textareaRef}
               value={text}

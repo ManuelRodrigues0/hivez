@@ -44,19 +44,20 @@ export default function Signup() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-white dark:bg-black px-6 text-zinc-900 dark:text-white">
+    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 text-zinc-900 dark:bg-black dark:text-white">
       <div className="w-full max-w-sm">
 
-        <h1 className="mb-8 text-center text-4xl font-bold text-zinc-900 dark:text-white">
+        <h1 className="mb-2 text-center text-4xl font-black tracking-tight text-zinc-900 dark:text-white">
           HIVEZ
         </h1>
+        <p className="mb-8 text-center text-sm text-zinc-500 dark:text-zinc-400">Create your account and join nearby hives.</p>
 
         <form
           onSubmit={handleSignup}
-          className="space-y-4"
+          className="app-surface space-y-4 p-4"
         >
           <input
-            className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 text-zinc-900 dark:text-white"
+            className="app-field"
             placeholder="Email"
             type="email"
             value={email}
@@ -64,7 +65,7 @@ export default function Signup() {
           />
 
           <input
-            className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 text-zinc-900 dark:text-white"
+            className="app-field"
             placeholder="Password"
             type="password"
             value={password}
@@ -74,7 +75,7 @@ export default function Signup() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-zinc-900 dark:bg-white p-3 font-semibold text-white dark:text-black transition hover:bg-zinc-800 dark:hover:bg-zinc-200 disabled:opacity-50"
+            className="app-primary-button w-full py-3"
           >
             {loading ? "Creating Account..." : "Sign Up"}
           </button>
@@ -82,7 +83,7 @@ export default function Signup() {
 
         <button
           onClick={handleGoogleSignup}
-          className="mt-4 w-full rounded-lg border border-zinc-300 dark:border-zinc-700 p-3 text-zinc-900 dark:text-white transition hover:bg-zinc-100 dark:hover:bg-zinc-900"
+          className="app-secondary-button mt-4 w-full py-3"
         >
           Continue with Google
         </button>

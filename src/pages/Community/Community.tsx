@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Users } from "lucide-react";
 
 import Feed from "@/components/feed/Feed";
 import { COMMUNITIES } from "@/constants/communities";
@@ -16,13 +16,13 @@ export default function Community() {
 
   if (!community) {
     return (
-      <div className="flex h-full items-center justify-center p-8 text-center">
-        <div>
+      <div className="app-empty-state">
+        <div className="app-surface max-w-sm p-8">
           <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Hive Not Found</h2>
-
+          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">This community is not available yet.</p>
           <button
             onClick={() => navigate("/")}
-            className="mt-6 rounded-lg bg-yellow-400 px-5 py-2 font-semibold text-black"
+            className="app-primary-button mt-6"
           >
             Back Home
           </button>
@@ -32,32 +32,37 @@ export default function Community() {
   }
 
   return (
-    <div className="min-h-full">
-      <div className="border-b border-zinc-800 dark:border-zinc-800 border-zinc-200 px-4 py-4">
-        <button
-          onClick={() => navigate(-1)}
-          className="mb-4 flex items-center gap-2 text-zinc-500 dark:text-zinc-400 transition hover:text-zinc-900 dark:hover:text-white"
-        >
-          <ArrowLeft size={20} />
-          Back
-        </button>
-
-        <div className="flex items-center gap-4">
-          <div className="text-5xl">{community.icon}</div>
-
-          <div>
-            <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
+    <div className="app-page">
+      <div className="app-sticky-header">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <button onClick={() => navigate(-1)} className="app-icon-button">
+            <ArrowLeft size={20} />
+          </button>
+          <div className="min-w-0">
+            <h1 className="truncate text-base font-semibold text-zinc-900 dark:text-white">
               {community.name}
             </h1>
-
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
-              Community Feed
-            </p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">Community feed</p>
           </div>
         </div>
       </div>
 
-      {/* We'll filter by category in the next file */}
+      <section className="border-b border-zinc-200 px-4 py-5 dark:border-zinc-800">
+        <div className="flex items-start gap-4">
+          <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl bg-zinc-100 text-4xl dark:bg-zinc-900">
+            {community.icon}
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">{community.name}</h2>
+            <p className="mt-1 text-sm leading-5 text-zinc-500 dark:text-zinc-400">{community.description}</p>
+            <div className="mt-3 flex items-center gap-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+              <Users size={14} />
+              Local reports and updates
+            </div>
+          </div>
+        </div>
+      </section>
+
       <Feed category={community.id} />
     </div>
   );
