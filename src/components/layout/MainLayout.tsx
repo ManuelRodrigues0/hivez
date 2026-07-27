@@ -70,7 +70,7 @@ export default function MainLayout() {
   );
 
   return (
-    <div className="flex min-h-screen pt-16 pt-16 bg-white dark:bg-black text-zinc-900 dark:text-white">
+    <div className="flex min-h-screen bg-white dark:bg-black text-zinc-900 dark:text-white">
       {/* Desktop Header - Fixed at top */}
       <header className="hidden lg:fixed lg:top-0 lg:left-0 lg:right-0 lg:z-50 lg:flex lg:items-center lg:justify-between lg:border-b lg:border-zinc-200 dark:lg:border-zinc-800 lg:bg-white dark:lg:bg-black lg:px-4 lg:h-16">
         {/* Left side - Menu + Logo */}
@@ -186,7 +186,7 @@ export default function MainLayout() {
         )}
 
         {/* Page Content - left aligned, same width */}
-        <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+        <main className="flex-1 overflow-y-auto pb-20 lg:pb-0 lg:pt-16">
           <div className="max-w-2xl">
             <Outlet />
           </div>
@@ -201,7 +201,7 @@ export default function MainLayout() {
             <button onClick={() => navigate("/search")} className="flex flex-col items-center gap-0.5 px-3 py-1">
               <Search size={22} className={isActive("/search") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
             </button>
-            <button onClick={() => navigate("/camera")} className="flex flex-col items-center gap-0.5 px-3 py-1">
+            <button onClick={() => setCreateModalOpen(true)} className="flex flex-col items-center gap-0.5 px-3 py-1">
               <div className="rounded-full border-2 border-zinc-500 dark:border-zinc-400 p-1">
                 <PlusSquare size={18} className="text-zinc-500 dark:text-zinc-400" />
               </div>
