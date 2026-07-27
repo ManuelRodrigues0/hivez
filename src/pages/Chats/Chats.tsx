@@ -56,6 +56,7 @@ interface ChatDoc {
 
 interface MessageDoc {
   id: string;
+  clientId?: string;
   text: string;
   senderId: string;
   createdAt?: any;
@@ -218,15 +219,25 @@ export default function Chats() {
 
   useEffect(() => {
     if (!user) return;
-    const q = query(collection(db, "chats"), where("participants", "array-contains", user.uid), orderBy("lastMessageAt", "desc"));
+    const q = query(collection(db, "chats"), where("participants", "array-contains", user.uid));
     return onSnapshot(q, (snapshot) => {
-      const nextChats = snapshot.docs.map((chatDoc) => ({
-        id: chatDoc.id,
-        ...(chatDoc.data() as Omit<ChatDoc, "id">),
-      }));
+      const nextChats = snapshot.docs
+        .map((chatDoc) => ({
+          id: chatDoc.id,
+          ...(chatDoc.data() as Omit<ChatDoc, "id">),
+        }))
+        .sort((a, b) => {
+          const aTime = a.lastMessageAt?.toDate?.().getTime?.() || 0;
+          const bTime = b.lastMessageAt?.toDate?.().getTime?.() || 0;
+          return bTime - aTime;
+        });
       setChats(nextChats);
+      if (nextChats.length) persistLocalChats(nextChats);
       setDraftChat((draft) => (draft && nextChats.some((chat) => chat.id === draft.id) ? null : draft));
       setSelectedChatId((current) => current || nextChats[0]?.id || null);
+    }, (error) => {
+      console.error("Chat listener failed:", error);
+      toast.error("Realtime chats are blocked. Check Firestore chat rules.");
     });
   }, [user]);
 
@@ -243,6 +254,18 @@ export default function Chats() {
         ...(messageDoc.data() as Omit<MessageDoc, "id">),
       }));
       setMessages(nextMessages);
+      const syncedClientIds = new Set(nextMessages.map((message) => message.clientId).filter(Boolean));
+      if (syncedClientIds.size) {
+        const nextLocalMessages = {
+          ...localMessages,
+          [selectedChatId]: (localMessages[selectedChatId] || []).filter((message) => !syncedClientIds.has(message.clientId || message.id)),
+        };
+        persistLocalMessages(nextLocalMessages);
+        setPendingMessages((current) => ({
+          ...current,
+          [selectedChatId]: (current[selectedChatId] || []).filter((message) => !syncedClientIds.has(message.clientId || message.id)),
+        }));
+      }
 
       const unreadFromOthers = snapshot.docs.filter((messageDoc) => {
         const data = messageDoc.data() as MessageDoc;
@@ -257,6 +280,9 @@ export default function Chats() {
         batch.update(doc(db, "chats", selectedChatId), { [`unreadCounts.${user.uid}`]: 0 });
         await batch.commit();
       }
+    }, (error) => {
+      console.error("Message listener failed:", error);
+      toast.error("Realtime messages are blocked. Check Firestore chat rules.");
     });
 
     return unsubscribe;
@@ -383,8 +409,10 @@ export default function Chats() {
 
     setSending(true);
     setMessageText("");
+    const clientId = `client-${user.uid}-${Date.now()}`;
     const optimisticMessage: MessageDoc = {
-      id: `local-${Date.now()}`,
+      id: clientId,
+      clientId,
       text,
       senderId: user.uid,
       createdAt: localTimestamp(),
@@ -427,6 +455,7 @@ export default function Chats() {
       );
 
       await addDoc(collection(db, "chats", selectedChat.id, "messages"), {
+        clientId,
         text,
         senderId: user.uid,
         createdAt: serverTimestamp(),
@@ -440,7 +469,7 @@ export default function Chats() {
       });
       setPendingMessages((current) => ({
         ...current,
-        [selectedChat.id]: (current[selectedChat.id] || []).filter((message) => message.id !== optimisticMessage.id),
+        [selectedChat.id]: (current[selectedChat.id] || []).filter((message) => message.clientId !== clientId),
       }));
     } catch (error) {
       console.error("Failed to send message:", error);
@@ -546,8 +575,8 @@ export default function Chats() {
               <div className="flex-1 space-y-2 overflow-y-auto rounded-t-[28px] bg-zinc-50 px-4 py-4 dark:bg-zinc-950/60">
                 {[
                   ...new Map(
-                    [...messages, ...(localMessages[selectedChat.id] || []), ...(pendingMessages[selectedChat.id] || [])]
-                      .map((message) => [message.id, message])
+                    [...localMessages[selectedChat.id] || [], ...pendingMessages[selectedChat.id] || [], ...messages]
+                      .map((message) => [message.clientId || message.id, message])
                   ).values(),
                 ].map((message, index, visibleMessages) => {
                   const mine = message.senderId === user?.uid;
