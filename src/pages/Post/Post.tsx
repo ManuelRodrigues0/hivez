@@ -115,13 +115,32 @@ export default function PostPage() {
     );
   }
 
+  const handleBack = () => {
+    // If there's browser history, go back; otherwise go to home feed
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/");
+    }
+  };
+
+  const handleLogin = () => {
+    // Navigate to login and come back to this post after login
+    navigate("/login", { state: { from: `/post/${id}` } });
+  };
+
+  const handleSignup = () => {
+    // Navigate to signup and come back to this post after signup
+    navigate("/signup", { state: { from: `/post/${id}` } });
+  };
+
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       {/* Header */}
       <div className="sticky top-0 z-10 border-b border-zinc-200 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-black/95">
         <div className="flex items-center gap-3 px-4 py-3">
           <button
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             className="rounded-full p-1 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
           >
             <ArrowLeft size={20} />
@@ -138,14 +157,14 @@ export default function PostPage() {
           </p>
           <div className="mt-2 flex gap-2">
             <button
-              onClick={() => navigate("/login")}
+              onClick={handleLogin}
               className="flex items-center gap-1.5 rounded-full bg-zinc-900 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
             >
               <LogIn size={14} />
               Log in
             </button>
             <button
-              onClick={() => navigate("/signup")}
+              onClick={handleSignup}
               className="flex items-center gap-1.5 rounded-full border border-zinc-300 px-4 py-1.5 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-white dark:hover:bg-zinc-800"
             >
               <UserPlus size={14} />
@@ -189,7 +208,7 @@ export default function PostPage() {
 
             <div className="mt-4 flex items-center gap-4 border-b border-zinc-200 pb-4 dark:border-zinc-800">
               <button
-                onClick={() => user && setLiked(!liked)}
+                onClick={() => user ? setLiked(!liked) : toast.info("Please log in to like")}
                 className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-red-50 dark:hover:bg-red-950/30"
               >
                 <Heart size={18} className={liked ? "fill-red-500 text-red-500" : "text-zinc-500 dark:text-zinc-400"} />
@@ -198,21 +217,21 @@ export default function PostPage() {
                 </span>
               </button>
               <button
-                onClick={() => user && toast.info("Please log in to comment")}
+                onClick={() => user ? toast.info("Comments coming soon") : toast.info("Please log in to comment")}
                 className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-sky-50 dark:hover:bg-sky-950/30"
               >
                 <MessageCircle size={18} className="text-zinc-500 dark:text-zinc-400" />
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">{post.comments}</span>
               </button>
               <button
-                onClick={() => user && toast.info("Please log in to repost")}
+                onClick={() => user ? toast.info("Repost coming soon") : toast.info("Please log in to repost")}
                 className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-green-50 dark:hover:bg-green-950/30"
               >
                 <Repeat2 size={18} className="text-zinc-500 dark:text-zinc-400" />
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">{post.shares}</span>
               </button>
               <button
-                onClick={() => user && toast.info("Please log in to share")}
+                onClick={() => user ? toast.info("Share coming soon") : toast.info("Please log in to share")}
                 className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-blue-50 dark:hover:bg-blue-950/30"
               >
                 <Send size={18} className="text-zinc-500 dark:text-zinc-400" />

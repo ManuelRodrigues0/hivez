@@ -1,15 +1,19 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 
 import { login, googleLogin } from "../../services/auth";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const [loading, setLoading] = useState(false);
+
+  // Get the redirect path from state, default to home
+  const from = (location.state as any)?.from || "/";
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -19,7 +23,8 @@ export default function Login() {
 
       await login(email, password);
 
-      navigate("/");
+      // Navigate to the original page they came from
+      navigate(from, { replace: true });
     } catch (err: any) {
       alert(err.message);
     } finally {
@@ -31,7 +36,8 @@ export default function Login() {
     try {
       await googleLogin();
 
-      navigate("/");
+      // Navigate to the original page they came from
+      navigate(from, { replace: true });
     } catch (err: any) {
       alert(err.message);
     }
