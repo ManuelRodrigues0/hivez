@@ -16,6 +16,8 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { logout } from "../../services/auth";
+import { enablePushNotifications } from "@/services/pushNotifications";
+import { toast } from "sonner";
 
 interface SettingsItem {
   icon: LucideIcon;
@@ -47,6 +49,18 @@ export default function Settings() {
     }
   }
 
+  async function handleEnableNotifications() {
+    if (!user) return;
+
+    try {
+      await enablePushNotifications(user.uid);
+      toast.success("System notifications are on.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Could not enable notifications.";
+      toast.error(message);
+    }
+  }
+
   const settingsSections: SettingsSection[] = [
     {
       title: "Account",
@@ -60,8 +74,9 @@ export default function Settings() {
         {
           icon: Bell,
           label: "Notifications",
-          onClick: () => {},
+          onClick: handleEnableNotifications,
           color: "text-pink-500",
+          subtitle: "Enable system push alerts",
         },
         {
           icon: Lock,

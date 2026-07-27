@@ -14,8 +14,8 @@ import {
 
 import { db } from "@/firebase/firebase";
 
-export type NotificationType = "comment" | "like" | "follow";
-type StoredNotificationType = NotificationType | "message";
+export type NotificationType = "comment" | "like";
+type StoredNotificationType = NotificationType | "message" | "follow";
 
 export interface NotificationActor {
   uid: string;
@@ -100,7 +100,7 @@ export function listenToNotifications(
             id: notificationDoc.id,
             ...(notificationDoc.data() as Omit<NotificationDoc, "id">),
           }))
-          .filter((notification) => notification.type !== "message")
+          .filter((notification) => notification.type === "comment" || notification.type === "like")
           .sort((a, b) => {
             const aTime = a.createdAt?.toDate?.().getTime?.() || 0;
             const bTime = b.createdAt?.toDate?.().getTime?.() || 0;
@@ -128,7 +128,7 @@ export function listenToUnreadNotificationsCount(
       onNext(
         snapshot.docs.filter((notificationDoc) => {
           const notification = notificationDoc.data() as NotificationDoc;
-          return !notification.read && notification.type !== "message";
+          return !notification.read && (notification.type === "comment" || notification.type === "like");
         }).length
       );
     },
@@ -152,7 +152,7 @@ export async function markAllNotificationsRead(uid: string) {
   const batch = writeBatch(db);
   unreadSnapshot.docs.forEach((notificationDoc) => {
     const notification = notificationDoc.data() as NotificationDoc;
-    if (!notification.read && notification.type !== "message") {
+    if (!notification.read && (notification.type === "comment" || notification.type === "like")) {
       batch.update(notificationDoc.ref, { read: true });
     }
   });

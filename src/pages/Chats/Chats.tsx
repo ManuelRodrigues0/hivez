@@ -28,7 +28,6 @@ import {
   UserPlus,
   X,
 } from "lucide-react";
-import { toast } from "sonner";
 
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/firebase/firebase";
@@ -237,7 +236,6 @@ export default function Chats() {
       setSelectedChatId((current) => current || (window.innerWidth >= 768 ? nextChats[0]?.id || null : current));
     }, (error) => {
       console.error("Chat listener failed:", error);
-      toast.error("Realtime chats are blocked. Check Firestore chat rules.");
     });
   }, [user]);
 
@@ -282,7 +280,6 @@ export default function Chats() {
       }
     }, (error) => {
       console.error("Message listener failed:", error);
-      toast.error("Realtime messages are blocked. Check Firestore chat rules.");
     });
 
     return unsubscribe;
@@ -397,7 +394,6 @@ export default function Chats() {
       }
     } catch (error) {
       console.error("Failed to start chat:", error);
-      toast.error("Could not create this chat. Check Firestore rules.");
     }
   }
 
@@ -474,7 +470,6 @@ export default function Chats() {
       }));
     } catch (error) {
       console.error("Failed to send message:", error);
-      toast.error("Message could not sync. Check Firestore rules.");
     } finally {
       setSending(false);
     }

@@ -4,6 +4,7 @@ import {
   GoogleAuthProvider,
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getMessaging, isSupported } from "firebase/messaging";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
@@ -24,3 +25,8 @@ export const db = getFirestore(app);
 export const storage = getStorage(app);
 
 export const googleProvider = new GoogleAuthProvider();
+
+export async function getFirebaseMessaging() {
+  const supported = await isSupported();
+  return supported ? getMessaging(app) : null;
+}

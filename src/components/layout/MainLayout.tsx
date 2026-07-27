@@ -9,6 +9,7 @@ import { logout } from "../../services/auth";
 import CreateModal from "../../components/feed/CreateModal";
 import { db } from "@/firebase/firebase";
 import { listenToNotifications, listenToUnreadNotificationsCount, markNotificationRead } from "@/services/notifications";
+import { listenForForegroundPushNotifications } from "@/services/pushNotifications";
 
 export default function MainLayout() {
   const navigate = useNavigate();
@@ -38,6 +39,18 @@ export default function MainLayout() {
       console.error("Unread notifications listener failed:", error);
     });
   }, [user]);
+
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+
+    listenForForegroundPushNotifications().then((nextUnsubscribe) => {
+      unsubscribe = nextUnsubscribe;
+    });
+
+    return () => {
+      unsubscribe?.();
+    };
+  }, []);
 
   useEffect(() => {
     if (!user) return;
