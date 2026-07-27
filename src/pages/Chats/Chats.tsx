@@ -29,6 +29,7 @@ import {
   UserPlus,
   X,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/firebase/firebase";
@@ -216,38 +217,44 @@ export default function Chats() {
         verified: false,
       };
     const id = chatIdFor(user.uid, person.uid);
-    const chatRef = doc(db, "chats", id);
-    const snap = await getDoc(chatRef);
+    const optimisticChat: ChatDoc = {
+      id,
+      participants: [user.uid, person.uid],
+      participantProfiles: {
+        [user.uid]: currentMe,
+        [person.uid]: person,
+      },
+      lastMessage: "",
+      lastMessageAt: null,
+      lastMessageSenderId: "",
+      unreadCounts: {
+        [user.uid]: 0,
+        [person.uid]: 0,
+      },
+    };
 
-    if (!snap.exists()) {
-      const newChat: ChatDoc = {
-        id,
-        participants: [user.uid, person.uid],
-        participantProfiles: {
-          [user.uid]: currentMe,
-          [person.uid]: person,
-        },
-        lastMessage: "",
-        lastMessageAt: serverTimestamp(),
-        lastMessageSenderId: "",
-        unreadCounts: {
-          [user.uid]: 0,
-          [person.uid]: 0,
-        },
-      };
-
-      setDraftChat(newChat);
-      setSelectedChatId(id);
-      const { id: _id, ...chatData } = newChat;
-      await setDoc(chatRef, {
-        ...chatData,
-        createdAt: serverTimestamp(),
-      });
-    }
-
+    setDraftChat(optimisticChat);
     setSelectedChatId(id);
     setSearchOpen(false);
     setUserSearch("");
+    setMessageText("");
+
+    const chatRef = doc(db, "chats", id);
+
+    try {
+      const snap = await getDoc(chatRef);
+      if (!snap.exists()) {
+        const { id: _id, ...chatData } = optimisticChat;
+        await setDoc(chatRef, {
+          ...chatData,
+          lastMessageAt: serverTimestamp(),
+          createdAt: serverTimestamp(),
+        });
+      }
+    } catch (error) {
+      console.error("Failed to start chat:", error);
+      toast.error("Could not create this chat. Check Firestore rules.");
+    }
   }
 
   async function sendMessage() {
