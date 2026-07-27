@@ -111,7 +111,10 @@ export default function MainLayout() {
 
         {/* Right side - Actions */}
         <div className="flex items-center gap-2">
-          <button className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
+          <button 
+            onClick={() => navigate("/search")}
+            className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          >
             <Search size={20} className="text-zinc-900 dark:text-white" />
           </button>
           <button 
