@@ -16,6 +16,7 @@ import {
 import { db } from "@/firebase/firebase";
 
 export type NotificationType = "comment" | "like" | "follow";
+type StoredNotificationType = NotificationType | "message";
 
 export interface NotificationActor {
   uid: string;
@@ -31,7 +32,7 @@ export interface NotificationDoc {
   actorUsername: string;
   actorDisplayName: string;
   actorPhotoURL: string;
-  type: NotificationType;
+  type: StoredNotificationType;
   text: string;
   link: string;
   postId?: string;
@@ -96,10 +97,12 @@ export function listenToNotifications(
     q,
     (snapshot) => {
       onNext(
-        snapshot.docs.map((notificationDoc) => ({
-          id: notificationDoc.id,
-          ...(notificationDoc.data() as Omit<NotificationDoc, "id">),
-        }))
+        snapshot.docs
+          .map((notificationDoc) => ({
+            id: notificationDoc.id,
+            ...(notificationDoc.data() as Omit<NotificationDoc, "id">),
+          }))
+          .filter((notification) => notification.type !== "message")
       );
     },
     onError
@@ -113,11 +116,21 @@ export function listenToUnreadNotificationsCount(
 ) {
   const q = query(
     collection(db, "notifications"),
-    where("recipientId", "==", uid),
-    where("read", "==", false)
+    where("recipientId", "==", uid)
   );
 
-  return onSnapshot(q, (snapshot) => onNext(snapshot.size), onError);
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      onNext(
+        snapshot.docs.filter((notificationDoc) => {
+          const notification = notificationDoc.data() as NotificationDoc;
+          return !notification.read && notification.type !== "message";
+        }).length
+      );
+    },
+    onError
+  );
 }
 
 export async function markNotificationRead(notificationId: string) {
@@ -127,16 +140,18 @@ export async function markNotificationRead(notificationId: string) {
 export async function markAllNotificationsRead(uid: string) {
   const q = query(
     collection(db, "notifications"),
-    where("recipientId", "==", uid),
-    where("read", "==", false)
+    where("recipientId", "==", uid)
   );
-  const snapshot = await getCountFromServer(q);
-  if (snapshot.data().count === 0) return;
+  const countSnapshot = await getCountFromServer(q);
+  if (countSnapshot.data().count === 0) return;
 
   const unreadSnapshot = await getDocs(q);
   const batch = writeBatch(db);
   unreadSnapshot.docs.forEach((notificationDoc) => {
-    batch.update(notificationDoc.ref, { read: true });
+    const notification = notificationDoc.data() as NotificationDoc;
+    if (!notification.read && notification.type !== "message") {
+      batch.update(notificationDoc.ref, { read: true });
+    }
   });
   await batch.commit();
 }
