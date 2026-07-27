@@ -2,13 +2,12 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Bell, Home, Search, PlusSquare, User, Menu, X, Settings, LogOut, HandHeart, MessageCircle } from "lucide-react";
 import { collection, onSnapshot } from "firebase/firestore";
-import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
 import { COMMUNITIES } from "../../constants/communities";
 import { logout } from "../../services/auth";
 import CreateModal from "../../components/feed/CreateModal";
 import { db } from "@/firebase/firebase";
-import { listenToNotifications, listenToUnreadNotificationsCount, markNotificationRead } from "@/services/notifications";
+import { listenToNotifications, listenToUnreadNotificationsCount } from "@/services/notifications";
 import { listenForForegroundPushNotifications } from "@/services/pushNotifications";
 
 export default function MainLayout() {
@@ -75,16 +74,7 @@ export default function MainLayout() {
             ? `${actorName} followed you`
             : `${actorName} liked your post`;
 
-        toast(message, {
-          description: notification.type === "follow" ? `@${notification.actorUsername}` : notification.text,
-          action: {
-            label: "Open",
-            onClick: async () => {
-              await markNotificationRead(notification.id);
-              navigate(notification.link || "/notifications");
-            },
-          },
-        });
+        console.log("New notification:", message);
       });
     });
   }, [navigate, user]);
@@ -115,13 +105,7 @@ export default function MainLayout() {
 
         const otherId = chat.participants.find((id: string) => id !== user.uid);
         const sender = otherId ? chat.participantProfiles?.[otherId] : null;
-        toast(`${sender?.displayName || sender?.username || "Someone"} sent you a message`, {
-          description: chat.lastMessage || "New message",
-          action: {
-            label: "Open",
-            onClick: () => navigate("/chats"),
-          },
-        });
+        console.log(`${sender?.displayName || sender?.username || "Someone"} sent you a message`);
       });
     });
   }, [navigate, user]);

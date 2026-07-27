@@ -17,7 +17,6 @@ import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { logout } from "../../services/auth";
 import { enablePushNotifications } from "@/services/pushNotifications";
-import { toast } from "sonner";
 
 interface SettingsItem {
   icon: LucideIcon;
@@ -54,10 +53,9 @@ export default function Settings() {
 
     try {
       await enablePushNotifications(user.uid);
-      toast.success("System notifications are on.");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Could not enable notifications.";
-      toast.error(message);
+      console.error(message);
     }
   }
 

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Heart, Loader2, MessageCircle, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
 
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -60,7 +59,6 @@ export default function Notifications() {
       },
       (error) => {
         console.error("Notifications listener failed:", error);
-        toast.error(error.message || "Notifications could not load.");
         setLoading(false);
       }
     );

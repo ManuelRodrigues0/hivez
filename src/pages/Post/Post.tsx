@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, BadgeCheck, Heart, MessageCircle, Repeat2, Send, ShieldX, LogIn, UserPlus } from "lucide-react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
-import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
 import type { FeedPost } from "../../components/feed/Feed";
 import MediaGrid from "../../components/feed/MediaGrid";
@@ -51,10 +50,8 @@ export default function PostPage() {
         console.error("Failed to load post:", err);
         if (err?.code === "permission-denied") {
           setError("Unable to load this post. It may not be publicly accessible. Check your Firestore security rules.");
-          toast.error("Permission denied. Update Firestore rules to allow public read access.");
         } else {
           setError("Failed to load this post. Please try again.");
-          toast.error("Failed to load post.");
         }
       } finally {
         setLoading(false);
@@ -214,7 +211,7 @@ export default function PostPage() {
 
             <div className="mt-4 flex items-center gap-4 border-b border-zinc-200 pb-4 dark:border-zinc-800">
               <button
-                onClick={() => user ? setLiked(!liked) : toast.info("Please log in to like")}
+                onClick={() => user ? setLiked(!liked) : navigate("/login")}
                 className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-red-50 dark:hover:bg-red-950/30"
               >
                 <Heart size={18} className={liked ? "fill-red-500 text-red-500" : "text-zinc-500 dark:text-zinc-400"} />
@@ -223,21 +220,21 @@ export default function PostPage() {
                 </span>
               </button>
               <button
-                onClick={() => user ? toast.info("Comments coming soon") : toast.info("Please log in to comment")}
+                onClick={() => user ? null : navigate("/login")}
                 className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-sky-50 dark:hover:bg-sky-950/30"
               >
                 <MessageCircle size={18} className="text-zinc-500 dark:text-zinc-400" />
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">{post.comments}</span>
               </button>
               <button
-                onClick={() => user ? toast.info("Repost coming soon") : toast.info("Please log in to repost")}
+                onClick={() => user ? null : navigate("/login")}
                 className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-green-50 dark:hover:bg-green-950/30"
               >
                 <Repeat2 size={18} className="text-zinc-500 dark:text-zinc-400" />
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">{post.shares}</span>
               </button>
               <button
-                onClick={() => user ? toast.info("Share coming soon") : toast.info("Please log in to share")}
+                onClick={() => user ? null : navigate("/login")}
                 className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-blue-50 dark:hover:bg-blue-950/30"
               >
                 <Send size={18} className="text-zinc-500 dark:text-zinc-400" />

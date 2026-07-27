@@ -18,7 +18,6 @@ import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { db } from "../../firebase/firebase";
 import { doc, updateDoc, deleteDoc, setDoc, increment, onSnapshot } from "firebase/firestore";
-import { toast } from "sonner";
 import type { FeedPost } from "./Feed";
 import { createNotification } from "@/services/notifications";
 
@@ -118,8 +117,7 @@ export default function FeedCard({ post, onCommentClick }: Props) {
 
   async function handleLike() {
     if (!user || liking) {
-      if (!user) toast.info("Please log in to like posts");
-      return;
+      if (!user) return;
     }
 
     setLiking(true);
@@ -161,7 +159,6 @@ export default function FeedCard({ post, onCommentClick }: Props) {
       }
     } catch (err) {
       console.error("Failed to update like:", err);
-      toast.error("Failed to update like");
     } finally {
       setLiking(false);
     }
