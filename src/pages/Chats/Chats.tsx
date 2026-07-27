@@ -13,7 +13,6 @@ import {
   serverTimestamp,
   setDoc,
   updateDoc,
-  where,
   writeBatch,
 } from "firebase/firestore";
 import {
@@ -104,6 +103,7 @@ export default function Chats() {
   const [chats, setChats] = useState<ChatDoc[]>([]);
   const [localChats, setLocalChats] = useState<ChatDoc[]>([]);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [mobileThreadOpen, setMobileThreadOpen] = useState(false);
   const [messages, setMessages] = useState<MessageDoc[]>([]);
   const [localMessages, setLocalMessages] = useState<Record<string, MessageDoc[]>>({});
   const [draftChat, setDraftChat] = useState<ChatDoc | null>(null);
@@ -180,7 +180,7 @@ export default function Chats() {
         lastMessageAt: restoreTimestamp(chat.lastMessageAt),
       }));
       setLocalChats(restoredChats);
-      setSelectedChatId((current) => current || restoredChats[0]?.id || null);
+      setSelectedChatId((current) => current || (window.innerWidth >= 768 ? restoredChats[0]?.id || null : current));
     }
 
     const storedMessages = localStorage.getItem(localMessagesKey(user.uid));
@@ -219,13 +219,13 @@ export default function Chats() {
 
   useEffect(() => {
     if (!user) return;
-    const q = query(collection(db, "chats"), where("participants", "array-contains", user.uid));
-    return onSnapshot(q, (snapshot) => {
+    return onSnapshot(collection(db, "chats"), (snapshot) => {
       const nextChats = snapshot.docs
         .map((chatDoc) => ({
           id: chatDoc.id,
           ...(chatDoc.data() as Omit<ChatDoc, "id">),
         }))
+        .filter((chat) => chat.participants?.includes(user.uid))
         .sort((a, b) => {
           const aTime = a.lastMessageAt?.toDate?.().getTime?.() || 0;
           const bTime = b.lastMessageAt?.toDate?.().getTime?.() || 0;
@@ -234,7 +234,7 @@ export default function Chats() {
       setChats(nextChats);
       if (nextChats.length) persistLocalChats(nextChats);
       setDraftChat((draft) => (draft && nextChats.some((chat) => chat.id === draft.id) ? null : draft));
-      setSelectedChatId((current) => current || nextChats[0]?.id || null);
+      setSelectedChatId((current) => current || (window.innerWidth >= 768 ? nextChats[0]?.id || null : current));
     }, (error) => {
       console.error("Chat listener failed:", error);
       toast.error("Realtime chats are blocked. Check Firestore chat rules.");
@@ -378,6 +378,7 @@ export default function Chats() {
     setDraftChat(optimisticChat);
     upsertLocalChat(optimisticChat);
     setSelectedChatId(id);
+    setMobileThreadOpen(true);
     setSearchOpen(false);
     setUserSearch("");
     setMessageText("");
@@ -479,30 +480,30 @@ export default function Chats() {
     }
   }
 
-  const showThreadOnMobile = Boolean(selectedChatId);
+  const showThreadOnMobile = Boolean(selectedChatId && mobileThreadOpen);
 
   return (
     <div className="app-page h-[calc(100vh-64px)] overflow-hidden">
       <div className="flex h-full">
-        <aside className={`${showThreadOnMobile ? "hidden md:flex" : "flex"} w-full flex-col md:w-80 lg:w-[340px]`}>
-          <div className="flex items-center justify-between px-4 pb-3 pt-5">
+        <aside className={`${showThreadOnMobile ? "hidden md:flex" : "flex"} relative w-full flex-col md:w-80 lg:w-[340px]`}>
+          <div className="flex items-center justify-between px-4 pb-3 pt-5 md:pt-5">
             <div>
-              <h1 className="text-xl font-bold text-zinc-900 dark:text-white">Chats</h1>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">Private conversations</p>
+              <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white md:text-xl">Chats</h1>
+              <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">Private conversations</p>
             </div>
-            <button onClick={() => setSearchOpen(true)} className="app-icon-button">
+            <button onClick={() => setSearchOpen(true)} className="app-icon-button hidden md:inline-flex">
               <UserPlus size={20} />
             </button>
           </div>
 
-          <div className="px-3 pb-4">
-            <button onClick={() => setSearchOpen(true)} className="flex w-full items-center gap-2 rounded-full bg-zinc-100 px-4 py-2.5 text-left text-sm text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
+          <div className="px-4 pb-3 md:px-3 md:pb-4">
+            <button onClick={() => setSearchOpen(true)} className="flex w-full items-center gap-2 rounded-full bg-zinc-100 px-4 py-3 text-left text-sm text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400 md:py-2.5">
               <Search size={17} />
               Search people to message
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-2 pb-3">
+          <div className="flex-1 overflow-y-auto px-2 pb-24 md:pb-3">
             {displayChats.length === 0 ? (
               <div className="mx-2 mt-8 rounded-3xl bg-zinc-50 px-5 py-10 text-center dark:bg-zinc-950">
                 <MessageCircle size={36} className="mb-3 text-zinc-300 dark:text-zinc-600" />
@@ -521,15 +522,18 @@ export default function Chats() {
                 return (
                   <button
                     key={chat.id}
-                    onClick={() => setSelectedChatId(chat.id)}
+                    onClick={() => {
+                      setSelectedChatId(chat.id);
+                      setMobileThreadOpen(true);
+                    }}
                     className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition ${
                       selectedChatId === chat.id ? "bg-zinc-100 dark:bg-zinc-900" : "hover:bg-zinc-50 dark:hover:bg-zinc-950"
                     }`}
                   >
-                    <Avatar user={person} />
+                    <Avatar user={person} className="h-13 w-13 md:h-11 md:w-11" />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="truncate text-sm font-semibold text-zinc-900 dark:text-white">{person?.displayName || "Hivez User"}</p>
+                        <p className="truncate text-base font-semibold text-zinc-900 dark:text-white md:text-sm">{person?.displayName || "Hivez User"}</p>
                         <span className="flex-shrink-0 text-xs text-zinc-500">{formatListTime(chat.lastMessageAt)}</span>
                       </div>
                       <div className="mt-0.5 flex items-center justify-between gap-2">
@@ -548,6 +552,12 @@ export default function Chats() {
               })
             )}
           </div>
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="absolute bottom-5 right-5 flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-white shadow-xl transition active:scale-95 dark:bg-white dark:text-black md:hidden"
+          >
+            <UserPlus size={22} />
+          </button>
         </aside>
 
         <section className={`${showThreadOnMobile ? "flex" : "hidden md:flex"} min-w-0 flex-1 flex-col`}>
@@ -555,7 +565,7 @@ export default function Chats() {
             <>
               <div className="flex items-center justify-between px-4 py-4">
                 <div className="flex min-w-0 items-center gap-3">
-                  <button onClick={() => setSelectedChatId(null)} className="app-icon-button md:hidden">
+                  <button onClick={() => setMobileThreadOpen(false)} className="app-icon-button md:hidden">
                     <ArrowLeft size={20} />
                   </button>
                   <Avatar user={otherUser} />
