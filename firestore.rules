@@ -70,7 +70,8 @@ service cloud.firestore {
     }
 
     match /notifications/{notificationId} {
-      allow read: if signedIn() && request.auth.uid == resource.data.recipientId;
+      allow list: if signedIn();
+      allow get: if signedIn() && request.auth.uid == resource.data.recipientId;
       allow create: if signedIn()
         && request.resource.data.actorId == request.auth.uid
         && request.resource.data.recipientId is string

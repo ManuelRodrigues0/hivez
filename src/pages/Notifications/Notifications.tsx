@@ -110,7 +110,7 @@ export default function Notifications() {
             <Heart size={40} className="mx-auto mb-3 text-zinc-300 dark:text-zinc-700" />
             <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">No notifications yet</h2>
             <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-              Comments, likes, and messages will show up here.
+              Comments, likes, and follows will show up here.
             </p>
           </div>
         </div>
