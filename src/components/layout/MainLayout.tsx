@@ -4,6 +4,7 @@ import { Home, Search, PlusSquare, Heart, User, Menu, X, Settings, LogOut } from
 import { useAuth } from "../../context/AuthContext";
 import { COMMUNITIES } from "../../constants/communities";
 import { logout } from "../../services/auth";
+import CreateModal from "../../components/feed/CreateModal";
 
 export default function MainLayout() {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ export default function MainLayout() {
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const isActive = (path: string) => location.pathname === path;
@@ -112,12 +114,11 @@ export default function MainLayout() {
           <button className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
             <Search size={20} className="text-zinc-900 dark:text-white" />
           </button>
-          <button className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
-            <PlusSquare 
-              onClick={() => navigate("/create")}
-              size={20}
-              className="text-zinc-900 dark:text-white"
-            />
+          <button 
+            onClick={() => setCreateModalOpen(true)}
+            className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          >
+            <PlusSquare size={20} className="text-zinc-900 dark:text-white" />
           </button>
           <button className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
             <Heart size={20} className="text-zinc-900 dark:text-white" />
@@ -214,6 +215,9 @@ export default function MainLayout() {
           </div>
         </nav>
       </div>
+      
+      {/* Create Modal */}
+      <CreateModal open={createModalOpen} onClose={() => setCreateModalOpen(false)} />
     </div>
   );
 }
