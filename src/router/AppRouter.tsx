@@ -12,6 +12,7 @@ import Settings from "@/pages/Settings/Settings";
 
 import Camera from "@/pages/Camera/Camera";
 import Create from "@/pages/Create/Create";
+import PostPage from "@/pages/Post/Post";
 import EditProfile from "@/components/profile/EditProfile";
 
 import Login from "@/pages/Login/Login";
@@ -113,6 +114,11 @@ export default function AppRouter() {
         <Route
           path="/create"
           element={<Create />}
+        />
+
+        <Route
+          path="/post/:id"
+          element={<PostPage />}
         />
 
       </Route>
