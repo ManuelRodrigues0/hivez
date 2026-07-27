@@ -1,13 +1,493 @@
-import { MessageCircle } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  increment,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  where,
+  writeBatch,
+} from "firebase/firestore";
+import {
+  ArrowLeft,
+  BadgeCheck,
+  Check,
+  CheckCheck,
+  Loader2,
+  MessageCircle,
+  MoreHorizontal,
+  Search,
+  Send,
+  UserPlus,
+  X,
+} from "lucide-react";
+
+import { useAuth } from "@/context/AuthContext";
+import { db } from "@/firebase/firebase";
+
+interface ChatUser {
+  uid: string;
+  username: string;
+  displayName: string;
+  photoURL: string;
+  verified?: boolean;
+  bio?: string;
+}
+
+interface ChatDoc {
+  id: string;
+  participants: string[];
+  participantProfiles: Record<string, ChatUser>;
+  lastMessage?: string;
+  lastMessageAt?: any;
+  lastMessageSenderId?: string;
+  unreadCounts?: Record<string, number>;
+  typing?: Record<string, boolean>;
+}
+
+interface MessageDoc {
+  id: string;
+  text: string;
+  senderId: string;
+  createdAt?: any;
+  readBy?: string[];
+}
+
+function chatIdFor(a: string, b: string) {
+  return [a, b].sort().join("_");
+}
+
+function formatTime(timestamp: any) {
+  if (!timestamp?.toDate) return "";
+  return timestamp.toDate().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
+function formatListTime(timestamp: any) {
+  if (!timestamp?.toDate) return "";
+  const date = timestamp.toDate();
+  const now = new Date();
+  const sameDay = date.toDateString() === now.toDateString();
+  if (sameDay) return formatTime(timestamp);
+  return date.toLocaleDateString([], { month: "short", day: "numeric" });
+}
 
 export default function Chats() {
+  const { user } = useAuth();
+  const [me, setMe] = useState<ChatUser | null>(null);
+  const [chats, setChats] = useState<ChatDoc[]>([]);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<MessageDoc[]>([]);
+  const [messageText, setMessageText] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [people, setPeople] = useState<ChatUser[]>([]);
+  const [sending, setSending] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    async function loadMe() {
+      if (!user) return;
+      const snap = await getDoc(doc(db, "users", user.uid));
+      const data = snap.data();
+      setMe({
+        uid: user.uid,
+        username: data?.username || user.email?.split("@")[0] || "user",
+        displayName: data?.displayName || user.displayName || "Hivez User",
+        photoURL: data?.photoURL || user.photoURL || "",
+        verified: data?.verified || false,
+        bio: data?.bio || "",
+      });
+    }
+    loadMe();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const q = query(collection(db, "chats"), where("participants", "array-contains", user.uid), orderBy("lastMessageAt", "desc"));
+    return onSnapshot(q, (snapshot) => {
+      const nextChats = snapshot.docs.map((chatDoc) => ({
+        id: chatDoc.id,
+        ...(chatDoc.data() as Omit<ChatDoc, "id">),
+      }));
+      setChats(nextChats);
+      setSelectedChatId((current) => current || nextChats[0]?.id || null);
+    });
+  }, [user]);
+
+  useEffect(() => {
+    if (!selectedChatId || !user) {
+      setMessages([]);
+      return;
+    }
+
+    const q = query(collection(db, "chats", selectedChatId, "messages"), orderBy("createdAt", "asc"));
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      const nextMessages = snapshot.docs.map((messageDoc) => ({
+        id: messageDoc.id,
+        ...(messageDoc.data() as Omit<MessageDoc, "id">),
+      }));
+      setMessages(nextMessages);
+
+      const unreadFromOthers = snapshot.docs.filter((messageDoc) => {
+        const data = messageDoc.data() as MessageDoc;
+        return data.senderId !== user.uid && !data.readBy?.includes(user.uid);
+      });
+
+      if (unreadFromOthers.length) {
+        const batch = writeBatch(db);
+        unreadFromOthers.forEach((messageDoc) => {
+          batch.update(messageDoc.ref, { readBy: [...((messageDoc.data() as MessageDoc).readBy || []), user.uid] });
+        });
+        batch.update(doc(db, "chats", selectedChatId), { [`unreadCounts.${user.uid}`]: 0 });
+        await batch.commit();
+      }
+    });
+
+    return unsubscribe;
+  }, [selectedChatId, user]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, selectedChatId]);
+
+  useEffect(() => {
+    const trimmed = userSearch.trim().toLowerCase();
+    if (!trimmed) {
+      setPeople([]);
+      return;
+    }
+
+    const timeout = window.setTimeout(async () => {
+      setSearching(true);
+      try {
+        const snapshot = await getDocs(query(collection(db, "users"), limit(60)));
+        const results: ChatUser[] = [];
+        snapshot.forEach((userDoc) => {
+          if (userDoc.id === user?.uid) return;
+          const data = userDoc.data();
+          const username = (data.username || "").toLowerCase();
+          const displayName = (data.displayName || "").toLowerCase();
+          if (username.includes(trimmed) || displayName.includes(trimmed)) {
+            results.push({
+              uid: userDoc.id,
+              username: data.username || "",
+              displayName: data.displayName || data.username || "Hivez User",
+              photoURL: data.photoURL || "",
+              verified: data.verified || false,
+              bio: data.bio || "",
+            });
+          }
+        });
+        setPeople(results);
+      } finally {
+        setSearching(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(timeout);
+  }, [userSearch, user?.uid]);
+
+  const selectedChat = chats.find((chat) => chat.id === selectedChatId) || null;
+  const otherUser = useMemo(() => {
+    if (!selectedChat || !user) return null;
+    const otherId = selectedChat.participants.find((id) => id !== user.uid);
+    return otherId ? selectedChat.participantProfiles?.[otherId] : null;
+  }, [selectedChat, user]);
+
+  async function startChat(person: ChatUser) {
+    if (!user || !me) return;
+    const id = chatIdFor(user.uid, person.uid);
+    const chatRef = doc(db, "chats", id);
+    const snap = await getDoc(chatRef);
+
+    if (!snap.exists()) {
+      await setDoc(chatRef, {
+        participants: [user.uid, person.uid],
+        participantProfiles: {
+          [user.uid]: me,
+          [person.uid]: person,
+        },
+        lastMessage: "",
+        lastMessageAt: serverTimestamp(),
+        lastMessageSenderId: "",
+        unreadCounts: {
+          [user.uid]: 0,
+          [person.uid]: 0,
+        },
+        createdAt: serverTimestamp(),
+      });
+    }
+
+    setSelectedChatId(id);
+    setSearchOpen(false);
+    setUserSearch("");
+  }
+
+  async function sendMessage() {
+    const text = messageText.trim();
+    if (!text || !user || !selectedChat || sending) return;
+
+    const recipientId = selectedChat.participants.find((id) => id !== user.uid);
+    if (!recipientId) return;
+
+    setSending(true);
+    setMessageText("");
+
+    try {
+      await addDoc(collection(db, "chats", selectedChat.id, "messages"), {
+        text,
+        senderId: user.uid,
+        createdAt: serverTimestamp(),
+        readBy: [user.uid],
+      });
+
+      await updateDoc(doc(db, "chats", selectedChat.id), {
+        lastMessage: text,
+        lastMessageAt: serverTimestamp(),
+        lastMessageSenderId: user.uid,
+        [`unreadCounts.${recipientId}`]: increment(1),
+      });
+    } finally {
+      setSending(false);
+    }
+  }
+
+  const showThreadOnMobile = Boolean(selectedChatId);
+
   return (
-    <div className="app-page">
-      <div className="app-empty-state">
-        <MessageCircle size={40} className="mb-4 text-zinc-300 dark:text-zinc-600" />
-        <h1 className="text-lg font-semibold text-zinc-900 dark:text-white">Chats</h1>
-        <p className="mt-1 text-sm">Messages and conversations will appear here.</p>
+    <div className="app-page h-[calc(100vh-64px)] overflow-hidden">
+      <div className="flex h-full border-x border-zinc-200 dark:border-zinc-800">
+        <aside className={`${showThreadOnMobile ? "hidden md:flex" : "flex"} w-full flex-col border-r border-zinc-200 dark:border-zinc-800 md:w-80 lg:w-88`}>
+          <div className="app-sticky-header flex items-center justify-between px-4 py-3">
+            <div>
+              <h1 className="text-xl font-bold text-zinc-900 dark:text-white">Chats</h1>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">Private conversations</p>
+            </div>
+            <button onClick={() => setSearchOpen(true)} className="app-icon-button">
+              <UserPlus size={20} />
+            </button>
+          </div>
+
+          <div className="border-b border-zinc-200 p-3 dark:border-zinc-800">
+            <button onClick={() => setSearchOpen(true)} className="flex w-full items-center gap-2 rounded-full bg-zinc-100 px-4 py-2.5 text-left text-sm text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
+              <Search size={17} />
+              Search people to message
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto">
+            {chats.length === 0 ? (
+              <div className="app-empty-state py-16">
+                <MessageCircle size={36} className="mb-3 text-zinc-300 dark:text-zinc-600" />
+                <p className="font-semibold text-zinc-900 dark:text-white">No chats yet</p>
+                <p className="mt-1 text-sm">Start a conversation with someone from Hivez.</p>
+              </div>
+            ) : (
+              chats.map((chat) => {
+                const otherId = chat.participants.find((id) => id !== user?.uid);
+                const person = otherId ? chat.participantProfiles?.[otherId] : null;
+                const unread = user ? chat.unreadCounts?.[user.uid] || 0 : 0;
+                return (
+                  <button
+                    key={chat.id}
+                    onClick={() => setSelectedChatId(chat.id)}
+                    className={`flex w-full items-center gap-3 border-b border-zinc-100 px-4 py-3 text-left transition dark:border-zinc-900 ${
+                      selectedChatId === chat.id ? "bg-zinc-100 dark:bg-zinc-900" : "hover:bg-zinc-50 dark:hover:bg-zinc-950"
+                    }`}
+                  >
+                    <Avatar user={person} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="truncate text-sm font-semibold text-zinc-900 dark:text-white">{person?.displayName || "Hivez User"}</p>
+                        <span className="flex-shrink-0 text-xs text-zinc-500">{formatListTime(chat.lastMessageAt)}</span>
+                      </div>
+                      <div className="mt-0.5 flex items-center justify-between gap-2">
+                        <p className={`truncate text-sm ${unread ? "font-semibold text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"}`}>
+                          {chat.lastMessage || `@${person?.username || "user"}`}
+                        </p>
+                        {unread > 0 && (
+                          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-sky-500 px-1.5 text-[11px] font-bold text-white">
+                            {unread}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </aside>
+
+        <section className={`${showThreadOnMobile ? "flex" : "hidden md:flex"} min-w-0 flex-1 flex-col`}>
+          {selectedChat && otherUser ? (
+            <>
+              <div className="app-sticky-header flex items-center justify-between px-4 py-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <button onClick={() => setSelectedChatId(null)} className="app-icon-button md:hidden">
+                    <ArrowLeft size={20} />
+                  </button>
+                  <Avatar user={otherUser} />
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <h2 className="truncate text-sm font-semibold text-zinc-900 dark:text-white">{otherUser.displayName || otherUser.username}</h2>
+                      {otherUser.verified && <BadgeCheck size={14} className="text-sky-500" />}
+                    </div>
+                    <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">@{otherUser.username}</p>
+                  </div>
+                </div>
+                <button className="app-icon-button">
+                  <MoreHorizontal size={20} />
+                </button>
+              </div>
+
+              <div className="flex-1 space-y-2 overflow-y-auto px-4 py-4">
+                {messages.map((message, index) => {
+                  const mine = message.senderId === user?.uid;
+                  const previous = messages[index - 1];
+                  const showTime = !previous || (message.createdAt?.seconds || 0) - (previous.createdAt?.seconds || 0) > 900;
+                  const read = Boolean(user && message.readBy?.some((uid) => uid !== user.uid));
+                  return (
+                    <div key={message.id}>
+                      {showTime && (
+                        <div className="my-4 text-center text-xs text-zinc-400">
+                          {message.createdAt?.toDate?.().toLocaleString([], {
+                            month: "short",
+                            day: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                          }) || "Sending"}
+                        </div>
+                      )}
+                      <div className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                        <div className={`max-w-[78%] ${mine ? "items-end" : "items-start"} flex flex-col`}>
+                          <div
+                            className={`rounded-3xl px-4 py-2.5 text-sm leading-5 shadow-sm ${
+                              mine
+                                ? "rounded-br-lg bg-zinc-900 text-white dark:bg-white dark:text-black"
+                                : "rounded-bl-lg bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-white"
+                            }`}
+                          >
+                            {message.text}
+                          </div>
+                          <div className="mt-1 flex items-center gap-1 px-1 text-[11px] text-zinc-400">
+                            <span>{formatTime(message.createdAt)}</span>
+                            {mine && (read ? <CheckCheck size={13} className="text-sky-500" /> : <Check size={13} />)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div ref={bottomRef} />
+              </div>
+
+              <div className="border-t border-zinc-200 p-3 dark:border-zinc-800">
+                <div className="flex items-end gap-2 rounded-3xl bg-zinc-100 p-2 dark:bg-zinc-900">
+                  <textarea
+                    value={messageText}
+                    onChange={(e) => setMessageText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMessage();
+                      }
+                    }}
+                    rows={1}
+                    placeholder={`Message ${otherUser.displayName || otherUser.username}`}
+                    className="max-h-32 min-h-10 flex-1 resize-none bg-transparent px-3 py-2 text-sm outline-none placeholder:text-zinc-500"
+                  />
+                  <button
+                    onClick={sendMessage}
+                    disabled={!messageText.trim() || sending}
+                    className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-zinc-900 text-white transition hover:bg-zinc-800 disabled:opacity-40 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+                  >
+                    {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="app-empty-state hidden flex-1 md:flex">
+              <MessageCircle size={44} className="mb-4 text-zinc-300 dark:text-zinc-600" />
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Select a chat</h2>
+              <p className="mt-1 text-sm">Choose an existing conversation or start a new one.</p>
+            </div>
+          )}
+        </section>
       </div>
+
+      {searchOpen && (
+        <div className="fixed inset-0 z-[80] flex items-start justify-center bg-black/60 px-4 pt-20 backdrop-blur-sm">
+          <div className="app-surface w-full max-w-lg overflow-hidden shadow-2xl">
+            <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
+              <h2 className="font-semibold text-zinc-900 dark:text-white">New chat</h2>
+              <button onClick={() => setSearchOpen(false)} className="app-icon-button">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="border-b border-zinc-200 p-3 dark:border-zinc-800">
+              <div className="flex items-center gap-2 rounded-full bg-zinc-100 px-4 py-2.5 dark:bg-zinc-900">
+                <Search size={17} className="text-zinc-400" />
+                <input
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  autoFocus
+                  placeholder="Search by name or username"
+                  className="flex-1 bg-transparent text-sm outline-none placeholder:text-zinc-500"
+                />
+              </div>
+            </div>
+            <div className="max-h-[55vh] overflow-y-auto">
+              {searching ? (
+                <div className="flex justify-center py-10">
+                  <Loader2 size={24} className="animate-spin text-zinc-400" />
+                </div>
+              ) : people.length ? (
+                people.map((person) => (
+                  <button key={person.uid} onClick={() => startChat(person)} className="flex w-full items-center gap-3 border-b border-zinc-100 px-4 py-3 text-left transition hover:bg-zinc-50 dark:border-zinc-900 dark:hover:bg-zinc-900">
+                    <Avatar user={person} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <p className="truncate text-sm font-semibold text-zinc-900 dark:text-white">{person.displayName}</p>
+                        {person.verified && <BadgeCheck size={14} className="text-sky-500" />}
+                      </div>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">@{person.username}</p>
+                      {person.bio && <p className="mt-0.5 truncate text-xs text-zinc-500">{person.bio}</p>}
+                    </div>
+                  </button>
+                ))
+              ) : (
+                <div className="app-empty-state py-12">
+                  <Search size={34} className="mb-3 text-zinc-300 dark:text-zinc-600" />
+                  <p className="font-semibold text-zinc-900 dark:text-white">{userSearch ? "No people found" : "Find someone"}</p>
+                  <p className="mt-1 text-sm">Search users to start a private chat.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+function Avatar({ user }: { user?: ChatUser | null }) {
+  const name = user?.displayName || user?.username || "Hivez";
+  return (
+    <img
+      src={user?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=27272a&color=fff`}
+      alt={name}
+      className="h-11 w-11 flex-shrink-0 rounded-full object-cover"
+    />
   );
 }
