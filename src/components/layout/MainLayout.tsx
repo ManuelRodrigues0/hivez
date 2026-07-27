@@ -17,7 +17,8 @@ export default function MainLayout() {
     "--layout-left": sidebarCollapsed ? "72px" : "280px",
     "--layout-right": "384px",
     "--layout-gap": sidebarCollapsed ? "8px" : "10px",
-    "--feed-max": sidebarCollapsed ? "820px" : "720px",
+    "--feed-max": sidebarCollapsed ? "820px" : "640px",
+    "--media-card-width": sidebarCollapsed ? "236px" : "204px",
   } as CSSProperties;
 
   const isActive = (path: string) => location.pathname === path;

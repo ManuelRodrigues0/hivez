@@ -25,7 +25,7 @@ export default function MediaGrid({ items, compact = false }: Props) {
             <div
               key={`${item.url}-${index}`}
               className={`relative flex-shrink-0 snap-start overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 ${
-                compact ? "h-64 w-48" : "h-[344px] w-[236px]"
+                compact ? "h-64 w-48" : "h-[344px] w-[var(--media-card-width)]"
               }`}
             >
               <MediaItem item={item} />
