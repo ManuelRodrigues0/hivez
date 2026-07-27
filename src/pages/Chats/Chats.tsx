@@ -87,6 +87,7 @@ export default function Chats() {
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [messages, setMessages] = useState<MessageDoc[]>([]);
   const [draftChat, setDraftChat] = useState<ChatDoc | null>(null);
+  const [pendingMessages, setPendingMessages] = useState<Record<string, MessageDoc[]>>({});
   const [messageText, setMessageText] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [userSearch, setUserSearch] = useState("");
@@ -199,7 +200,12 @@ export default function Chats() {
     return () => clearTimeout(timeout);
   }, [userSearch, user?.uid]);
 
-  const selectedChat = chats.find((chat) => chat.id === selectedChatId) || (draftChat?.id === selectedChatId ? draftChat : null);
+  const displayChats = useMemo(() => {
+    if (!draftChat || chats.some((chat) => chat.id === draftChat.id)) return chats;
+    return [draftChat, ...chats];
+  }, [chats, draftChat]);
+
+  const selectedChat = displayChats.find((chat) => chat.id === selectedChatId) || null;
   const otherUser = useMemo(() => {
     if (!selectedChat || !user) return null;
     const otherId = selectedChat.participants.find((id) => id !== user.uid);
@@ -266,8 +272,47 @@ export default function Chats() {
 
     setSending(true);
     setMessageText("");
+    const optimisticMessage: MessageDoc = {
+      id: `local-${Date.now()}`,
+      text,
+      senderId: user.uid,
+      createdAt: { toDate: () => new Date(), seconds: Math.floor(Date.now() / 1000) },
+      readBy: [user.uid],
+    };
+
+    setPendingMessages((current) => ({
+      ...current,
+      [selectedChat.id]: [...(current[selectedChat.id] || []), optimisticMessage],
+    }));
+
+    const optimisticChat: ChatDoc = {
+      ...selectedChat,
+      lastMessage: text,
+      lastMessageAt: optimisticMessage.createdAt,
+      lastMessageSenderId: user.uid,
+      unreadCounts: {
+        ...(selectedChat.unreadCounts || {}),
+        [user.uid]: selectedChat.unreadCounts?.[user.uid] || 0,
+        [recipientId]: (selectedChat.unreadCounts?.[recipientId] || 0) + 1,
+      },
+    };
+    setDraftChat(optimisticChat);
 
     try {
+      const { id: _id, ...chatData } = selectedChat;
+      await setDoc(
+        doc(db, "chats", selectedChat.id),
+        {
+          ...chatData,
+          lastMessage: text,
+          lastMessageAt: serverTimestamp(),
+          lastMessageSenderId: user.uid,
+          [`unreadCounts.${recipientId}`]: increment(1),
+          createdAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+
       await addDoc(collection(db, "chats", selectedChat.id, "messages"), {
         text,
         senderId: user.uid,
@@ -279,8 +324,14 @@ export default function Chats() {
         lastMessage: text,
         lastMessageAt: serverTimestamp(),
         lastMessageSenderId: user.uid,
-        [`unreadCounts.${recipientId}`]: increment(1),
       });
+      setPendingMessages((current) => ({
+        ...current,
+        [selectedChat.id]: (current[selectedChat.id] || []).filter((message) => message.id !== optimisticMessage.id),
+      }));
+    } catch (error) {
+      console.error("Failed to send message:", error);
+      toast.error("Message could not sync. Check Firestore rules.");
     } finally {
       setSending(false);
     }
@@ -310,7 +361,7 @@ export default function Chats() {
           </div>
 
           <div className="flex-1 overflow-y-auto px-2 pb-3">
-            {chats.length === 0 ? (
+            {displayChats.length === 0 ? (
               <div className="mx-2 mt-8 rounded-3xl bg-zinc-50 px-5 py-10 text-center dark:bg-zinc-950">
                 <MessageCircle size={36} className="mb-3 text-zinc-300 dark:text-zinc-600" />
                 <p className="font-semibold text-zinc-900 dark:text-white">No chats yet</p>
@@ -321,7 +372,7 @@ export default function Chats() {
                 </button>
               </div>
             ) : (
-              chats.map((chat) => {
+              displayChats.map((chat) => {
                 const otherId = chat.participants.find((id) => id !== user?.uid);
                 const person = otherId ? chat.participantProfiles?.[otherId] : null;
                 const unread = user ? chat.unreadCounts?.[user.uid] || 0 : 0;
@@ -380,9 +431,9 @@ export default function Chats() {
               </div>
 
               <div className="flex-1 space-y-2 overflow-y-auto rounded-t-[28px] bg-zinc-50 px-4 py-4 dark:bg-zinc-950/60">
-                {messages.map((message, index) => {
+                {[...messages, ...(pendingMessages[selectedChat.id] || [])].map((message, index, visibleMessages) => {
                   const mine = message.senderId === user?.uid;
-                  const previous = messages[index - 1];
+                  const previous = visibleMessages[index - 1];
                   const showTime = !previous || (message.createdAt?.seconds || 0) - (previous.createdAt?.seconds || 0) > 900;
                   const read = Boolean(user && message.readBy?.some((uid) => uid !== user.uid));
                   return (
