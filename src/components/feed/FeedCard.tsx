@@ -20,6 +20,7 @@ import { db } from "../../firebase/firebase";
 import { doc, updateDoc, deleteDoc, setDoc, increment, onSnapshot } from "firebase/firestore";
 import { toast } from "sonner";
 import type { FeedPost } from "./Feed";
+import { createNotification } from "@/services/notifications";
 
 import CommentsSheet from "../comments/CommentsSheet";
 import MediaGrid from "./MediaGrid";
@@ -142,6 +143,19 @@ export default function FeedCard({ post, onCommentClick }: Props) {
         });
         await updateDoc(postRef, {
           likes: increment(1),
+        });
+        await createNotification({
+          recipientId: post.uid,
+          actor: {
+            uid: user.uid,
+            username: user.email?.split("@")[0] || "",
+            displayName: user.displayName || user.email?.split("@")[0] || "Hivez User",
+            photoURL: user.photoURL || "",
+          },
+          type: "like",
+          text: post.caption || "your post",
+          link: `/post/${post.id}`,
+          postId: post.id,
         });
         setLiked(true);
       }

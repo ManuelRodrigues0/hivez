@@ -1,10 +1,11 @@
-import { useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Home, Search, PlusSquare, User, Menu, X, Settings, LogOut, HandHeart, MessageCircle } from "lucide-react";
+import { Bell, Home, Search, PlusSquare, User, Menu, X, Settings, LogOut, HandHeart, MessageCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { COMMUNITIES } from "../../constants/communities";
 import { logout } from "../../services/auth";
 import CreateModal from "../../components/feed/CreateModal";
+import { listenToUnreadNotificationsCount } from "@/services/notifications";
 
 export default function MainLayout() {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ export default function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const layoutVars = {
     "--layout-left": sidebarCollapsed ? "72px" : "280px",
     "--layout-right": "384px",
@@ -22,6 +24,13 @@ export default function MainLayout() {
   } as CSSProperties;
 
   const isActive = (path: string) => location.pathname === path;
+
+  useEffect(() => {
+    if (!user) return;
+    return listenToUnreadNotificationsCount(user.uid, setUnreadNotifications, (error) => {
+      console.error("Unread notifications listener failed:", error);
+    });
+  }, [user]);
 
   function getPageTitle(pathname: string): string {
     switch (pathname) {
@@ -59,6 +68,19 @@ export default function MainLayout() {
   const sidebarContent = (
     <>
       {/* Home */}
+      <button
+        onClick={() => go("/notifications")}
+        className={`flex w-full items-center gap-4 px-5 py-4 transition ${
+          isActive("/notifications") ? "bg-zinc-100 font-semibold dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"
+        }`}
+      >
+        <span className="relative flex-shrink-0">
+          <Bell size={22} className="text-zinc-900 dark:text-white" />
+          {unreadNotifications > 0 && <Badge count={unreadNotifications} />}
+        </span>
+        <span className="text-zinc-900 dark:text-white">Notifications</span>
+      </button>
+
       <button
         onClick={() => go("/")}
         className={`flex w-full items-center gap-4 px-5 py-4 transition ${
@@ -139,6 +161,13 @@ export default function MainLayout() {
         {/* Right side - Actions */}
         <div className="flex items-center gap-2">
           <button 
+            onClick={() => navigate("/notifications")}
+            className="relative rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          >
+            <Bell size={20} className="text-zinc-900 dark:text-white" />
+            {unreadNotifications > 0 && <Badge count={unreadNotifications} />}
+          </button>
+          <button 
             onClick={() => navigate("/search")}
             className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
           >
@@ -183,6 +212,10 @@ export default function MainLayout() {
           <div className="flex flex-col items-center py-4">
             <button onClick={() => go("/")} className={`p-3 transition ${isActive("/") ? "bg-zinc-100 dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"}`}>
               <Home size={22} className="text-zinc-900 dark:text-white" />
+            </button>
+            <button onClick={() => go("/notifications")} className={`relative p-3 transition ${isActive("/notifications") ? "bg-zinc-100 dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"}`} title="Notifications">
+              <Bell size={22} className="text-zinc-900 dark:text-white" />
+              {unreadNotifications > 0 && <Badge count={unreadNotifications} />}
             </button>
             {COMMUNITIES.map((community) => (
               <button key={community.id} onClick={() => go(`/hive/${community.id}`)} className={`p-3 transition ${isActive(`/hive/${community.id}`) ? "bg-zinc-100 dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"}`} title={community.name}>
@@ -292,6 +325,10 @@ export default function MainLayout() {
               <button onClick={() => navigate("/chats")} className="flex flex-col items-center gap-0.5 px-3 py-1">
                 <MessageCircle size={22} className={isActive("/chats") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
               </button>
+              <button onClick={() => navigate("/notifications")} className="relative flex flex-col items-center gap-0.5 px-3 py-1">
+                <Bell size={22} className={isActive("/notifications") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
+                {unreadNotifications > 0 && <Badge count={unreadNotifications} />}
+              </button>
               <button onClick={() => navigate("/profile")} className="flex flex-col items-center gap-0.5 px-3 py-1">
                 <User size={22} className={isActive("/profile") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
               </button>
@@ -303,5 +340,13 @@ export default function MainLayout() {
         <CreateModal open={createModalOpen} onClose={() => setCreateModalOpen(false)} />
       </div>
     </div>
+  );
+}
+
+function Badge({ count }: { count: number }) {
+  return (
+    <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white">
+      {count > 9 ? "9+" : count}
+    </span>
   );
 }

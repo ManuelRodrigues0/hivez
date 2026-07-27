@@ -16,6 +16,7 @@ import {
 import { db } from "../../firebase/firebase";
 
 import { useAuth } from "../../context/AuthContext";
+import { createNotification } from "@/services/notifications";
 
 import type { FeedPost } from "../feed/Feed";
 
@@ -90,7 +91,7 @@ export default function CommentsSheet({
       const userSnap = await getDoc(doc(db, "users", user.uid));
       const profile = userSnap.data();
 
-      await addDoc(
+      const commentRef = await addDoc(
         collection(db, "posts", post.id, "comments"),
         {
           uid: user.uid,
@@ -104,6 +105,21 @@ export default function CommentsSheet({
 
       await updateDoc(doc(db, "posts", post.id), {
         comments: increment(1),
+      });
+
+      await createNotification({
+        recipientId: post.uid,
+        actor: {
+          uid: user.uid,
+          username: profile?.username || "",
+          displayName: profile?.displayName || user.displayName || "",
+          photoURL: profile?.photoURL || user.photoURL || "",
+        },
+        type: "comment",
+        text: text.trim(),
+        link: `/post/${post.id}`,
+        postId: post.id,
+        commentId: commentRef.id,
       });
 
       setText("");
