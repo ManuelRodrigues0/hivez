@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Home, Search, PlusSquare, Heart, User, Menu, Settings, LogOut } from "lucide-react";
+import { Home, Search, PlusSquare, Heart, User, Menu, X, Settings, LogOut } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { COMMUNITIES } from "../../constants/communities";
 import { logout } from "../../services/auth";
@@ -10,6 +10,7 @@ export default function MainLayout() {
   const location = useLocation();
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -120,13 +121,36 @@ export default function MainLayout() {
 
       {/* Desktop Sidebar - Below header */}
       <aside 
-        className="hidden lg:flex lg:flex-col lg:fixed lg:left-0 lg:top-16 lg:h-[calc(100vh-64px)] lg:bg-white dark:lg:bg-black lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800 lg:w-[280px] lg:z-40"
+        className="hidden lg:flex lg:flex-col lg:fixed lg:left-0 lg:top-16 lg:h-[calc(100vh-64px)] lg:bg-white dark:lg:bg-black lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800 lg:z-40 transition-all duration-300"
       >
-        {sidebarContent}
+        <button
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          className="flex items-center justify-center border-b border-zinc-200 dark:border-zinc-800 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+        >
+          {sidebarCollapsed ? <Menu size={20} className="text-zinc-900 dark:text-white" /> : <X size={20} className="text-zinc-900 dark:text-white" />}
+        </button>
+        <div className="flex-1 overflow-hidden">
+          {sidebarCollapsed ? (
+            <div className="flex flex-col items-center py-4">
+              <button onClick={() => go("/")} className={`p-3 transition ${isActive("/") ? "bg-zinc-100 dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"}`}>
+                <Home size={22} className="text-zinc-900 dark:text-white" />
+              </button>
+              {COMMUNITIES.map((community) => (
+                <button key={community.id} onClick={() => go(`/hive/${community.id}`)} className={`p-3 transition ${isActive(`/hive/${community.id}`) ? "bg-zinc-100 dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"}`} title={community.name}>
+                  <span className="text-lg">{community.icon}</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="overflow-y-auto">
+              {sidebarContent}
+            </div>
+          )}
+        </div>
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex w-full flex-col lg:ml-[280px]">
+      <div className={`flex w-full flex-col transition-all duration-300 ${sidebarCollapsed ? "lg:ml-[72px]" : "lg:ml-[280px]"}`}>
         {/* Mobile Top Bar */}
         <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-black/95 lg:hidden">
           <div className="flex items-center justify-between px-4 py-3">
