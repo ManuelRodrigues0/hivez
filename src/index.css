@@ -153,14 +153,12 @@ html.light,
   }
 }
 
-/* Hide scrollbar on mobile devices */
-@media (max-width: 768px) {
-  * {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  
-  *::-webkit-scrollbar {
-    display: none;
-  }
+/* Hide scrollbar globally while keeping scroll functionality */
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
 }
