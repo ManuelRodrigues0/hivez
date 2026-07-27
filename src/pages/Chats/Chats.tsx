@@ -530,7 +530,7 @@ export default function Chats() {
                       selectedChatId === chat.id ? "bg-zinc-100 dark:bg-zinc-900" : "hover:bg-zinc-50 dark:hover:bg-zinc-950"
                     }`}
                   >
-                    <Avatar user={person} className="h-13 w-13 md:h-11 md:w-11" />
+                    <Avatar user={person} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <p className="truncate text-base font-semibold text-zinc-900 dark:text-white md:text-sm">{person?.displayName || "Hivez User"}</p>
@@ -560,7 +560,7 @@ export default function Chats() {
           </button>
         </aside>
 
-        <section className={`${showThreadOnMobile ? "flex" : "hidden md:flex"} min-w-0 flex-1 flex-col`}>
+        <section className={`${showThreadOnMobile ? "flex" : "hidden md:flex"} min-w-0 flex-1 flex-col h-full`}>
           {selectedChat && otherUser ? (
             <>
               <div className="flex items-center justify-between px-4 py-4">
