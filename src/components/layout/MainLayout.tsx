@@ -238,12 +238,12 @@ export default function MainLayout() {
             </>
           )}
 
-          {/* Page Content - left aligned, same width */}
-          <main className="flex-1 overflow-y-auto pb-20 lg:pb-0 lg:pt-16">
-            <div className={`${sidebarCollapsed ? "max-w-2xl" : "max-w-2xl lg:max-w-xl"}`}>
-              <Outlet />
-            </div>
-          </main>
+        {/* Page Content - left aligned, same width */}
+        <main className="flex-1 overflow-y-auto pb-20 lg:pb-0 lg:pt-16">
+          <div className={`${sidebarCollapsed ? "max-w-2xl" : "w-full"}`}>
+            <Outlet />
+          </div>
+        </main>
 
           {/* Mobile Bottom Nav */}
           <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-200 bg-white dark:border-zinc-800 dark:bg-black lg:hidden">
