@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 import {
   Heart,
@@ -7,6 +7,11 @@ import {
   Send,
   MoreHorizontal,
   BadgeCheck,
+  Copy,
+  Flag,
+  UserMinus,
+  Share2,
+  ExternalLink,
 } from "lucide-react";
 
 import type { FeedPost } from "./Feed";
@@ -41,6 +46,58 @@ function timeAgo(timestamp: any) {
 export default function FeedCard({ post, onCommentClick }: Props) {
   const [liked, setLiked] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [shareMenuOpen, setShareMenuOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const menuRef = useRef<HTMLDivElement>(null);
+  const shareMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close menus on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+      if (shareMenuRef.current && !shareMenuRef.current.contains(e.target as Node)) {
+        setShareMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  function handleShare() {
+    const url = `${window.location.origin}/post/${post.id}`;
+    if (navigator.share) {
+      navigator.share({
+        title: post.caption || "Check this post on Hivez",
+        url,
+      });
+    } else {
+      navigator.clipboard.writeText(url).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+    }
+    setShareMenuOpen(false);
+  }
+
+  function handleCopyLink() {
+    const url = `${window.location.origin}/post/${post.id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+    setShareMenuOpen(false);
+  }
+
+  function handleCopyText() {
+    if (post.caption) {
+      navigator.clipboard.writeText(post.caption);
+    }
+    setMenuOpen(false);
+  }
 
   return (
     <>
@@ -78,9 +135,49 @@ export default function FeedCard({ post, onCommentClick }: Props) {
                   {timeAgo(post.createdAt)}
                 </span>
               </div>
-              <button className="flex-shrink-0 rounded-full p-1.5 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
-                <MoreHorizontal size={16} className="text-zinc-500 dark:text-zinc-400" />
-              </button>
+
+              {/* Three dot menu */}
+              <div className="relative" ref={menuRef}>
+                <button
+                  onClick={() => {
+                    setMenuOpen(!menuOpen);
+                    setShareMenuOpen(false);
+                  }}
+                  className="flex-shrink-0 rounded-full p-1.5 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                >
+                  <MoreHorizontal size={16} className="text-zinc-500 dark:text-zinc-400" />
+                </button>
+                {menuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+                    <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 py-1 shadow-xl">
+                      <button
+                        onClick={handleCopyText}
+                        className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      >
+                        <Copy size={16} />
+                        Copy text
+                      </button>
+                      <button
+                        onClick={handleCopyLink}
+                        className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      >
+                        <ExternalLink size={16} />
+                        Copy link
+                      </button>
+                      <hr className="mx-3 border-zinc-200 dark:border-zinc-700" />
+                      <button className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30">
+                        <Flag size={16} />
+                        Report
+                      </button>
+                      <button className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                        <UserMinus size={16} />
+                        Mute
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Caption */}
@@ -104,7 +201,7 @@ export default function FeedCard({ post, onCommentClick }: Props) {
               </div>
             )}
 
-            {/* Media - smaller */}
+            {/* Media */}
             {post.mediaUrl && (
               <div className="mt-2.5">
                 {post.mediaType === "image" ? (
@@ -156,9 +253,44 @@ export default function FeedCard({ post, onCommentClick }: Props) {
                   {post.shares}
                 </span>
               </button>
-              <button className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-blue-50 dark:hover:bg-blue-950/30 group">
-                <Send size={18} className="text-zinc-500 dark:text-zinc-400 group-hover:text-blue-500" />
-              </button>
+
+              {/* Share button with dropdown */}
+              <div className="relative" ref={shareMenuRef}>
+                <button
+                  onClick={() => {
+                    setShareMenuOpen(!shareMenuOpen);
+                    setMenuOpen(false);
+                  }}
+                  className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-blue-50 dark:hover:bg-blue-950/30 group"
+                >
+                  {copied ? (
+                    <span className="text-xs text-green-500 font-medium">Copied!</span>
+                  ) : (
+                    <Send size={18} className="text-zinc-500 dark:text-zinc-400 group-hover:text-blue-500" />
+                  )}
+                </button>
+                {shareMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShareMenuOpen(false)} />
+                    <div className="absolute left-0 top-full z-50 mt-1 w-48 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 py-1 shadow-xl">
+                      <button
+                        onClick={handleShare}
+                        className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      >
+                        <Share2 size={16} />
+                        Share
+                      </button>
+                      <button
+                        onClick={handleCopyLink}
+                        className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      >
+                        <Copy size={16} />
+                        Copy link
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
