@@ -17,7 +17,7 @@ export default function SearchBar({
     <div className="relative">
       <Search
         size={18}
-        className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
+        className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 dark:text-zinc-400"
       />
 
       <input
@@ -25,7 +25,7 @@ export default function SearchBar({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-xl bg-zinc-900 py-3 pl-12 pr-4 text-white outline-none placeholder:text-zinc-500"
+        className="w-full rounded-xl bg-zinc-100 dark:bg-zinc-900 py-3 pl-12 pr-4 text-zinc-900 dark:text-white outline-none placeholder:text-zinc-500 dark:placeholder:text-zinc-400"
       />
     </div>
   );

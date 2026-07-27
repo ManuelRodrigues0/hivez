@@ -44,31 +44,31 @@ export default function ProfileStats() {
       <div className="grid grid-cols-3 text-center">
 
         <div>
-          <h2 className="text-2xl font-bold">
+          <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
             {profile.posts}
           </h2>
 
-          <p className="mt-1 text-sm text-zinc-400">
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
             Posts
           </p>
         </div>
 
         <div>
-          <h2 className="text-2xl font-bold">
+          <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
             {profile.followers}
           </h2>
 
-          <p className="mt-1 text-sm text-zinc-400">
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
             Followers
           </p>
         </div>
 
         <div>
-          <h2 className="text-2xl font-bold">
+          <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
             {profile.following}
           </h2>
 
-          <p className="mt-1 text-sm text-zinc-400">
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
             Following
           </p>
         </div>

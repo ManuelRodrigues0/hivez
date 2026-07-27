@@ -19,13 +19,13 @@ export default function MainLayout() {
   const sidebarContent = (
     <>
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-zinc-200 px-5 py-5 dark:border-zinc-800">
+      <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-5 py-5">
         <div>
-          <h1 className="text-2xl font-black tracking-wide">🐝 HIVEZ</h1>
-          <p className="text-xs text-zinc-500">Report. React. Resolve.</p>
+          <h1 className="text-2xl font-black tracking-wide text-zinc-900 dark:text-white">🐝 HIVEZ</h1>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">Report. React. Resolve.</p>
         </div>
         <button onClick={() => setSidebarOpen(false)} className="rounded-lg p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800">
-          <X size={22} />
+          <X size={22} className="text-zinc-900 dark:text-white" />
         </button>
       </div>
 
@@ -36,11 +36,12 @@ export default function MainLayout() {
           isActive("/") ? "bg-zinc-100 font-semibold dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"
         }`}
       >
-        <Home size={22} /> Home
+        <Home size={22} className="text-zinc-900 dark:text-white" /> 
+        <span className="text-zinc-900 dark:text-white">Home</span>
       </button>
 
       {/* Communities */}
-      <div className="px-5 pt-6 pb-3 text-xs uppercase tracking-widest text-zinc-500">Hives</div>
+      <div className="px-5 pt-6 pb-3 text-xs uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Hives</div>
       <div className="flex-1 overflow-y-auto">
         {COMMUNITIES.map((community) => (
           <button
@@ -51,7 +52,7 @@ export default function MainLayout() {
             }`}
           >
             <span className="text-lg">{community.icon}</span>
-            <span>{community.name}</span>
+            <span className="text-zinc-900 dark:text-white">{community.name}</span>
           </button>
         ))}
       </div>
@@ -59,22 +60,24 @@ export default function MainLayout() {
       {/* Footer */}
       <div className="border-t border-zinc-200 dark:border-zinc-800">
         <button onClick={() => go("/settings")} className="flex w-full items-center gap-4 px-5 py-4 hover:bg-zinc-50 dark:hover:bg-zinc-900">
-          <Settings size={20} /> Settings
+          <Settings size={20} className="text-zinc-900 dark:text-white" /> 
+          <span className="text-zinc-900 dark:text-white">Settings</span>
         </button>
         <button
           onClick={logout}
           className="flex w-full items-center gap-4 px-5 py-4 text-red-500 hover:bg-red-50 dark:hover:bg-red-950"
         >
-          <LogOut size={20} /> Logout
+          <LogOut size={20} /> 
+          <span className="text-zinc-900 dark:text-white">Logout</span>
         </button>
       </div>
     </>
   );
 
   return (
-    <div className="flex min-h-screen bg-white text-black dark:bg-black dark:text-white">
+    <div className="flex min-h-screen bg-white dark:bg-black text-zinc-900 dark:text-white">
       {/* Desktop Sidebar - Icon only (Twitter/Threads style) */}
-      <aside className="hidden lg:flex lg:w-[72px] xl:w-[280px] lg:flex-col lg:border-r lg:border-zinc-200 lg:fixed lg:left-0 lg:top-0 lg:h-screen lg:bg-white dark:lg:border-zinc-800 dark:lg:bg-black">
+      <aside className="hidden lg:flex lg:w-[72px] xl:w-[280px] lg:flex-col lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800 lg:fixed lg:left-0 lg:top-0 lg:h-screen lg:bg-white dark:lg:bg-black">
         {sidebarContent}
       </aside>
 
@@ -84,11 +87,11 @@ export default function MainLayout() {
         <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-black/95 lg:hidden">
           <div className="flex items-center justify-between px-4 py-3">
             <button onClick={() => setSidebarOpen(true)} className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
-              <Menu size={22} />
+              <Menu size={22} className="text-zinc-900 dark:text-white" />
             </button>
-            <h1 className="text-lg font-bold tracking-wide">🐝 HIVEZ</h1>
+            <h1 className="text-lg font-bold tracking-wide text-zinc-900 dark:text-white">🐝 HIVEZ</h1>
             <button onClick={() => navigate("/search")} className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
-              <Search size={22} />
+              <Search size={22} className="text-zinc-900 dark:text-white" />
             </button>
           </div>
         </header>
@@ -114,21 +117,21 @@ export default function MainLayout() {
         <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-200 bg-white dark:border-zinc-800 dark:bg-black lg:hidden">
           <div className="flex items-center justify-around py-2">
             <button onClick={() => navigate("/")} className="flex flex-col items-center gap-0.5 px-3 py-1">
-              <Home size={22} className={isActive("/") ? "text-black dark:text-white" : "text-zinc-500"} />
+              <Home size={22} className={isActive("/") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
             </button>
             <button onClick={() => navigate("/search")} className="flex flex-col items-center gap-0.5 px-3 py-1">
-              <Search size={22} className={isActive("/search") ? "text-black dark:text-white" : "text-zinc-500"} />
+              <Search size={22} className={isActive("/search") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
             </button>
             <button onClick={() => navigate("/camera")} className="flex flex-col items-center gap-0.5 px-3 py-1">
-              <div className="rounded-full border-2 border-zinc-500 p-1">
-                <PlusSquare size={18} className="text-zinc-500" />
+              <div className="rounded-full border-2 border-zinc-500 dark:border-zinc-400 p-1">
+                <PlusSquare size={18} className="text-zinc-500 dark:text-zinc-400" />
               </div>
             </button>
             <button onClick={() => navigate("/activity")} className="flex flex-col items-center gap-0.5 px-3 py-1">
-              <Heart size={22} className={isActive("/activity") ? "text-black dark:text-white" : "text-zinc-500"} />
+              <Heart size={22} className={isActive("/activity") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
             </button>
             <button onClick={() => navigate("/profile")} className="flex flex-col items-center gap-0.5 px-3 py-1">
-              <User size={22} className={isActive("/profile") ? "text-black dark:text-white" : "text-zinc-500"} />
+              <User size={22} className={isActive("/profile") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
             </button>
           </div>
         </nav>

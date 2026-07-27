@@ -38,10 +38,10 @@ export default function Signup() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-black px-6 text-white">
+    <div className="flex min-h-screen items-center justify-center bg-white dark:bg-black px-6 text-zinc-900 dark:text-white">
       <div className="w-full max-w-sm">
 
-        <h1 className="mb-8 text-center text-4xl font-bold">
+        <h1 className="mb-8 text-center text-4xl font-bold text-zinc-900 dark:text-white">
           HIVEZ
         </h1>
 
@@ -50,7 +50,7 @@ export default function Signup() {
           className="space-y-4"
         >
           <input
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-900 p-3"
+            className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 text-zinc-900 dark:text-white"
             placeholder="Email"
             type="email"
             value={email}
@@ -58,7 +58,7 @@ export default function Signup() {
           />
 
           <input
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-900 p-3"
+            className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 text-zinc-900 dark:text-white"
             placeholder="Password"
             type="password"
             value={password}
@@ -68,7 +68,7 @@ export default function Signup() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-white p-3 font-semibold text-black"
+            className="w-full rounded-lg bg-zinc-900 dark:bg-white p-3 font-semibold text-white dark:text-black transition hover:bg-zinc-800 dark:hover:bg-zinc-200 disabled:opacity-50"
           >
             {loading ? "Creating Account..." : "Sign Up"}
           </button>
@@ -76,15 +76,15 @@ export default function Signup() {
 
         <button
           onClick={handleGoogleSignup}
-          className="mt-4 w-full rounded-lg border border-zinc-700 p-3"
+          className="mt-4 w-full rounded-lg border border-zinc-300 dark:border-zinc-700 p-3 text-zinc-900 dark:text-white transition hover:bg-zinc-100 dark:hover:bg-zinc-900"
         >
           Continue with Google
         </button>
 
-        <p className="mt-6 text-center text-zinc-400">
+        <p className="mt-6 text-center text-zinc-600 dark:text-zinc-400">
           Already have an account?{" "}
           <Link
-            className="text-white"
+            className="text-zinc-900 dark:text-white font-semibold"
             to="/login"
           >
             Login

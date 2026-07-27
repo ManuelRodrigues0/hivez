@@ -62,8 +62,8 @@ export default function Profile() {
     return (
       <div className="flex h-full items-center justify-center py-32 text-center">
         <div>
-          <h2 className="text-xl font-bold">User not found</h2>
-          <p className="mt-2 text-sm text-zinc-500">This profile doesn't exist.</p>
+          <h2 className="text-xl font-bold text-zinc-900 dark:text-white">User not found</h2>
+          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">This profile doesn't exist.</p>
           <button onClick={() => navigate(-1)} className="mt-4 text-sm text-sky-500 hover:underline">
             Go back
           </button>
@@ -97,10 +97,10 @@ export default function Profile() {
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold">{profile.displayName || "Hivez User"}</h1>
+              <h1 className="text-xl font-bold text-zinc-900 dark:text-white">{profile.displayName || "Hivez User"}</h1>
               {profile.verified && <BadgeCheck size={18} className="text-sky-500" />}
             </div>
-            <p className="mt-0.5 text-sm text-zinc-500">@{profile.username}</p>
+            <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">@{profile.username}</p>
           </div>
           <img
             src={profile.photoURL || "https://ui-avatars.com/api/?name=Hivez&background=6366f1&color=fff"}
@@ -110,14 +110,14 @@ export default function Profile() {
         </div>
 
         {profile.bio && (
-          <p className="mt-3 whitespace-pre-wrap text-sm leading-5">{profile.bio}</p>
+          <p className="mt-3 whitespace-pre-wrap text-sm leading-5 text-zinc-700 dark:text-zinc-300">{profile.bio}</p>
         )}
 
         {/* Stats */}
         <div className="mt-4 flex items-center gap-5 text-sm">
-          <span><strong>{profile.posts}</strong> <span className="text-zinc-500">posts</span></span>
-          <span><strong>{profile.followers}</strong> <span className="text-zinc-500">followers</span></span>
-          <span><strong>{profile.following}</strong> <span className="text-zinc-500">following</span></span>
+          <span><strong className="text-zinc-900 dark:text-white">{profile.posts}</strong> <span className="text-zinc-500 dark:text-zinc-400">posts</span></span>
+          <span><strong className="text-zinc-900 dark:text-white">{profile.followers}</strong> <span className="text-zinc-500 dark:text-zinc-400">followers</span></span>
+          <span><strong className="text-zinc-900 dark:text-white">{profile.following}</strong> <span className="text-zinc-500 dark:text-zinc-400">following</span></span>
         </div>
 
         {/* Action Buttons */}
@@ -171,8 +171,8 @@ export default function Profile() {
 
       {/* Content */}
       <div className="flex flex-col items-center justify-center py-24 text-center">
-        <h2 className="text-base font-semibold">No {activeTab} yet</h2>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h2 className="text-base font-semibold text-zinc-900 dark:text-white">No {activeTab} yet</h2>
+        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
           {isOwnProfile ? "Your posts will appear here." : "This user hasn't posted anything yet."}
         </p>
       </div>

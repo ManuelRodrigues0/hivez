@@ -124,7 +124,7 @@ export default function CommentsSheet({
       />
 
       {/* Mobile: bottom sheet */}
-      <div className="sm:hidden fixed inset-x-0 bottom-0 z-[100] mx-auto h-[92vh] w-full rounded-t-[32px] border border-zinc-800 bg-black shadow-2xl">
+      <div className="sm:hidden fixed inset-x-0 bottom-0 z-[100] mx-auto h-[92vh] w-full rounded-t-[32px] border border-zinc-800 dark:border-zinc-800 border-zinc-200 bg-white dark:bg-black shadow-2xl">
         <div className="flex h-full flex-col overflow-hidden rounded-t-[32px]">
           <CommentHeader count={comments.length} onClose={onClose} />
           <OriginalPost post={post} />
@@ -140,19 +140,19 @@ export default function CommentsSheet({
       </div>
 
       {/* Desktop: full-screen overlay that replaces the feed */}
-      <div className="hidden sm:flex fixed inset-0 z-[100] bg-black">
+      <div className="hidden sm:flex fixed inset-0 z-[100] bg-white dark:bg-black">
         <div className="flex w-full max-w-2xl flex-col mx-auto">
           {/* Header */}
-          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-800 bg-black/95 px-4 py-3 backdrop-blur">
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-800 dark:border-zinc-800 border-zinc-200 bg-white dark:bg-black/95 px-4 py-3 backdrop-blur">
             <button
               onClick={onClose}
-              className="rounded-full p-2 transition hover:bg-zinc-800"
+              className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-900 dark:text-white">
                 <path d="M19 12H5M12 19l-7-7 7-7" />
               </svg>
             </button>
-            <h1 className="text-base font-semibold text-white">Replies</h1>
+            <h1 className="text-base font-semibold text-zinc-900 dark:text-white">Replies</h1>
             <div className="w-10" />
           </div>
 
@@ -165,7 +165,7 @@ export default function CommentsSheet({
           </div>
 
           {/* Composer at bottom */}
-          <div className="border-t border-zinc-800 p-4">
+          <div className="border-t border-zinc-800 dark:border-zinc-800 border-zinc-200 p-4">
             <CommentComposer
               ref={textareaRef}
               value={text}

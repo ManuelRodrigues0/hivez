@@ -32,7 +32,7 @@ export default function OriginalPost({
   post,
 }: Props) {
   return (
-    <section className="sticky top-[76px] z-20 border-b border-zinc-800 bg-black px-5 py-4">
+    <section className="sticky top-[76px] z-20 border-b border-zinc-800 dark:border-zinc-800 border-zinc-200 bg-white dark:bg-black px-5 py-4">
 
       <div className="flex gap-3">
 
@@ -49,7 +49,7 @@ export default function OriginalPost({
 
           <div className="flex items-center gap-2">
 
-            <span className="font-semibold text-white">
+            <span className="font-semibold text-zinc-900 dark:text-white">
               {post.displayName || post.username}
             </span>
 
@@ -60,18 +60,18 @@ export default function OriginalPost({
               />
             )}
 
-            <span className="text-sm text-zinc-500">
+            <span className="text-sm text-zinc-500 dark:text-zinc-400">
               @{post.username}
             </span>
 
-            <span className="text-sm text-zinc-500">
+            <span className="text-sm text-zinc-500 dark:text-zinc-400">
               · {timeAgo(post.createdAt)}
             </span>
 
           </div>
 
           {post.caption && (
-            <p className="mt-3 whitespace-pre-wrap text-white">
+            <p className="mt-3 whitespace-pre-wrap text-zinc-900 dark:text-white">
               {post.caption}
             </p>
           )}

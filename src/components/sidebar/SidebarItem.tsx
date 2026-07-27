@@ -18,10 +18,10 @@ export default function SidebarItem({
     >
       <div className="flex items-center gap-4">
         <span className="text-2xl">{icon}</span>
-        <span className="text-[15px] font-medium">{title}</span>
+        <span className="text-[15px] font-medium text-zinc-900 dark:text-white">{title}</span>
       </div>
 
-      <ChevronRight size={18} className="text-zinc-400" />
+      <ChevronRight size={18} className="text-zinc-500 dark:text-zinc-400" />
     </button>
   );
 }

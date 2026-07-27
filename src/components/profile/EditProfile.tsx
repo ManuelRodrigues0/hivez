@@ -114,7 +114,7 @@ export default function EditProfile() {
         {/* Form */}
         <div className="space-y-5">
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-zinc-500 uppercase tracking-wider">Display Name</label>
+            <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Display Name</label>
             <input
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
@@ -124,7 +124,7 @@ export default function EditProfile() {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-zinc-500 uppercase tracking-wider">Username</label>
+            <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Username</label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-zinc-500">@</span>
               <input
@@ -137,7 +137,7 @@ export default function EditProfile() {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-zinc-500 uppercase tracking-wider">Bio</label>
+            <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Bio</label>
             <textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
@@ -149,7 +149,7 @@ export default function EditProfile() {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-zinc-500 uppercase tracking-wider">Profile Picture URL</label>
+            <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Profile Picture URL</label>
             <input
               value={photoURL}
               onChange={(e) => setPhotoURL(e.target.value)}

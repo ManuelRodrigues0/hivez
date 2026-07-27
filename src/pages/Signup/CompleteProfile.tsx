@@ -65,14 +65,14 @@ export default function CompleteProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center px-6">
+    <div className="min-h-screen bg-white dark:bg-black text-zinc-900 dark:text-white flex items-center justify-center px-6">
       <div className="w-full max-w-sm">
-        <h1 className="mb-8 text-center text-4xl font-bold">
+        <h1 className="mb-8 text-center text-4xl font-bold text-zinc-900 dark:text-white">
           Complete Profile
         </h1>
 
         <input
-          className="mb-4 w-full rounded-xl border border-zinc-700 bg-zinc-900 p-4"
+          className="mb-4 w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 text-zinc-900 dark:text-white"
           placeholder="Username"
           value={username}
           onChange={(e) =>
@@ -81,7 +81,7 @@ export default function CompleteProfile() {
         />
 
         <textarea
-          className="mb-6 h-28 w-full resize-none rounded-xl border border-zinc-700 bg-zinc-900 p-4"
+          className="mb-6 h-28 w-full resize-none rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 text-zinc-900 dark:text-white"
           placeholder="Bio"
           value={bio}
           onChange={(e) =>
@@ -92,7 +92,7 @@ export default function CompleteProfile() {
         <button
           onClick={saveProfile}
           disabled={loading}
-          className="w-full rounded-xl bg-white p-4 font-semibold text-black disabled:opacity-50"
+          className="w-full rounded-xl bg-zinc-900 dark:bg-white p-4 font-semibold text-white dark:text-black transition hover:bg-zinc-800 dark:hover:bg-zinc-200 disabled:opacity-50"
         >
           {loading ? "Saving..." : "Continue"}
         </button>

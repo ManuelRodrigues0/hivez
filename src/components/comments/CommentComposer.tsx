@@ -30,7 +30,7 @@ const CommentComposer = forwardRef<
     ref
   ) => {
     return (
-      <div className="sticky bottom-0 border-t border-zinc-800 bg-black/95 backdrop-blur-xl">
+      <div className="sticky bottom-0 border-t border-zinc-800 dark:border-zinc-800 border-zinc-200 bg-white dark:bg-black/95 backdrop-blur-xl">
 
         <div className="flex items-end gap-3 p-4">
 
@@ -52,7 +52,7 @@ const CommentComposer = forwardRef<
                 onSend();
               }
             }}
-            className="max-h-40 min-h-[48px] flex-1 resize-none rounded-2xl bg-zinc-900 px-4 py-3 text-white outline-none placeholder:text-zinc-500"
+            className="max-h-40 min-h-[48px] flex-1 resize-none rounded-2xl bg-zinc-100 dark:bg-zinc-900 px-4 py-3 text-zinc-900 dark:text-white outline-none placeholder:text-zinc-500 dark:placeholder:text-zinc-400"
           />
 
           <button

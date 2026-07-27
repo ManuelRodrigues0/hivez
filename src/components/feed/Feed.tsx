@@ -79,7 +79,7 @@ export default function Feed({ category, hashtag, onCommentClick }: FeedProps) {
 
   if (loading) {
     return (
-      <div className="py-20 text-center text-zinc-500">
+      <div className="py-20 text-center text-zinc-500 dark:text-zinc-400">
         Loading posts...
       </div>
     );
@@ -87,7 +87,7 @@ export default function Feed({ category, hashtag, onCommentClick }: FeedProps) {
 
   if (!posts.length) {
     return (
-      <div className="py-20 text-center text-zinc-500">
+      <div className="py-20 text-center text-zinc-500 dark:text-zinc-400">
         {category
           ? "No posts in this Hive yet."
           : hashtag

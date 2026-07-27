@@ -18,16 +18,19 @@ export default function Create() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [caption, setCaption] = useState("");
+  const isTextMode = state?.textMode;
+  const media: File | File[] | undefined = state?.media;
+  const textContent: string | undefined = state?.text;
+
+  const [caption, setCaption] = useState(textContent || "");
   const [posting, setPosting] = useState(false);
   const [category, setCategory] = useState(COMMUNITIES[0].id);
   const [location, setLocation] = useState("");
 
-  // Support both single file and multiple files
-  const media: File | File[] | undefined = state?.media;
-  const textContent: string | undefined = state?.text;
-
-  const isTextOnly = !media && textContent;
+  const isTextOnly = isTextMode || (!media && textContent);
+  
+  // Hide category/location for text-only posts
+  const showOptions = !isTextOnly;
   const isMultiple = Array.isArray(media);
   const singleFile = !isMultiple ? media : undefined;
 
@@ -47,7 +50,7 @@ export default function Create() {
     return singleFile!.type.startsWith("video");
   }, [media, isMultiple, singleFile, isTextOnly]);
 
-  if (!media && !textContent) {
+  if (!isTextMode && !media && !textContent) {
     navigate("/");
     return null;
   }
@@ -157,7 +160,7 @@ export default function Create() {
           Cancel
         </button>
 
-        <h1 className="text-base font-semibold">New Post</h1>
+        <h1 className="text-base font-semibold text-zinc-900 dark:text-white">New Post</h1>
 
         <button
           onClick={uploadToCloudinary}
@@ -168,64 +171,34 @@ export default function Create() {
         </button>
       </div>
 
-      <div className="mx-auto max-w-2xl">
-        {/* Media Preview */}
-        {!isTextOnly && (
-          <div className="relative bg-zinc-100 dark:bg-zinc-900">
-            {isVideo ? (
-              <video
-                src={previews[0]}
-                controls
-                className="max-h-[500px] w-full object-contain"
-              />
-            ) : isMultiple ? (
-              <div className="grid grid-cols-2 gap-1 p-1">
-                {previews.map((preview, idx) => (
-                  <img
-                    key={idx}
-                    src={preview}
-                    alt={`Preview ${idx + 1}`}
-                    className="h-48 w-full rounded-lg object-cover"
-                  />
-                ))}
-              </div>
-            ) : (
-              <img
-                src={previews[0]}
-                alt="Preview"
-                className="max-h-[500px] w-full object-contain"
-              />
-            )}
-          </div>
-        )}
-
+      <div className={`mx-auto ${isTextOnly ? 'max-w-3xl' : 'max-w-2xl'}`}>
         {/* Post Details */}
-        <div className="border-b border-zinc-200 p-4 dark:border-zinc-800">
+        <div className={`border-b border-zinc-200 dark:border-zinc-800 ${isTextOnly ? 'p-8' : 'p-4'}`}>
           {/* User Info */}
-          <div className="mb-3 flex items-center gap-3">
+          <div className="mb-4 flex items-center gap-3">
             <img
               src={user?.photoURL || "https://ui-avatars.com/api/?name=Hivez&background=6366f1&color=fff"}
               alt=""
               className="h-10 w-10 rounded-full object-cover"
             />
             <div>
-              <p className="text-sm font-semibold">{user?.displayName || "Hivez User"}</p>
-              <p className="text-xs text-zinc-500">@{user?.email?.split("@")[0] || "user"}</p>
+              <p className="text-sm font-semibold text-zinc-900 dark:text-white">{user?.displayName || "Hivez User"}</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">@{user?.email?.split("@")[0] || "user"}</p>
             </div>
           </div>
 
           {/* Caption Input */}
           <textarea
-            placeholder={isTextOnly ? "What's on your mind?" : "Write a caption... Use #hashtags to categorize your post"}
+            placeholder="What's on your mind?"
             value={caption}
             onChange={(e) => setCaption(e.target.value)}
-            rows={isTextOnly ? 6 : 4}
-            className="w-full resize-none rounded-xl border border-zinc-200 bg-white p-3 text-sm outline-none transition focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus:border-zinc-600"
+            rows={isTextOnly ? 12 : 4}
+            className={`w-full resize-none rounded-xl border border-zinc-200 bg-white p-3 text-sm outline-none transition focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus:border-zinc-600 ${isTextOnly ? 'text-base' : ''}`}
           />
 
           {/* Hashtags Preview */}
           {extractHashtags(caption).length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
               {extractHashtags(caption).map((tag, idx) => (
                 <span key={idx} className="text-xs text-sky-500">
                   {tag}
@@ -235,9 +208,9 @@ export default function Create() {
           )}
 
           {/* Category Selector */}
-          {!isTextOnly && (
+          {showOptions && (
             <div className="mt-4">
-              <label className="mb-2 block text-xs font-medium text-zinc-500 uppercase tracking-wider">
+              <label className="mb-2 block text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                 Add to Hive
               </label>
               <div className="flex flex-wrap gap-2">
@@ -260,9 +233,9 @@ export default function Create() {
           )}
 
           {/* Location Input */}
-          {!isTextOnly && (
+          {showOptions && (
             <div className="mt-4">
-              <label className="mb-2 block text-xs font-medium text-zinc-500 uppercase tracking-wider">
+              <label className="mb-2 block text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                 Add Location
               </label>
               <input

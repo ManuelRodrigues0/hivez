@@ -135,21 +135,21 @@ export default function SearchPage() {
       <div className="sticky top-0 z-10 border-b border-zinc-200 bg-white/95 backdrop-blur-xl dark:border-zinc-800 dark:bg-black/95">
         <div className="px-4 pb-3 pt-4">
           <div className="relative">
-            <SearchIcon size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <SearchIcon size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" />
             <input
               ref={inputRef}
               type="text"
               value={query_text}
               onChange={(e) => handleQueryChange(e.target.value)}
               placeholder="Search users and posts..."
-              className="w-full rounded-xl bg-zinc-100 py-3 pl-12 pr-12 text-sm outline-none placeholder:text-zinc-400 dark:bg-zinc-900 dark:text-white"
+              className="w-full rounded-xl bg-zinc-100 py-3 pl-12 pr-12 text-sm outline-none placeholder:text-zinc-400 dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-400"
             />
             {query_text && (
               <button
                 onClick={clearSearch}
                 className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 transition hover:bg-zinc-200 dark:hover:bg-zinc-800"
               >
-                <X size={16} className="text-zinc-500" />
+                <X size={16} className="text-zinc-500 dark:text-zinc-400" />
               </button>
             )}
           </div>
@@ -198,8 +198,8 @@ export default function SearchPage() {
           <div className="p-4">
             <div className="mb-6">
               <div className="mb-4 flex items-center gap-2">
-                <TrendingUp size={18} className="text-zinc-400" />
-                <h2 className="text-base font-semibold">Trending Hives</h2>
+                <TrendingUp size={18} className="text-zinc-400 dark:text-zinc-500" />
+                <h2 className="text-base font-semibold text-zinc-900 dark:text-white">Trending Hives</h2>
               </div>
               <div className="flex flex-wrap gap-2">
                 {TRENDING_TOPICS.map((topic) => (
@@ -217,23 +217,23 @@ export default function SearchPage() {
 
             <div>
               <div className="mb-4 flex items-center gap-2">
-                <User size={18} className="text-zinc-400" />
-                <h2 className="text-base font-semibold">Suggested</h2>
+                <User size={18} className="text-zinc-400 dark:text-zinc-500" />
+                <h2 className="text-base font-semibold text-zinc-900 dark:text-white">Suggested</h2>
               </div>
-              <p className="text-sm text-zinc-500">
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
                 Start typing to search for users and posts.
               </p>
             </div>
           </div>
         ) : loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 size={24} className="animate-spin text-zinc-400" />
+            <Loader2 size={24} className="animate-spin text-zinc-400 dark:text-zinc-500" />
           </div>
         ) : !hasResults ? (
           <div className="py-20 text-center">
             <SearchIcon size={40} className="mx-auto mb-4 text-zinc-300 dark:text-zinc-600" />
-            <p className="text-lg font-semibold text-zinc-500">No results found</p>
-            <p className="mt-1 text-sm text-zinc-400">
+            <p className="text-lg font-semibold text-zinc-500 dark:text-zinc-400">No results found</p>
+            <p className="mt-1 text-sm text-zinc-400 dark:text-zinc-500">
               Try searching for something else.
             </p>
           </div>
@@ -242,7 +242,7 @@ export default function SearchPage() {
             {(activeTab === "top" || activeTab === "users") && users.length > 0 && (
               <div>
                 {activeTab === "top" && (
-                  <h3 className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                  <h3 className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                     Users
                   </h3>
                 )}
@@ -263,7 +263,7 @@ export default function SearchPage() {
                       />
                       <div className="min-w-0 flex-1 text-left">
                         <div className="flex items-center gap-2">
-                          <span className="truncate text-sm font-semibold">
+                          <span className="truncate text-sm font-semibold text-zinc-900 dark:text-white">
                             {user.displayName || user.username}
                           </span>
                           {user.verified && (
@@ -272,11 +272,11 @@ export default function SearchPage() {
                             </span>
                           )}
                         </div>
-                        <span className="text-xs text-zinc-500">
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400">
                           @{user.username}
                         </span>
                         {user.bio && (
-                          <p className="mt-0.5 truncate text-xs text-zinc-400">
+                          <p className="mt-0.5 truncate text-xs text-zinc-600 dark:text-zinc-400">
                             {user.bio}
                           </p>
                         )}
@@ -293,7 +293,7 @@ export default function SearchPage() {
                   <div className="border-t border-zinc-200 dark:border-zinc-800" />
                 )}
                 {activeTab === "top" && (
-                  <h3 className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                  <h3 className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                     Posts
                   </h3>
                 )}
@@ -330,14 +330,14 @@ export default function SearchPage() {
                             alt=""
                             className="h-5 w-5 rounded-full object-cover"
                           />
-                          <span className="text-xs font-medium text-zinc-500">
+                          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
                             {post.displayName || post.username}
                           </span>
                         </div>
-                        <p className="mt-1 line-clamp-2 text-sm">
+                        <p className="mt-1 line-clamp-2 text-sm text-zinc-900 dark:text-white">
                           {post.caption}
                         </p>
-                        <div className="mt-1 flex items-center gap-3 text-xs text-zinc-500">
+                        <div className="mt-1 flex items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400">
                           <span>❤️ {post.likes}</span>
                           <span>💬 {post.comments}</span>
                         </div>

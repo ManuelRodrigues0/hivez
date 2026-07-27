@@ -18,7 +18,7 @@ export default function Community() {
     return (
       <div className="flex h-full items-center justify-center p-8 text-center">
         <div>
-          <h2 className="text-2xl font-bold">Hive Not Found</h2>
+          <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Hive Not Found</h2>
 
           <button
             onClick={() => navigate("/")}
@@ -33,10 +33,10 @@ export default function Community() {
 
   return (
     <div className="min-h-full">
-      <div className="border-b border-zinc-800 px-4 py-4">
+      <div className="border-b border-zinc-800 dark:border-zinc-800 border-zinc-200 px-4 py-4">
         <button
           onClick={() => navigate(-1)}
-          className="mb-4 flex items-center gap-2 text-zinc-400 transition hover:text-white"
+          className="mb-4 flex items-center gap-2 text-zinc-500 dark:text-zinc-400 transition hover:text-zinc-900 dark:hover:text-white"
         >
           <ArrowLeft size={20} />
           Back
@@ -46,11 +46,11 @@ export default function Community() {
           <div className="text-5xl">{community.icon}</div>
 
           <div>
-            <h1 className="text-2xl font-bold">
+            <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
               {community.name}
             </h1>
 
-            <p className="text-sm text-zinc-400">
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
               Community Feed
             </p>
           </div>

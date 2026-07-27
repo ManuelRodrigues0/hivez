@@ -28,7 +28,7 @@ export default function CommentList({
 }: Props) {
   if (loading) {
     return (
-      <div className="flex flex-1 items-center justify-center text-zinc-500">
+      <div className="flex flex-1 items-center justify-center text-zinc-500 dark:text-zinc-400">
         Loading replies...
       </div>
     );
@@ -36,14 +36,14 @@ export default function CommentList({
 
   if (!comments.length) {
     return (
-      <div className="flex flex-1 items-center justify-center text-center text-zinc-500">
+      <div className="flex flex-1 items-center justify-center text-center text-zinc-500 dark:text-zinc-400">
         <div>
 
-          <p className="text-lg font-semibold">
+          <p className="text-lg font-semibold text-zinc-900 dark:text-white">
             No replies yet
           </p>
 
-          <p className="mt-2 text-sm">
+          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
             Be the first to reply.
           </p>
 

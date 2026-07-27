@@ -20,7 +20,7 @@ interface Props {
 
 export default function UserCard({ user }: Props) {
   return (
-    <button className="flex w-full items-center gap-3 px-5 py-4 transition hover:bg-zinc-900">
+    <button className="flex w-full items-center gap-3 px-5 py-4 transition hover:bg-zinc-100 dark:hover:bg-zinc-900">
       <img
         src={
           user.photoURL ||
@@ -32,7 +32,7 @@ export default function UserCard({ user }: Props) {
 
       <div className="flex-1 text-left">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-white">
+          <span className="font-semibold text-zinc-900 dark:text-white">
             {user.displayName}
           </span>
 
@@ -41,12 +41,12 @@ export default function UserCard({ user }: Props) {
           )}
         </div>
 
-        <span className="text-sm text-zinc-500">
+        <span className="text-sm text-zinc-500 dark:text-zinc-400">
           @{user.username}
         </span>
 
         {user.bio && (
-          <p className="mt-1 text-sm text-zinc-400 line-clamp-1">
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400 line-clamp-1">
             {user.bio}
           </p>
         )}
