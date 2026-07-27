@@ -35,14 +35,12 @@ export default function AppRouter() {
   if (!user) {
     return (
       <Routes>
-        {/* Public post view - anyone can see a post */}
+        {/* Public routes */}
         <Route path="/post/:id" element={<PostPage />} />
-
         <Route element={<MobileLayout />}>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
         </Route>
-
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     );
@@ -51,6 +49,7 @@ export default function AppRouter() {
   if (!profileCompleted) {
     return (
       <Routes>
+        <Route path="/post/:id" element={<PostPage />} />
         <Route path="*" element={<CompleteProfile />} />
       </Routes>
     );
@@ -58,42 +57,28 @@ export default function AppRouter() {
 
   return (
     <Routes>
-
-      {/* Post page - standalone, outside any layout */}
+      {/* Post page - standalone first before all other routes */}
       <Route path="/post/:id" element={<PostPage />} />
 
       {/* Main Application with sidebar */}
       <Route element={<MainLayout />}>
-
         <Route index element={<Home />} />
-
         <Route path="/hive/:id" element={<Community />} />
-
         <Route path="/profile" element={<Profile />} />
-
         <Route path="/activity" element={<Activity />} />
-
         <Route path="/search" element={<Search />} />
-
         <Route path="/notifications" element={<Notifications />} />
-
         <Route path="/settings" element={<Settings />} />
-
         <Route path="/profile/edit" element={<EditProfile />} />
-
       </Route>
 
       {/* Standalone Pages without sidebar */}
       <Route element={<MobileLayout />}>
-
         <Route path="/camera" element={<Camera />} />
-
         <Route path="/create" element={<Create />} />
-
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
-
     </Routes>
   );
 }
