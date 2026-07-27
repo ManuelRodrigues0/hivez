@@ -483,7 +483,7 @@ export default function Chats() {
   const showThreadOnMobile = Boolean(selectedChatId && mobileThreadOpen);
 
   return (
-    <div className="fixed inset-0 top-[64px] bottom-[60px] overflow-hidden md:bottom-0 md:static md:inset-auto md:h-[calc(100vh-64px)]">
+    <div className="h-full overflow-hidden -mb-20 pb-20">
       <div className="flex h-full">
         <aside className={`${showThreadOnMobile ? "hidden md:flex" : "flex"} relative w-full flex-col md:w-80 lg:w-[340px]`}>
           <div className="flex items-center justify-between px-4 pb-3 pt-5 md:pt-5">
@@ -628,7 +628,7 @@ export default function Chats() {
                 <div ref={bottomRef} />
               </div>
 
-              <div className="flex-shrink-0 bg-zinc-50 p-3 dark:bg-zinc-950/60 pb-[calc(12px+60px)] md:pb-3">
+              <div className="flex-shrink-0 bg-zinc-50 p-3 dark:bg-zinc-950/60">
                 <div className="flex items-end gap-2 rounded-3xl bg-zinc-100 p-2 dark:bg-zinc-900">
                   <textarea
                     value={messageText}
