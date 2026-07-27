@@ -185,9 +185,9 @@ export default function MainLayout() {
           </>
         )}
 
-        {/* Page Content - constrained width on desktop */}
+        {/* Page Content - full width from sidebar */}
         <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
-          <div className="mx-auto max-w-2xl">
+          <div className="lg:pl-6 lg:pr-6">
             <Outlet />
           </div>
         </main>
