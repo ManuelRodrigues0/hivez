@@ -14,6 +14,10 @@ import {
   ExternalLink,
 } from "lucide-react";
 
+import { useAuth } from "../../context/AuthContext";
+import { db } from "../../firebase/firebase";
+import { doc, updateDoc, deleteDoc, setDoc, increment } from "firebase/firestore";
+import { toast } from "sonner";
 import type { FeedPost } from "./Feed";
 
 import CommentsSheet from "../comments/CommentsSheet";
@@ -44,7 +48,9 @@ function timeAgo(timestamp: any) {
 }
 
 export default function FeedCard({ post, onCommentClick }: Props) {
+  const { user } = useAuth();
   const [liked, setLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(post.likes);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [shareMenuOpen, setShareMenuOpen] = useState(false);
@@ -66,6 +72,44 @@ export default function FeedCard({ post, onCommentClick }: Props) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  async function handleLike() {
+    if (!user) {
+      toast.info("Please log in to like posts");
+      return;
+    }
+
+    const postRef = doc(db, "posts", post.id);
+    const likeRef = doc(db, "posts", post.id, "likes", user.uid);
+
+    try {
+      if (liked) {
+        // Unlike
+        await updateDoc(postRef, {
+          likes: increment(-1),
+        });
+        // Delete the like document
+        await deleteDoc(likeRef);
+        setLiked(false);
+        setLikesCount(prev => prev - 1);
+      } else {
+        // Like
+        await updateDoc(postRef, {
+          likes: increment(1),
+        });
+        // Create a like document
+        await setDoc(likeRef, {
+          userId: user.uid,
+          createdAt: new Date(),
+        });
+        setLiked(true);
+        setLikesCount(prev => prev + 1);
+      }
+    } catch (err) {
+      console.error("Failed to update like:", err);
+      toast.error("Failed to update like");
+    }
+  }
 
   function handleShare() {
     const url = `${window.location.origin}/post/${post.id}`;
@@ -223,7 +267,7 @@ export default function FeedCard({ post, onCommentClick }: Props) {
             {/* Actions */}
             <div className="mt-2 -ml-2 flex items-center gap-1">
               <button
-                onClick={() => setLiked(!liked)}
+                onClick={handleLike}
                 className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-red-50 dark:hover:bg-red-950/30 group"
               >
                 <Heart
@@ -235,7 +279,7 @@ export default function FeedCard({ post, onCommentClick }: Props) {
                   }
                 />
                 <span className={`text-xs ${liked ? "text-red-500" : "text-zinc-500 dark:text-zinc-400 group-hover:text-red-500"}`}>
-                  {post.likes + (liked ? 1 : 0)}
+                  {likesCount}
                 </span>
               </button>
               <button
