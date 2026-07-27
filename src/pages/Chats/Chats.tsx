@@ -85,6 +85,7 @@ export default function Chats() {
   const [chats, setChats] = useState<ChatDoc[]>([]);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [messages, setMessages] = useState<MessageDoc[]>([]);
+  const [draftChat, setDraftChat] = useState<ChatDoc | null>(null);
   const [messageText, setMessageText] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [userSearch, setUserSearch] = useState("");
@@ -119,6 +120,7 @@ export default function Chats() {
         ...(chatDoc.data() as Omit<ChatDoc, "id">),
       }));
       setChats(nextChats);
+      setDraftChat((draft) => (draft && nextChats.some((chat) => chat.id === draft.id) ? null : draft));
       setSelectedChatId((current) => current || nextChats[0]?.id || null);
     });
   }, [user]);
@@ -196,7 +198,7 @@ export default function Chats() {
     return () => clearTimeout(timeout);
   }, [userSearch, user?.uid]);
 
-  const selectedChat = chats.find((chat) => chat.id === selectedChatId) || null;
+  const selectedChat = chats.find((chat) => chat.id === selectedChatId) || (draftChat?.id === selectedChatId ? draftChat : null);
   const otherUser = useMemo(() => {
     if (!selectedChat || !user) return null;
     const otherId = selectedChat.participants.find((id) => id !== user.uid);
@@ -204,16 +206,25 @@ export default function Chats() {
   }, [selectedChat, user]);
 
   async function startChat(person: ChatUser) {
-    if (!user || !me) return;
+    if (!user) return;
+    const currentMe =
+      me || {
+        uid: user.uid,
+        username: user.email?.split("@")[0] || "user",
+        displayName: user.displayName || "Hivez User",
+        photoURL: user.photoURL || "",
+        verified: false,
+      };
     const id = chatIdFor(user.uid, person.uid);
     const chatRef = doc(db, "chats", id);
     const snap = await getDoc(chatRef);
 
     if (!snap.exists()) {
-      await setDoc(chatRef, {
+      const newChat: ChatDoc = {
+        id,
         participants: [user.uid, person.uid],
         participantProfiles: {
-          [user.uid]: me,
+          [user.uid]: currentMe,
           [person.uid]: person,
         },
         lastMessage: "",
@@ -223,6 +234,13 @@ export default function Chats() {
           [user.uid]: 0,
           [person.uid]: 0,
         },
+      };
+
+      setDraftChat(newChat);
+      setSelectedChatId(id);
+      const { id: _id, ...chatData } = newChat;
+      await setDoc(chatRef, {
+        ...chatData,
         createdAt: serverTimestamp(),
       });
     }
@@ -265,9 +283,9 @@ export default function Chats() {
 
   return (
     <div className="app-page h-[calc(100vh-64px)] overflow-hidden">
-      <div className="flex h-full border-x border-zinc-200 dark:border-zinc-800">
-        <aside className={`${showThreadOnMobile ? "hidden md:flex" : "flex"} w-full flex-col border-r border-zinc-200 dark:border-zinc-800 md:w-80 lg:w-88`}>
-          <div className="app-sticky-header flex items-center justify-between px-4 py-3">
+      <div className="flex h-full">
+        <aside className={`${showThreadOnMobile ? "hidden md:flex" : "flex"} w-full flex-col md:w-80 lg:w-[340px]`}>
+          <div className="flex items-center justify-between px-4 pb-3 pt-5">
             <div>
               <h1 className="text-xl font-bold text-zinc-900 dark:text-white">Chats</h1>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">Private conversations</p>
@@ -277,19 +295,23 @@ export default function Chats() {
             </button>
           </div>
 
-          <div className="border-b border-zinc-200 p-3 dark:border-zinc-800">
+          <div className="px-3 pb-4">
             <button onClick={() => setSearchOpen(true)} className="flex w-full items-center gap-2 rounded-full bg-zinc-100 px-4 py-2.5 text-left text-sm text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
               <Search size={17} />
               Search people to message
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto px-2 pb-3">
             {chats.length === 0 ? (
-              <div className="app-empty-state py-16">
+              <div className="mx-2 mt-8 rounded-3xl bg-zinc-50 px-5 py-10 text-center dark:bg-zinc-950">
                 <MessageCircle size={36} className="mb-3 text-zinc-300 dark:text-zinc-600" />
                 <p className="font-semibold text-zinc-900 dark:text-white">No chats yet</p>
-                <p className="mt-1 text-sm">Start a conversation with someone from Hivez.</p>
+                <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Search someone and start a conversation.</p>
+                <button onClick={() => setSearchOpen(true)} className="app-primary-button mt-5">
+                  <UserPlus size={16} />
+                  New chat
+                </button>
               </div>
             ) : (
               chats.map((chat) => {
@@ -300,7 +322,7 @@ export default function Chats() {
                   <button
                     key={chat.id}
                     onClick={() => setSelectedChatId(chat.id)}
-                    className={`flex w-full items-center gap-3 border-b border-zinc-100 px-4 py-3 text-left transition dark:border-zinc-900 ${
+                    className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition ${
                       selectedChatId === chat.id ? "bg-zinc-100 dark:bg-zinc-900" : "hover:bg-zinc-50 dark:hover:bg-zinc-950"
                     }`}
                   >
@@ -331,7 +353,7 @@ export default function Chats() {
         <section className={`${showThreadOnMobile ? "flex" : "hidden md:flex"} min-w-0 flex-1 flex-col`}>
           {selectedChat && otherUser ? (
             <>
-              <div className="app-sticky-header flex items-center justify-between px-4 py-3">
+              <div className="flex items-center justify-between px-4 py-4">
                 <div className="flex min-w-0 items-center gap-3">
                   <button onClick={() => setSelectedChatId(null)} className="app-icon-button md:hidden">
                     <ArrowLeft size={20} />
@@ -350,7 +372,7 @@ export default function Chats() {
                 </button>
               </div>
 
-              <div className="flex-1 space-y-2 overflow-y-auto px-4 py-4">
+              <div className="flex-1 space-y-2 overflow-y-auto rounded-t-[28px] bg-zinc-50 px-4 py-4 dark:bg-zinc-950/60">
                 {messages.map((message, index) => {
                   const mine = message.senderId === user?.uid;
                   const previous = messages[index - 1];
@@ -391,7 +413,7 @@ export default function Chats() {
                 <div ref={bottomRef} />
               </div>
 
-              <div className="border-t border-zinc-200 p-3 dark:border-zinc-800">
+              <div className="bg-zinc-50 p-3 dark:bg-zinc-950/60">
                 <div className="flex items-end gap-2 rounded-3xl bg-zinc-100 p-2 dark:bg-zinc-900">
                   <textarea
                     value={messageText}
@@ -417,10 +439,16 @@ export default function Chats() {
               </div>
             </>
           ) : (
-            <div className="app-empty-state hidden flex-1 md:flex">
-              <MessageCircle size={44} className="mb-4 text-zinc-300 dark:text-zinc-600" />
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Select a chat</h2>
-              <p className="mt-1 text-sm">Choose an existing conversation or start a new one.</p>
+            <div className="hidden flex-1 items-center justify-center px-6 md:flex">
+              <div className="max-w-sm rounded-[32px] bg-zinc-50 p-10 text-center dark:bg-zinc-950">
+                <MessageCircle size={44} className="mx-auto mb-4 text-zinc-300 dark:text-zinc-600" />
+                <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Your conversations</h2>
+                <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Pick a chat or search someone to start messaging.</p>
+                <button onClick={() => setSearchOpen(true)} className="app-primary-button mt-5">
+                  <UserPlus size={16} />
+                  Start chat
+                </button>
+              </div>
             </div>
           )}
         </section>
@@ -428,14 +456,14 @@ export default function Chats() {
 
       {searchOpen && (
         <div className="fixed inset-0 z-[80] flex items-start justify-center bg-black/60 px-4 pt-20 backdrop-blur-sm">
-          <div className="app-surface w-full max-w-lg overflow-hidden shadow-2xl">
-            <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
+          <div className="w-full max-w-lg overflow-hidden rounded-[28px] bg-white shadow-2xl dark:bg-zinc-950">
+            <div className="flex items-center justify-between px-4 py-3">
               <h2 className="font-semibold text-zinc-900 dark:text-white">New chat</h2>
               <button onClick={() => setSearchOpen(false)} className="app-icon-button">
                 <X size={18} />
               </button>
             </div>
-            <div className="border-b border-zinc-200 p-3 dark:border-zinc-800">
+            <div className="px-3 pb-3">
               <div className="flex items-center gap-2 rounded-full bg-zinc-100 px-4 py-2.5 dark:bg-zinc-900">
                 <Search size={17} className="text-zinc-400" />
                 <input
@@ -454,7 +482,7 @@ export default function Chats() {
                 </div>
               ) : people.length ? (
                 people.map((person) => (
-                  <button key={person.uid} onClick={() => startChat(person)} className="flex w-full items-center gap-3 border-b border-zinc-100 px-4 py-3 text-left transition hover:bg-zinc-50 dark:border-zinc-900 dark:hover:bg-zinc-900">
+                  <button key={person.uid} onClick={() => startChat(person)} className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-zinc-50 dark:hover:bg-zinc-900">
                     <Avatar user={person} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
