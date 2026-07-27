@@ -289,7 +289,7 @@ export default function FeedCard({ post, onCommentClick }: Props) {
 
             {/* Media */}
             {mediaItems.length > 0 && (
-              <div className="mt-2.5">
+              <div className="mt-2.5 min-w-0 overflow-hidden">
                 <MediaGrid items={mediaItems} />
               </div>
             )}

@@ -207,7 +207,7 @@ export default function PostPage() {
             </p>
 
             {mediaItems.length > 0 && (
-              <div className="mt-3">
+              <div className="mt-3 min-w-0 overflow-hidden">
                 <MediaGrid items={mediaItems} />
               </div>
             )}

@@ -147,7 +147,7 @@ function CommentsView({ post, onClose }: { post: FeedPost; onClose: () => void }
           </p>
         )}
         {mediaItems.length > 0 && (
-          <div className="mt-2.5">
+          <div className="mt-2.5 min-w-0 overflow-hidden">
             <MediaGrid items={mediaItems} compact />
           </div>
         )}

@@ -60,7 +60,7 @@ export default function OriginalPost({ post }: Props) {
           )}
 
           {mediaItems.length > 0 && (
-            <div className="mt-4">
+            <div className="mt-4 min-w-0 overflow-hidden">
               <MediaGrid items={mediaItems} compact />
             </div>
           )}

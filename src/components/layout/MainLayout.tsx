@@ -15,8 +15,7 @@ export default function MainLayout() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const layoutVars = {
     "--layout-left": sidebarCollapsed ? "72px" : "280px",
-    "--layout-right": "400px",
-    "--layout-right-gap": "20px",
+    "--layout-right": "384px",
     "--layout-gap": sidebarCollapsed ? "8px" : "10px",
     "--feed-max": sidebarCollapsed ? "820px" : "720px",
   } as CSSProperties;
@@ -227,7 +226,7 @@ export default function MainLayout() {
         </aside>
 
         {/* Content wrapper */}
-        <div className="flex w-full flex-col transition-[padding] duration-300 lg:pr-[calc(var(--layout-right)+var(--layout-right-gap))]">
+        <div className="flex w-full flex-col transition-[padding] duration-300 lg:pr-[var(--layout-right)]">
           {/* Mobile Top Bar */}
           <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-black/95 lg:hidden">
             <div className="flex items-center justify-between px-4 py-3">

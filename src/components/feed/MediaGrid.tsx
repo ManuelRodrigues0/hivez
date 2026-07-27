@@ -20,12 +20,12 @@ export default function MediaGrid({ items, compact = false }: Props) {
           <MediaItem item={items[0]} single compact={compact} />
         </div>
       ) : (
-        <div className="flex max-w-full snap-x gap-1.5 overflow-x-auto overscroll-x-contain rounded-2xl">
+        <div className="flex w-full max-w-full snap-x gap-1.5 overflow-x-auto overscroll-x-contain rounded-2xl">
           {items.map((item, index) => (
             <div
               key={`${item.url}-${index}`}
               className={`relative flex-shrink-0 snap-start overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 ${
-                compact ? "h-64 w-48" : "h-[344px] w-[246px]"
+                compact ? "h-64 w-48" : "h-[344px] w-[236px]"
               }`}
             >
               <MediaItem item={item} />
