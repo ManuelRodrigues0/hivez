@@ -16,7 +16,8 @@ import { useAuth } from "../../context/AuthContext";
 import Feed from "@/components/feed/Feed";
 import CreateModal from "@/components/feed/CreateModal";
 import type { FeedPost } from "@/components/feed/Feed";
-import MediaGrid, { type PostMediaItem } from "@/components/feed/MediaGrid";
+import MediaGrid from "@/components/feed/MediaGrid";
+import type { PostMediaItem } from "@/components/feed/MediaGrid";
 
 export default function Home() {
   const [selectedPost, setSelectedPost] = useState<FeedPost | null>(null);

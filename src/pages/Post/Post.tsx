@@ -6,7 +6,8 @@ import { db } from "../../firebase/firebase";
 import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
 import type { FeedPost } from "../../components/feed/Feed";
-import MediaGrid, { type PostMediaItem } from "../../components/feed/MediaGrid";
+import MediaGrid from "../../components/feed/MediaGrid";
+import type { PostMediaItem } from "../../components/feed/MediaGrid";
 
 function timeAgo(timestamp: any) {
   if (!timestamp?.toDate) return "Now";

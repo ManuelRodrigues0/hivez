@@ -1,7 +1,8 @@
 import { BadgeCheck } from "lucide-react";
 
 import type { FeedPost } from "../feed/Feed";
-import MediaGrid, { type PostMediaItem } from "../feed/MediaGrid";
+import MediaGrid from "../feed/MediaGrid";
+import type { PostMediaItem } from "../feed/MediaGrid";
 
 interface Props {
   post: FeedPost;

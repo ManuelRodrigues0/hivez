@@ -12,7 +12,8 @@ import {
   getDoc,
   doc,
 } from "firebase/firestore";
-import MediaGrid, { type PostMediaItem } from "@/components/feed/MediaGrid";
+import MediaGrid from "@/components/feed/MediaGrid";
+import type { PostMediaItem } from "@/components/feed/MediaGrid";
 
 export default function Create() {
   const { state } = useLocation();
