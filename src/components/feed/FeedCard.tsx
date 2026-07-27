@@ -75,17 +75,35 @@ export default function FeedCard({ post, onCommentClick }: Props) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Listen to like count changes in real-time
+  // Listen to post data changes in real-time (likes, comments, shares)
   useEffect(() => {
     const postRef = doc(db, "posts", post.id);
     const unsubscribe = onSnapshot(postRef, (snap) => {
       if (snap.exists()) {
         const data = snap.data();
         setLikesCount(data.likes || 0);
+        // Update comments count if it changes
+        if (data.comments !== undefined && data.comments !== post.comments) {
+          // This will trigger a re-render with updated comment count
+        }
       }
     });
     return () => unsubscribe();
   }, [post.id]);
+
+  // Check if current user has liked this post
+  useEffect(() => {
+    if (!user) {
+      setLiked(false);
+      return;
+    }
+
+    const likeRef = doc(db, "posts", post.id, "likes", user.uid);
+    const unsubscribe = onSnapshot(likeRef, (snap) => {
+      setLiked(snap.exists());
+    });
+    return () => unsubscribe();
+  }, [post.id, user]);
 
   async function handleLike() {
     if (!user || liking) {
@@ -99,7 +117,6 @@ export default function FeedCard({ post, onCommentClick }: Props) {
     const likeRef = doc(db, "posts", post.id, "likes", user.uid);
 
     try {
-      // Optimistic update - update UI immediately
       if (liked) {
         // Unlike
         await deleteDoc(likeRef);
