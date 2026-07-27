@@ -15,8 +15,8 @@ export default function MainLayout() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const layoutVars = {
     "--layout-left": sidebarCollapsed ? "72px" : "280px",
-    "--layout-right": "320px",
-    "--layout-gap": sidebarCollapsed ? "24px" : "32px",
+    "--layout-right": "352px",
+    "--layout-gap": sidebarCollapsed ? "16px" : "14px",
     "--feed-max": sidebarCollapsed ? "820px" : "720px",
   } as CSSProperties;
 
