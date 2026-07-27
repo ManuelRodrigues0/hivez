@@ -120,7 +120,7 @@ export default function MainLayout() {
 
       {/* Desktop Sidebar - Below header */}
       <aside 
-        className="hidden lg:flex lg:flex-col lg:fixed lg:left-0 lg:top-16 lg:h-[calc(100vh-64px)] lg:bg-white dark:lg:bg-black lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800 lg:w-[280px]"
+        className="hidden lg:flex lg:flex-col lg:fixed lg:left-0 lg:top-16 lg:h-[calc(100vh-64px)] lg:bg-white dark:lg:bg-black lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800 lg:w-[280px] lg:z-40"
       >
         {sidebarContent}
       </aside>
