@@ -180,7 +180,7 @@ export default function MainLayout() {
           <>
             <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
             <div className="fixed left-0 top-0 z-50 flex h-screen w-80 max-w-[85%] flex-col border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 lg:hidden">
-              <div className="border-b border-zinc-200 dark:border-zinc-800 px-5 py-5">
+              <div className="border-b border-zinc-200 dark:border-zinc-800 px-5 pt-4 pb-2">
                 <h1 className="text-2xl font-black tracking-wide text-zinc-900 dark:text-white">🐝 HIVEZ</h1>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">Report. React. Resolve.</p>
               </div>
