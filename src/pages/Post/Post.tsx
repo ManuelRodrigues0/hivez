@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, BadgeCheck, Heart, MessageCircle, Repeat2, Send, MoreHorizontal } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Heart, MessageCircle, Repeat2, Send } from "lucide-react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 import type { FeedPost } from "../../components/feed/Feed";
