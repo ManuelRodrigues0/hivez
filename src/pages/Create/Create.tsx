@@ -12,6 +12,7 @@ import {
   getDoc,
   doc,
 } from "firebase/firestore";
+import MediaGrid, { type PostMediaItem } from "@/components/feed/MediaGrid";
 
 export default function Create() {
   const { state } = useLocation();
@@ -33,6 +34,11 @@ export default function Create() {
   const showOptions = !isTextOnly;
   const isMultiple = Array.isArray(media);
   const singleFile = !isMultiple ? media : undefined;
+  const filesToPreview = isMultiple ? media : singleFile ? [singleFile] : [];
+  const previewItems: PostMediaItem[] = filesToPreview.map((file) => ({
+    url: URL.createObjectURL(file),
+    type: file.type.startsWith("video") ? "video" : "image",
+  }));
 
   const isVideo = useMemo(() => {
     if (isTextOnly) return false;
@@ -107,7 +113,11 @@ export default function Create() {
       }).filter(Boolean);
 
       const uploadResults = await Promise.all(uploadPromises);
-      const mediaUrls = uploadResults.map((result) => result.secure_url);
+      const mediaItems: PostMediaItem[] = uploadResults.map((result, index) => ({
+        url: result.secure_url,
+        type: filesToUpload[index].type.startsWith("video") ? "video" : "image",
+      }));
+      const mediaUrls = mediaItems.map((item) => item.url);
 
       const userDoc = await getDoc(doc(db, "users", user.uid));
       const profile = userDoc.data();
@@ -123,9 +133,10 @@ export default function Create() {
         hashtags,
         category,
         location: location.trim() || null,
-        mediaUrl: mediaUrls[0], // Primary media
-        mediaUrls: mediaUrls, // All media URLs
-        mediaType: isVideo ? "video" : "image",
+        mediaUrl: mediaUrls[0],
+        mediaUrls,
+        mediaItems,
+        mediaType: mediaItems[0]?.type || (isVideo ? "video" : "image"),
         likes: 0,
         comments: 0,
         shares: 0,
@@ -187,6 +198,12 @@ export default function Create() {
             rows={isTextOnly ? 12 : 4}
             className={`w-full resize-none rounded-xl border border-zinc-200 bg-white p-3 text-sm outline-none transition focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus:border-zinc-600 ${isTextOnly ? 'text-base' : ''}`}
           />
+
+          {previewItems.length > 0 && (
+            <div className="mt-4">
+              <MediaGrid items={previewItems} />
+            </div>
+          )}
 
           {/* Hashtags Preview */}
           {extractHashtags(caption).length > 0 && (

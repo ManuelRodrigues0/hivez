@@ -6,6 +6,7 @@ import { db } from "../../firebase/firebase";
 import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
 import type { FeedPost } from "../../components/feed/Feed";
+import MediaGrid, { type PostMediaItem } from "../../components/feed/MediaGrid";
 
 function timeAgo(timestamp: any) {
   if (!timestamp?.toDate) return "Now";
@@ -133,6 +134,14 @@ export default function PostPage() {
     // Navigate to signup and come back to this post after signup
     navigate("/signup", { state: { from: `/post/${id}` } });
   };
+  const mediaItems: PostMediaItem[] =
+    post.mediaItems?.length
+      ? post.mediaItems
+      : post.mediaUrls?.length
+      ? post.mediaUrls.map((url) => ({ url, type: post.mediaType === "video" ? "video" : "image" }))
+      : post.mediaUrl
+      ? [{ url: post.mediaUrl, type: post.mediaType === "video" ? "video" : "image" }]
+      : [];
 
   return (
     <div className="app-page">
@@ -196,13 +205,9 @@ export default function PostPage() {
               {post.caption}
             </p>
 
-            {post.mediaUrl && (
+            {mediaItems.length > 0 && (
               <div className="mt-3">
-                {post.mediaType === "image" ? (
-                  <img src={post.mediaUrl} alt="" className="max-h-[720px] w-full rounded-2xl border border-zinc-200 bg-zinc-100 object-contain dark:border-zinc-700 dark:bg-zinc-900" />
-                ) : (
-                  <video src={post.mediaUrl} controls className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-700" />
-                )}
+                <MediaGrid items={mediaItems} />
               </div>
             )}
 

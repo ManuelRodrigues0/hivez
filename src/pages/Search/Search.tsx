@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { collection, getDocs, limit, orderBy, query } from "firebase/firestore";
 import { BadgeCheck, Heart, Loader2, MessageCircle, Search as SearchIcon, TrendingUp, User, X } from "lucide-react";
 import { db } from "../../firebase/firebase";
+import type { PostMediaItem } from "@/components/feed/MediaGrid";
 
 interface SearchUser {
   uid: string;
@@ -17,6 +18,8 @@ interface SearchPost {
   id: string;
   caption: string;
   mediaUrl: string;
+  mediaUrls?: string[];
+  mediaItems?: PostMediaItem[];
   mediaType: "image" | "video";
   username: string;
   displayName: string;
@@ -88,6 +91,8 @@ export default function SearchPage() {
             id: doc.id,
             caption: data.caption || "",
             mediaUrl: data.mediaUrl || "",
+            mediaUrls: data.mediaUrls || [],
+            mediaItems: data.mediaItems || [],
             mediaType: data.mediaType || "image",
             username: data.username || "",
             displayName: data.displayName || "",
@@ -224,9 +229,13 @@ export default function SearchPage() {
                 <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
                   {posts.map((post) => (
                     <button key={post.id} onClick={() => navigate(`/post/${post.id}`)} className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-zinc-50 dark:hover:bg-zinc-900">
-                      {post.mediaUrl && (
+                      {(post.mediaItems?.[0]?.url || post.mediaUrls?.[0] || post.mediaUrl) && (
                         <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-zinc-100 dark:bg-zinc-900">
-                          {post.mediaType === "video" ? <video src={post.mediaUrl} className="h-full w-full object-cover" /> : <img src={post.mediaUrl} alt="" className="h-full w-full object-cover" />}
+                          {(post.mediaItems?.[0]?.type || post.mediaType) === "video" ? (
+                            <video src={post.mediaItems?.[0]?.url || post.mediaUrls?.[0] || post.mediaUrl} className="h-full w-full object-cover" />
+                          ) : (
+                            <img src={post.mediaItems?.[0]?.url || post.mediaUrls?.[0] || post.mediaUrl} alt="" className="h-full w-full object-cover" />
+                          )}
                         </div>
                       )}
                       <div className="min-w-0 flex-1">

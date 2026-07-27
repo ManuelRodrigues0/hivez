@@ -11,6 +11,7 @@ import {
 import { db } from "../../firebase/firebase";
 
 import FeedCard from "./FeedCard";
+import type { PostMediaItem } from "./MediaGrid";
 
 export interface FeedPost {
   id: string;
@@ -21,7 +22,9 @@ export interface FeedPost {
   verified: boolean;
   caption: string;
   mediaUrl: string;
-  mediaType: "image" | "video";
+  mediaUrls?: string[];
+  mediaItems?: PostMediaItem[];
+  mediaType: "image" | "video" | "text";
   likes: number;
   comments: number;
   shares: number;

@@ -22,6 +22,8 @@ import { toast } from "sonner";
 import type { FeedPost } from "./Feed";
 
 import CommentsSheet from "../comments/CommentsSheet";
+import MediaGrid from "./MediaGrid";
+import type { PostMediaItem } from "./MediaGrid";
 
 interface Props {
   post: FeedPost;
@@ -57,6 +59,14 @@ export default function FeedCard({ post, onCommentClick }: Props) {
   const [shareMenuOpen, setShareMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [liking, setLiking] = useState(false);
+  const mediaItems: PostMediaItem[] =
+    post.mediaItems?.length
+      ? post.mediaItems
+      : post.mediaUrls?.length
+      ? post.mediaUrls.map((url) => ({ url, type: post.mediaType === "video" ? "video" : "image" }))
+      : post.mediaUrl
+      ? [{ url: post.mediaUrl, type: post.mediaType === "video" ? "video" : "image" }]
+      : [];
 
   const menuRef = useRef<HTMLDivElement>(null);
   const shareMenuRef = useRef<HTMLDivElement>(null);
@@ -278,21 +288,9 @@ export default function FeedCard({ post, onCommentClick }: Props) {
             )}
 
             {/* Media */}
-            {post.mediaUrl && (
+            {mediaItems.length > 0 && (
               <div className="mt-2.5">
-                {post.mediaType === "image" ? (
-                  <img
-                    src={post.mediaUrl}
-                    alt=""
-                    className="max-h-[620px] w-full rounded-2xl border border-zinc-200 bg-zinc-100 object-contain dark:border-zinc-700 dark:bg-zinc-900"
-                  />
-                ) : (
-                  <video
-                    src={post.mediaUrl}
-                    controls
-                    className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-700"
-                  />
-                )}
+                <MediaGrid items={mediaItems} />
               </div>
             )}
 

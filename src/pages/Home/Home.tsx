@@ -16,6 +16,7 @@ import { useAuth } from "../../context/AuthContext";
 import Feed from "@/components/feed/Feed";
 import CreateModal from "@/components/feed/CreateModal";
 import type { FeedPost } from "@/components/feed/Feed";
+import MediaGrid, { type PostMediaItem } from "@/components/feed/MediaGrid";
 
 export default function Home() {
   const [selectedPost, setSelectedPost] = useState<FeedPost | null>(null);
@@ -54,6 +55,14 @@ function CommentsView({ post, onClose }: { post: FeedPost; onClose: () => void }
   const [comments, setComments] = useState<any[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const mediaItems: PostMediaItem[] =
+    post.mediaItems?.length
+      ? post.mediaItems
+      : post.mediaUrls?.length
+      ? post.mediaUrls.map((url) => ({ url, type: post.mediaType === "video" ? "video" : "image" }))
+      : post.mediaUrl
+      ? [{ url: post.mediaUrl, type: post.mediaType === "video" ? "video" : "image" }]
+      : [];
 
   useEffect(() => {
     const q = query(
@@ -136,21 +145,9 @@ function CommentsView({ post, onClose }: { post: FeedPost; onClose: () => void }
             {post.caption}
           </p>
         )}
-        {post.mediaUrl && (
+        {mediaItems.length > 0 && (
           <div className="mt-2.5">
-            {post.mediaType === "image" ? (
-              <img
-                src={post.mediaUrl}
-                alt=""
-                className="max-h-[280px] w-full rounded-xl object-cover"
-              />
-            ) : (
-              <video
-                src={post.mediaUrl}
-                controls
-                className="w-full rounded-xl"
-              />
-            )}
+            <MediaGrid items={mediaItems} compact />
           </div>
         )}
       </div>
