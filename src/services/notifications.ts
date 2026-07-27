@@ -5,7 +5,6 @@ import {
   getCountFromServer,
   getDocs,
   onSnapshot,
-  orderBy,
   query,
   serverTimestamp,
   updateDoc,
@@ -89,8 +88,7 @@ export function listenToNotifications(
 ) {
   const q = query(
     collection(db, "notifications"),
-    where("recipientId", "==", uid),
-    orderBy("createdAt", "desc")
+    where("recipientId", "==", uid)
   );
 
   return onSnapshot(
@@ -103,6 +101,11 @@ export function listenToNotifications(
             ...(notificationDoc.data() as Omit<NotificationDoc, "id">),
           }))
           .filter((notification) => notification.type !== "message")
+          .sort((a, b) => {
+            const aTime = a.createdAt?.toDate?.().getTime?.() || 0;
+            const bTime = b.createdAt?.toDate?.().getTime?.() || 0;
+            return bTime - aTime;
+          })
       );
     },
     onError

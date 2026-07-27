@@ -60,7 +60,7 @@ export default function Notifications() {
       },
       (error) => {
         console.error("Notifications listener failed:", error);
-        toast.error("Notifications are blocked. Check Firestore rules.");
+        toast.error(error.message || "Notifications could not load.");
         setLoading(false);
       }
     );
