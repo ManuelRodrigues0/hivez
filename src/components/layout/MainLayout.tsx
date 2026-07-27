@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Home, Search, PlusSquare, Heart, User, Menu, X, Settings, LogOut } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
@@ -11,6 +11,7 @@ export default function MainLayout() {
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -92,11 +93,16 @@ export default function MainLayout() {
         {/* Center - Search bar */}
         <div className="flex-1 max-w-2xl mx-8">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
+            <Search 
+              onClick={() => searchInputRef.current?.focus()}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" 
+              size={20}
+            />
             <input
               type="text"
               placeholder="Find anything"
               className="w-full rounded-full border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-900 py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-zinc-400 dark:focus:border-zinc-600"
+              ref={searchInputRef}
             />
           </div>
         </div>
@@ -107,7 +113,11 @@ export default function MainLayout() {
             <Search size={20} className="text-zinc-900 dark:text-white" />
           </button>
           <button className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
-            <PlusSquare size={20} className="text-zinc-900 dark:text-white" />
+            <PlusSquare 
+              onClick={() => navigate("/create")}
+              size={20}
+              className="text-zinc-900 dark:text-white"
+            />
           </button>
           <button className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
             <Heart size={20} className="text-zinc-900 dark:text-white" />
