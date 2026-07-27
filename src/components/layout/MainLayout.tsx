@@ -177,8 +177,41 @@ export default function MainLayout() {
       </aside>
 
       {/* Main Content Area */}
-      <div className={`flex w-full flex-col transition-all duration-300 ${sidebarCollapsed ? "lg:ml-[72px]" : "lg:ml-[280px]"}`}>
-        {/* Mobile Top Bar */}
+      <div className="flex w-full flex-col transition-all duration-300 lg:ml-[280px]">
+        {/* Updates Sidebar - Desktop only */}
+        <aside className="hidden lg:block lg:w-80 lg:border-l lg:border-zinc-200 dark:lg:border-zinc-800 lg:p-4">
+          <h2 className="mb-4 text-lg font-bold text-zinc-900 dark:text-white">Updates</h2>
+          <div className="space-y-3">
+            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                <p className="text-sm font-semibold text-zinc-900 dark:text-white">System Update</p>
+              </div>
+              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">New features have been deployed</p>
+              <p className="mt-1 text-xs text-zinc-400">2 hours ago</p>
+            </div>
+            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                <p className="text-sm font-semibold text-zinc-900 dark:text-white">Community Growth</p>
+              </div>
+              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">100 new members joined this week</p>
+              <p className="mt-1 text-xs text-zinc-400">5 hours ago</p>
+            </div>
+            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
+                <p className="text-sm font-semibold text-zinc-900 dark:text-white">Maintenance</p>
+              </div>
+              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Scheduled maintenance tonight</p>
+              <p className="mt-1 text-xs text-zinc-400">1 day ago</p>
+            </div>
+          </div>
+        </aside>
+
+        {/* Content wrapper */}
+        <div className={`flex w-full flex-col transition-all duration-300 ${sidebarCollapsed ? "lg:ml-[72px]" : ""}`}>
+          {/* Mobile Top Bar */}
         <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-black/95 lg:hidden">
           <div className="flex items-center justify-between px-4 py-3">
             <button onClick={() => setSidebarOpen(true)} className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
