@@ -4,8 +4,6 @@ import { ArrowLeft, Camera, Save } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { db } from "../../firebase/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { storage } from "../../firebase/firebase";
 
 export default function EditProfile() {
   const { user, refreshProfileStatus } = useAuth();
@@ -60,17 +58,25 @@ export default function EditProfile() {
 
     setUploading(true);
     try {
-      // Create a reference to the storage location
-      const imageRef = ref(storage, `profile-pictures/${user.uid}/${Date.now()}_${file.name}`);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "hivez_upload");
 
-      // Upload the file
-      await uploadBytes(imageRef, file);
+      const response = await fetch(
+        "https://api.cloudinary.com/v1_1/dpotccr5q/image/upload",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
-      // Get the download URL
-      const downloadURL = await getDownloadURL(imageRef);
+      const data = await response.json();
 
-      // Update the photoURL state
-      setPhotoURL(downloadURL);
+      if (data.secure_url) {
+        setPhotoURL(data.secure_url);
+      } else {
+        throw new Error("Upload failed");
+      }
     } catch (err) {
       console.error("Failed to upload image:", err);
       alert("Failed to upload image. Please try again.");
