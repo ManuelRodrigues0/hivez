@@ -67,7 +67,7 @@ export default function MainLayout() {
   );
 
   return (
-    <div className="flex min-h-screen bg-white dark:bg-black text-zinc-900 dark:text-white">
+    <div className="flex min-h-screen pt-16 pt-16 bg-white dark:bg-black text-zinc-900 dark:text-white">
       {/* Desktop Header - Fixed at top */}
       <header className="hidden lg:fixed lg:top-0 lg:left-0 lg:right-0 lg:z-50 lg:flex lg:items-center lg:justify-between lg:border-b lg:border-zinc-200 dark:lg:border-zinc-800 lg:bg-white dark:lg:bg-black lg:px-4 lg:h-16">
         {/* Left side - Menu + Logo */}
@@ -129,7 +129,7 @@ export default function MainLayout() {
       <aside 
         className="hidden lg:flex lg:flex-col lg:fixed lg:left-0 lg:top-16 lg:h-[calc(100vh-64px)] lg:bg-white dark:lg:bg-black lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800 lg:z-40 transition-all duration-300"
       >
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1">
           {sidebarCollapsed ? (
             <div className="flex flex-col items-center py-4">
               <button onClick={() => go("/")} className={`p-3 transition ${isActive("/") ? "bg-zinc-100 dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"}`}>
