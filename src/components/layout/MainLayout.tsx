@@ -188,7 +188,7 @@ export default function MainLayout() {
       {/* Main Content Area */}
       <div className="flex w-full flex-col transition-[margin] duration-300 lg:ml-[var(--layout-left)]">
         {/* Updates Sidebar - Desktop only */}
-        <aside className="fixed right-0 top-16 hidden h-[calc(100vh-64px)] w-[var(--layout-right)] overflow-y-auto px-4 py-6 lg:block">
+        <aside className="fixed right-0 top-16 hidden h-[calc(100vh-64px)] w-[var(--layout-right)] overflow-y-auto border-l border-zinc-200 px-4 py-6 dark:border-zinc-800 lg:block">
           <div className="rounded-2xl bg-zinc-100 p-4 dark:bg-zinc-950">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Updates</h2>
