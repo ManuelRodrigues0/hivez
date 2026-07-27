@@ -44,118 +44,122 @@ export default function FeedCard({ post, onCommentClick }: Props) {
 
   return (
     <>
-      <article className="border-y border-zinc-800 dark:border-zinc-800 border-zinc-200">
-        <div className="mx-auto max-w-2xl px-4 py-3">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <img
-                src={
-                  post.photoURL ||
-                  "https://ui-avatars.com/api/?name=Hivez&background=6366f1&color=fff"
-                }
-                alt={post.username}
-                className="h-9 w-9 rounded-full object-cover"
-              />
-              <div className="flex-1">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-semibold text-zinc-900 dark:text-white">
-                    {post.displayName || post.username}
-                  </span>
-                  {post.verified && (
-                    <BadgeCheck size={14} className="text-sky-500" />
-                  )}
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                    @{post.username}
-                  </span>
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                    · {timeAgo(post.createdAt)}
-                  </span>
-                </div>
+      <article className="border-b border-zinc-200 dark:border-zinc-800 px-4 py-3 transition hover:bg-zinc-50 dark:hover:bg-zinc-900/40">
+        <div className="flex gap-3">
+          {/* Avatar column */}
+          <div className="flex flex-col items-center">
+            <img
+              src={
+                post.photoURL ||
+                "https://ui-avatars.com/api/?name=Hivez&background=6366f1&color=fff"
+              }
+              alt={post.username}
+              className="h-10 w-10 flex-shrink-0 rounded-full object-cover"
+            />
+            <div className="mt-1 w-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
+          </div>
+
+          {/* Content column */}
+          <div className="min-w-0 flex-1">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="truncate text-sm font-semibold text-zinc-900 dark:text-white hover:underline cursor-pointer">
+                  {post.displayName || post.username}
+                </span>
+                {post.verified && (
+                  <BadgeCheck size={14} className="flex-shrink-0 text-sky-500" />
+                )}
+                <span className="hidden sm:inline text-sm text-zinc-500 dark:text-zinc-400 truncate">
+                  @{post.username}
+                </span>
+                <span className="text-sm text-zinc-400 dark:text-zinc-500">·</span>
+                <span className="text-sm text-zinc-500 dark:text-zinc-400 flex-shrink-0">
+                  {timeAgo(post.createdAt)}
+                </span>
               </div>
+              <button className="flex-shrink-0 rounded-full p-1.5 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                <MoreHorizontal size={16} className="text-zinc-500 dark:text-zinc-400" />
+              </button>
             </div>
-            <button className="rounded-full p-1.5 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
-              <MoreHorizontal size={18} className="text-zinc-500 dark:text-zinc-400" />
-            </button>
-          </div>
 
-          {/* Caption */}
-          {post.caption && (
-            <div className="mt-2.5">
-              <p className="whitespace-pre-wrap break-words text-sm leading-6 text-zinc-900 dark:text-zinc-100">
-                {post.caption}
-              </p>
-              {post.hashtags && post.hashtags.length > 0 && (
-                <div className="mt-1.5 flex flex-wrap gap-2">
-                  {post.hashtags.map((tag, idx) => (
-                    <button
-                      key={idx}
-                      className="text-xs text-sky-500 hover:underline"
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+            {/* Caption */}
+            {post.caption && (
+              <div className="mt-1">
+                <p className="whitespace-pre-wrap break-words text-[15px] leading-5 text-zinc-800 dark:text-zinc-200">
+                  {post.caption}
+                </p>
+                {post.hashtags && post.hashtags.length > 0 && (
+                  <div className="mt-1.5 flex flex-wrap gap-2">
+                    {post.hashtags.map((tag, idx) => (
+                      <button
+                        key={idx}
+                        className="text-sm text-sky-500 hover:underline"
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
-          {/* Media - smaller */}
-          {post.mediaUrl && (
-            <div className="mt-2.5">
-              {post.mediaType === "image" ? (
-                <img
-                  src={post.mediaUrl}
-                  alt=""
-                  className="max-h-[280px] w-full rounded-xl object-cover"
+            {/* Media - smaller */}
+            {post.mediaUrl && (
+              <div className="mt-2.5">
+                {post.mediaType === "image" ? (
+                  <img
+                    src={post.mediaUrl}
+                    alt=""
+                    className="max-h-[300px] w-full rounded-2xl border border-zinc-200 dark:border-zinc-700 object-cover"
+                  />
+                ) : (
+                  <video
+                    src={post.mediaUrl}
+                    controls
+                    className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-700"
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="mt-2 -ml-2 flex items-center gap-1">
+              <button
+                onClick={() => setLiked(!liked)}
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-red-50 dark:hover:bg-red-950/30 group"
+              >
+                <Heart
+                  size={18}
+                  className={
+                    liked
+                      ? "fill-red-500 text-red-500"
+                      : "text-zinc-500 dark:text-zinc-400 group-hover:text-red-500"
+                  }
                 />
-              ) : (
-                <video
-                  src={post.mediaUrl}
-                  controls
-                  className="w-full rounded-xl"
-                />
-              )}
+                <span className={`text-xs ${liked ? "text-red-500" : "text-zinc-500 dark:text-zinc-400 group-hover:text-red-500"}`}>
+                  {post.likes + (liked ? 1 : 0)}
+                </span>
+              </button>
+              <button
+                onClick={() => onCommentClick?.(post)}
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-sky-50 dark:hover:bg-sky-950/30 group"
+              >
+                <MessageCircle size={18} className="text-zinc-500 dark:text-zinc-400 group-hover:text-sky-500" />
+                <span className="text-xs text-zinc-500 dark:text-zinc-400 group-hover:text-sky-500">
+                  {post.comments}
+                </span>
+              </button>
+              <button className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-green-50 dark:hover:bg-green-950/30 group">
+                <Repeat2 size={18} className="text-zinc-500 dark:text-zinc-400 group-hover:text-green-500" />
+                <span className="text-xs text-zinc-500 dark:text-zinc-400 group-hover:text-green-500">
+                  {post.shares}
+                </span>
+              </button>
+              <button className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-blue-50 dark:hover:bg-blue-950/30 group">
+                <Send size={18} className="text-zinc-500 dark:text-zinc-400 group-hover:text-blue-500" />
+              </button>
             </div>
-          )}
-
-          {/* Actions */}
-          <div className="mt-3 flex items-center gap-1">
-            <button
-              onClick={() => setLiked(!liked)}
-              className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
-            >
-              <Heart
-                size={18}
-                className={
-                  liked
-                    ? "fill-red-500 text-red-500"
-                    : "text-zinc-500 dark:text-zinc-400"
-                }
-              />
-            </button>
-            <button
-              onClick={() => onCommentClick?.(post)}
-              className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
-            >
-              <MessageCircle size={18} className="text-zinc-500 dark:text-zinc-400" />
-            </button>
-            <button className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
-              <Repeat2 size={18} className="text-zinc-500 dark:text-zinc-400" />
-            </button>
-            <button className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
-              <Send size={18} className="text-zinc-500 dark:text-zinc-400" />
-            </button>
-          </div>
-
-          {/* Stats */}
-          <div className="mt-1.5 flex items-center gap-2 text-sm">
-            <span className="font-semibold text-zinc-900 dark:text-white">{post.likes}</span>
-            <span className="text-zinc-500 dark:text-zinc-400">likes</span>
-            <span className="text-zinc-400 dark:text-zinc-600">·</span>
-            <button className="text-zinc-500 dark:text-zinc-400 hover:underline">
-              {post.comments} comments
-            </button>
           </div>
         </div>
       </article>
