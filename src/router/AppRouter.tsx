@@ -9,6 +9,8 @@ import Activity from "@/pages/Activity/Activity";
 import Search from "@/pages/Search/Search";
 import Notifications from "@/pages/Notifications/Notifications";
 import Settings from "@/pages/Settings/Settings";
+import Volunteering from "@/pages/Volunteering/Volunteering";
+import Chats from "@/pages/Chats/Chats";
 
 import Camera from "@/pages/Camera/Camera";
 import Create from "@/pages/Create/Create";
@@ -67,6 +69,8 @@ export default function AppRouter() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/activity" element={<Activity />} />
         <Route path="/search" element={<Search />} />
+        <Route path="/volunteering" element={<Volunteering />} />
+        <Route path="/chats" element={<Chats />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/profile/edit" element={<EditProfile />} />

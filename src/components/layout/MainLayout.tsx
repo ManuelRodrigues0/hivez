@@ -1,6 +1,6 @@
 import { useState, type CSSProperties } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Home, Search, PlusSquare, Heart, User, Menu, X, Settings, LogOut } from "lucide-react";
+import { Home, Search, PlusSquare, User, Menu, X, Settings, LogOut, HandHeart, MessageCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { COMMUNITIES } from "../../constants/communities";
 import { logout } from "../../services/auth";
@@ -33,6 +33,10 @@ export default function MainLayout() {
         return "Profile";
       case "/activity":
         return "Activity";
+      case "/volunteering":
+        return "Volunteering";
+      case "/chats":
+        return "Chats";
       case "/notifications":
         return "Notifications";
       case "/settings":
@@ -146,8 +150,17 @@ export default function MainLayout() {
           >
             <PlusSquare size={20} className="text-zinc-900 dark:text-white" />
           </button>
-          <button className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
-            <Heart size={20} className="text-zinc-900 dark:text-white" />
+          <button
+            onClick={() => navigate("/volunteering")}
+            className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          >
+            <HandHeart size={20} className="text-zinc-900 dark:text-white" />
+          </button>
+          <button
+            onClick={() => navigate("/chats")}
+            className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          >
+            <MessageCircle size={20} className="text-zinc-900 dark:text-white" />
           </button>
           <button 
             onClick={() => navigate("/profile")}
@@ -268,16 +281,16 @@ export default function MainLayout() {
               <button onClick={() => navigate("/")} className="flex flex-col items-center gap-0.5 px-3 py-1">
                 <Home size={22} className={isActive("/") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
               </button>
-              <button onClick={() => navigate("/search")} className="flex flex-col items-center gap-0.5 px-3 py-1">
-                <Search size={22} className={isActive("/search") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
+              <button onClick={() => navigate("/volunteering")} className="flex flex-col items-center gap-0.5 px-3 py-1">
+                <HandHeart size={22} className={isActive("/volunteering") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
               </button>
               <button onClick={() => setCreateModalOpen(true)} className="flex flex-col items-center gap-0.5 px-3 py-1">
                 <div className="rounded-full border-2 border-zinc-500 dark:border-zinc-400 p-1">
                   <PlusSquare size={18} className="text-zinc-500 dark:text-zinc-400" />
                 </div>
               </button>
-              <button onClick={() => navigate("/activity")} className="flex flex-col items-center gap-0.5 px-3 py-1">
-                <Heart size={22} className={isActive("/activity") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
+              <button onClick={() => navigate("/chats")} className="flex flex-col items-center gap-0.5 px-3 py-1">
+                <MessageCircle size={22} className={isActive("/chats") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
               </button>
               <button onClick={() => navigate("/profile")} className="flex flex-col items-center gap-0.5 px-3 py-1">
                 <User size={22} className={isActive("/profile") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
