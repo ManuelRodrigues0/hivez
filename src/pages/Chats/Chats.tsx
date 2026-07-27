@@ -483,8 +483,8 @@ export default function Chats() {
   const showThreadOnMobile = Boolean(selectedChatId && mobileThreadOpen);
 
   return (
-    <div className="app-page h-[calc(100vh-124px)] overflow-hidden md:h-[calc(100vh-64px)]">
-      <div className="flex h-full min-h-0">
+    <div className="fixed inset-0 top-[64px] bottom-[60px] overflow-hidden md:bottom-0 md:static md:inset-auto md:h-[calc(100vh-64px)]">
+      <div className="flex h-full">
         <aside className={`${showThreadOnMobile ? "hidden md:flex" : "flex"} relative w-full flex-col md:w-80 lg:w-[340px]`}>
           <div className="flex items-center justify-between px-4 pb-3 pt-5 md:pt-5">
             <div>
@@ -560,10 +560,10 @@ export default function Chats() {
           </button>
         </aside>
 
-        <section className={`${showThreadOnMobile ? "flex" : "hidden md:flex"} min-w-0 flex-1 flex-col h-full min-h-0 relative`}>
+        <section className={`${showThreadOnMobile ? "flex" : "hidden md:flex"} min-w-0 flex-1 flex-col relative`}>
           {selectedChat && otherUser ? (
             <>
-              <div className="flex items-center justify-between px-4 py-4">
+              <div className="flex-shrink-0 flex items-center justify-between px-4 py-4">
                 <div className="flex min-w-0 items-center gap-3">
                   <button onClick={() => setMobileThreadOpen(false)} className="app-icon-button md:hidden">
                     <ArrowLeft size={20} />
@@ -582,7 +582,7 @@ export default function Chats() {
                 </button>
               </div>
 
-              <div className="flex-1 space-y-2 overflow-y-auto rounded-t-[28px] bg-zinc-50 px-4 py-4 dark:bg-zinc-950/60 pb-20 md:pb-4">
+              <div className="flex-1 min-h-0 space-y-2 overflow-y-auto rounded-t-[28px] bg-zinc-50 px-4 py-4 dark:bg-zinc-950/60">
                 {[
                   ...new Map(
                     [...localMessages[selectedChat.id] || [], ...pendingMessages[selectedChat.id] || [], ...messages]
@@ -628,7 +628,7 @@ export default function Chats() {
                 <div ref={bottomRef} />
               </div>
 
-              <div className="bg-zinc-50 p-3 dark:bg-zinc-950/60">
+              <div className="flex-shrink-0 bg-zinc-50 p-3 dark:bg-zinc-950/60 pb-[calc(12px+60px)] md:pb-3">
                 <div className="flex items-end gap-2 rounded-3xl bg-zinc-100 p-2 dark:bg-zinc-900">
                   <textarea
                     value={messageText}
