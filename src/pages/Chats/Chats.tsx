@@ -483,8 +483,8 @@ export default function Chats() {
   const showThreadOnMobile = Boolean(selectedChatId && mobileThreadOpen);
 
   return (
-    <div className="app-page h-[calc(100vh-64px)] overflow-hidden">
-      <div className="flex h-full">
+    <div className="app-page h-[calc(100vh-124px)] overflow-hidden md:h-[calc(100vh-64px)]">
+      <div className="flex h-full min-h-0">
         <aside className={`${showThreadOnMobile ? "hidden md:flex" : "flex"} relative w-full flex-col md:w-80 lg:w-[340px]`}>
           <div className="flex items-center justify-between px-4 pb-3 pt-5 md:pt-5">
             <div>
@@ -560,7 +560,7 @@ export default function Chats() {
           </button>
         </aside>
 
-        <section className={`${showThreadOnMobile ? "flex" : "hidden md:flex"} min-w-0 flex-1 flex-col h-full`}>
+        <section className={`${showThreadOnMobile ? "flex" : "hidden md:flex"} min-w-0 flex-1 flex-col h-full min-h-0 relative`}>
           {selectedChat && otherUser ? (
             <>
               <div className="flex items-center justify-between px-4 py-4">
@@ -582,7 +582,7 @@ export default function Chats() {
                 </button>
               </div>
 
-              <div className="flex-1 space-y-2 overflow-y-auto rounded-t-[28px] bg-zinc-50 px-4 py-4 dark:bg-zinc-950/60">
+              <div className="flex-1 space-y-2 overflow-y-auto rounded-t-[28px] bg-zinc-50 px-4 py-4 dark:bg-zinc-950/60 pb-20 md:pb-4">
                 {[
                   ...new Map(
                     [...localMessages[selectedChat.id] || [], ...pendingMessages[selectedChat.id] || [], ...messages]
