@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  deleteDoc,
   getDoc,
   increment,
   onSnapshot,
@@ -25,14 +26,18 @@ export async function createFollowRequest(requesterId: string, targetId: string)
   const requestRef = doc(db, "followRequests", `${requesterId}_${targetId}`);
   const snapshot = await getDoc(requestRef);
   
-  if (snapshot.exists()) return; // Request already exists
+  // If request exists and is pending, don't create duplicate
+  if (snapshot.exists() && snapshot.data()?.status === "pending") {
+    return; // Request already exists
+  }
 
+  // Create or update the request (in case it was previously declined)
   await setDoc(requestRef, {
     requesterId,
     targetId,
     status: "pending",
     createdAt: serverTimestamp(),
-  });
+  }, { merge: true });
 }
 
 export async function acceptFollowRequest(requesterId: string, targetId: string) {
@@ -43,7 +48,7 @@ export async function acceptFollowRequest(requesterId: string, targetId: string)
 
   const batch = writeBatch(db);
 
-  // Update request status
+  // Update request status to accepted
   batch.update(requestRef, { status: "accepted" });
 
   // Create follow relationship
@@ -66,11 +71,17 @@ export async function acceptFollowRequest(requesterId: string, targetId: string)
   batch.update(doc(db, "users", requesterId), { following: increment(1) });
 
   await batch.commit();
+  
+  // Delete the follow request document after accepting
+  await deleteDoc(requestRef);
 }
 
 export async function declineFollowRequest(requesterId: string, targetId: string) {
   const requestRef = doc(db, "followRequests", `${requesterId}_${targetId}`);
   await updateDoc(requestRef, { status: "declined" });
+  
+  // Delete the follow request document after declining
+  await deleteDoc(requestRef);
 }
 
 export function listenToFollowRequests(
