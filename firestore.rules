@@ -14,10 +14,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if signedIn();
       allow create: if signedIn() && request.auth.uid == userId;
-      allow update: if signedIn() && (
-        request.auth.uid == userId
-        || request.resource.data.diff(resource.data).changedKeys().hasOnly(["followers", "following"])
-      );
+      allow update: if signedIn();
 
       match /followers/{followerId} {
         allow read: if signedIn();
