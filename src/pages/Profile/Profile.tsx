@@ -31,6 +31,7 @@ export default function Profile() {
   const [followRequestPending, setFollowRequestPending] = useState(false);
   const [followBusy, setFollowBusy] = useState(false);
   const [activeTab, setActiveTab] = useState<"threads" | "replies" | "media">("threads");
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const isOwnProfile = !uid || uid === currentUser?.uid;
   const profileUid = isOwnProfile ? currentUser?.uid : uid;
@@ -62,19 +63,23 @@ export default function Profile() {
       return;
     }
 
-    const followUnsub = onSnapshot(doc(db, "follows", `${currentUser.uid}_${profileUid}`), (snap) => {
-      const isFollowing = snap.exists();
-      setFollowing(isFollowing);
-      // If following exists, request is not pending
-      if (isFollowing) {
-        setFollowRequestPending(false);
+    // Subscribe to follow relationship
+    const followUnsub = onSnapshot(
+      doc(db, "follows", `${currentUser.uid}_${profileUid}`),
+      (snap) => {
+        const isFollowing = snap.exists();
+        setFollowing(isFollowing);
+        if (isFollowing) {
+          setFollowRequestPending(false);
+        }
+      },
+      (error) => {
+        console.error("Error listening to follow status:", error);
       }
-    });
+    );
 
-    let requestUnsub: (() => void) | undefined;
-
-    // Listen to sent follow requests in real-time (outgoing requests)
-    requestUnsub = listenToSentFollowRequests(
+    // Subscribe to sent follow requests
+    const requestUnsub = listenToSentFollowRequests(
       currentUser.uid,
       (requests) => {
         const hasPending = requests.some((req) => req.targetId === profileUid);
@@ -87,13 +92,14 @@ export default function Profile() {
 
     return () => {
       followUnsub();
-      if (requestUnsub) requestUnsub();
+      requestUnsub();
     };
   }, [currentUser, isOwnProfile, profileUid]);
 
   async function toggleFollow() {
     if (!currentUser || !profile || isOwnProfile || followBusy) return;
     setFollowBusy(true);
+    setLocalError(null);
 
     try {
       if (following) {
@@ -111,6 +117,7 @@ export default function Profile() {
 
         await batch.commit();
 
+        // Optimistically update UI
         setFollowing(false);
         setProfile((current) =>
           current
@@ -128,8 +135,11 @@ export default function Profile() {
       } else {
         // Send follow request
         await createFollowRequest(currentUser.uid, profile.uid);
+        
+        // Optimistically update UI
         setFollowRequestPending(true);
 
+        // Send notification
         const mySnap = await getDoc(doc(db, "users", currentUser.uid));
         const myProfile = mySnap.data();
 
@@ -148,6 +158,7 @@ export default function Profile() {
       }
     } catch (error) {
       console.error("Error toggling follow:", error);
+      setLocalError("Failed to update follow status. Please try again.");
     } finally {
       setFollowBusy(false);
     }
@@ -236,8 +247,12 @@ export default function Profile() {
             </>
           ) : (
             <>
-              <button onClick={toggleFollow} disabled={followBusy} className="app-primary-button flex-1">
-                {following ? "Following" : followRequestPending ? "Requested" : "Follow"}
+              <button 
+                onClick={toggleFollow} 
+                disabled={followBusy} 
+                className="app-primary-button flex-1"
+              >
+                {followBusy ? "Loading..." : following ? "Following" : followRequestPending ? "Requested" : "Follow"}
               </button>
               <button className="app-secondary-button px-3">
                 <MessageCircle size={18} />
@@ -248,6 +263,9 @@ export default function Profile() {
             </>
           )}
         </div>
+        {localError && (
+          <p className="mt-2 text-sm text-red-500">{localError}</p>
+        )}
       </div>
 
       {/* Tabs */}
