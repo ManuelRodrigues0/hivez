@@ -157,6 +157,16 @@ export default function MainLayout() {
       </button>
 
       <button
+        onClick={() => go("/volunteering")}
+        className={`flex w-full items-center gap-4 px-5 py-4 transition ${
+          isActive("/volunteering") ? "bg-zinc-100 font-semibold dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"
+        }`}
+      >
+        <HandHeart size={22} className="text-zinc-900 dark:text-white flex-shrink-0" /> 
+        <span className="text-zinc-900 dark:text-white">Volunteering</span>
+      </button>
+
+      <button
         onClick={() => go("/notifications")}
         className={`flex w-full items-center gap-4 px-5 py-4 transition ${
           isActive("/notifications") ? "bg-zinc-100 font-semibold dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"
@@ -291,6 +301,9 @@ export default function MainLayout() {
             <button onClick={() => go("/")} className={`p-3 transition ${isActive("/") ? "bg-zinc-100 dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"}`}>
               <Home size={22} className="text-zinc-900 dark:text-white" />
             </button>
+            <button onClick={() => go("/volunteering")} className={`p-3 transition ${isActive("/volunteering") ? "bg-zinc-100 dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"}`} title="Volunteering">
+              <HandHeart size={22} className="text-zinc-900 dark:text-white" />
+            </button>
             <button onClick={() => go("/notifications")} className={`relative p-3 transition ${isActive("/notifications") ? "bg-zinc-100 dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"}`} title="Notifications">
               <Bell size={22} className="text-zinc-900 dark:text-white" />
               {unreadNotifications > 0 && <Badge count={unreadNotifications} />}
@@ -395,9 +408,6 @@ export default function MainLayout() {
             <div className="flex items-center justify-around py-2">
               <button onClick={() => navigate("/")} className="flex flex-col items-center gap-0.5 px-3 py-1">
                 <Home size={22} className={isActive("/") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
-              </button>
-              <button onClick={() => navigate("/volunteering")} className="flex flex-col items-center gap-0.5 px-3 py-1">
-                <HandHeart size={22} className={isActive("/volunteering") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
               </button>
               <button onClick={() => setCreateModalOpen(true)} className="flex flex-col items-center gap-0.5 px-3 py-1">
                 <div className="rounded-full border-2 border-zinc-500 dark:border-zinc-400 p-1">
