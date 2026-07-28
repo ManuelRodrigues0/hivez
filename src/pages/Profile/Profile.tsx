@@ -90,9 +90,32 @@ export default function Profile() {
       }
     );
 
+    // Subscribe to profile user document for real-time count updates
+    const profileUnsub = onSnapshot(
+      doc(db, "users", profileUid),
+      (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          setProfile((current) =>
+            current
+              ? {
+                  ...current,
+                  followers: data.followers || 0,
+                  following: data.following || 0,
+                }
+              : current
+          );
+        }
+      },
+      (error) => {
+        console.error("Error listening to profile updates:", error);
+      }
+    );
+
     return () => {
       followUnsub();
       requestUnsub();
+      profileUnsub();
     };
   }, [currentUser, isOwnProfile, profileUid]);
 
