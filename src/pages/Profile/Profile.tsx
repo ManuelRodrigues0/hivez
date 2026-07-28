@@ -134,12 +134,15 @@ export default function Profile() {
         setFollowRequestPending(false);
       } else {
         // Send follow request
+        console.log("Creating follow request...");
         await createFollowRequest(currentUser.uid, profile.uid);
+        console.log("Follow request created successfully");
         
         // Optimistically update UI
         setFollowRequestPending(true);
 
         // Send notification
+        console.log("Creating notification...");
         const mySnap = await getDoc(doc(db, "users", currentUser.uid));
         const myProfile = mySnap.data();
 
@@ -155,10 +158,13 @@ export default function Profile() {
           text: "sent you a follow request",
           link: `/profile?uid=${currentUser.uid}`,
         });
+        console.log("Notification created successfully");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error toggling follow:", error);
-      setLocalError("Failed to update follow status. Please try again.");
+      console.error("Error code:", error.code);
+      console.error("Error message:", error.message);
+      setLocalError(`Failed to update follow status: ${error.message}`);
     } finally {
       setFollowBusy(false);
     }
