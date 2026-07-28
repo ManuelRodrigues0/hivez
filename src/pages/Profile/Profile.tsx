@@ -97,12 +97,25 @@ export default function Profile() {
   }, [currentUser, isOwnProfile, profileUid]);
 
   async function toggleFollow() {
-    if (!currentUser || !profile || isOwnProfile || followBusy) return;
+    console.log("=== TOGGLE FOLLOW CLICKED ===");
+    console.log("Current user:", currentUser?.uid);
+    console.log("Profile user:", profile?.uid);
+    console.log("Is own profile:", isOwnProfile);
+    console.log("Currently following:", following);
+    console.log("Request pending:", followRequestPending);
+    console.log("Follow busy:", followBusy);
+    
+    if (!currentUser || !profile || isOwnProfile || followBusy) {
+      console.log("Early return - conditions not met");
+      return;
+    }
+    
     setFollowBusy(true);
     setLocalError(null);
 
     try {
       if (following) {
+        console.log("Unfollowing...");
         // Unfollow
         const followRef = doc(db, "follows", `${currentUser.uid}_${profile.uid}`);
         const followerRef = doc(db, "users", profile.uid, "followers", currentUser.uid);
@@ -116,6 +129,7 @@ export default function Profile() {
         batch.update(doc(db, "users", currentUser.uid), { following: increment(-1) });
 
         await batch.commit();
+        console.log("Unfollow successful");
 
         // Optimistically update UI
         setFollowing(false);
@@ -128,21 +142,23 @@ export default function Profile() {
             : current
         );
       } else if (followRequestPending) {
+        console.log("Canceling pending request...");
         // Cancel pending request
         const requestRef = doc(db, "followRequests", `${currentUser.uid}_${profile.uid}`);
         await deleteDoc(requestRef);
         setFollowRequestPending(false);
+        console.log("Request canceled");
       } else {
+        console.log("Sending follow request...");
         // Send follow request
-        console.log("Creating follow request...");
         await createFollowRequest(currentUser.uid, profile.uid);
-        console.log("Follow request created successfully");
+        console.log("Follow request created");
         
         // Optimistically update UI
         setFollowRequestPending(true);
 
         // Send notification
-        console.log("Creating notification...");
+        console.log("Sending notification...");
         const mySnap = await getDoc(doc(db, "users", currentUser.uid));
         const myProfile = mySnap.data();
 
@@ -158,15 +174,18 @@ export default function Profile() {
           text: "sent you a follow request",
           link: `/profile?uid=${currentUser.uid}`,
         });
-        console.log("Notification created successfully");
+        console.log("Notification sent - FOLLOW REQUEST COMPLETE");
       }
     } catch (error: any) {
-      console.error("Error toggling follow:", error);
+      console.error("=== ERROR IN TOGGLE FOLLOW ===");
+      console.error("Error:", error);
       console.error("Error code:", error.code);
       console.error("Error message:", error.message);
-      setLocalError(`Failed to update follow status: ${error.message}`);
+      console.error("Error stack:", error.stack);
+      setLocalError(`Failed: ${error.message}`);
     } finally {
       setFollowBusy(false);
+      console.log("=== TOGGLE FOLLOW COMPLETE ===");
     }
   }
 
