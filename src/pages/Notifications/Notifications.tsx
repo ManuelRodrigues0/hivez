@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Heart, Loader2, MessageCircle, UserPlus } from "lucide-react";
+import { Heart, Loader2, MessageCircle, UserPlus, Check, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/context/AuthContext";
@@ -9,6 +9,7 @@ import {
   markNotificationRead,
   type NotificationDoc,
 } from "@/services/notifications";
+import { acceptFollowRequest, declineFollowRequest } from "@/services/followRequests";
 
 function timeAgo(timestamp: any) {
   if (!timestamp?.toDate) return "Now";
@@ -33,7 +34,7 @@ function iconFor(type: NotificationDoc["type"]) {
 function titleFor(notification: NotificationDoc) {
   const name = notification.actorDisplayName || notification.actorUsername || "Someone";
   if (notification.type === "comment") return `${name} commented on your post`;
-  if (notification.type === "follow") return `${name} followed you`;
+  if (notification.type === "follow") return `${name} sent you a follow request`;
   if (notification.type === "message") return `${name} sent you a message`;
   return `${name} liked your post`;
 }
@@ -69,6 +70,36 @@ export default function Notifications() {
       await markNotificationRead(notification.id);
     }
     navigate(notification.link || "/notifications");
+  }
+
+  async function handleAcceptFollowRequest(notification: NotificationDoc, e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!user) return;
+    
+    try {
+      await acceptFollowRequest(notification.actorId, user.uid);
+      // Optionally mark the notification as read
+      if (!notification.read) {
+        await markNotificationRead(notification.id);
+      }
+    } catch (error) {
+      console.error("Failed to accept follow request:", error);
+    }
+  }
+
+  async function handleDeclineFollowRequest(notification: NotificationDoc, e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!user) return;
+    
+    try {
+      await declineFollowRequest(notification.actorId, user.uid);
+      // Optionally mark the notification as read
+      if (!notification.read) {
+        await markNotificationRead(notification.id);
+      }
+    } catch (error) {
+      console.error("Failed to decline follow request:", error);
+    }
   }
 
   async function markAllRead() {
@@ -141,6 +172,24 @@ export default function Notifications() {
                     {!notification.read && <span className="h-2 w-2 rounded-full bg-sky-500" />}
                   </div>
                 </div>
+                {notification.type === "follow" && (
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      onClick={(e) => handleAcceptFollowRequest(notification, e)}
+                      className="flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-600"
+                    >
+                      <Check size={14} />
+                      Accept
+                    </button>
+                    <button
+                      onClick={(e) => handleDeclineFollowRequest(notification, e)}
+                      className="flex items-center gap-1.5 rounded-lg bg-zinc-200 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                    >
+                      <X size={14} />
+                      Decline
+                    </button>
+                  </div>
+                )}
                 <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-500">{timeAgo(notification.createdAt)}</p>
               </div>
             </button>

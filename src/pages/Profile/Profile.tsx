@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, BadgeCheck, MessageCircle, UserPlus } from "lucide-react";
-import { doc, getDoc, increment, onSnapshot, serverTimestamp, writeBatch } from "firebase/firestore";
+import { doc, deleteDoc, getDoc, increment, onSnapshot, serverTimestamp, writeBatch } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { createNotification } from "@/services/notifications";
+import { createFollowRequest, checkFollowRequestStatus } from "@/services/followRequests";
 
 interface UserProfile {
   uid: string;
@@ -27,6 +28,7 @@ export default function Profile() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [following, setFollowing] = useState(false);
+  const [followRequestPending, setFollowRequestPending] = useState(false);
   const [followBusy, setFollowBusy] = useState(false);
   const [activeTab, setActiveTab] = useState<"threads" | "replies" | "media">("threads");
 
@@ -56,12 +58,24 @@ export default function Profile() {
   useEffect(() => {
     if (!currentUser || !profileUid || isOwnProfile) {
       setFollowing(false);
+      setFollowRequestPending(false);
       return;
     }
 
-    return onSnapshot(doc(db, "follows", `${currentUser.uid}_${profileUid}`), (snap) => {
+    const followUnsub = onSnapshot(doc(db, "follows", `${currentUser.uid}_${profileUid}`), (snap) => {
       setFollowing(snap.exists());
     });
+
+    const checkRequestStatus = async () => {
+      const status = await checkFollowRequestStatus(currentUser.uid, profileUid);
+      setFollowRequestPending(status === "pending");
+    };
+
+    checkRequestStatus();
+
+    return () => {
+      followUnsub();
+    };
   }, [currentUser, isOwnProfile, profileUid]);
 
   async function toggleFollow() {
@@ -69,44 +83,42 @@ export default function Profile() {
     setFollowBusy(true);
 
     try {
-      const followRef = doc(db, "follows", `${currentUser.uid}_${profile.uid}`);
-      const followerRef = doc(db, "users", profile.uid, "followers", currentUser.uid);
-      const followingRef = doc(db, "users", currentUser.uid, "following", profile.uid);
-      const mySnap = await getDoc(doc(db, "users", currentUser.uid));
-      const myProfile = mySnap.data();
-      const batch = writeBatch(db);
-
       if (following) {
+        // Unfollow
+        const followRef = doc(db, "follows", `${currentUser.uid}_${profile.uid}`);
+        const followerRef = doc(db, "users", profile.uid, "followers", currentUser.uid);
+        const followingRef = doc(db, "users", currentUser.uid, "following", profile.uid);
+        const batch = writeBatch(db);
+
         batch.delete(followRef);
         batch.delete(followerRef);
         batch.delete(followingRef);
         batch.update(doc(db, "users", profile.uid), { followers: increment(-1) });
         batch.update(doc(db, "users", currentUser.uid), { following: increment(-1) });
+
+        await batch.commit();
+
+        setProfile((current) =>
+          current
+            ? {
+                ...current,
+                followers: Math.max(0, current.followers - 1),
+              }
+            : current
+        );
+      } else if (followRequestPending) {
+        // Cancel pending request
+        const requestRef = doc(db, "followRequests", `${currentUser.uid}_${profile.uid}`);
+        await deleteDoc(requestRef);
+        setFollowRequestPending(false);
       } else {
-        const followData = {
-          followerId: currentUser.uid,
-          followingId: profile.uid,
-          createdAt: serverTimestamp(),
-        };
-        batch.set(followRef, followData);
-        batch.set(followerRef, followData);
-        batch.set(followingRef, followData);
-        batch.update(doc(db, "users", profile.uid), { followers: increment(1) });
-        batch.update(doc(db, "users", currentUser.uid), { following: increment(1) });
-      }
+        // Send follow request
+        await createFollowRequest(currentUser.uid, profile.uid);
+        setFollowRequestPending(true);
 
-      await batch.commit();
+        const mySnap = await getDoc(doc(db, "users", currentUser.uid));
+        const myProfile = mySnap.data();
 
-      setProfile((current) =>
-        current
-          ? {
-              ...current,
-              followers: Math.max(0, current.followers + (following ? -1 : 1)),
-            }
-          : current
-      );
-
-      if (!following) {
         await createNotification({
           recipientId: profile.uid,
           actor: {
@@ -116,7 +128,7 @@ export default function Profile() {
             photoURL: myProfile?.photoURL || currentUser.photoURL || "",
           },
           type: "follow",
-          text: "started following you",
+          text: "sent you a follow request",
           link: `/profile?uid=${currentUser.uid}`,
         });
       }
@@ -209,7 +221,7 @@ export default function Profile() {
           ) : (
             <>
               <button onClick={toggleFollow} disabled={followBusy} className="app-primary-button flex-1">
-                {following ? "Following" : "Follow"}
+                {following ? "Following" : followRequestPending ? "Requested" : "Follow"}
               </button>
               <button className="app-secondary-button px-3">
                 <MessageCircle size={18} />

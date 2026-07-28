@@ -100,7 +100,7 @@ export function listenToNotifications(
             id: notificationDoc.id,
             ...(notificationDoc.data() as Omit<NotificationDoc, "id">),
           }))
-          .filter((notification) => notification.type === "comment" || notification.type === "like")
+          .filter((notification) => notification.type === "comment" || notification.type === "like" || notification.type === "follow")
           .sort((a, b) => {
             const aTime = a.createdAt?.toDate?.().getTime?.() || 0;
             const bTime = b.createdAt?.toDate?.().getTime?.() || 0;
@@ -128,7 +128,7 @@ export function listenToUnreadNotificationsCount(
       onNext(
         snapshot.docs.filter((notificationDoc) => {
           const notification = notificationDoc.data() as NotificationDoc;
-          return !notification.read && (notification.type === "comment" || notification.type === "like");
+          return !notification.read && (notification.type === "comment" || notification.type === "like" || notification.type === "follow");
         }).length
       );
     },
@@ -152,7 +152,7 @@ export async function markAllNotificationsRead(uid: string) {
   const batch = writeBatch(db);
   unreadSnapshot.docs.forEach((notificationDoc) => {
     const notification = notificationDoc.data() as NotificationDoc;
-    if (!notification.read && (notification.type === "comment" || notification.type === "like")) {
+    if (!notification.read && (notification.type === "comment" || notification.type === "like" || notification.type === "follow")) {
       batch.update(notificationDoc.ref, { read: true });
     }
   });
