@@ -78,10 +78,8 @@ export default function Notifications() {
     
     try {
       await acceptFollowRequest(notification.actorId, user.uid);
-      // Optionally mark the notification as read
-      if (!notification.read) {
-        await markNotificationRead(notification.id);
-      }
+      // Remove the notification from the list
+      setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
     } catch (error) {
       console.error("Failed to accept follow request:", error);
     }
@@ -93,10 +91,8 @@ export default function Notifications() {
     
     try {
       await declineFollowRequest(notification.actorId, user.uid);
-      // Optionally mark the notification as read
-      if (!notification.read) {
-        await markNotificationRead(notification.id);
-      }
+      // Remove the notification from the list
+      setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
     } catch (error) {
       console.error("Failed to decline follow request:", error);
     }

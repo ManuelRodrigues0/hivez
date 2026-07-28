@@ -97,6 +97,30 @@ export function listenToFollowRequests(
   );
 }
 
+export function listenToSentFollowRequests(
+  userId: string,
+  onNext: (requests: FollowRequest[]) => void,
+  onError?: (error: Error) => void
+) {
+  const q = query(
+    collection(db, "followRequests"),
+    where("requesterId", "==", userId),
+    where("status", "==", "pending")
+  );
+
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const requests = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as Omit<FollowRequest, "id">),
+      }));
+      onNext(requests);
+    },
+    onError
+  );
+}
+
 export async function checkFollowRequestStatus(
   requesterId: string,
   targetId: string

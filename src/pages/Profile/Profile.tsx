@@ -5,7 +5,7 @@ import { doc, deleteDoc, getDoc, increment, onSnapshot, writeBatch } from "fireb
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { createNotification } from "@/services/notifications";
-import { createFollowRequest, checkFollowRequestStatus } from "@/services/followRequests";
+import { createFollowRequest, listenToSentFollowRequests } from "@/services/followRequests";
 
 interface UserProfile {
   uid: string;
@@ -63,18 +63,31 @@ export default function Profile() {
     }
 
     const followUnsub = onSnapshot(doc(db, "follows", `${currentUser.uid}_${profileUid}`), (snap) => {
-      setFollowing(snap.exists());
+      const isFollowing = snap.exists();
+      setFollowing(isFollowing);
+      // If following exists, request is not pending
+      if (isFollowing) {
+        setFollowRequestPending(false);
+      }
     });
 
-    const checkRequestStatus = async () => {
-      const status = await checkFollowRequestStatus(currentUser.uid, profileUid);
-      setFollowRequestPending(status === "pending");
-    };
+    let requestUnsub: (() => void) | undefined;
 
-    checkRequestStatus();
+    // Listen to sent follow requests in real-time (outgoing requests)
+    requestUnsub = listenToSentFollowRequests(
+      currentUser.uid,
+      (requests) => {
+        const hasPending = requests.some((req) => req.targetId === profileUid);
+        setFollowRequestPending(hasPending);
+      },
+      (error) => {
+        console.error("Failed to listen to sent follow requests:", error);
+      }
+    );
 
     return () => {
       followUnsub();
+      if (requestUnsub) requestUnsub();
     };
   }, [currentUser, isOwnProfile, profileUid]);
 
@@ -98,6 +111,7 @@ export default function Profile() {
 
         await batch.commit();
 
+        setFollowing(false);
         setProfile((current) =>
           current
             ? {
@@ -132,6 +146,8 @@ export default function Profile() {
           link: `/profile?uid=${currentUser.uid}`,
         });
       }
+    } catch (error) {
+      console.error("Error toggling follow:", error);
     } finally {
       setFollowBusy(false);
     }
