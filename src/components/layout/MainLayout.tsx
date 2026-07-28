@@ -359,8 +359,12 @@ export default function MainLayout() {
                 <Menu size={22} className="text-zinc-900 dark:text-white" />
               </button>
               <h1 className="text-lg font-bold tracking-wide text-zinc-900 dark:text-white">🐝 HIVEZ</h1>
-              <button onClick={() => navigate("/search")} className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
-                <Search size={22} className="text-zinc-900 dark:text-white" />
+              <button 
+                onClick={() => navigate("/notifications")}
+                className="relative rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              >
+                <Bell size={22} className="text-zinc-900 dark:text-white" />
+                {unreadNotifications > 0 && <Badge count={unreadNotifications} />}
               </button>
             </div>
           </header>
@@ -403,9 +407,8 @@ export default function MainLayout() {
               <button onClick={() => navigate("/chats")} className="flex flex-col items-center gap-0.5 px-3 py-1">
                 <MessageCircle size={22} className={isActive("/chats") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
               </button>
-              <button onClick={() => navigate("/notifications")} className="relative flex flex-col items-center gap-0.5 px-3 py-1">
-                <Bell size={22} className={isActive("/notifications") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
-                {unreadNotifications > 0 && <Badge count={unreadNotifications} />}
+              <button onClick={() => navigate("/search")} className="flex flex-col items-center gap-0.5 px-3 py-1">
+                <Search size={22} className={isActive("/search") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
               </button>
               <button onClick={() => navigate("/profile")} className="flex flex-col items-center gap-0.5 px-3 py-1">
                 <User size={22} className={isActive("/profile") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
