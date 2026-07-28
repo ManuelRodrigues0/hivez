@@ -15,7 +15,7 @@ export default function MainLayout() {
   const location = useLocation();
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const seenNotificationIds = useRef<Set<string>>(new Set());
