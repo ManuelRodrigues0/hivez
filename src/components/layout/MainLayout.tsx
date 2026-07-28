@@ -409,6 +409,9 @@ export default function MainLayout() {
               <button onClick={() => navigate("/")} className="flex flex-col items-center gap-0.5 px-3 py-1">
                 <Home size={22} className={isActive("/") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
               </button>
+              <button onClick={() => navigate("/search")} className="flex flex-col items-center gap-0.5 px-3 py-1">
+                <Search size={22} className={isActive("/search") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
+              </button>
               <button onClick={() => setCreateModalOpen(true)} className="flex flex-col items-center gap-0.5 px-3 py-1">
                 <div className="rounded-full border-2 border-zinc-500 dark:border-zinc-400 p-1">
                   <PlusSquare size={18} className="text-zinc-500 dark:text-zinc-400" />
@@ -416,9 +419,6 @@ export default function MainLayout() {
               </button>
               <button onClick={() => navigate("/chats")} className="flex flex-col items-center gap-0.5 px-3 py-1">
                 <MessageCircle size={22} className={isActive("/chats") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
-              </button>
-              <button onClick={() => navigate("/search")} className="flex flex-col items-center gap-0.5 px-3 py-1">
-                <Search size={22} className={isActive("/search") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
               </button>
               <button onClick={() => navigate("/profile")} className="flex flex-col items-center gap-0.5 px-3 py-1">
                 <User size={22} className={isActive("/profile") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
