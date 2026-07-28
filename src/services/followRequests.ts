@@ -10,7 +10,6 @@ import {
   setDoc,
   updateDoc,
   where,
-  writeBatch,
 } from "firebase/firestore";
 
 import { db } from "@/firebase/firebase";
@@ -46,12 +45,7 @@ export async function acceptFollowRequest(requesterId: string, targetId: string)
   
   if (!snapshot.exists()) return;
 
-  const batch = writeBatch(db);
-
-  // Update request status to accepted
-  batch.update(requestRef, { status: "accepted" });
-
-  // Create follow relationship
+  // Create follow relationship first
   const followRef = doc(db, "follows", `${requesterId}_${targetId}`);
   const followerRef = doc(db, "users", targetId, "followers", requesterId);
   const followingRef = doc(db, "users", requesterId, "following", targetId);
@@ -62,25 +56,22 @@ export async function acceptFollowRequest(requesterId: string, targetId: string)
     createdAt: serverTimestamp(),
   };
 
-  batch.set(followRef, followData);
-  batch.set(followerRef, followData);
-  batch.set(followingRef, followData);
+  await setDoc(followRef, followData);
+  await setDoc(followerRef, followData);
+  await setDoc(followingRef, followData);
 
   // Update follower counts
-  batch.update(doc(db, "users", targetId), { followers: increment(1) });
-  batch.update(doc(db, "users", requesterId), { following: increment(1) });
+  await updateDoc(doc(db, "users", targetId), { followers: increment(1) });
+  await updateDoc(doc(db, "users", requesterId), { following: increment(1) });
 
-  await batch.commit();
-  
-  // Delete the follow request document after accepting
+  // Delete the follow request document
   await deleteDoc(requestRef);
 }
 
 export async function declineFollowRequest(requesterId: string, targetId: string) {
   const requestRef = doc(db, "followRequests", `${requesterId}_${targetId}`);
-  await updateDoc(requestRef, { status: "declined" });
   
-  // Delete the follow request document after declining
+  // Delete the follow request document
   await deleteDoc(requestRef);
 }
 
