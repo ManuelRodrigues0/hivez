@@ -147,6 +147,16 @@ export default function MainLayout() {
     <>
       {/* Home */}
       <button
+        onClick={() => go("/")}
+        className={`flex w-full items-center gap-4 px-5 py-4 transition ${
+          isActive("/") ? "bg-zinc-100 font-semibold dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"
+        }`}
+      >
+        <Home size={22} className="text-zinc-900 dark:text-white flex-shrink-0" /> 
+        <span className="text-zinc-900 dark:text-white">Home</span>
+      </button>
+
+      <button
         onClick={() => go("/notifications")}
         className={`flex w-full items-center gap-4 px-5 py-4 transition ${
           isActive("/notifications") ? "bg-zinc-100 font-semibold dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"
@@ -157,16 +167,6 @@ export default function MainLayout() {
           {unreadNotifications > 0 && <Badge count={unreadNotifications} />}
         </span>
         <span className="text-zinc-900 dark:text-white">Notifications</span>
-      </button>
-
-      <button
-        onClick={() => go("/")}
-        className={`flex w-full items-center gap-4 px-5 py-4 transition ${
-          isActive("/") ? "bg-zinc-100 font-semibold dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"
-        }`}
-      >
-        <Home size={22} className="text-zinc-900 dark:text-white flex-shrink-0" /> 
-        <span className="text-zinc-900 dark:text-white">Home</span>
       </button>
 
       {/* Communities */}
