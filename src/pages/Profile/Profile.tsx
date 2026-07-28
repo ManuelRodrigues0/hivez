@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, BadgeCheck, MessageCircle, UserPlus } from "lucide-react";
-import { doc, deleteDoc, getDoc, increment, onSnapshot, serverTimestamp, writeBatch } from "firebase/firestore";
+import { doc, deleteDoc, getDoc, increment, onSnapshot, writeBatch } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { createNotification } from "@/services/notifications";

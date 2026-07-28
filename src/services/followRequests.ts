@@ -10,7 +10,6 @@ import {
   updateDoc,
   where,
   writeBatch,
-  deleteDoc,
 } from "firebase/firestore";
 
 import { db } from "@/firebase/firebase";
