@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Camera, Save } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { db } from "../../firebase/firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 
 export default function EditProfile() {
   const { user, refreshProfileStatus } = useAuth();
@@ -11,6 +11,7 @@ export default function EditProfile() {
 
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
+  const [originalUsername, setOriginalUsername] = useState("");
   const [bio, setBio] = useState("");
   const [photoURL, setPhotoURL] = useState("");
   const [saving, setSaving] = useState(false);
@@ -28,6 +29,7 @@ export default function EditProfile() {
           const data = snap.data();
           setDisplayName(data.displayName || "");
           setUsername(data.username || "");
+          setOriginalUsername(data.username || "");
           setBio(data.bio || "");
           setPhotoURL(data.photoURL || "");
         }
@@ -91,18 +93,55 @@ export default function EditProfile() {
       alert("Display name is required.");
       return;
     }
+
+    const cleanUsername = username.trim().replace(/^@+/, "").toLowerCase();
+
+    if (cleanUsername.length < 3) {
+      alert("Username must be at least 3 characters.");
+      return;
+    }
+
     setSaving(true);
+
     try {
+      // Check if username has changed
+      const usernameChanged = cleanUsername !== originalUsername;
+
+      if (usernameChanged) {
+        // Check if the new username is already taken
+        const usernameDoc = await getDoc(doc(db, "usernames", cleanUsername));
+        if (usernameDoc.exists()) {
+          alert("Username already taken. Please choose another.");
+          setSaving(false);
+          return;
+        }
+
+        // Delete the old username entry if it exists
+        if (originalUsername) {
+          await deleteDoc(doc(db, "usernames", originalUsername));
+        }
+
+        // Create the new username entry
+        await setDoc(doc(db, "usernames", cleanUsername), {
+          uid: user.uid,
+        });
+      }
+
+      // Update the user document
       await setDoc(
         doc(db, "users", user.uid),
         {
           displayName: displayName.trim(),
-          username: username.trim().replace(/^@+/, "").toLowerCase(),
+          username: cleanUsername,
           bio: bio.trim(),
           photoURL,
         },
         { merge: true }
       );
+
+      // Update originalUsername to reflect the change
+      setOriginalUsername(cleanUsername);
+
       await refreshProfileStatus();
       navigate("/profile");
     } catch (err: any) {
