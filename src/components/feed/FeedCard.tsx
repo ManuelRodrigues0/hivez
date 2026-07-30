@@ -12,6 +12,7 @@ import {
   UserMinus,
   Share2,
   ExternalLink,
+  Trash2,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -196,6 +197,22 @@ export default function FeedCard({ post, onCommentClick }: Props) {
     setMenuOpen(false);
   }
 
+  async function deletePost() {
+    if (!user || user.uid !== post.uid) return;
+    if (!window.confirm("Delete this post? This can't be undone.")) return;
+    
+    try {
+      await deleteDoc(doc(db, "posts", post.id));
+      // Decrement user's post count
+      await updateDoc(doc(db, "users", user.uid), {
+        posts: increment(-1),
+      });
+    } catch (err) {
+      console.error("Failed to delete post:", err);
+    }
+    setMenuOpen(false);
+  }
+
   return (
     <>
       <article className="border-b border-zinc-200 dark:border-zinc-800 px-4 py-3 transition hover:bg-zinc-50 dark:hover:bg-zinc-900/40">
@@ -262,6 +279,18 @@ export default function FeedCard({ post, onCommentClick }: Props) {
                         <ExternalLink size={16} />
                         Copy link
                       </button>
+                      {user && user.uid === post.uid && (
+                        <>
+                          <hr className="mx-3 border-zinc-200 dark:border-zinc-700" />
+                          <button
+                            onClick={deletePost}
+                            className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
+                          >
+                            <Trash2 size={16} />
+                            Delete
+                          </button>
+                        </>
+                      )}
                       <hr className="mx-3 border-zinc-200 dark:border-zinc-700" />
                       <button className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30">
                         <Flag size={16} />
