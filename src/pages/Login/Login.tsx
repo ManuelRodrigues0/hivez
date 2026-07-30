@@ -44,13 +44,13 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 text-zinc-900 dark:bg-black dark:text-white">
+    <div className="auth-bg flex min-h-screen items-center justify-center px-6 text-white">
       <div className="w-full max-w-sm">
 
-        <h1 className="mb-2 text-center text-4xl font-black tracking-tight text-zinc-900 dark:text-white">
+        <h1 className="mb-2 text-center text-4xl font-black tracking-tight text-white drop-shadow-lg">
           HIVEZ
         </h1>
-        <p className="mb-8 text-center text-sm text-zinc-500 dark:text-zinc-400">Sign in to your local feed.</p>
+        <p className="mb-8 text-center text-sm text-zinc-200 drop-shadow">Sign in to your local feed.</p>
 
         <form
           onSubmit={handleLogin}
@@ -92,10 +92,10 @@ export default function Login() {
           Continue with Google
         </button>
 
-        <p className="mt-6 text-center text-zinc-600 dark:text-zinc-400">
+        <p className="mt-6 text-center text-zinc-200 drop-shadow">
           Don't have an account?{" "}
           <Link
-            className="text-zinc-900 dark:text-white font-semibold"
+            className="text-white font-semibold underline"
             to="/signup"
           >
             Sign Up

@@ -197,6 +197,18 @@ html.light,
   .app-tab-active {
     @apply border-zinc-900 text-zinc-900 dark:border-white dark:text-white;
   }
+
+  /* Background image used on Login / Signup / Complete Profile screens.
+     Place your image at: public/auth-bg.jpg
+     (or change the URL below to match your filename) */
+  .auth-bg {
+    background-image:
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.65)),
+      url("/auth-bg.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
 }
 
 /* Flash animation for camera */
