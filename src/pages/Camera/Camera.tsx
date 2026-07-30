@@ -13,6 +13,9 @@ export default function Camera() {
   const timerRef = useRef<number | null>(null);
   const holdTimeoutRef = useRef<number | null>(null);
   const didRecordRef = useRef(false);
+  const capturingRef = useRef(false);
+  const multiSnapTimerRef = useRef<number | null>(null);
+  const multiSnapCountRef = useRef(0);
 
   const [loading, setLoading] = useState(true);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
@@ -25,6 +28,7 @@ export default function Camera() {
   const [timerActive, setTimerActive] = useState(false);
   const [hdEnabled, setHdEnabled] = useState(false);
   const [multiSnapEnabled, setMultiSnapEnabled] = useState(false);
+  const [multiSnapActive, setMultiSnapActive] = useState(false);
 
   useEffect(() => {
     async function startCamera() {
@@ -39,6 +43,7 @@ export default function Camera() {
 
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
         streamRef.current = stream;
+        capturingRef.current = false;
 
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -63,19 +68,56 @@ export default function Camera() {
     return () => {
       streamRef.current?.getTracks().forEach((track) => track.stop());
       if (timerRef.current) clearInterval(timerRef.current);
+      if (multiSnapTimerRef.current) clearInterval(multiSnapTimerRef.current);
     };
   }, [navigate, facingMode, hdEnabled]);
 
-  // Apply flash effect
+  // Enable/disable camera torch for flash
+  async function toggleTorch(enabled: boolean) {
+    if (!streamRef.current) return;
+    const track = streamRef.current.getVideoTracks()[0];
+    if (!track) return;
+    
+    try {
+      // Check if torch is supported (non-standard API)
+      const capabilities = track.getCapabilities?.() as any;
+      if (capabilities?.torch) {
+        await track.applyConstraints({
+          advanced: [{ torch: enabled }] as any,
+        });
+      } else {
+        // Torch not supported - use screen flash instead
+        triggerScreenFlash();
+      }
+    } catch {
+      // Torch failed - use screen flash instead
+      if (enabled) triggerScreenFlash();
+    }
+  }
+
+  // Screen flash effect
+  function triggerScreenFlash() {
+    const flash = document.createElement("div");
+    flash.className = "fixed inset-0 z-50 bg-white";
+    flash.style.animation = "flash 0.15s ease-out forwards";
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 150);
+  }
+
+  // Trigger flash (torch or screen)
   function triggerFlash() {
     if (!flashEnabled) return;
-    const flash = document.createElement("div");
-    flash.className = "fixed inset-0 z-50 bg-white animate-flash";
-    document.body.appendChild(flash);
-    setTimeout(() => flash.remove(), 200);
+    if (facingMode === "environment") {
+      toggleTorch(true);
+      setTimeout(() => toggleTorch(false), 100);
+    } else {
+      triggerScreenFlash();
+    }
   }
 
   function switchCamera() {
+    // Turn off torch before switching
+    toggleTorch(false);
     streamRef.current?.getTracks().forEach((track) => track.stop());
     setLoading(true);
     setFacingMode((current) => (current === "environment" ? "user" : "environment"));
@@ -117,7 +159,71 @@ export default function Camera() {
     setRecording(false);
   }
 
-  function handlePressStart() {
+  function capturePhoto() {
+    if (!videoRef.current || !canvasRef.current || capturingRef.current) return;
+    capturingRef.current = true;
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      capturingRef.current = false;
+      return;
+    }
+
+    if (facingMode === "user") {
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+    }
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          capturingRef.current = false;
+          return;
+        }
+        const file = new File([blob], `hivez-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`, { type: "image/jpeg" });
+        setCaptures((current) => [...current, file]);
+        capturingRef.current = false;
+      },
+      "image/jpeg",
+      0.95
+    );
+  }
+
+  // Start multi snap burst
+  function startMultiSnap() {
+    if (multiSnapActive) return;
+    setMultiSnapActive(true);
+    multiSnapCountRef.current = 0;
+    const totalSnaps = 10;
+    const delay = 200; // 200ms between each snap
+
+    // First capture immediately
+    triggerFlash();
+    capturePhoto();
+    multiSnapCountRef.current = 1;
+
+    multiSnapTimerRef.current = window.setInterval(() => {
+      multiSnapCountRef.current++;
+      if (multiSnapCountRef.current >= totalSnaps) {
+        if (multiSnapTimerRef.current) {
+          clearInterval(multiSnapTimerRef.current);
+          multiSnapTimerRef.current = null;
+        }
+        setMultiSnapActive(false);
+        return;
+      }
+      triggerFlash();
+      capturePhoto();
+    }, delay);
+  }
+
+  function handlePointerDown() {
+    if (capturingRef.current || multiSnapActive) return;
     didRecordRef.current = false;
     holdTimeoutRef.current = window.setTimeout(() => {
       didRecordRef.current = true;
@@ -125,7 +231,8 @@ export default function Camera() {
     }, 350);
   }
 
-  function handlePressEnd() {
+  function handlePointerUp() {
+    if (multiSnapActive) return;
     if (holdTimeoutRef.current) clearTimeout(holdTimeoutRef.current);
 
     if (recording) {
@@ -133,13 +240,17 @@ export default function Camera() {
       return;
     }
 
-    if (!didRecordRef.current) {
+    if (!didRecordRef.current && !capturingRef.current) {
+      if (multiSnapEnabled) {
+        startMultiSnap();
+        return;
+      }
+
       if (timerActive) {
-        // Show countdown before capture
         let count = 3;
         const countdownEl = document.createElement("div");
         countdownEl.className = "fixed inset-0 z-50 flex items-center justify-center bg-black/50";
-        countdownEl.innerHTML = `<span class="text-7xl font-bold text-white animate-ping" id="countdown">${count}</span>`;
+        countdownEl.innerHTML = `<span class="text-7xl font-bold text-white" id="countdown">${count}</span>`;
         document.body.appendChild(countdownEl);
         
         const countInterval = setInterval(() => {
@@ -160,44 +271,19 @@ export default function Camera() {
     }
   }
 
-  function capturePhoto() {
-    if (!videoRef.current || !canvasRef.current) return;
-
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    if (facingMode === "user") {
-      ctx.translate(canvas.width, 0);
-      ctx.scale(-1, 1);
-    }
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    canvas.toBlob(
-      (blob) => {
-        if (!blob) return;
-        const file = new File([blob], `hivez-${Date.now()}.jpg`, { type: "image/jpeg" });
-        setCaptures((current) => [...current, file]);
-      },
-      "image/jpeg",
-      0.95
-    );
-  }
-
   function removeCapture(index: number) {
     setCaptures((current) => current.filter((_, itemIndex) => itemIndex !== index));
   }
 
   function finishPost() {
     if (!captures.length) return;
+    toggleTorch(false);
     streamRef.current?.getTracks().forEach((track) => track.stop());
     navigate("/create", { state: { media: captures } });
   }
 
   function cancel() {
+    toggleTorch(false);
     streamRef.current?.getTracks().forEach((track) => track.stop());
     navigate("/");
   }
@@ -230,11 +316,21 @@ export default function Camera() {
         <div className="pointer-events-none absolute inset-0 z-10">
           <div className="h-full w-full" style={{
             backgroundImage: `
-              linear-gradient(to right, rgba(255,255,255,0.2) 1px, transparent 1px),
-              linear-gradient(to bottom, rgba(255,255,255,0.2) 1px, transparent 1px)
+              linear-gradient(to right, rgba(255,255,255,0.15) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(255,255,255,0.15) 1px, transparent 1px)
             `,
             backgroundSize: '33.33% 33.33%'
           }} />
+        </div>
+      )}
+
+      {/* Multi Snap progress indicator */}
+      {multiSnapActive && (
+        <div className="absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2">
+          <div className="flex items-center gap-2 rounded-full bg-black/50 px-5 py-2 backdrop-blur-sm">
+            <div className="h-2 w-2 animate-pulse rounded-full bg-white" />
+            <span className="text-sm font-semibold text-white">Burst {multiSnapCountRef.current}/10</span>
+          </div>
         </div>
       )}
 
@@ -248,13 +344,11 @@ export default function Camera() {
         </div>
       )}
 
-      {/* Top Bar - Snapchat style */}
+      {/* Top Bar */}
       <div className="absolute left-0 right-0 top-0 z-30">
-        {/* Gradient fade */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-transparent h-32" />
         
         <div className="relative flex items-center justify-between px-4 pt-12">
-          {/* Left - Close */}
           <button 
             onClick={cancel} 
             className="flex h-10 w-10 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm transition hover:bg-black/50 active:scale-90"
@@ -262,24 +356,25 @@ export default function Camera() {
             <X size={22} />
           </button>
 
-          {/* Center - Recording indicator or status */}
           <div className="flex items-center gap-2">
             {recording && (
               <>
                 <div className="h-3 w-3 animate-pulse rounded-full bg-red-500" />
-                <span className="text-sm font-semibold text-white drop-shadow-lg">
-                  {recordTime}s
-                </span>
+                <span className="text-sm font-semibold text-white drop-shadow-lg">{recordTime}s</span>
               </>
             )}
-            {!recording && captures.length > 0 && (
+            {multiSnapActive && (
+              <span className="rounded-full bg-black/40 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
+                Capturing...
+              </span>
+            )}
+            {!recording && !multiSnapActive && captures.length > 0 && (
               <span className="rounded-full bg-black/40 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
                 {captures.length} captured
               </span>
             )}
           </div>
 
-          {/* Right - Menu trigger */}
           <div className="relative">
             <button 
               onClick={() => setMenuOpen(!menuOpen)} 
@@ -288,7 +383,6 @@ export default function Camera() {
               <ChevronDown size={22} className={`transition-transform duration-200 ${menuOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            {/* Slide-down Menu */}
             {menuOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
@@ -363,38 +457,39 @@ export default function Camera() {
 
       {/* Bottom Controls */}
       <div className="absolute bottom-0 left-0 right-0 z-30">
-        {/* Gradient fade */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent h-48" />
         
         <div className="relative flex items-center justify-center pb-8 pt-16">
-          {/* Capture Button - Snapchat style */}
           <div className="relative">
-            {/* Outer ring */}
             <div className={`absolute -inset-1.5 rounded-full transition-all duration-300 ${
               recording ? "border-4 border-red-500 animate-pulse" : "border-4 border-white/30"
             }`} />
             
-            {/* Main button */}
-            <button
-              onMouseDown={handlePressStart}
-              onMouseUp={handlePressEnd}
-              onMouseLeave={handlePressEnd}
-              onTouchStart={handlePressStart}
-              onTouchEnd={handlePressEnd}
-              className={`relative flex h-20 w-20 items-center justify-center rounded-full transition-all active:scale-90 ${
-                recording ? "bg-red-500 scale-90" : "bg-white/20"
-              }`}
-            >
-              <div className={`h-16 w-16 rounded-full transition-all duration-200 ${
-                recording ? "bg-red-500 rounded-lg scale-75" : "bg-white"
-              }`} />
-            </button>
+            <div className="relative">
+              <button
+                onPointerDown={handlePointerDown}
+                onPointerUp={handlePointerUp}
+                onPointerLeave={handlePointerUp}
+                className={`flex h-20 w-20 items-center justify-center rounded-full transition-all select-none active:scale-90 ${
+                  recording ? "bg-red-500 scale-90" : multiSnapActive ? "bg-purple-500 scale-90" : "bg-white/20"
+                }`}
+              >
+                <div className={`h-16 w-16 rounded-full transition-all duration-200 select-none ${
+                  recording ? "bg-red-500 rounded-lg scale-75" : multiSnapActive ? "bg-purple-400" : "bg-white"
+                }`} />
+              </button>
+              {multiSnapEnabled && !recording && !multiSnapActive && (
+                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                  <span className="text-[10px] font-medium text-white/60">MULTI</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Next Button - shown when captures exist */}
-      {captures.length > 0 && (
+      {/* Next Button */}
+      {captures.length > 0 && !multiSnapActive && (
         <button
           onClick={finishPost}
           disabled={recording}
