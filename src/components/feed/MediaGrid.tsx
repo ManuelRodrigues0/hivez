@@ -58,21 +58,18 @@ function MediaItem({
       <div className="relative">
         <video
           src={item.url}
-          controls={single}
           muted={muted}
           playsInline
-          autoPlay={!single}
-          loop={!single}
+          autoPlay
+          loop
           className={`h-full w-full ${single ? `${singleClass} object-contain` : "object-cover"}`}
         />
-        {!single && (
-          <button
-            onClick={() => setMuted(!muted)}
-            className="absolute bottom-2 right-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white backdrop-blur-sm transition hover:bg-black/90"
-          >
-            {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-          </button>
-        )}
+        <button
+          onClick={() => setMuted(!muted)}
+          className="absolute bottom-2 left-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white backdrop-blur-sm transition hover:bg-black/90"
+        >
+          {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+        </button>
       </div>
     );
   }
