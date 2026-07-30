@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, BadgeCheck, Heart, MessageCircle, Repeat2, Send, ShieldX, LogIn, UserPlus } from "lucide-react";
-import { doc, getDoc } from "firebase/firestore";
+import { ArrowLeft, BadgeCheck, Heart, MessageCircle, Repeat2, Send, Trash2, ShieldX, LogIn, UserPlus } from "lucide-react";
+import { doc, getDoc, deleteDoc, updateDoc, increment } from "firebase/firestore";
+import { toast } from "sonner";
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
 import type { FeedPost } from "../../components/feed/Feed";
@@ -123,6 +124,43 @@ export default function PostPage() {
     }
   };
 
+  async function deletePost() {
+    if (!user || !post || user.uid !== post.uid) return;
+    
+    const toastId = toast("Delete this post?", {
+      description: "This action cannot be undone.",
+      duration: 5000,
+      position: "bottom-center",
+      className: "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800",
+      action: {
+        label: "Delete",
+        onClick: async () => {
+          try {
+            await deleteDoc(doc(db, "posts", post.id));
+            await updateDoc(doc(db, "users", user.uid), {
+              posts: increment(-1),
+            });
+            toast.success("Post deleted", {
+              duration: 2000,
+              position: "bottom-center",
+            });
+            navigate("/");
+          } catch (err) {
+            console.error("Failed to delete post:", err);
+            toast.error("Failed to delete post", {
+              duration: 2000,
+              position: "bottom-center",
+            });
+          }
+        },
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => toast.dismiss(toastId),
+      },
+    });
+  }
+
   const handleLogin = () => {
     // Navigate to login and come back to this post after login
     navigate("/login", { state: { from: `/post/${id}` } });
@@ -239,6 +277,14 @@ export default function PostPage() {
               >
                 <Send size={18} className="text-zinc-500 dark:text-zinc-400" />
               </button>
+              {user && post.uid === user.uid && (
+                <button
+                  onClick={deletePost}
+                  className="ml-auto flex items-center gap-1.5 rounded-full px-3 py-1.5 text-red-500 transition hover:bg-red-50 dark:hover:bg-red-950/30"
+                >
+                  <Trash2 size={18} />
+                </button>
+              )}
             </div>
 
             <div className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">

@@ -491,17 +491,6 @@ export default function Profile() {
                           </span>
                         </div>
                       </button>
-                      {currentUser && post.uid === currentUser.uid && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deletePost(post.id);
-                          }}
-                          className="absolute right-1.5 top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/80 text-red-500 opacity-0 shadow-sm transition hover:bg-white hover:text-red-600 group-hover:opacity-100 dark:bg-zinc-800/80 dark:hover:bg-zinc-800"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      )}
                     </div>
                   );
                 })}
