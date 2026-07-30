@@ -20,7 +20,24 @@ import EditProfile from "@/components/profile/EditProfile";
 import Login from "@/pages/Login/Login";
 import Signup from "@/pages/Signup/Signup";
 import CompleteProfile from "@/pages/Signup/CompleteProfile";
+import AdminSetup from "@/pages/AdminSetup";
 
+import AdminLayout from "../components/admin/AdminLayout";
+import {
+  AdminDashboard,
+  AdminUsers,
+  AdminPosts,
+  AdminReports,
+  AdminIssues,
+  AdminHives,
+  AdminAIQueue,
+  AdminNotifications,
+  AdminAnalytics,
+  AdminMedia,
+  AdminRoles,
+  AdminSettings,
+  AdminLogs,
+} from "../components/admin/AdminPages";
 import { useAuth } from "@/context/AuthContext";
 
 export default function AppRouter() {
@@ -37,10 +54,10 @@ export default function AppRouter() {
   if (!user) {
     return (
       <Routes>
-        {/* Public routes */}
         <Route path="/post/:id" element={<PostPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/admin-setup" element={<AdminSetup />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     );
@@ -50,6 +67,7 @@ export default function AppRouter() {
     return (
       <Routes>
         <Route path="/post/:id" element={<PostPage />} />
+        <Route path="/admin-setup" element={<AdminSetup />} />
         <Route path="*" element={<CompleteProfile />} />
       </Routes>
     );
@@ -57,10 +75,8 @@ export default function AppRouter() {
 
   return (
     <Routes>
-      {/* Post page - standalone first before all other routes */}
       <Route path="/post/:id" element={<PostPage />} />
 
-      {/* Main Application with sidebar */}
       <Route element={<MainLayout />}>
         <Route index element={<Home />} />
         <Route path="/hive/:id" element={<Community />} />
@@ -74,12 +90,28 @@ export default function AppRouter() {
         <Route path="/profile/edit" element={<EditProfile />} />
       </Route>
 
-      {/* Standalone Pages without sidebar */}
       <Route element={<MobileLayout />}>
         <Route path="/camera" element={<Camera />} />
         <Route path="/create" element={<Create />} />
       </Route>
 
+      <Route element={<AdminLayout />}>
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/users" element={<AdminUsers />} />
+        <Route path="/admin/posts" element={<AdminPosts />} />
+        <Route path="/admin/reports" element={<AdminReports />} />
+        <Route path="/admin/issues" element={<AdminIssues />} />
+        <Route path="/admin/hives" element={<AdminHives />} />
+        <Route path="/admin/ai-queue" element={<AdminAIQueue />} />
+        <Route path="/admin/notifications" element={<AdminNotifications />} />
+        <Route path="/admin/analytics" element={<AdminAnalytics />} />
+        <Route path="/admin/media" element={<AdminMedia />} />
+        <Route path="/admin/roles" element={<AdminRoles />} />
+        <Route path="/admin/settings" element={<AdminSettings />} />
+        <Route path="/admin/logs" element={<AdminLogs />} />
+      </Route>
+
+      <Route path="/admin-setup" element={<AdminSetup />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

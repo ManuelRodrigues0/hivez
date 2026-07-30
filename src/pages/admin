@@ -1,0 +1,155 @@
+import { useState, useEffect } from "react";
+import {
+  Users,
+  FileText,
+  Flag,
+  UserPlus,
+  Activity,
+  Server,
+} from "lucide-react";
+import { getDashboardStats, subscribeToUsers, subscribeToPosts } from "../../services/admin";
+import type { AdminUser, AdminPost } from "../../services/admin";
+
+export default function AdminDashboard() {
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    activeUsers: 0,
+    newSignups: 0,
+    totalPosts: 0,
+    pendingReports: 0,
+  });
+  const [recentUsers, setRecentUsers] = useState<AdminUser[]>([]);
+  const [recentPosts, setRecentPosts] = useState<AdminPost[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getDashboardStats().then((s) => {
+      setStats(s);
+      setLoading(false);
+    });
+
+    const unsubUsers = subscribeToUsers((users) => setRecentUsers(users.slice(0, 5)));
+    const unsubPosts = subscribeToPosts((posts) => setRecentPosts(posts.slice(0, 5)));
+
+    return () => {
+      unsubUsers();
+      unsubPosts();
+    };
+  }, []);
+
+  const statCards = [
+    { label: "Total Users", value: stats.totalUsers, icon: Users, color: "from-blue-500 to-blue-600" },
+    { label: "Active Users", value: stats.activeUsers, icon: Activity, color: "from-green-500 to-green-600" },
+    { label: "New Signups", value: stats.newSignups, icon: UserPlus, color: "from-purple-500 to-purple-600" },
+    { label: "Total Posts", value: stats.totalPosts, icon: FileText, color: "from-amber-500 to-amber-600" },
+    { label: "Reports Pending", value: stats.pendingReports, icon: Flag, color: "from-red-500 to-red-600" },
+  ];
+
+  return (
+    <div className="min-h-full bg-zinc-950 p-6 text-white">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-8">
+          <h1 className="text-2xl font-black tracking-tight">Dashboard</h1>
+          <p className="mt-1 text-sm text-zinc-400">Overview of your Hivez platform</p>
+        </div>
+
+        {loading ? (
+          <div className="flex h-64 items-center justify-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-white" />
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+              {statCards.map((card) => {
+                const Icon = card.icon;
+                return (
+                  <div key={card.label} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+                    <div className={`mb-3 inline-flex rounded-xl bg-gradient-to-br ${card.color} p-2.5`}>
+                      <Icon size={20} className="text-white" />
+                    </div>
+                    <p className="text-3xl font-black">{card.value.toLocaleString()}</p>
+                    <p className="mt-1 text-xs text-zinc-400">{card.label}</p>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+              <div className="mb-4 flex items-center gap-2">
+                <Server size={18} className="text-green-500" />
+                <h2 className="text-sm font-bold">System Status</h2>
+              </div>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <StatusItem label="API" status="Operational" color="text-green-500" />
+                <StatusItem label="Database" status="Connected" color="text-green-500" />
+                <StatusItem label="Storage" status="Operational" color="text-green-500" />
+                <StatusItem label="Auth" status="Active" color="text-green-500" />
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-6 lg:grid-cols-2">
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+                <h2 className="mb-4 text-sm font-bold">Recent Users</h2>
+                <div className="space-y-3">
+                  {recentUsers.length === 0 ? (
+                    <p className="text-sm text-zinc-500">No users yet.</p>
+                  ) : (
+                    recentUsers.map((u) => (
+                      <div key={u.uid} className="flex items-center gap-3">
+                        <img
+                          src={u.photoURL || `https://ui-avatars.com/api/?name=${u.displayName || u.email}&background=27272a&color=fff`}
+                          alt=""
+                          className="h-9 w-9 rounded-full object-cover"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">{u.displayName || u.email}</p>
+                          <p className="truncate text-xs text-zinc-500">@{u.username || "unknown"}</p>
+                        </div>
+                        {u.verified && (
+                          <span className="rounded-full bg-sky-500/20 px-2 py-0.5 text-[10px] font-bold text-sky-400">Verified</span>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+                <h2 className="mb-4 text-sm font-bold">Recent Posts</h2>
+                <div className="space-y-3">
+                  {recentPosts.length === 0 ? (
+                    <p className="text-sm text-zinc-500">No posts yet.</p>
+                  ) : (
+                    recentPosts.map((p) => (
+                      <div key={p.id} className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-800">
+                          <FileText size={16} className="text-zinc-400" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">{p.caption || "No caption"}</p>
+                          <p className="truncate text-xs text-zinc-500">@{p.username} · {p.likes || 0} likes</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function StatusItem({ label, status, color }: { label: string; status: string; color: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className={`h-2 w-2 rounded-full ${color.replace("text-", "bg-")}`} />
+      <div>
+        <p className="text-xs text-zinc-500">{label}</p>
+        <p className={`text-xs font-semibold ${color}`}>{status}</p>
+      </div>
+    </div>
+  );
+}
