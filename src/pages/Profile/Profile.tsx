@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, BadgeCheck, MessageCircle, UserPlus, Settings, Share2 } from "lucide-react";
-import { doc, deleteDoc, getDoc, increment, onSnapshot, query, where, orderBy, writeBatch, collection } from "firebase/firestore";
+import { doc, deleteDoc, getDoc, increment, onSnapshot, query, where, writeBatch, collection } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { createNotification } from "@/services/notifications";
@@ -67,10 +67,11 @@ export default function Profile() {
     }
 
     setPostsLoading(true);
+    // Only use where clause to avoid needing a composite index
+    // Sort client-side instead
     const q = query(
       collection(db, "posts"),
-      where("uid", "==", profileUid),
-      orderBy("createdAt", "desc")
+      where("uid", "==", profileUid)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -78,6 +79,14 @@ export default function Profile() {
         id: doc.id,
         ...(doc.data() as Omit<FeedPost, "id">),
       }));
+      
+      // Sort client-side by createdAt (descending)
+      posts.sort((a, b) => {
+        const aTime = a.createdAt?.toDate?.()?.getTime?.() || 0;
+        const bTime = b.createdAt?.toDate?.()?.getTime?.() || 0;
+        return bTime - aTime;
+      });
+      
       setUserPosts(posts);
       setPostsLoading(false);
     }, (error) => {
