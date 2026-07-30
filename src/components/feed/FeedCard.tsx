@@ -19,6 +19,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { db } from "../../firebase/firebase";
 import { doc, updateDoc, deleteDoc, setDoc, increment, onSnapshot } from "firebase/firestore";
+import { toast } from "sonner";
 import type { FeedPost } from "./Feed";
 import { createNotification } from "@/services/notifications";
 
@@ -199,18 +200,39 @@ export default function FeedCard({ post, onCommentClick }: Props) {
 
   async function deletePost() {
     if (!user || user.uid !== post.uid) return;
-    if (!window.confirm("Delete this post? This can't be undone.")) return;
-    
-    try {
-      await deleteDoc(doc(db, "posts", post.id));
-      // Decrement user's post count
-      await updateDoc(doc(db, "users", user.uid), {
-        posts: increment(-1),
-      });
-    } catch (err) {
-      console.error("Failed to delete post:", err);
-    }
     setMenuOpen(false);
+
+    const toastId = toast("Delete this post?", {
+      description: "This action cannot be undone.",
+      duration: 5000,
+      position: "bottom-center",
+      className: "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800",
+      action: {
+        label: "Delete",
+        onClick: async () => {
+          try {
+            await deleteDoc(doc(db, "posts", post.id));
+            await updateDoc(doc(db, "users", user.uid), {
+              posts: increment(-1),
+            });
+            toast.success("Post deleted", {
+              duration: 2000,
+              position: "bottom-center",
+            });
+          } catch (err) {
+            console.error("Failed to delete post:", err);
+            toast.error("Failed to delete post", {
+              duration: 2000,
+              position: "bottom-center",
+            });
+          }
+        },
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => toast.dismiss(toastId),
+      },
+    });
   }
 
   return (

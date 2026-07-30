@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, BadgeCheck, MessageCircle, UserPlus, Settings, Share2 } from "lucide-react";
-import { doc, deleteDoc, getDoc, increment, onSnapshot, query, where, writeBatch, collection } from "firebase/firestore";
+import { ArrowLeft, BadgeCheck, MessageCircle, UserPlus, Settings, Share2, Trash2 } from "lucide-react";
+import { doc, deleteDoc, getDoc, increment, onSnapshot, query, where, writeBatch, collection, updateDoc } from "firebase/firestore";
+import { toast } from "sonner";
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { createNotification } from "@/services/notifications";
@@ -253,6 +254,42 @@ export default function Profile() {
     }
   }
 
+  async function deletePost(postId: string) {
+    if (!currentUser) return;
+    
+    const toastId = toast("Delete this post?", {
+      description: "This action cannot be undone.",
+      duration: 5000,
+      position: "bottom-center",
+      className: "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800",
+      action: {
+        label: "Delete",
+        onClick: async () => {
+          try {
+            await deleteDoc(doc(db, "posts", postId));
+            await updateDoc(doc(db, "users", currentUser.uid), {
+              posts: increment(-1),
+            });
+            toast.success("Post deleted", {
+              duration: 2000,
+              position: "bottom-center",
+            });
+          } catch (err) {
+            console.error("Failed to delete post:", err);
+            toast.error("Failed to delete post", {
+              duration: 2000,
+              position: "bottom-center",
+            });
+          }
+        },
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => toast.dismiss(toastId),
+      },
+    });
+  }
+
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center py-32">
@@ -412,48 +449,60 @@ export default function Profile() {
                   const isVideo = post.mediaItems?.[0]?.type === "video" || post.mediaType === "video";
                   
                   return (
-                    <button
-                      key={post.id}
-                      onClick={() => navigate(`/post/${post.id}`)}
-                      className="group relative aspect-square overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-800"
-                    >
-                      {mediaUrl ? (
-                        isVideo ? (
-                          <video
-                            src={mediaUrl}
-                            className="h-full w-full object-cover transition group-hover:opacity-80"
-                            muted
-                          />
+                    <div key={post.id} className="group relative aspect-square overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-800">
+                      <button
+                        onClick={() => navigate(`/post/${post.id}`)}
+                        className="h-full w-full"
+                      >
+                        {mediaUrl ? (
+                          isVideo ? (
+                            <video
+                              src={mediaUrl}
+                              className="h-full w-full object-cover transition group-hover:opacity-80"
+                              muted
+                            />
+                          ) : (
+                            <img
+                              src={mediaUrl}
+                              alt={post.caption || "Post"}
+                              className="h-full w-full object-cover transition group-hover:opacity-80"
+                            />
+                          )
                         ) : (
-                          <img
-                            src={mediaUrl}
-                            alt={post.caption || "Post"}
-                            className="h-full w-full object-cover transition group-hover:opacity-80"
-                          />
-                        )
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center p-4">
-                          <p className="line-clamp-4 text-center text-xs text-zinc-500 dark:text-zinc-400">
-                            {post.caption || "No content"}
-                          </p>
+                          <div className="flex h-full w-full items-center justify-center p-4">
+                            <p className="line-clamp-4 text-center text-xs text-zinc-500 dark:text-zinc-400">
+                              {post.caption || "No content"}
+                            </p>
+                          </div>
+                        )}
+                        {/* Hover overlay with stats */}
+                        <div className="absolute inset-0 flex items-center justify-center gap-4 bg-black/60 opacity-0 transition group-hover:opacity-100">
+                          <span className="flex items-center gap-1 text-sm font-semibold text-white">
+                            <svg className="h-4 w-4 fill-white" viewBox="0 0 24 24">
+                              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                            </svg>
+                            {post.likes}
+                          </span>
+                          <span className="flex items-center gap-1 text-sm font-semibold text-white">
+                            <svg className="h-4 w-4 fill-white" viewBox="0 0 24 24">
+                              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+                            </svg>
+                            {post.comments}
+                          </span>
                         </div>
+                      </button>
+                      {currentUser && post.uid === currentUser.uid && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deletePost(post.id);
+                          }}
+                          className="absolute right-1.5 top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/80 text-red-500 opacity-0 shadow-sm transition hover:bg-white hover:text-red-600 group-hover:opacity-100 dark:bg-zinc-800/80 dark:hover:bg-zinc-800"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       )}
-                      {/* Hover overlay with stats */}
-                      <div className="absolute inset-0 flex items-center justify-center gap-4 bg-black/60 opacity-0 transition group-hover:opacity-100">
-                        <span className="flex items-center gap-1 text-sm font-semibold text-white">
-                          <svg className="h-4 w-4 fill-white" viewBox="0 0 24 24">
-                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                          </svg>
-                          {post.likes}
-                        </span>
-                        <span className="flex items-center gap-1 text-sm font-semibold text-white">
-                          <svg className="h-4 w-4 fill-white" viewBox="0 0 24 24">
-                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-                          </svg>
-                          {post.comments}
-                        </span>
-                      </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
