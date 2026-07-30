@@ -199,8 +199,9 @@ html.light,
   }
 
   /* Background image used on Login / Signup / Complete Profile screens.
-     Place your image at: public/auth-bg.jpg
-     (or change the URL below to match your filename) */
+     Desktop image:  public/auth-bg.jpg
+     Mobile image:   public/auth-bg-mobile.jpg
+     (change the URLs below to match your filenames) */
   .auth-bg {
     background-image:
       linear-gradient(to bottom, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.65)),
@@ -208,6 +209,15 @@ html.light,
     background-size: 100% 100%;
     background-position: center;
     background-repeat: no-repeat;
+  }
+
+  /* Mobile uses a separate image */
+  @media (max-width: 768px) {
+    .auth-bg {
+      background-image:
+        linear-gradient(to bottom, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.65)),
+        url("/auth-bg-mobile.jpg");
+    }
   }
 }
 
