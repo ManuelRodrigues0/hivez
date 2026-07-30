@@ -104,10 +104,11 @@ export default function Camera() {
     // Front camera flash is not supported in web browsers
   }
 
-  // Apply zoom to video element
+  // Apply zoom to video container
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.style.transform = `scale(${zoom})${facingMode === "user" ? " scaleX(-1)" : ""}`;
+    const videoContainer = document.querySelector('.video-container') as HTMLElement | null;
+    if (videoContainer) {
+      videoContainer.style.transform = `scale(${zoom})${facingMode === "user" ? " scaleX(-1)" : ""}`;
     }
   }, [zoom, facingMode]);
 
@@ -301,13 +302,15 @@ export default function Camera() {
   return (
     <main className="fixed inset-0 z-50 overflow-hidden bg-black">
       {/* Video Feed */}
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        className="h-full w-full object-cover"
-      />
+      <div className="video-container absolute inset-0 flex items-center justify-center">
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className="h-full w-full object-cover"
+        />
+      </div>
 
       <canvas ref={canvasRef} className="hidden" />
 
