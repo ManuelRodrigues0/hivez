@@ -39,10 +39,8 @@ export default function AppRouter() {
       <Routes>
         {/* Public routes */}
         <Route path="/post/:id" element={<PostPage />} />
-        <Route element={<MobileLayout />}>
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-        </Route>
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     );
