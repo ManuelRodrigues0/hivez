@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Heart, Loader2, MessageCircle, UserPlus, Check, X } from "lucide-react";
+import { Heart, Loader2, MessageCircle, UserPlus, Check, X, Megaphone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { deleteDoc, doc } from "firebase/firestore";
+import { db } from "@/firebase/firebase";
 
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -27,6 +29,7 @@ function timeAgo(timestamp: any) {
 function iconFor(type: NotificationDoc["type"]) {
   if (type === "comment") return <MessageCircle size={18} className="text-sky-500" />;
   if (type === "follow") return <UserPlus size={18} className="text-emerald-500" />;
+  if (type === "broadcast") return <Megaphone size={18} className="text-amber-500" />;
   if (type === "message") return <MessageCircle size={18} className="text-emerald-500" />;
   return <Heart size={18} className="fill-red-500 text-red-500" />;
 }
@@ -35,6 +38,7 @@ function titleFor(notification: NotificationDoc) {
   const name = notification.actorDisplayName || notification.actorUsername || "Someone";
   if (notification.type === "comment") return `${name} commented on your post`;
   if (notification.type === "follow") return `${name} sent you a follow request`;
+  if (notification.type === "broadcast") return `📢 ${notification.actorDisplayName || "Hivez"}`;
   if (notification.type === "message") return `${name} sent you a message`;
   return `${name} liked your post`;
 }
@@ -78,7 +82,8 @@ export default function Notifications() {
     
     try {
       await acceptFollowRequest(notification.actorId, user.uid);
-      // Remove the notification from the list
+      // Delete the notification so it doesn't reappear after refresh
+      try { await deleteDoc(doc(db, "notifications", notification.id)); } catch {}
       setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
     } catch (error) {
       console.error("Failed to accept follow request:", error);
@@ -91,7 +96,8 @@ export default function Notifications() {
     
     try {
       await declineFollowRequest(notification.actorId, user.uid);
-      // Remove the notification from the list
+      // Delete the notification so it doesn't reappear after refresh
+      try { await deleteDoc(doc(db, "notifications", notification.id)); } catch {}
       setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
     } catch (error) {
       console.error("Failed to decline follow request:", error);
