@@ -58,8 +58,10 @@ function MediaItem({
       <video
         src={item.url}
         controls={single}
-        muted={!single}
+        muted
         playsInline
+        autoPlay={!single}
+        loop={!single}
         className={`h-full w-full ${single ? `${singleClass} object-contain` : "object-cover"}`}
       />
     );
