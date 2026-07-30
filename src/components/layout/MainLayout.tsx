@@ -16,18 +16,42 @@ export default function MainLayout() {
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [isHoveringSidebar, setIsHoveringSidebar] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const seenNotificationIds = useRef<Set<string>>(new Set());
   const notificationsReady = useRef(false);
   const seenChatTimes = useRef<Record<string, number>>({});
   const chatsReady = useRef(false);
+  const hoverTimeoutRef = useRef<number | null>(null);
+  
+  const handleSidebarMouseEnter = () => {
+    if (window.innerWidth >= 1024 && sidebarCollapsed) {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+      hoverTimeoutRef.current = window.setTimeout(() => {
+        setIsHoveringSidebar(true);
+      }, 100);
+    }
+  };
+
+  const handleSidebarMouseLeave = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setIsHoveringSidebar(false);
+  };
+
+  const isSidebarExpanded = !sidebarCollapsed || isHoveringSidebar;
+  
   const layoutVars = {
-    "--layout-left": sidebarCollapsed ? "72px" : "280px",
+    "--layout-left": isSidebarExpanded ? "280px" : "72px",
     "--layout-right": "384px",
-    "--layout-gap": sidebarCollapsed ? "8px" : "10px",
-    "--feed-max": sidebarCollapsed ? "820px" : "640px",
-    "--media-card-width": sidebarCollapsed ? "236px" : "204px",
+    "--layout-gap": isSidebarExpanded ? "10px" : "8px",
+    "--feed-max": isSidebarExpanded ? "640px" : "820px",
+    "--media-card-width": isSidebarExpanded ? "204px" : "236px",
   } as CSSProperties;
 
   const isActive = (path: string) => location.pathname === path;
@@ -295,8 +319,16 @@ export default function MainLayout() {
       {/* Desktop Sidebar - Below header */}
       <aside 
         className="hidden lg:fixed lg:left-0 lg:top-16 lg:z-40 lg:flex lg:h-[calc(100vh-64px)] lg:w-[var(--layout-left)] lg:flex-col lg:border-r lg:border-zinc-200 lg:bg-white transition-[width] duration-300 dark:lg:border-zinc-800 dark:lg:bg-black"
+        onMouseEnter={handleSidebarMouseEnter}
+        onMouseLeave={handleSidebarMouseLeave}
       >
-        {sidebarCollapsed ? (
+        {isSidebarExpanded ? (
+          <div className="flex flex-col h-full">
+            <div className="flex-1 overflow-y-auto">
+              {sidebarContent}
+            </div>
+          </div>
+        ) : (
           <div className="flex flex-col items-center py-4">
             <button onClick={() => go("/")} className={`p-3 transition ${isActive("/") ? "bg-zinc-100 dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"}`}>
               <Home size={22} className="text-zinc-900 dark:text-white" />
@@ -313,12 +345,6 @@ export default function MainLayout() {
                 <span className="text-lg">{community.icon}</span>
               </button>
             ))}
-          </div>
-        ) : (
-          <div className="flex flex-col h-full">
-            <div className="flex-1 overflow-y-auto">
-              {sidebarContent}
-            </div>
           </div>
         )}
       </aside>
