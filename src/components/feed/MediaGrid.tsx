@@ -55,20 +55,20 @@ function MediaItem({
 
   if (item.type === "video") {
     return (
-      <div className="relative">
+      <div className="relative w-full min-h-[200px]" style={{ height: single ? 'auto' : '100%' }}>
         <video
           src={item.url}
           muted={muted}
           playsInline
           autoPlay
           loop
-          className={`h-full w-full ${single ? `${singleClass} object-contain` : "object-cover"}`}
+          className={`w-full ${single ? `${singleClass} object-contain` : "h-full object-cover"}`}
         />
         <button
           onClick={() => setMuted(!muted)}
-          className="absolute bottom-2 left-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white backdrop-blur-sm transition hover:bg-black/90"
+          className="absolute bottom-3 left-3 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-black/80 text-white backdrop-blur-md transition hover:bg-black hover:scale-110"
         >
-          {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+          {muted ? <VolumeX size={20} /> : <Volume2 size={20} />}
         </button>
       </div>
     );
