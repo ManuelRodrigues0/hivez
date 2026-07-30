@@ -66,9 +66,9 @@ function MediaItem({
         />
         <button
           onClick={() => setMuted(!muted)}
-          className="absolute bottom-3 left-3 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-black/80 text-white backdrop-blur-md transition hover:bg-black hover:scale-110"
+          className="absolute bottom-2 left-2 z-50 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition hover:bg-black/80"
         >
-          {muted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+          {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
         </button>
       </div>
     );
