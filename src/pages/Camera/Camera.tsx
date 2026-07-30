@@ -16,6 +16,7 @@ export default function Camera() {
   const capturingRef = useRef(false);
   const multiSnapTimerRef = useRef<number | null>(null);
   const multiSnapCountRef = useRef(0);
+  const normalModeLockRef = useRef(false);
 
   const [loading, setLoading] = useState(true);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
@@ -85,34 +86,21 @@ export default function Camera() {
         await track.applyConstraints({
           advanced: [{ torch: enabled }] as any,
         });
-      } else {
-        // Torch not supported - use screen flash instead
-        triggerScreenFlash();
       }
     } catch {
-      // Torch failed - use screen flash instead
-      if (enabled) triggerScreenFlash();
+      // Torch failed - silently ignore
     }
   }
 
-  // Screen flash effect
-  function triggerScreenFlash() {
-    const flash = document.createElement("div");
-    flash.className = "fixed inset-0 z-50 bg-white";
-    flash.style.animation = "flash 0.15s ease-out forwards";
-    document.body.appendChild(flash);
-    setTimeout(() => flash.remove(), 150);
-  }
-
-  // Trigger flash (torch or screen)
+  // Trigger flash (torch only - no screen flash)
   function triggerFlash() {
     if (!flashEnabled) return;
+    // Only use torch for rear camera, no screen flash
     if (facingMode === "environment") {
       toggleTorch(true);
       setTimeout(() => toggleTorch(false), 100);
-    } else {
-      triggerScreenFlash();
     }
+    // Front camera flash is not supported in web browsers
   }
 
   function switchCamera() {
@@ -240,11 +228,17 @@ export default function Camera() {
       return;
     }
 
-    if (!didRecordRef.current && !capturingRef.current) {
+    if (!didRecordRef.current && !capturingRef.current && !normalModeLockRef.current) {
       if (multiSnapEnabled) {
         startMultiSnap();
         return;
       }
+
+      // Lock normal mode to prevent rapid multiple captures
+      normalModeLockRef.current = true;
+      setTimeout(() => {
+        normalModeLockRef.current = false;
+      }, 800);
 
       if (timerActive) {
         let count = 3;
