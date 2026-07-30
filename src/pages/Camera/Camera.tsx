@@ -30,6 +30,7 @@ export default function Camera() {
   const [hdEnabled, setHdEnabled] = useState(false);
   const [multiSnapEnabled, setMultiSnapEnabled] = useState(false);
   const [multiSnapActive, setMultiSnapActive] = useState(false);
+  const [zoom, setZoom] = useState(1);
 
   useEffect(() => {
     async function startCamera() {
@@ -102,6 +103,13 @@ export default function Camera() {
     }
     // Front camera flash is not supported in web browsers
   }
+
+  // Apply zoom to video element
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.style.transform = `scale(${zoom})${facingMode === "user" ? " scaleX(-1)" : ""}`;
+    }
+  }, [zoom, facingMode]);
 
   function switchCamera() {
     // Turn off torch before switching
@@ -298,9 +306,7 @@ export default function Camera() {
         autoPlay
         playsInline
         muted
-        className={`h-full w-full object-cover transition-transform duration-300 ${
-          facingMode === "user" ? "scale-x-[-1]" : ""
-        }`}
+        className="h-full w-full object-cover"
       />
 
       <canvas ref={canvasRef} className="hidden" />
@@ -449,11 +455,31 @@ export default function Camera() {
         </div>
       )}
 
+      {/* Zoom Slider */}
+      <div className="absolute bottom-32 left-0 right-0 z-30 px-8">
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-medium text-white/60">1x</span>
+          <input
+            type="range"
+            min="1"
+            max="10"
+            step="0.1"
+            value={zoom}
+            onChange={(e) => setZoom(parseFloat(e.target.value))}
+            className="h-1 flex-1 appearance-none rounded-full bg-white/20 accent-white"
+            style={{
+              background: `linear-gradient(to right, white ${((zoom - 1) / 9) * 100}%, rgba(255,255,255,0.2) ${((zoom - 1) / 9) * 100}%)`
+            }}
+          />
+          <span className="text-xs font-medium text-white/60">{zoom.toFixed(1)}x</span>
+        </div>
+      </div>
+
       {/* Bottom Controls */}
       <div className="absolute bottom-0 left-0 right-0 z-30">
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent h-48" />
         
-        <div className="relative flex items-center justify-center pb-8 pt-16">
+        <div className="relative flex items-center justify-center pb-8 pt-8">
           <div className="relative">
             <div className={`absolute -inset-1.5 rounded-full transition-all duration-300 ${
               recording ? "border-4 border-red-500 animate-pulse" : "border-4 border-white/30"
