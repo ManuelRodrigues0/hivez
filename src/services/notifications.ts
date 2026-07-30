@@ -14,7 +14,7 @@ import {
 
 import { db } from "@/firebase/firebase";
 
-export type NotificationType = "comment" | "like" | "follow";
+export type NotificationType = "comment" | "like" | "follow" | "broadcast";
 type StoredNotificationType = NotificationType | "message";
 
 export interface NotificationActor {
@@ -100,7 +100,7 @@ export function listenToNotifications(
             id: notificationDoc.id,
             ...(notificationDoc.data() as Omit<NotificationDoc, "id">),
           }))
-          .filter((notification) => notification.type === "comment" || notification.type === "like" || notification.type === "follow")
+          .filter((notification) => notification.type === "comment" || notification.type === "like" || notification.type === "follow" || notification.type === "broadcast")
           .sort((a, b) => {
             const aTime = a.createdAt?.toDate?.().getTime?.() || 0;
             const bTime = b.createdAt?.toDate?.().getTime?.() || 0;
@@ -128,7 +128,7 @@ export function listenToUnreadNotificationsCount(
       onNext(
         snapshot.docs.filter((notificationDoc) => {
           const notification = notificationDoc.data() as NotificationDoc;
-          return !notification.read && (notification.type === "comment" || notification.type === "like" || notification.type === "follow");
+          return !notification.read && (notification.type === "comment" || notification.type === "like" || notification.type === "follow" || notification.type === "broadcast");
         }).length
       );
     },
@@ -152,7 +152,7 @@ export async function markAllNotificationsRead(uid: string) {
   const batch = writeBatch(db);
   unreadSnapshot.docs.forEach((notificationDoc) => {
     const notification = notificationDoc.data() as NotificationDoc;
-    if (!notification.read && (notification.type === "comment" || notification.type === "like" || notification.type === "follow")) {
+    if (!notification.read && (notification.type === "comment" || notification.type === "like" || notification.type === "follow" || notification.type === "broadcast")) {
       batch.update(notificationDoc.ref, { read: true });
     }
   });

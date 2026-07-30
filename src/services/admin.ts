@@ -319,8 +319,15 @@ export async function sendBroadcastNotification(data: { title: string; body: str
     const notifRef = doc(collection(db, "notifications"));
     await setDoc(notifRef, {
       recipientId: userDoc.id,
-      actor: { uid: data.adminId, username: "Hivez", displayName: data.adminName, photoURL: "" },
-      type: "broadcast", text: data.body, link: "/", read: false, createdAt: serverTimestamp(),
+      actorId: data.adminId,
+      actorUsername: "Hivez",
+      actorDisplayName: data.adminName,
+      actorPhotoURL: "",
+      type: "broadcast",
+      text: data.body,
+      link: "/",
+      read: false,
+      createdAt: serverTimestamp(),
     });
   }
 }
