@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, BadgeCheck, MessageCircle, UserPlus, Settings, Share2, Trash2 } from "lucide-react";
-import { doc, deleteDoc, getDoc, increment, onSnapshot, query, where, writeBatch, collection, updateDoc } from "firebase/firestore";
-import { toast } from "sonner";
+import { ArrowLeft, BadgeCheck, MessageCircle, UserPlus, Settings, Share2 } from "lucide-react";
+import { doc, deleteDoc, getDoc, increment, onSnapshot, query, where, writeBatch, collection } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { createNotification } from "@/services/notifications";
@@ -252,42 +251,6 @@ export default function Profile() {
       setFollowBusy(false);
       console.log("=== TOGGLE FOLLOW COMPLETE ===");
     }
-  }
-
-  async function deletePost(postId: string) {
-    if (!currentUser) return;
-    
-    const toastId = toast("Delete this post?", {
-      description: "This action cannot be undone.",
-      duration: 5000,
-      position: "bottom-center",
-      className: "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800",
-      action: {
-        label: "Delete",
-        onClick: async () => {
-          try {
-            await deleteDoc(doc(db, "posts", postId));
-            await updateDoc(doc(db, "users", currentUser.uid), {
-              posts: increment(-1),
-            });
-            toast.success("Post deleted", {
-              duration: 2000,
-              position: "bottom-center",
-            });
-          } catch (err) {
-            console.error("Failed to delete post:", err);
-            toast.error("Failed to delete post", {
-              duration: 2000,
-              position: "bottom-center",
-            });
-          }
-        },
-      },
-      cancel: {
-        label: "Cancel",
-        onClick: () => toast.dismiss(toastId),
-      },
-    });
   }
 
   if (loading) {
