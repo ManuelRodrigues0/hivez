@@ -591,12 +591,77 @@ export default function Profile() {
         </div>
 
         {/* Content */}
-        <div className="app-empty-state">
-          <h2 className="text-base font-semibold text-zinc-900 dark:text-white">No {activeTab} yet</h2>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            {isOwnProfile ? "Your posts will appear here." : "This user hasn't posted anything yet."}
-          </p>
-        </div>
+        {activeTab === "posts" && (
+          <>
+            {postsLoading ? (
+              <div className="flex min-h-[200px] items-center justify-center py-12">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900 dark:border-zinc-700 dark:border-t-white" />
+              </div>
+            ) : userPosts.length > 0 ? (
+              <div className="grid grid-cols-3 gap-0.5">
+                {userPosts.map((post) => {
+                  const mediaUrl = post.mediaItems?.[0]?.url || post.mediaUrls?.[0] || post.mediaUrl;
+                  const isVideo = post.mediaItems?.[0]?.type === "video" || post.mediaType === "video";
+                  
+                  return (
+                    <button
+                      key={post.id}
+                      onClick={() => navigate(`/post/${post.id}`)}
+                      className="group relative aspect-square overflow-hidden bg-zinc-100 dark:bg-zinc-800"
+                    >
+                      {mediaUrl ? (
+                        isVideo ? (
+                          <video
+                            src={mediaUrl}
+                            className="h-full w-full object-cover"
+                            muted
+                          />
+                        ) : (
+                          <img
+                            src={mediaUrl}
+                            alt={post.caption || "Post"}
+                            className="h-full w-full object-cover"
+                          />
+                        )
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center p-2">
+                          <p className="line-clamp-3 text-center text-[10px] text-zinc-500 dark:text-zinc-400">
+                            {post.caption || "No content"}
+                          </p>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="app-empty-state">
+                <h2 className="text-base font-semibold text-zinc-900 dark:text-white">No posts yet</h2>
+                <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                  {isOwnProfile ? "Your posts will appear here." : "This user hasn't posted anything yet."}
+                </p>
+              </div>
+            )}
+          </>
+        )}
+
+        {activeTab === "replies" && (
+          <div className="app-empty-state">
+            <h2 className="text-base font-semibold text-zinc-900 dark:text-white">No replies yet</h2>
+            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+              {isOwnProfile ? "Your replies will appear here." : "This user hasn't replied to anything yet."}
+            </p>
+          </div>
+        )}
+
+        {activeTab === "media" && (
+          <div className="app-empty-state">
+            <h2 className="text-base font-semibold text-zinc-900 dark:text-white">No media yet</h2>
+            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+              {isOwnProfile ? "Your media will appear here." : "This user hasn't shared any media yet."}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
