@@ -17,6 +17,7 @@ export default function EditProfile() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [usernameError, setUsernameError] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -89,6 +90,8 @@ export default function EditProfile() {
 
   async function save() {
     if (!user) return;
+    setUsernameError("");
+
     if (!displayName.trim()) {
       alert("Display name is required.");
       return;
@@ -97,7 +100,7 @@ export default function EditProfile() {
     const cleanUsername = username.trim().replace(/^@+/, "").toLowerCase();
 
     if (cleanUsername.length < 3) {
-      alert("Username must be at least 3 characters.");
+      setUsernameError("Username must be at least 3 characters.");
       return;
     }
 
@@ -111,7 +114,7 @@ export default function EditProfile() {
         // Check if the new username is already taken
         const usernameDoc = await getDoc(doc(db, "usernames", cleanUsername));
         if (usernameDoc.exists()) {
-          alert("Username already taken. Please choose another.");
+          setUsernameError("Username already taken. Please choose another.");
           setSaving(false);
           return;
         }
@@ -145,7 +148,7 @@ export default function EditProfile() {
       await refreshProfileStatus();
       navigate("/profile");
     } catch (err: any) {
-      alert(err.message || "Failed to update profile.");
+      setUsernameError(err.message || "Failed to update profile.");
     } finally {
       setSaving(false);
     }
@@ -231,11 +234,17 @@ export default function EditProfile() {
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-zinc-500">@</span>
               <input
                 value={username}
-                onChange={(e) => setUsername(e.target.value.replace(/^@+/, ""))}
+                onChange={(e) => {
+                  setUsername(e.target.value.replace(/^@+/, ""));
+                  setUsernameError("");
+                }}
                 placeholder="username"
                 className="app-field pl-8"
               />
             </div>
+            {usernameError && (
+              <p className="mt-1.5 text-xs text-red-500">{usernameError}</p>
+            )}
           </div>
 
           <div>

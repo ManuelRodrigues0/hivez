@@ -13,16 +13,19 @@ export default function CompleteProfile() {
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
   const [loading, setLoading] = useState(false);
+  const [usernameError, setUsernameError] = useState("");
 
   async function saveProfile() {
     if (!user) return;
+
+    setUsernameError("");
 
     const rawUsername = username.trim();
     // Strip @ if user typed it in the username field
     const cleanUsername = rawUsername.replace(/^@+/, "").toLowerCase();
 
     if (cleanUsername.length < 3) {
-      alert("Username must be at least 3 characters.");
+      setUsernameError("Username must be at least 3 characters.");
       return;
     }
 
@@ -33,7 +36,7 @@ export default function CompleteProfile() {
     );
 
     if (usernameDoc.exists()) {
-      alert("Username already taken.");
+      setUsernameError("Username already taken.");
       setLoading(false);
       return;
     }
@@ -58,7 +61,7 @@ export default function CompleteProfile() {
 
       await refreshProfileStatus();
     } catch (err: any) {
-      alert(err.message || "Failed to save profile.");
+      setUsernameError(err.message || "Failed to save profile.");
     } finally {
       setLoading(false);
     }
@@ -73,14 +76,20 @@ export default function CompleteProfile() {
         <p className="mb-8 text-center text-sm text-zinc-500 dark:text-zinc-400">Choose the identity people will see in the feed.</p>
 
         <div className="app-surface space-y-4 p-4">
-          <input
-            className="app-field"
-            placeholder="Username"
-            value={username}
-            onChange={(e) =>
-              setUsername(e.target.value)
-            }
-          />
+          <div>
+            <input
+              className="app-field"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                setUsernameError("");
+              }}
+            />
+            {usernameError && (
+              <p className="mt-1.5 text-xs text-red-500">{usernameError}</p>
+            )}
+          </div>
 
           <textarea
             className="app-field h-28 resize-none"
