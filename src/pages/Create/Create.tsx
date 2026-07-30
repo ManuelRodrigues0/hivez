@@ -14,7 +14,6 @@ import {
   increment,
   updateDoc,
 } from "firebase/firestore";
-import MediaGrid from "@/components/feed/MediaGrid";
 import type { PostMediaItem } from "@/components/feed/MediaGrid";
 import { Volume2, VolumeX } from "lucide-react";
 
