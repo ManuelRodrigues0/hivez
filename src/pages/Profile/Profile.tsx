@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, BadgeCheck, MessageCircle, UserPlus, Settings, Share2 } from "lucide-react";
-import { doc, deleteDoc, getDoc, increment, onSnapshot, writeBatch } from "firebase/firestore";
+import { doc, deleteDoc, getDoc, increment, onSnapshot, query, where, orderBy, writeBatch, collection } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { createNotification } from "@/services/notifications";
 import { createFollowRequest, listenToSentFollowRequests } from "@/services/followRequests";
+import type { FeedPost } from "../../components/feed/Feed";
 
 interface UserProfile {
   uid: string;
@@ -30,8 +31,10 @@ export default function Profile() {
   const [following, setFollowing] = useState(false);
   const [followRequestPending, setFollowRequestPending] = useState(false);
   const [followBusy, setFollowBusy] = useState(false);
-  const [activeTab, setActiveTab] = useState<"threads" | "replies" | "media">("threads");
+  const [activeTab, setActiveTab] = useState<"posts" | "replies" | "media">("posts");
   const [localError, setLocalError] = useState<string | null>(null);
+  const [userPosts, setUserPosts] = useState<FeedPost[]>([]);
+  const [postsLoading, setPostsLoading] = useState(true);
 
   const isOwnProfile = !uid || uid === currentUser?.uid;
   const profileUid = isOwnProfile ? currentUser?.uid : uid;
@@ -54,6 +57,35 @@ export default function Profile() {
       }
     }
     loadProfile();
+  }, [profileUid]);
+
+  // Fetch user posts
+  useEffect(() => {
+    if (!profileUid) {
+      setPostsLoading(false);
+      return;
+    }
+
+    setPostsLoading(true);
+    const q = query(
+      collection(db, "posts"),
+      where("uid", "==", profileUid),
+      orderBy("createdAt", "desc")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const posts: FeedPost[] = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as Omit<FeedPost, "id">),
+      }));
+      setUserPosts(posts);
+      setPostsLoading(false);
+    }, (error) => {
+      console.error("Error fetching user posts:", error);
+      setPostsLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [profileUid]);
 
   useEffect(() => {
@@ -235,165 +267,236 @@ export default function Profile() {
   }
 
   const tabs = [
-    { key: "threads" as const, label: "Threads" },
+    { key: "posts" as const, label: "Posts" },
     { key: "replies" as const, label: "Replies" },
     { key: "media" as const, label: "Media" },
   ];
 
   return (
     <div className="app-page">
-      {/* Desktop-only modern profile layout */}
+      {/* Desktop-only minimalist profile layout */}
       <div className="hidden lg:block">
-        {/* Hero Section with gradient background */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-sky-500/10 via-purple-500/5 to-pink-500/10 dark:from-sky-500/20 dark:via-purple-500/10 dark:to-pink-500/20">
-          {/* Decorative elements */}
-          <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-          
-          {/* Header with back button */}
-          {!isOwnProfile && (
-            <div className="relative z-10 flex items-center gap-4 px-8 py-4">
-              <button 
-                onClick={() => navigate(-1)} 
-                className="group flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 text-sm font-medium text-zinc-700 backdrop-blur-sm transition-all hover:bg-white hover:shadow-md dark:bg-zinc-800/80 dark:text-zinc-200 dark:hover:bg-zinc-800"
-              >
-                <ArrowLeft size={18} className="transition-transform group-hover:-translate-x-0.5" />
-                Back
-              </button>
+        {/* Header with back button */}
+        {!isOwnProfile && (
+          <div className="flex items-center gap-4 px-8 py-4">
+            <button 
+              onClick={() => navigate(-1)} 
+              className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+            >
+              <ArrowLeft size={18} />
+              Back
+            </button>
+          </div>
+        )}
+
+        {/* Profile Header */}
+        <div className="border-b border-zinc-200 px-8 pb-8 pt-6 dark:border-zinc-800">
+          <div className="flex items-start justify-between">
+            {/* Profile Picture */}
+            <div className="relative">
+              <img
+                src={profile.photoURL || "https://ui-avatars.com/api/?name=Hivez&background=6366f1&color=fff"}
+                alt={profile.username}
+                className="h-24 w-24 rounded-full border border-zinc-200 object-cover dark:border-zinc-700"
+              />
+              {profile.verified && (
+                <div className="absolute -bottom-0.5 -right-0.5 rounded-full bg-sky-500 p-1">
+                  <BadgeCheck size={16} className="text-white" />
+                </div>
+              )}
             </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              {isOwnProfile ? (
+                <>
+                  <button 
+                    onClick={() => navigate("/profile/edit")}
+                    className="rounded-lg border border-zinc-300 px-5 py-2 text-sm font-medium text-zinc-900 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-white dark:hover:bg-zinc-800"
+                  >
+                    <Settings size={16} className="inline-block mr-1.5" />
+                    Edit Profile
+                  </button>
+                  <button className="rounded-lg border border-zinc-300 px-5 py-2 text-sm font-medium text-zinc-900 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-white dark:hover:bg-zinc-800">
+                    <Share2 size={16} className="inline-block mr-1.5" />
+                    Share
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button 
+                    onClick={toggleFollow} 
+                    disabled={followBusy}
+                    className={`rounded-lg border px-5 py-2 text-sm font-medium transition ${
+                      following 
+                        ? "border-zinc-300 text-zinc-900 hover:bg-zinc-50 dark:border-zinc-700 dark:text-white dark:hover:bg-zinc-800" 
+                        : "border-zinc-900 bg-zinc-900 text-white hover:bg-zinc-800 dark:border-white dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100"
+                    }`}
+                  >
+                    {followBusy ? "Loading..." : following ? "Following" : followRequestPending ? "Requested" : "Follow"}
+                  </button>
+                  <button className="rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-white dark:hover:bg-zinc-800">
+                    <MessageCircle size={18} />
+                  </button>
+                  <button className="rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-white dark:hover:bg-zinc-800">
+                    <UserPlus size={18} />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Profile Info */}
+          <div className="mt-5">
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
+                {profile.displayName || "Hivez User"}
+              </h1>
+            </div>
+            <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">@{profile.username}</p>
+          </div>
+
+          {profile.bio && (
+            <p className="mt-3 max-w-xl whitespace-pre-wrap text-sm leading-6 text-zinc-700 dark:text-zinc-300">
+              {profile.bio}
+            </p>
           )}
 
-          {/* Profile Header Section */}
-          <div className="relative z-10 px-8 pb-8 pt-6">
-            <div className="flex items-start justify-between">
-              {/* Profile Picture with ring */}
-              <div className="relative">
-                <div className="absolute -inset-1 rounded-full bg-gradient-to-br from-sky-500 to-purple-600 opacity-75 blur-sm"></div>
-                <div className="relative rounded-full bg-white p-1 dark:bg-zinc-900">
-                  <img
-                    src={profile.photoURL || "https://ui-avatars.com/api/?name=Hivez&background=6366f1&color=fff"}
-                    alt={profile.username}
-                    className="h-32 w-32 rounded-full border-4 border-white object-cover shadow-xl dark:border-zinc-900"
-                  />
-                </div>
-                {profile.verified && (
-                  <div className="absolute -bottom-1 -right-1 rounded-full bg-sky-500 p-2 shadow-lg">
-                    <BadgeCheck size={20} className="text-white" />
-                  </div>
-                )}
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-3">
-                {isOwnProfile ? (
-                  <>
-                    <button 
-                      onClick={() => navigate("/profile/edit")}
-                      className="group flex items-center gap-2 rounded-full bg-zinc-900 px-6 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-zinc-800 hover:shadow-xl dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100"
-                    >
-                      <Settings size={18} />
-                      Edit Profile
-                    </button>
-                    <button className="flex items-center gap-2 rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-zinc-900 shadow-md transition-all hover:shadow-lg dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-700">
-                      <Share2 size={18} />
-                      Share
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button 
-                      onClick={toggleFollow} 
-                      disabled={followBusy}
-                      className={`group flex items-center gap-2 rounded-full px-8 py-2.5 text-sm font-semibold shadow-lg transition-all hover:shadow-xl ${
-                        following 
-                          ? "bg-zinc-200 text-zinc-900 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-700" 
-                          : "bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100"
-                      }`}
-                    >
-                      {followBusy ? "Loading..." : following ? "Following" : followRequestPending ? "Requested" : "Follow"}
-                    </button>
-                    <button className="flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-zinc-900 shadow-md transition-all hover:shadow-lg dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-700">
-                      <MessageCircle size={18} />
-                    </button>
-                    <button className="flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-zinc-900 shadow-md transition-all hover:shadow-lg dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-700">
-                      <UserPlus size={18} />
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Profile Info */}
-            <div className="mt-6">
-              <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">
-                  {profile.displayName || "Hivez User"}
-                </h1>
-              </div>
-              <p className="mt-1 text-base text-zinc-500 dark:text-zinc-400">@{profile.username}</p>
-            </div>
-
-            {profile.bio && (
-              <p className="mt-4 max-w-2xl whitespace-pre-wrap text-base leading-7 text-zinc-700 dark:text-zinc-300">
-                {profile.bio}
-              </p>
-            )}
-
-            {/* Stats */}
-            <div className="mt-6 flex items-center gap-8">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-zinc-900 dark:text-white">{profile.posts}</div>
-                <div className="text-sm text-zinc-500 dark:text-zinc-400">Posts</div>
-              </div>
-              <div className="h-8 w-px bg-zinc-300 dark:bg-zinc-700"></div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-zinc-900 dark:text-white">{profile.followers}</div>
-                <div className="text-sm text-zinc-500 dark:text-zinc-400">Followers</div>
-              </div>
-              <div className="h-8 w-px bg-zinc-300 dark:bg-zinc-700"></div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-zinc-900 dark:text-white">{profile.following}</div>
-                <div className="text-sm text-zinc-500 dark:text-zinc-400">Following</div>
-              </div>
-            </div>
+          {/* Stats */}
+          <div className="mt-5 flex items-center gap-6 text-sm">
+            <span className="text-zinc-900 dark:text-white"><strong>{profile.posts}</strong> <span className="text-zinc-500 dark:text-zinc-400">posts</span></span>
+            <span className="text-zinc-900 dark:text-white"><strong>{profile.followers}</strong> <span className="text-zinc-500 dark:text-zinc-400">followers</span></span>
+            <span className="text-zinc-900 dark:text-white"><strong>{profile.following}</strong> <span className="text-zinc-500 dark:text-zinc-400">following</span></span>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="sticky top-16 z-20 border-b border-zinc-200 bg-white/95 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/95">
+        <div className="sticky top-16 z-20 border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-black">
           <div className="flex">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`relative flex-1 py-4 text-sm font-semibold transition-all ${
+                className={`flex-1 py-3.5 text-sm font-medium transition-colors ${
                   activeTab === tab.key
-                    ? "text-zinc-900 dark:text-white"
+                    ? "border-b-2 border-zinc-900 text-zinc-900 dark:border-white dark:text-white"
                     : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
                 }`}
               >
                 {tab.label}
-                {activeTab === tab.key && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-sky-500 to-purple-600"></div>
-                )}
               </button>
             ))}
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex min-h-[400px] items-center justify-center py-20">
-          <div className="text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
-              <svg className="h-8 w-8 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
+        {activeTab === "posts" && (
+          <>
+            {postsLoading ? (
+              <div className="flex min-h-[300px] items-center justify-center py-16">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900 dark:border-zinc-700 dark:border-t-white" />
+              </div>
+            ) : userPosts.length > 0 ? (
+              <div className="grid grid-cols-3 gap-1 p-4">
+                {userPosts.map((post) => {
+                  const mediaUrl = post.mediaItems?.[0]?.url || post.mediaUrls?.[0] || post.mediaUrl;
+                  const isVideo = post.mediaItems?.[0]?.type === "video" || post.mediaType === "video";
+                  
+                  return (
+                    <button
+                      key={post.id}
+                      onClick={() => navigate(`/post/${post.id}`)}
+                      className="group relative aspect-square overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-800"
+                    >
+                      {mediaUrl ? (
+                        isVideo ? (
+                          <video
+                            src={mediaUrl}
+                            className="h-full w-full object-cover transition group-hover:opacity-80"
+                            muted
+                          />
+                        ) : (
+                          <img
+                            src={mediaUrl}
+                            alt={post.caption || "Post"}
+                            className="h-full w-full object-cover transition group-hover:opacity-80"
+                          />
+                        )
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center p-4">
+                          <p className="line-clamp-4 text-center text-xs text-zinc-500 dark:text-zinc-400">
+                            {post.caption || "No content"}
+                          </p>
+                        </div>
+                      )}
+                      {/* Hover overlay with stats */}
+                      <div className="absolute inset-0 flex items-center justify-center gap-4 bg-black/60 opacity-0 transition group-hover:opacity-100">
+                        <span className="flex items-center gap-1 text-sm font-semibold text-white">
+                          <svg className="h-4 w-4 fill-white" viewBox="0 0 24 24">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                          </svg>
+                          {post.likes}
+                        </span>
+                        <span className="flex items-center gap-1 text-sm font-semibold text-white">
+                          <svg className="h-4 w-4 fill-white" viewBox="0 0 24 24">
+                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+                          </svg>
+                          {post.comments}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex min-h-[300px] items-center justify-center py-16">
+                <div className="text-center">
+                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
+                    <svg className="h-6 w-6 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                  </div>
+                  <h2 className="text-base font-semibold text-zinc-900 dark:text-white">No posts yet</h2>
+                  <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                    {isOwnProfile ? "Your posts will appear here." : "This user hasn't posted anything yet."}
+                  </p>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {activeTab === "replies" && (
+          <div className="flex min-h-[300px] items-center justify-center py-16">
+            <div className="text-center">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
+                <svg className="h-6 w-6 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
+              <h2 className="text-base font-semibold text-zinc-900 dark:text-white">No replies yet</h2>
+              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                {isOwnProfile ? "Your replies will appear here." : "This user hasn't replied to anything yet."}
+              </p>
             </div>
-            <h2 className="text-xl font-semibold text-zinc-900 dark:text-white">No {activeTab} yet</h2>
-            <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-              {isOwnProfile ? "Your posts will appear here." : "This user hasn't posted anything yet."}
-            </p>
           </div>
-        </div>
+        )}
+
+        {activeTab === "media" && (
+          <div className="flex min-h-[300px] items-center justify-center py-16">
+            <div className="text-center">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
+                <svg className="h-6 w-6 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h2 className="text-base font-semibold text-zinc-900 dark:text-white">No media yet</h2>
+              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                {isOwnProfile ? "Your media will appear here." : "This user hasn't shared any media yet."}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Mobile layout (unchanged) */}
