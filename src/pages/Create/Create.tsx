@@ -11,6 +11,8 @@ import {
   serverTimestamp,
   getDoc,
   doc,
+  increment,
+  updateDoc,
 } from "firebase/firestore";
 import MediaGrid from "@/components/feed/MediaGrid";
 import type { PostMediaItem } from "@/components/feed/MediaGrid";
@@ -89,6 +91,11 @@ export default function Create() {
           createdAt: serverTimestamp(),
         });
 
+        // Increment user's post count
+        await updateDoc(doc(db, "users", user.uid), {
+          posts: increment(1),
+        });
+
         navigate("/");
         return;
       }
@@ -142,6 +149,11 @@ export default function Create() {
         comments: 0,
         shares: 0,
         createdAt: serverTimestamp(),
+      });
+
+      // Increment user's post count
+      await updateDoc(doc(db, "users", user.uid), {
+        posts: increment(1),
       });
 
       navigate("/");
