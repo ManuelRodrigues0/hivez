@@ -1,6 +1,10 @@
+import { useState } from "react";
+import { Volume2, VolumeX } from "lucide-react";
+
 export interface PostMediaItem {
   url: string;
   type: "image" | "video";
+  muted?: boolean;
 }
 
 interface Props {
@@ -29,11 +33,6 @@ export default function MediaGrid({ items, compact = false }: Props) {
               }`}
             >
               <MediaItem item={item} />
-              {item.type === "video" && (
-                <div className="absolute bottom-2 right-2 rounded-full bg-black/70 px-2 py-1 text-[11px] font-semibold text-white">
-                  Video
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -51,19 +50,30 @@ function MediaItem({
   single?: boolean;
   compact?: boolean;
 }) {
+  const [muted, setMuted] = useState(item.muted ?? true);
   const singleClass = compact ? "max-h-80" : "max-h-[620px]";
 
   if (item.type === "video") {
     return (
-      <video
-        src={item.url}
-        controls={single}
-        muted
-        playsInline
-        autoPlay={!single}
-        loop={!single}
-        className={`h-full w-full ${single ? `${singleClass} object-contain` : "object-cover"}`}
-      />
+      <div className="relative">
+        <video
+          src={item.url}
+          controls={single}
+          muted={muted}
+          playsInline
+          autoPlay={!single}
+          loop={!single}
+          className={`h-full w-full ${single ? `${singleClass} object-contain` : "object-cover"}`}
+        />
+        {!single && (
+          <button
+            onClick={() => setMuted(!muted)}
+            className="absolute bottom-2 right-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white backdrop-blur-sm transition hover:bg-black/90"
+          >
+            {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+          </button>
+        )}
+      </div>
     );
   }
 

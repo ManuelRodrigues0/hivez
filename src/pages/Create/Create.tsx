@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore";
 import MediaGrid from "@/components/feed/MediaGrid";
 import type { PostMediaItem } from "@/components/feed/MediaGrid";
+import { Volume2, VolumeX } from "lucide-react";
 
 export default function Create() {
   const { state } = useLocation();
@@ -30,6 +31,19 @@ export default function Create() {
   const [posting, setPosting] = useState(false);
   const [category, setCategory] = useState(COMMUNITIES[0].id);
   const [location, setLocation] = useState("");
+  const [mutedVideos, setMutedVideos] = useState<Set<number>>(new Set());
+
+  function toggleMute(index: number) {
+    setMutedVideos((current) => {
+      const next = new Set(current);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  }
 
   const isTextOnly = isTextMode || (!media && textContent);
   
@@ -38,9 +52,10 @@ export default function Create() {
   const isMultiple = Array.isArray(media);
   const singleFile = !isMultiple ? media : undefined;
   const filesToPreview = isMultiple ? media : singleFile ? [singleFile] : [];
-  const previewItems: PostMediaItem[] = filesToPreview.map((file) => ({
+  const previewItems: PostMediaItem[] = filesToPreview.map((file, index) => ({
     url: URL.createObjectURL(file),
     type: file.type.startsWith("video") ? "video" : "image",
+    muted: mutedVideos.has(index),
   }));
 
   const isVideo = useMemo(() => {
@@ -124,6 +139,7 @@ export default function Create() {
       const mediaItems: PostMediaItem[] = uploadResults.map((result, index) => ({
         url: result.secure_url,
         type: filesToUpload[index].type.startsWith("video") ? "video" : "image",
+        muted: mutedVideos.has(index),
       }));
       const mediaUrls = mediaItems.map((item) => item.url);
 
@@ -214,7 +230,30 @@ export default function Create() {
 
           {previewItems.length > 0 && (
             <div className="mt-4">
-              <MediaGrid items={previewItems} />
+              <div className="grid grid-cols-2 gap-2">
+                {previewItems.map((item, index) => (
+                  <div key={index} className="relative aspect-square overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900">
+                    {item.type === "video" ? (
+                      <>
+                        <video
+                          src={item.url}
+                          className="h-full w-full object-cover"
+                          muted={item.muted}
+                          controls
+                        />
+                        <button
+                          onClick={() => toggleMute(index)}
+                          className="absolute bottom-2 right-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white backdrop-blur-sm transition hover:bg-black/90"
+                        >
+                          {item.muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                        </button>
+                      </>
+                    ) : (
+                      <img src={item.url} alt="" className="h-full w-full object-cover" />
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
