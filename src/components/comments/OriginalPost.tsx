@@ -44,6 +44,12 @@ export default function OriginalPost({ post }: Props) {
         />
 
         <div className="min-w-0 flex-1">
+          {mediaItems.length > 0 && (
+            <div className="mb-3 min-w-0 overflow-hidden">
+              <MediaGrid items={mediaItems} compact />
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold text-zinc-900 dark:text-white">
               {post.displayName || post.username}
@@ -57,12 +63,6 @@ export default function OriginalPost({ post }: Props) {
             <p className="mt-3 whitespace-pre-wrap break-words text-zinc-900 dark:text-white">
               {post.caption}
             </p>
-          )}
-
-          {mediaItems.length > 0 && (
-            <div className="mt-4 min-w-0 overflow-hidden">
-              <MediaGrid items={mediaItems} compact />
-            </div>
           )}
         </div>
       </div>

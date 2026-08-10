@@ -240,35 +240,28 @@ export default function IssueCommunityPage() {
   return (
     <div className="app-page">
       <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-black">
-        {community.mediaUrl && (
-          <div className="aspect-[16/8] max-h-80 w-full overflow-hidden bg-zinc-100 dark:bg-zinc-900">
-            {community.mediaType === "video" ? (
-              <video src={community.mediaUrl} className="h-full w-full object-cover" controls playsInline />
-            ) : (
-              <img src={community.mediaUrl} alt="" className="h-full w-full object-cover" />
-            )}
-          </div>
-        )}
-        <div className="px-4 py-5">
-          <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="px-4 py-4">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-zinc-950 px-3 py-1 text-xs font-bold uppercase text-white dark:bg-white dark:text-black">{pretty(community.status)}</span>
             {community.location && <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300"><MapPin size={13} />{community.location}</span>}
             <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300"><Users size={13} />{community.memberCount} members</span>
           </div>
-          <h1 className="text-3xl font-black tracking-tight text-zinc-950 dark:text-white sm:text-4xl">{community.title}</h1>
-          <p className="mt-3 text-base leading-7 text-zinc-700 dark:text-zinc-300">{community.description}</p>
-          <div className="mt-5 flex flex-wrap gap-2">
-            {!isMember ? (
-              <button onClick={handleJoinCommunity} disabled={busy} className="inline-flex h-11 items-center gap-2 rounded-full bg-zinc-950 px-5 text-sm font-bold text-white transition hover:scale-[1.02] disabled:opacity-60 dark:bg-white dark:text-black">
-                <HandHeart size={17} /> Join community
-              </button>
-            ) : (
-              <button onClick={handleLeaveCommunity} disabled={busy || member?.role === "owner"} className="h-11 rounded-full border border-zinc-200 px-5 text-sm font-bold text-zinc-900 disabled:opacity-50 dark:border-zinc-800 dark:text-white">
-                {member?.role === "owner" ? "Owner" : "Leave"}
-              </button>
+          <div className="flex items-center gap-3">
+            {community.mediaUrl && (
+              <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-900">
+                {community.mediaType === "video" ? (
+                  <video src={community.mediaUrl} className="h-full w-full object-cover" playsInline />
+                ) : (
+                  <img src={community.mediaUrl} alt="" className="h-full w-full object-cover" />
+                )}
+              </div>
             )}
-            <Link to={`/post/${community.postId}`} className="inline-flex h-11 items-center rounded-full border border-zinc-200 px-5 text-sm font-bold text-zinc-900 dark:border-zinc-800 dark:text-white">View original post</Link>
+            <Link to={`/issue-community/${community.id}/details`} className="group block flex-1">
+              <h1 className="text-2xl font-black tracking-tight text-zinc-950 transition group-hover:underline dark:text-white sm:text-3xl">{community.title}</h1>
+            </Link>
           </div>
+          <p className="mt-2 text-sm leading-6 text-zinc-700 dark:text-zinc-300">{community.description}</p>
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">@{community.owner.username}</p>
         </div>
       </header>
 
@@ -425,12 +418,12 @@ function MessagePanel({ messages, canPost, value, onChange, onSubmit, mode }: { 
         {!messages.length && <div className="rounded-3xl border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-500 dark:border-zinc-800">No {mode.toLowerCase()} messages yet.</div>}
       </div>
       {canPost ? (
-        <form onSubmit={onSubmit} className="sticky bottom-20 flex gap-2 rounded-full border border-zinc-200 bg-white p-2 shadow-lg dark:border-zinc-800 dark:bg-zinc-950">
+        <form onSubmit={onSubmit} className="mt-4 flex gap-2 rounded-full border border-zinc-200 bg-white p-2 shadow-lg dark:border-zinc-800 dark:bg-zinc-950">
           <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={`Write in ${mode.toLowerCase()}`} className="min-w-0 flex-1 bg-transparent px-4 text-sm outline-none dark:text-white" />
           <button disabled={!value.trim()} className="grid h-10 w-10 place-items-center rounded-full bg-zinc-950 text-white disabled:opacity-50 dark:bg-white dark:text-black"><Send size={17} /></button>
         </form>
       ) : (
-        <p className="rounded-3xl bg-zinc-100 p-4 text-center text-sm font-semibold text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">Join the community to post.</p>
+        <p className="mt-4 rounded-3xl bg-zinc-100 p-4 text-center text-sm font-semibold text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">Join the community to post.</p>
       )}
     </section>
   );
