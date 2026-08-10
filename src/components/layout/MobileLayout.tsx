@@ -2,7 +2,7 @@ import { Outlet } from "react-router-dom";
 
 export default function MobileLayout() {
   return (
-    <div className="min-h-screen bg-black text-white max-w-md mx-auto">
+    <div className="app-shell min-h-screen bg-white text-zinc-900 dark:bg-black dark:text-white max-w-md mx-auto">
       <Outlet />
     </div>
   );

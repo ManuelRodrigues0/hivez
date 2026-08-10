@@ -32,7 +32,7 @@ export default function Community() {
   }
 
   return (
-    <div className="app-page">
+    <div className="app-page app-community-page">
       <div className="app-sticky-header">
         <div className="flex items-center gap-3 px-4 py-3">
           <button onClick={() => navigate(-1)} className="app-icon-button">

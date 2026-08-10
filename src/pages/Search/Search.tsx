@@ -130,7 +130,7 @@ export default function SearchPage() {
   const hasResults = users.length > 0 || posts.length > 0;
 
   return (
-    <div className="app-page flex flex-col">
+    <div className="app-page app-search-page flex flex-col">
       <div className="app-sticky-header">
         <div className="px-4 pb-3 pt-4">
           <div className="relative">

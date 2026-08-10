@@ -10,6 +10,7 @@ import Search from "@/pages/Search/Search";
 import Notifications from "@/pages/Notifications/Notifications";
 import Settings from "@/pages/Settings/Settings";
 import Volunteering from "@/pages/Volunteering/Volunteering";
+import IssueCommunityPage from "@/pages/Volunteering/IssueCommunity";
 import Chats from "@/pages/Chats/Chats";
 
 import Camera from "@/pages/Camera/Camera";
@@ -86,6 +87,7 @@ export default function AppRouter() {
         <Route path="/activity" element={<Activity />} />
         <Route path="/search" element={<Search />} />
         <Route path="/volunteering" element={<Volunteering />} />
+        <Route path="/issue-community/:communityId" element={<IssueCommunityPage />} />
         <Route path="/chats" element={<Chats />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/settings" element={<Settings />} />

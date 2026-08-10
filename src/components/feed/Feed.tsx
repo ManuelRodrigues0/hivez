@@ -32,6 +32,7 @@ export interface FeedPost {
   category?: string;
   hashtags?: string[];
   location?: string | null;
+  issueCommunityId?: string;
 }
 
 interface FeedProps {

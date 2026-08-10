@@ -46,7 +46,7 @@ export default function CommentCard({ comment, depth = 0 }: Props) {
 
   return (
     <div style={{ marginLeft }}>
-      <article className="group flex gap-2.5 px-4 py-3 transition hover:bg-zinc-100 dark:hover:bg-zinc-900/50">
+      <article className="group flex gap-2.5 rounded-2xl px-4 py-3 transition hover:bg-zinc-100 dark:hover:bg-zinc-900/50">
         <img
           src={
             comment.photoURL ||
@@ -104,7 +104,7 @@ export default function CommentCard({ comment, depth = 0 }: Props) {
                     className="fixed inset-0 z-40"
                     onClick={() => setShowActions(false)}
                   />
-                  <div className="absolute bottom-full right-0 z-50 mb-1 w-36 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 py-1 shadow-xl">
+                  <div className="app-popover-menu absolute bottom-full right-0 z-50 mb-1 w-36 rounded-xl border border-zinc-200 bg-white py-1 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
                     <button className="w-full px-3 py-2 text-left text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800">
                       Copy text
                     </button>

@@ -1,0 +1,498 @@
+import { useEffect, useState } from "react";
+import type { FormEvent, ReactNode } from "react";
+import { Link, useParams } from "react-router-dom";
+import { CalendarDays, CheckCircle2, HandHeart, MapPin, Send, ShieldCheck, Users } from "lucide-react";
+import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
+import {
+  closePoll,
+  createPoll,
+  createVolunteerActivity,
+  getUserSummary,
+  joinActivity,
+  joinIssueCommunity,
+  leaveActivity,
+  leaveIssueCommunity,
+  listenActivityEvidence,
+  listenActivityParticipant,
+  listenCommunityMember,
+  listenCommunityMembers,
+  listenCommunityMessages,
+  listenCommunityPolls,
+  listenIssueCommunity,
+  listenVolunteerActivities,
+  sendCommunityMessage,
+  submitActivityEvidence,
+  updateActivityStatus,
+  updateCommunityStatus,
+  votePoll,
+} from "@/services/volunteering";
+import type {
+  ActivityEvidence,
+  ActivityParticipant,
+  CommunityMember,
+  CommunityMessage,
+  CommunityPoll,
+  IssueCommunity,
+  IssueCommunityStatus,
+  VolunteerActivity,
+  VolunteerActivityStatus,
+  VolunteerUserSummary,
+} from "@/types/volunteering";
+
+const tabs = ["Discussion", "Chat", "Polls", "Actions", "Progress", "Members", "Evidence"] as const;
+type Tab = (typeof tabs)[number];
+
+const issueStatuses: IssueCommunityStatus[] = [
+  "REPORTED",
+  "COMMUNITY_VERIFIED",
+  "ACTION_STARTED",
+  "IN_PROGRESS",
+  "AWAITING_VERIFICATION",
+  "RESOLVED",
+  "VERIFIED",
+  "ARCHIVED",
+];
+
+const activityStatuses: VolunteerActivityStatus[] = ["OPEN", "ACTIVE", "AWAITING_VERIFICATION", "VERIFIED", "COMPLETED", "CANCELLED"];
+
+function pretty(value: string) {
+  return value.replaceAll("_", " ").toLowerCase();
+}
+
+function timeText(value: any) {
+  if (!value?.toDate) return "";
+  return value.toDate().toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+export default function IssueCommunityPage() {
+  const { communityId } = useParams();
+  const { user } = useAuth();
+  const [summary, setSummary] = useState<VolunteerUserSummary | null>(null);
+  const [community, setCommunity] = useState<IssueCommunity | null>(null);
+  const [member, setMember] = useState<CommunityMember | null>(null);
+  const [members, setMembers] = useState<CommunityMember[]>([]);
+  const [discussion, setDiscussion] = useState<CommunityMessage[]>([]);
+  const [chat, setChat] = useState<CommunityMessage[]>([]);
+  const [polls, setPolls] = useState<Array<CommunityPoll & { myVote?: any }>>([]);
+  const [activities, setActivities] = useState<VolunteerActivity[]>([]);
+  const [evidence, setEvidence] = useState<ActivityEvidence[]>([]);
+  const [activeTab, setActiveTab] = useState<Tab>("Discussion");
+  const [messageText, setMessageText] = useState("");
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState("Yes\nNo");
+  const [activityTitle, setActivityTitle] = useState("");
+  const [activityDescription, setActivityDescription] = useState("");
+  const [activityDate, setActivityDate] = useState("");
+  const [activityTime, setActivityTime] = useState("");
+  const [activityLocation, setActivityLocation] = useState("");
+  const [activityLimit, setActivityLimit] = useState("10");
+  const [activityRoles, setActivityRoles] = useState("Volunteer, Organizer");
+  const [evidenceActivityId, setEvidenceActivityId] = useState("");
+  const [evidenceDescription, setEvidenceDescription] = useState("");
+  const [evidenceUrl, setEvidenceUrl] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    getUserSummary(user.uid).then(setSummary);
+  }, [user]);
+
+  useEffect(() => {
+    if (!communityId) return;
+    return listenIssueCommunity(communityId, setCommunity);
+  }, [communityId]);
+
+  useEffect(() => {
+    if (!communityId || !user) return;
+    return listenCommunityMember(communityId, user.uid, setMember);
+  }, [communityId, user]);
+
+  useEffect(() => {
+    if (!communityId) return;
+    const unsubs = [
+      listenCommunityMembers(communityId, setMembers),
+      listenCommunityMessages(communityId, "discussion", setDiscussion),
+      listenCommunityMessages(communityId, "chat", setChat),
+      listenCommunityPolls(communityId, user?.uid, setPolls),
+      listenVolunteerActivities(communityId, setActivities),
+      listenActivityEvidence(communityId, setEvidence),
+    ];
+    return () => unsubs.forEach((unsubscribe) => unsubscribe());
+  }, [communityId, user?.uid]);
+
+  const canManage = member?.role === "owner" || member?.role === "organizer" || member?.role === "moderator";
+  const isMember = Boolean(member);
+
+  useEffect(() => {
+    if (!evidenceActivityId && activities[0]) setEvidenceActivityId(activities[0].id);
+  }, [activities, evidenceActivityId]);
+
+  async function handleJoinCommunity() {
+    if (!community || !summary || busy) return;
+    setBusy(true);
+    try {
+      await joinIssueCommunity(community, summary);
+      toast.success("Joined issue community");
+    } catch (error) {
+      console.error(error);
+      toast.error("Could not join community");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleLeaveCommunity() {
+    if (!community || !member || busy) return;
+    setBusy(true);
+    try {
+      await leaveIssueCommunity(community, member);
+      toast.success("Left community");
+    } catch (error: any) {
+      toast.error(error?.message || "Could not leave community");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleSendMessage(event: FormEvent) {
+    event.preventDefault();
+    if (!communityId || !summary || !messageText.trim() || !isMember) return;
+    await sendCommunityMessage({
+      communityId,
+      user: summary,
+      text: messageText,
+      kind: activeTab === "Chat" ? "chat" : "discussion",
+    });
+    setMessageText("");
+  }
+
+  async function handleCreatePoll(event: FormEvent) {
+    event.preventDefault();
+    if (!communityId || !user || !canManage || !pollQuestion.trim()) return;
+    const options = pollOptions.split(/\n|,/).map((item) => item.trim()).filter(Boolean).slice(0, 6);
+    if (options.length < 2) return toast.error("Add at least two options");
+    await createPoll({ communityId, question: pollQuestion, options, createdBy: user.uid });
+    setPollQuestion("");
+    setPollOptions("Yes\nNo");
+    toast.success("Poll created");
+  }
+
+  async function handleCreateActivity(event: FormEvent) {
+    event.preventDefault();
+    if (!community || !summary || !canManage || !activityTitle.trim()) return;
+    await createVolunteerActivity({
+      communityId: community.id,
+      issueId: community.issueId,
+      title: activityTitle,
+      description: activityDescription,
+      category: community.category,
+      organizerId: summary.uid,
+      organizer: summary,
+      location: activityLocation || community.location || "",
+      meetingPoint: activityLocation || community.location || "",
+      startDate: activityDate,
+      startTime: activityTime,
+      endDate: activityDate,
+      endTime: "",
+      volunteerLimit: Number(activityLimit) || 0,
+      status: "OPEN",
+      urgent: false,
+      roles: activityRoles.split(",").map((item) => item.trim()).filter(Boolean),
+      requirements: "Bring what you need for the activity.",
+      instructions: "Coordinate in the community chat before arriving.",
+      verificationMethod: "Organizer review",
+      evidenceRequirements: "Upload a photo, video, or short note after the work is done.",
+    });
+    setActivityTitle("");
+    setActivityDescription("");
+    setActivityDate("");
+    setActivityTime("");
+    setActivityLocation("");
+    toast.success("Volunteer action created");
+  }
+
+  async function handleSubmitEvidence(event: FormEvent) {
+    event.preventDefault();
+    if (!community || !summary || !evidenceActivityId || !evidenceDescription.trim()) return;
+    await submitActivityEvidence({
+      activityId: evidenceActivityId,
+      communityId: community.id,
+      uid: summary.uid,
+      user: summary,
+      description: evidenceDescription,
+      mediaUrl: evidenceUrl,
+      mediaType: evidenceUrl ? "image" : "text",
+    });
+    setEvidenceDescription("");
+    setEvidenceUrl("");
+    toast.success("Evidence submitted");
+  }
+
+  if (!communityId || !community) {
+    return (
+      <div className="app-page">
+        <div className="app-empty-state">Loading issue community...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="app-page">
+      <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-black">
+        {community.mediaUrl && (
+          <div className="aspect-[16/8] max-h-80 w-full overflow-hidden bg-zinc-100 dark:bg-zinc-900">
+            {community.mediaType === "video" ? (
+              <video src={community.mediaUrl} className="h-full w-full object-cover" controls playsInline />
+            ) : (
+              <img src={community.mediaUrl} alt="" className="h-full w-full object-cover" />
+            )}
+          </div>
+        )}
+        <div className="px-4 py-5">
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-zinc-950 px-3 py-1 text-xs font-bold uppercase text-white dark:bg-white dark:text-black">{pretty(community.status)}</span>
+            {community.location && <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300"><MapPin size={13} />{community.location}</span>}
+            <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300"><Users size={13} />{community.memberCount} members</span>
+          </div>
+          <h1 className="text-3xl font-black tracking-tight text-zinc-950 dark:text-white sm:text-4xl">{community.title}</h1>
+          <p className="mt-3 text-base leading-7 text-zinc-700 dark:text-zinc-300">{community.description}</p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            {!isMember ? (
+              <button onClick={handleJoinCommunity} disabled={busy} className="inline-flex h-11 items-center gap-2 rounded-full bg-zinc-950 px-5 text-sm font-bold text-white transition hover:scale-[1.02] disabled:opacity-60 dark:bg-white dark:text-black">
+                <HandHeart size={17} /> Join community
+              </button>
+            ) : (
+              <button onClick={handleLeaveCommunity} disabled={busy || member?.role === "owner"} className="h-11 rounded-full border border-zinc-200 px-5 text-sm font-bold text-zinc-900 disabled:opacity-50 dark:border-zinc-800 dark:text-white">
+                {member?.role === "owner" ? "Owner" : "Leave"}
+              </button>
+            )}
+            <Link to={`/post/${community.postId}`} className="inline-flex h-11 items-center rounded-full border border-zinc-200 px-5 text-sm font-bold text-zinc-900 dark:border-zinc-800 dark:text-white">View original post</Link>
+          </div>
+        </div>
+      </header>
+
+      <nav className="sticky top-0 z-10 flex gap-2 overflow-x-auto border-b border-zinc-200 bg-white/95 px-4 py-3 backdrop-blur-xl dark:border-zinc-800 dark:bg-black/95">
+        {tabs.map((tab) => (
+          <button key={tab} onClick={() => setActiveTab(tab)} className={`h-10 shrink-0 rounded-full px-4 text-sm font-bold transition ${activeTab === tab ? "bg-zinc-950 text-white dark:bg-white dark:text-black" : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"}`}>
+            {tab}
+          </button>
+        ))}
+      </nav>
+
+      <main className="px-4 py-5">
+        {(activeTab === "Discussion" || activeTab === "Chat") && (
+          <MessagePanel messages={activeTab === "Chat" ? chat : discussion} canPost={isMember} value={messageText} onChange={setMessageText} onSubmit={handleSendMessage} mode={activeTab} />
+        )}
+
+        {activeTab === "Polls" && (
+          <section className="space-y-4">
+            {canManage && (
+              <form onSubmit={handleCreatePoll} className="space-y-3 rounded-3xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+                <input value={pollQuestion} onChange={(e) => setPollQuestion(e.target.value)} placeholder="Ask the community" className="h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                <textarea value={pollOptions} onChange={(e) => setPollOptions(e.target.value)} className="min-h-24 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                <button className="h-10 rounded-full bg-zinc-950 px-5 text-sm font-bold text-white dark:bg-white dark:text-black">Create poll</button>
+              </form>
+            )}
+            {polls.map((poll) => (
+              <div key={poll.id} className="rounded-3xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+                <div className="flex items-start justify-between gap-3">
+                  <h3 className="font-black text-zinc-950 dark:text-white">{poll.question}</h3>
+                  {canManage && poll.status === "OPEN" && <button onClick={() => closePoll(poll.id)} className="text-xs font-bold text-zinc-500">Close</button>}
+                </div>
+                <div className="mt-4 space-y-2">
+                  {poll.options.map((option, index) => {
+                    const count = poll.counts[index] || 0;
+                    const percent = poll.totalVotes ? Math.round((count / poll.totalVotes) * 100) : 0;
+                    return (
+                      <button key={option} disabled={!isMember || Boolean(poll.myVote) || poll.status !== "OPEN"} onClick={() => user && votePoll(poll, user.uid, index)} className="relative h-11 w-full overflow-hidden rounded-2xl border border-zinc-200 px-4 text-left text-sm font-bold disabled:cursor-default dark:border-zinc-800">
+                        <span className="absolute inset-y-0 left-0 bg-zinc-100 dark:bg-zinc-900" style={{ width: `${percent}%` }} />
+                        <span className="relative flex justify-between"><span>{option}</span><span>{percent}%</span></span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-3 text-xs font-semibold text-zinc-500">{poll.totalVotes} votes</p>
+              </div>
+            ))}
+          </section>
+        )}
+
+        {activeTab === "Actions" && (
+          <section className="space-y-4">
+            {canManage && (
+              <form onSubmit={handleCreateActivity} className="space-y-3 rounded-3xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+                <input value={activityTitle} onChange={(e) => setActivityTitle(e.target.value)} placeholder="Action title" className="h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                <textarea value={activityDescription} onChange={(e) => setActivityDescription(e.target.value)} placeholder="What needs to happen?" className="min-h-24 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <input type="date" value={activityDate} onChange={(e) => setActivityDate(e.target.value)} className="h-12 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                  <input type="time" value={activityTime} onChange={(e) => setActivityTime(e.target.value)} className="h-12 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                  <input value={activityLocation} onChange={(e) => setActivityLocation(e.target.value)} placeholder="Meeting point" className="h-12 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                  <input value={activityLimit} onChange={(e) => setActivityLimit(e.target.value)} placeholder="Volunteer limit" className="h-12 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                </div>
+                <input value={activityRoles} onChange={(e) => setActivityRoles(e.target.value)} placeholder="Roles" className="h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                <button className="h-10 rounded-full bg-zinc-950 px-5 text-sm font-bold text-white dark:bg-white dark:text-black">Create action</button>
+              </form>
+            )}
+            {activities.map((activity) => (
+              <ActivityCard key={activity.id} activity={activity} summary={summary} canManage={canManage} isCommunityMember={isMember} />
+            ))}
+          </section>
+        )}
+
+        {activeTab === "Progress" && (
+          <section className="space-y-4 rounded-3xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950">
+            <div className="flex items-center gap-3">
+              <ShieldCheck className="text-emerald-500" />
+              <div>
+                <h2 className="text-lg font-black text-zinc-950 dark:text-white">Community progress</h2>
+                <p className="text-sm text-zinc-500">Track the issue from report to resolution.</p>
+              </div>
+            </div>
+            {canManage && (
+              <select value={community.status} onChange={(e) => updateCommunityStatus(community.id, e.target.value as IssueCommunityStatus)} className="h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm font-bold dark:border-zinc-800 dark:bg-zinc-900 dark:text-white">
+                {issueStatuses.map((status) => <option key={status} value={status}>{pretty(status)}</option>)}
+              </select>
+            )}
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Metric icon={<Users size={18} />} label="Members" value={community.memberCount} />
+              <Metric icon={<CalendarDays size={18} />} label="Actions" value={community.activityCount} />
+              <Metric icon={<CheckCircle2 size={18} />} label="Evidence" value={evidence.length} />
+            </div>
+          </section>
+        )}
+
+        {activeTab === "Members" && (
+          <section className="space-y-3">
+            {members.map((item) => (
+              <div key={item.id} className="flex items-center gap-3 rounded-3xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+                <img src={item.user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.user.displayName)}&background=111&color=fff`} alt="" className="h-11 w-11 rounded-full object-cover" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-black text-zinc-950 dark:text-white">{item.user.displayName}</p>
+                  <p className="truncate text-xs text-zinc-500">@{item.user.username || "hivez"}</p>
+                </div>
+                <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold capitalize text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">{item.role}</span>
+              </div>
+            ))}
+          </section>
+        )}
+
+        {activeTab === "Evidence" && (
+          <section className="space-y-4">
+            {isMember && activities.length > 0 && (
+              <form onSubmit={handleSubmitEvidence} className="space-y-3 rounded-3xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+                <select value={evidenceActivityId} onChange={(e) => setEvidenceActivityId(e.target.value)} className="h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-white">
+                  {activities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title}</option>)}
+                </select>
+                <textarea value={evidenceDescription} onChange={(e) => setEvidenceDescription(e.target.value)} placeholder="Describe what was completed or verified" className="min-h-24 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                <input value={evidenceUrl} onChange={(e) => setEvidenceUrl(e.target.value)} placeholder="Optional image/video URL" className="h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                <button className="h-10 rounded-full bg-zinc-950 px-5 text-sm font-bold text-white dark:bg-white dark:text-black">Submit evidence</button>
+              </form>
+            )}
+            {evidence.map((item) => (
+              <div key={item.id} className="rounded-3xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+                <div className="flex items-center gap-3">
+                  <img src={item.user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.user.displayName)}&background=111&color=fff`} alt="" className="h-10 w-10 rounded-full object-cover" />
+                  <div>
+                    <p className="text-sm font-black text-zinc-950 dark:text-white">{item.user.displayName}</p>
+                    <p className="text-xs font-semibold text-zinc-500">{pretty(item.status)} • {timeText(item.createdAt)}</p>
+                  </div>
+                </div>
+                <p className="mt-3 text-sm leading-6 text-zinc-700 dark:text-zinc-300">{item.description}</p>
+                {item.mediaUrl && <img src={item.mediaUrl} alt="" className="mt-3 max-h-80 w-full rounded-2xl object-cover" />}
+              </div>
+            ))}
+          </section>
+        )}
+      </main>
+    </div>
+  );
+}
+
+function MessagePanel({ messages, canPost, value, onChange, onSubmit, mode }: { messages: CommunityMessage[]; canPost: boolean; value: string; onChange: (value: string) => void; onSubmit: (event: FormEvent) => void; mode: string }) {
+  return (
+    <section className="space-y-4">
+      <div className="space-y-3">
+        {messages.map((message) => (
+          <div key={message.id} className="flex gap-3 rounded-3xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+            <img src={message.user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(message.user.displayName)}&background=111&color=fff`} alt="" className="h-10 w-10 rounded-full object-cover" />
+            <div className="min-w-0">
+              <p className="text-sm font-black text-zinc-950 dark:text-white">{message.user.displayName} <span className="font-semibold text-zinc-400">{timeText(message.createdAt)}</span></p>
+              <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-zinc-700 dark:text-zinc-300">{message.text}</p>
+            </div>
+          </div>
+        ))}
+        {!messages.length && <div className="rounded-3xl border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-500 dark:border-zinc-800">No {mode.toLowerCase()} messages yet.</div>}
+      </div>
+      {canPost ? (
+        <form onSubmit={onSubmit} className="sticky bottom-20 flex gap-2 rounded-full border border-zinc-200 bg-white p-2 shadow-lg dark:border-zinc-800 dark:bg-zinc-950">
+          <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={`Write in ${mode.toLowerCase()}`} className="min-w-0 flex-1 bg-transparent px-4 text-sm outline-none dark:text-white" />
+          <button disabled={!value.trim()} className="grid h-10 w-10 place-items-center rounded-full bg-zinc-950 text-white disabled:opacity-50 dark:bg-white dark:text-black"><Send size={17} /></button>
+        </form>
+      ) : (
+        <p className="rounded-3xl bg-zinc-100 p-4 text-center text-sm font-semibold text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">Join the community to post.</p>
+      )}
+    </section>
+  );
+}
+
+function ActivityCard({ activity, summary, canManage, isCommunityMember }: { activity: VolunteerActivity; summary: VolunteerUserSummary | null; canManage: boolean; isCommunityMember: boolean }) {
+  const [participant, setParticipant] = useState<ActivityParticipant | null>(null);
+  const [busy, setBusy] = useState(false);
+  const joined = Boolean(participant);
+
+  useEffect(() => {
+    if (!summary) return;
+    return listenActivityParticipant(activity.id, summary.uid, setParticipant);
+  }, [activity.id, summary]);
+
+  async function toggleJoin() {
+    if (!summary || busy) return;
+    setBusy(true);
+    try {
+      if (joined) await leaveActivity(activity, summary.uid);
+      else await joinActivity(activity, summary, activity.roles[0] || "Volunteer");
+    } catch (error: any) {
+      toast.error(error?.message || "Could not update activity");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="rounded-3xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="font-black text-zinc-950 dark:text-white">{activity.title}</h3>
+          <p className="mt-1 text-sm leading-6 text-zinc-600 dark:text-zinc-400">{activity.description}</p>
+        </div>
+        <span className="rounded-full bg-zinc-100 px-3 py-1 text-[11px] font-bold uppercase text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">{pretty(activity.status)}</span>
+      </div>
+      <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-zinc-500">
+        <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 dark:bg-zinc-900"><CalendarDays size={14} />{activity.startDate || "Flexible"}</span>
+        <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 dark:bg-zinc-900"><MapPin size={14} />{activity.location || "Nearby"}</span>
+        <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 dark:bg-zinc-900"><Users size={14} />{activity.volunteerCount}{activity.volunteerLimit ? `/${activity.volunteerLimit}` : ""}</span>
+      </div>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button disabled={!isCommunityMember || busy} onClick={toggleJoin} className="h-10 rounded-full bg-zinc-950 px-5 text-sm font-bold text-white disabled:opacity-50 dark:bg-white dark:text-black">
+          {joined ? "Leave action" : "Join action"}
+        </button>
+        {canManage && (
+          <select value={activity.status} onChange={(e) => updateActivityStatus(activity.id, e.target.value as VolunteerActivityStatus)} className="h-10 rounded-full border border-zinc-200 bg-white px-4 text-sm font-bold dark:border-zinc-800 dark:bg-zinc-950 dark:text-white">
+            {activityStatuses.map((status) => <option key={status} value={status}>{pretty(status)}</option>)}
+          </select>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Metric({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
+  return (
+    <div className="rounded-3xl bg-zinc-50 p-4 dark:bg-zinc-900">
+      <div className="text-zinc-500">{icon}</div>
+      <p className="mt-3 text-2xl font-black text-zinc-950 dark:text-white">{value}</p>
+      <p className="text-xs font-bold uppercase tracking-wide text-zinc-500">{label}</p>
+    </div>
+  );
+}

@@ -134,10 +134,10 @@ export default function CommentsSheet({
   return (
     <>
       {/* Backdrop */}
-      <div onClick={onClose} className="fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm transition-opacity" />
+      <div onClick={onClose} className="fixed inset-0 z-[90] bg-black/55 backdrop-blur-sm transition-opacity" />
 
       {/* Mobile: bottom sheet */}
-      <div className="fixed inset-x-0 bottom-0 z-[100] mx-auto h-[92vh] w-full rounded-t-[28px] border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-black sm:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-[100] mx-auto h-[92vh] w-full rounded-t-[28px] border border-zinc-200 bg-white shadow-2xl transition-transform dark:border-zinc-800 dark:bg-black sm:hidden">
         <div className="flex h-full flex-col overflow-hidden rounded-t-[28px]">
           <CommentHeader count={comments.length} onClose={onClose} />
           <OriginalPost post={post} />
@@ -154,7 +154,7 @@ export default function CommentsSheet({
 
       {/* Desktop: full-screen overlay that replaces the feed */}
       <div className="fixed inset-0 z-[100] hidden bg-white dark:bg-black sm:flex">
-        <div className="mx-auto flex w-full max-w-2xl flex-col border-x border-zinc-200 dark:border-zinc-800">
+        <div className="mx-auto flex w-full max-w-2xl flex-col border-x border-zinc-200 bg-white dark:border-zinc-800 dark:bg-black">
           {/* Header */}
           <div className="app-sticky-header flex items-center justify-between px-4 py-3">
             <button

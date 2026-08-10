@@ -118,7 +118,7 @@ export default function Notifications() {
   }
 
   return (
-    <section className="min-h-[calc(100vh-64px)]">
+    <section className="app-notifications-page min-h-[calc(100vh-64px)]">
       <div className="app-sticky-header flex items-center justify-between px-4 py-4">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Notifications</h1>

@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore";
 import type { PostMediaItem } from "@/components/feed/MediaGrid";
 import { Volume2, VolumeX } from "lucide-react";
+import { createIssueCommunityForPost, getUserSummary } from "@/services/volunteering";
 
 export default function Create() {
   const { state } = useLocation();
@@ -87,7 +88,7 @@ export default function Create() {
         const profile = userDoc.data();
         const hashtags = extractHashtags(caption);
 
-        await addDoc(collection(db, "posts"), {
+        const postRef = await addDoc(collection(db, "posts"), {
           uid: user.uid,
           username: profile?.username || "",
           displayName: profile?.displayName || user.displayName || "",
@@ -103,6 +104,17 @@ export default function Create() {
           comments: 0,
           shares: 0,
           createdAt: serverTimestamp(),
+        });
+
+        await createIssueCommunityForPost({
+          postId: postRef.id,
+          ownerId: user.uid,
+          owner: await getUserSummary(user.uid),
+          caption,
+          category,
+          location: location.trim() || null,
+          mediaUrl: "",
+          mediaType: "text",
         });
 
         // Increment user's post count
@@ -146,7 +158,7 @@ export default function Create() {
       const profile = userDoc.data();
       const hashtags = extractHashtags(caption);
 
-      await addDoc(collection(db, "posts"), {
+      const postRef = await addDoc(collection(db, "posts"), {
         uid: user.uid,
         username: profile?.username || "",
         displayName: profile?.displayName || user.displayName || "",
@@ -166,6 +178,17 @@ export default function Create() {
         createdAt: serverTimestamp(),
       });
 
+      await createIssueCommunityForPost({
+        postId: postRef.id,
+        ownerId: user.uid,
+        owner: await getUserSummary(user.uid),
+        caption,
+        category,
+        location: location.trim() || null,
+        mediaUrl: mediaUrls[0],
+        mediaType: mediaItems[0]?.type || (isVideo ? "video" : "image"),
+      });
+
       // Increment user's post count
       await updateDoc(doc(db, "users", user.uid), {
         posts: increment(1),
@@ -181,7 +204,7 @@ export default function Create() {
   }
 
   return (
-    <main className="min-h-screen bg-white dark:bg-black">
+    <main className="app-create-page min-h-screen bg-white dark:bg-black">
       {/* Header */}
       <div className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-200 bg-white/95 px-4 py-3 backdrop-blur dark:border-zinc-800 dark:bg-black/95">
         <button

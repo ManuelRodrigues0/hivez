@@ -2,6 +2,21 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isCommunityMember(communityId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/communityMembers/$(communityId + "_" + request.auth.uid));
+    }
+
+    function isCommunityManager(communityId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/communityMembers/$(communityId + "_" + request.auth.uid))
+        && get(/databases/$(database)/documents/communityMembers/$(communityId + "_" + request.auth.uid)).data.role in ["owner", "organizer", "moderator"];
+    }
+
     // Username uniqueness enforcement
     // Only allow creating a username if it doesn't already exist
     match /usernames/{username} {
@@ -13,10 +28,124 @@ service cloud.firestore {
         && resource.data.uid == request.auth.uid;
       allow update: if false; // Prevent updates to username entries
     }
-    
-    // COMPLETELY OPEN FOR TESTING (except usernames collection above)
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+
+    // Existing Hivez app collections keep authenticated access so current app
+    // behavior, admin tools, posts, chat, comments, follows and settings do not break.
+    match /users/{userId} {
+      allow read, write: if signedIn();
+      match /{document=**} {
+        allow read, write: if signedIn();
+      }
+    }
+
+    match /posts/{postId} {
+      allow read, write: if signedIn();
+      match /{document=**} {
+        allow read, write: if signedIn();
+      }
+    }
+
+    match /chats/{chatId} {
+      allow read, write: if signedIn();
+      match /{document=**} {
+        allow read, write: if signedIn();
+      }
+    }
+
+    match /{collectionId}/{documentId} {
+      allow read, write: if signedIn()
+        && collectionId in [
+          "follows",
+          "followRequests",
+          "notifications",
+          "reports",
+          "broadcasts",
+          "settings",
+          "admin_logs"
+        ];
+    }
+
+    match /issueCommunities/{communityId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.ownerId is string
+        && request.resource.data.postId is string
+        && request.resource.data.memberCount == 1;
+      allow update: if isCommunityManager(communityId)
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(["memberCount", "activityCount", "status", "updatedAt", "archived"]);
+      allow delete: if isCommunityManager(communityId);
+    }
+
+    match /communityMembers/{membershipId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.communityId is string
+        && request.resource.data.uid is string
+        && (request.resource.data.uid == request.auth.uid || request.resource.data.role == "owner");
+      allow update: if isCommunityManager(resource.data.communityId);
+      allow delete: if signedIn()
+        && (resource.data.uid == request.auth.uid || isCommunityManager(resource.data.communityId))
+        && resource.data.role != "owner";
+    }
+
+    match /communityMessages/{messageId} {
+      allow read: if signedIn();
+      allow create: if isCommunityMember(request.resource.data.communityId)
+        && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if resource.data.uid == request.auth.uid || isCommunityManager(resource.data.communityId);
+    }
+
+    match /communityPolls/{pollId} {
+      allow read: if signedIn();
+      allow create: if isCommunityManager(request.resource.data.communityId);
+      allow update: if isCommunityManager(resource.data.communityId) || isCommunityMember(resource.data.communityId);
+      allow delete: if isCommunityManager(resource.data.communityId);
+    }
+
+    match /pollVotes/{voteId} {
+      allow read: if signedIn();
+      allow create: if isCommunityMember(request.resource.data.communityId)
+        && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /volunteerActivities/{activityId} {
+      allow read: if signedIn();
+      allow create: if isCommunityManager(request.resource.data.communityId);
+      allow update: if isCommunityManager(resource.data.communityId)
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(["volunteerCount", "updatedAt"]);
+      allow delete: if isCommunityManager(resource.data.communityId);
+    }
+
+    match /activityParticipants/{participantId} {
+      allow read: if signedIn();
+      allow create: if isCommunityMember(request.resource.data.communityId)
+        && request.resource.data.uid == request.auth.uid;
+      allow update: if resource.data.uid == request.auth.uid || isCommunityManager(resource.data.communityId);
+      allow delete: if resource.data.uid == request.auth.uid || isCommunityManager(resource.data.communityId);
+    }
+
+    match /activityEvidence/{evidenceId} {
+      allow read: if signedIn();
+      allow create: if isCommunityMember(request.resource.data.communityId)
+        && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isCommunityManager(resource.data.communityId);
+    }
+
+    match /volunteerGroups/{groupId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if signedIn()
+        && exists(/databases/$(database)/documents/volunteerGroupMembers/$(groupId + "_" + request.auth.uid));
+      allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
+    }
+
+    match /volunteerGroupMembers/{membershipId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if signedIn()
+        && resource.data.uid == request.auth.uid;
     }
   }
 }

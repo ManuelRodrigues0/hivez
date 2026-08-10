@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 import {
   Heart,
@@ -13,6 +14,7 @@ import {
   Share2,
   ExternalLink,
   Trash2,
+  HandHeart,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -22,6 +24,14 @@ import { doc, updateDoc, deleteDoc, setDoc, increment, onSnapshot } from "fireba
 import { toast } from "sonner";
 import type { FeedPost } from "./Feed";
 import { createNotification } from "@/services/notifications";
+import {
+  createIssueCommunityForPost,
+  getUserSummary,
+  joinIssueCommunity,
+  listenCommunityByPost,
+  listenCommunityMember,
+} from "@/services/volunteering";
+import type { CommunityMember, IssueCommunity } from "@/types/volunteering";
 
 import CommentsSheet from "../comments/CommentsSheet";
 import MediaGrid from "./MediaGrid";
@@ -54,6 +64,7 @@ function timeAgo(timestamp: any) {
 
 export default function FeedCard({ post, onCommentClick }: Props) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likes);
   const [commentsOpen, setCommentsOpen] = useState(false);
@@ -61,6 +72,9 @@ export default function FeedCard({ post, onCommentClick }: Props) {
   const [shareMenuOpen, setShareMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [liking, setLiking] = useState(false);
+  const [community, setCommunity] = useState<IssueCommunity | null>(null);
+  const [communityMember, setCommunityMember] = useState<CommunityMember | null>(null);
+  const [volunteerBusy, setVolunteerBusy] = useState(false);
   const mediaItems: PostMediaItem[] =
     post.mediaItems?.length
       ? post.mediaItems
@@ -102,6 +116,18 @@ export default function FeedCard({ post, onCommentClick }: Props) {
     });
     return () => unsubscribe();
   }, [post.id]);
+
+  useEffect(() => {
+    return listenCommunityByPost(post.id, setCommunity);
+  }, [post.id]);
+
+  useEffect(() => {
+    if (!user || !community) {
+      setCommunityMember(null);
+      return;
+    }
+    return listenCommunityMember(community.id, user.uid, setCommunityMember);
+  }, [community, user]);
 
   // Check if current user has liked this post
   useEffect(() => {
@@ -163,6 +189,57 @@ export default function FeedCard({ post, onCommentClick }: Props) {
       console.error("Failed to update like:", err);
     } finally {
       setLiking(false);
+    }
+  }
+
+  async function handleVolunteer() {
+    if (!user || volunteerBusy) return;
+    setVolunteerBusy(true);
+    try {
+      let activeCommunity = community;
+      if (!activeCommunity) {
+        const owner = await getUserSummary(post.uid);
+        const communityId = await createIssueCommunityForPost({
+          postId: post.id,
+          ownerId: post.uid,
+          owner,
+          caption: post.caption,
+          category: post.category,
+          location: post.location,
+          mediaUrl: mediaItems[0]?.url || post.mediaUrl || "",
+          mediaType: mediaItems[0]?.type || post.mediaType,
+        });
+        activeCommunity = {
+          id: communityId,
+          postId: post.id,
+          issueId: post.id,
+          title: post.caption || `${post.category || "Community"} issue`,
+          description: post.caption || "Community issue",
+          category: post.category || "community",
+          location: post.location || null,
+          mediaUrl: mediaItems[0]?.url || post.mediaUrl || "",
+          mediaType: mediaItems[0]?.type || post.mediaType,
+          ownerId: post.uid,
+          owner,
+          status: "REPORTED",
+          memberCount: 1,
+          activityCount: 0,
+          rules: [],
+          archived: false,
+          createdAt: null,
+          updatedAt: null,
+        };
+      }
+
+      if (!communityMember && activeCommunity.ownerId !== user.uid) {
+        await joinIssueCommunity(activeCommunity, await getUserSummary(user.uid));
+      }
+      navigate(`/issue-community/${activeCommunity.id}`);
+    } catch (err) {
+      console.error("Failed to open volunteer community:", err);
+      toast.error("Could not open volunteer community");
+    } finally {
+      setVolunteerBusy(false);
     }
   }
 
@@ -393,6 +470,23 @@ export default function FeedCard({ post, onCommentClick }: Props) {
                 <Repeat2 size={18} className="text-zinc-500 dark:text-zinc-400 group-hover:text-green-500" />
                 <span className="text-xs text-zinc-500 dark:text-zinc-400 group-hover:text-green-500">
                   {post.shares}
+                </span>
+              </button>
+              <button
+                onClick={handleVolunteer}
+                disabled={volunteerBusy}
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-amber-50 disabled:opacity-60 dark:hover:bg-amber-950/30 group"
+              >
+                <HandHeart
+                  size={18}
+                  className={
+                    communityMember || community?.ownerId === user?.uid
+                      ? "fill-amber-500 text-amber-500"
+                      : "text-zinc-500 dark:text-zinc-400 group-hover:text-amber-500"
+                  }
+                />
+                <span className="hidden text-xs font-semibold text-zinc-500 group-hover:text-amber-500 dark:text-zinc-400 sm:inline">
+                  {community?.ownerId === user?.uid ? "Manage" : communityMember ? "Joined" : "Volunteer"}
                 </span>
               </button>
 

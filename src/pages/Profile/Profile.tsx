@@ -282,7 +282,7 @@ export default function Profile() {
   ];
 
   return (
-    <div className="app-page">
+    <div className="app-page app-profile-page">
       {/* Desktop-only minimalist profile layout */}
       <div className="hidden lg:block">
         {/* Header with back button */}

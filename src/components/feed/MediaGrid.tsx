@@ -20,7 +20,7 @@ export default function MediaGrid({ items, compact = false }: Props) {
   return (
     <div>
       {single ? (
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900">
+        <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
           <MediaItem item={items[0]} single compact={compact} />
         </div>
       ) : (
@@ -28,7 +28,7 @@ export default function MediaGrid({ items, compact = false }: Props) {
           {items.map((item, index) => (
             <div
               key={`${item.url}-${index}`}
-              className={`relative flex-shrink-0 snap-start overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 ${
+              className={`relative flex-shrink-0 snap-start overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 ${
                 compact ? "h-64 w-48" : "h-[344px] w-[var(--media-card-width)]"
               }`}
             >

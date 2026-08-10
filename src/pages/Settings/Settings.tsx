@@ -124,7 +124,7 @@ export default function Settings() {
   ];
 
   return (
-    <div className="app-page">
+    <div className="app-page app-settings-page">
       {/* Header */}
       <div className="app-sticky-header">
         <div className="flex items-center gap-3 px-4 py-3">

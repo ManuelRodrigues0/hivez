@@ -478,7 +478,7 @@ export default function Chats() {
   const showThreadOnMobile = Boolean(selectedChatId && mobileThreadOpen);
 
   return (
-    <div className="fixed inset-0 top-[64px] bottom-[44px] overflow-hidden md:static md:inset-auto md:h-[calc(100vh-64px)] md:app-page">
+    <div className="app-chats-page fixed inset-0 top-[64px] bottom-[44px] overflow-hidden md:static md:inset-auto md:h-[calc(100vh-64px)] md:app-page">
       <div className="flex h-full">
         <aside className={`${showThreadOnMobile ? "hidden md:flex" : "flex"} relative w-full flex-col md:w-80 lg:w-[340px]`}>
           <div className="flex items-center justify-between px-4 pb-3 pt-5 md:pt-5">
