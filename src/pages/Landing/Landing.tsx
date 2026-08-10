@@ -116,6 +116,11 @@ export default function Landing() {
           <Link to="/login">Log in</Link>
           <Link to="/signup" className="nav-signup">Sign up</Link>
         </div>
+        <div className="landing-mobile-links" aria-label="Landing sections">
+          <a href="#features">Features</a>
+          <a href="#how">How</a>
+          <a href="#intelligence">AI tools</a>
+        </div>
       </header>
 
       <main>
