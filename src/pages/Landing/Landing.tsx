@@ -1,38 +1,101 @@
 import { Link } from "react-router-dom";
 import {
-  ArrowDown,
   ArrowRight,
-  Heart,
+  Bell,
+  Bot,
+  Camera,
+  CheckCircle2,
   MapPin,
   MessageCircle,
-  Navigation,
-  Sparkles,
+  Search,
+  Share2,
+  ShieldCheck,
+  ThumbsUp,
+  Users,
 } from "lucide-react";
-import LandingNavbar from "@/components/landing/LandingNavbar";
-import ScrollReveal from "@/components/landing/ScrollReveal";
 import { landingMedia } from "./landingMedia";
 import "./Landing.css";
 
-const hives = ["Roads", "Safety", "Events", "Pets", "Lost & Found", "Environment"];
+const issueTypes = [
+  "Potholes",
+  "Garbage",
+  "Broken streetlights",
+  "Water leakage",
+  "Illegal parking",
+  "Fallen trees",
+];
 
-function SocialPhone({ variant = "front" }: { variant?: "front" | "back" }) {
+const features = [
+  {
+    icon: Camera,
+    title: "Report local issues",
+    text: "Share civic concerns with photos, videos, location context, and a short description.",
+  },
+  {
+    icon: ThumbsUp,
+    title: "Raise visibility",
+    text: "Upvotes, comments, and shares help important problems get noticed by the community.",
+  },
+  {
+    icon: Users,
+    title: "Discuss and support",
+    text: "Neighbors can add updates, confirm reports, suggest help, and coordinate action.",
+  },
+  {
+    icon: Bell,
+    title: "Stay updated",
+    text: "Notifications, search, and profiles keep people connected to what matters nearby.",
+  },
+];
+
+const intelligenceFeatures = [
+  "Location-based issue discovery",
+  "Volunteer groups for local action",
+  "AI issue detection from photos and videos",
+  "Duplicate report detection",
+  "Severity analysis",
+  "AI-assisted resolution verification",
+];
+
+function IssuePreview() {
   return (
-    <div className={`social-phone social-phone--${variant}`} aria-hidden="true">
-      <div className="social-phone__bar">
-        <span>Nearby</span>
-        <span>now</span>
-      </div>
-      <div className="social-phone__media">
-        <span>{variant === "front" ? "Water leak on 8th Main" : "Street cleanup at 5 PM"}</span>
-      </div>
-      <div className="social-phone__meta">
+    <div className="issue-preview" aria-label="Hivez issue post preview">
+      <div className="issue-preview__top">
         <div>
-          <strong>{variant === "front" ? "Maya" : "Dev"}</strong>
-          <span><MapPin size={13} /> {variant === "front" ? "0.4 km" : "0.9 km"}</span>
+          <strong>Hivez</strong>
+          <span>Nearby reports</span>
         </div>
-        <div className="social-phone__actions">
-          <span><Heart size={15} /> {variant === "front" ? "284" : "96"}</span>
-          <span><MessageCircle size={15} /> {variant === "front" ? "32" : "11"}</span>
+        <Search size={18} aria-hidden="true" />
+      </div>
+
+      <article className="issue-card">
+        <div className="issue-card__media">
+          <span>Water leakage on 8th Main</span>
+        </div>
+        <div className="issue-card__body">
+          <div className="issue-card__meta">
+            <span><MapPin size={14} /> 0.4 km away</span>
+            <span>Roads</span>
+          </div>
+          <p>Pipe leakage has been active since morning. Water is spreading near the bus stop.</p>
+          <div className="issue-card__actions">
+            <span><ThumbsUp size={15} /> 284</span>
+            <span><MessageCircle size={15} /> 32</span>
+            <span><Share2 size={15} /> Share</span>
+          </div>
+        </div>
+      </article>
+
+      <div className="mini-report-list">
+        <div>
+          <span className="status-dot status-dot--urgent" />
+          <p>Broken streetlight near Park Road</p>
+          <strong>96</strong>
+        </div>
+        <div>
+          <span className="status-dot" />
+          <p>Garbage overflow behind market</p>
+          <strong>141</strong>
         </div>
       </div>
     </div>
@@ -42,130 +105,163 @@ function SocialPhone({ variant = "front" }: { variant?: "front" | "back" }) {
 export default function Landing() {
   return (
     <div className="landing-page">
-      <LandingNavbar />
+      <header className="landing-site-nav">
+        <Link to="/" className="landing-site-nav__brand">Hivez</Link>
+        <nav aria-label="Landing sections">
+          <a href="#features">Features</a>
+          <a href="#how">How it works</a>
+          <a href="#intelligence">Intelligence</a>
+        </nav>
+        <div className="landing-site-nav__actions">
+          <Link to="/login">Log in</Link>
+          <Link to="/signup" className="nav-signup">Sign up</Link>
+        </div>
+      </header>
 
       <main>
-        <section className="hero-bereal" aria-labelledby="landing-title">
-          <div className="hero-bereal__video" aria-hidden="true">
-            <video autoPlay muted loop playsInline poster={landingMedia.heroPoster}>
-              <source src={landingMedia.heroVideo} type="video/mp4" />
-            </video>
-          </div>
-
-          <div className="hero-bereal__copy">
-            <p className="hero-bereal__eyebrow anim-fade-up">HIVEZ</p>
-            <h1 id="landing-title" className="anim-fade-up delay-100">
-              See what's happening around you.
-            </h1>
-            <p className="anim-fade-up delay-200">
-              A social feed for real local life. Post issues, find hives, and
-              join what your community is doing right now.
+        <section className="landing-hero">
+          <div className="landing-hero__content">
+            <p className="landing-eyebrow">Community-driven civic social platform</p>
+            <h1>Report, discover, and support local issues around you.</h1>
+            <p>
+              Hivez helps people share problems like potholes, garbage, broken
+              streetlights, water leakage, illegal parking, and other civic concerns,
+              then discuss and support them together.
             </p>
-            <div className="hero-bereal__actions anim-fade-up delay-300">
-              <Link to="/signup" className="landing-pill landing-pill--white">
+            <div className="landing-hero__actions">
+              <Link to="/signup" className="landing-button landing-button--primary">
                 Join Hivez <ArrowRight size={18} />
               </Link>
-              <Link to="/login" className="landing-pill landing-pill--dark">
-                Log in
-              </Link>
+              <a href="#features" className="landing-button landing-button--secondary">
+                Explore features
+              </a>
             </div>
           </div>
 
-          <div className="hero-bereal__phones anim-scale-in delay-500">
-            <SocialPhone variant="back" />
-            <SocialPhone />
+          <div className="landing-hero__visual">
+            <div className="hero-media" aria-hidden="true">
+              <video autoPlay muted loop playsInline poster={landingMedia.heroPoster}>
+                <source src={landingMedia.heroVideo} type="video/mp4" />
+              </video>
+            </div>
+            <IssuePreview />
           </div>
-
-          <a className="hero-bereal__scroll" href="#real" aria-label="Scroll to next section">
-            <ArrowDown size={20} />
-          </a>
         </section>
 
-        <ScrollReveal>
-          <section id="real" className="statement-section statement-section--white">
-            <div className="statement-section__inner">
-              <h2>Your neighborhood is already talking.</h2>
+        <section className="issue-strip" aria-label="Common issues on Hivez">
+          {issueTypes.map((issue) => (
+            <span key={issue}>{issue}</span>
+          ))}
+        </section>
+
+        <section id="features" className="landing-section">
+          <div className="section-heading">
+            <p className="landing-eyebrow">What Hivez does</p>
+            <h2>A social feed for local action.</h2>
+            <p>
+              Hivez turns community problems into visible, discussable reports that
+              people can support, update, and share.
+            </p>
+          </div>
+
+          <div className="feature-grid">
+            {features.map((feature) => (
+              <article className="feature-card" key={feature.title}>
+                <feature.icon size={24} aria-hidden="true" />
+                <h3>{feature.title}</h3>
+                <p>{feature.text}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section id="how" className="landing-section landing-section--dark">
+          <div className="section-heading">
+            <p className="landing-eyebrow">How it works</p>
+            <h2>Simple enough for everyday community use.</h2>
+          </div>
+
+          <div className="steps-grid">
+            <article>
+              <span>01</span>
+              <h3>Post the issue</h3>
+              <p>Add a photo or video, describe the problem, and share it with your community.</p>
+            </article>
+            <article>
+              <span>02</span>
+              <h3>People interact</h3>
+              <p>Neighbors upvote, comment, share, and add useful context so the report gains visibility.</p>
+            </article>
+            <article>
+              <span>03</span>
+              <h3>Action becomes easier</h3>
+              <p>Community members can follow updates, coordinate support, and push important issues forward.</p>
+            </article>
+          </div>
+        </section>
+
+        <section className="community-section">
+          <div className="community-section__copy">
+            <p className="landing-eyebrow">Built for communities</p>
+            <h2>Profiles, search, notifications, and real interaction.</h2>
+            <p>
+              Hivez is not just a complaint box. It is a community layer where
+              people can discover nearby concerns, connect through discussions,
+              follow updates, and build local awareness together.
+            </p>
+            <Link to="/signup" className="landing-button landing-button--primary">
+              Start with Hivez <ArrowRight size={18} />
+            </Link>
+          </div>
+          <div className="community-panel">
+            <div><Users size={20} /> User profiles</div>
+            <div><Search size={20} /> Search local reports</div>
+            <div><Bell size={20} /> Notifications</div>
+            <div><MessageCircle size={20} /> Community comments</div>
+            <div><ShieldCheck size={20} /> Support civic visibility</div>
+          </div>
+        </section>
+
+        <section id="intelligence" className="landing-section">
+          <div className="section-heading">
+            <p className="landing-eyebrow">Built-in intelligence</p>
+            <h2>Smarter tools for stronger communities.</h2>
+            <p>
+              Hivez helps communities detect issues faster, reduce duplicate reports,
+              understand severity, coordinate volunteers, and verify whether problems
+              are resolved.
+            </p>
+          </div>
+
+          <div className="roadmap-grid">
+            {intelligenceFeatures.map((item) => (
+              <div key={item}>
+                <CheckCircle2 size={20} aria-hidden="true" />
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="ai-callout">
+            <Bot size={28} aria-hidden="true" />
+            <div>
+              <h3>AI-assisted civic reporting</h3>
               <p>
-                HIVEZ makes it visible. Local problems, small wins, helpful people,
-                and spontaneous moments all show up in one real-time place.
+                Hivez uses AI assistance to identify report categories, spot duplicate
+                issues, estimate severity, and help verify resolution updates.
               </p>
             </div>
-          </section>
-        </ScrollReveal>
+          </div>
+        </section>
 
-        <ScrollReveal>
-          <section id="discover" className="product-section product-section--black">
-            <div className="product-section__text">
-              <span>Discover</span>
-              <h2>Open HIVEZ. Know the street.</h2>
-            </div>
-            <div className="wide-post" aria-label="HIVEZ feed preview">
-              <div className="wide-post__media">
-                <strong>Power cut near the park</strong>
-              </div>
-              <div className="wide-post__body">
-                <div>
-                  <strong>Asha</strong>
-                  <span>Koramangala - 0.6 km away</span>
-                </div>
-                <p>12 people nearby marked this as active.</p>
-                <div className="wide-post__actions">
-                  <span><Heart size={16} /> 412</span>
-                  <span><MessageCircle size={16} /> 48</span>
-                  <span><Navigation size={16} /> Nearby</span>
-                </div>
-              </div>
-            </div>
-          </section>
-        </ScrollReveal>
-
-        <ScrollReveal>
-          <section id="nearby" className="split-section">
-            <div className="split-section__visual" aria-hidden="true">
-              <div className="nearby-orbit">
-                <span className="nearby-orbit__dot nearby-orbit__dot--one" />
-                <span className="nearby-orbit__dot nearby-orbit__dot--two" />
-                <span className="nearby-orbit__dot nearby-orbit__dot--three" />
-                <div>
-                  <MapPin size={22} />
-                  <strong>5 active updates</strong>
-                  <span>within 1 km</span>
-                </div>
-              </div>
-            </div>
-            <div className="split-section__copy">
-              <span>Nearby</span>
-              <h2>Feel connected to where you are.</h2>
-              <p>No corporate dashboard. Just the local feed, people, and hives that matter around you.</p>
-            </div>
-          </section>
-        </ScrollReveal>
-
-        <ScrollReveal>
-          <section id="hives" className="hives-bereal">
-            <div className="hives-bereal__heading">
-              <span>Hives</span>
-              <h2>Find your Hive.</h2>
-            </div>
-            <div className="hives-bereal__grid">
-              {hives.map((hive, index) => (
-                <Link to="/signup" className={`hive-chip hive-chip--${index + 1}`} key={hive}>
-                  {hive}
-                </Link>
-              ))}
-            </div>
-          </section>
-        </ScrollReveal>
-
-        <section className="final-bereal" aria-labelledby="final-title">
-          <Sparkles size={28} aria-hidden="true" />
-          <h2 id="final-title">Be part of what's happening.</h2>
-          <p>Join HIVEZ and discover your community.</p>
+        <section className="final-cta">
+          <h2>Help your community see what matters.</h2>
+          <p>Join Hivez and start discovering local issues, updates, and people around you.</p>
           <div>
-            <Link to="/signup" className="landing-pill landing-pill--white">
+            <Link to="/signup" className="landing-button landing-button--primary">
               Join Hivez <ArrowRight size={18} />
             </Link>
-            <Link to="/login" className="landing-pill landing-pill--dark">
+            <Link to="/login" className="landing-button landing-button--secondary">
               Log in
             </Link>
           </div>
@@ -173,15 +269,18 @@ export default function Landing() {
       </main>
 
       <footer className="landing-footer">
-        <strong>HIVEZ</strong>
+        <div>
+          <strong>Hivez</strong>
+          <p>Community-driven local issue reporting and discussion.</p>
+        </div>
         <nav aria-label="Footer">
-          <a href="#discover">Discover</a>
-          <a href="#nearby">Nearby</a>
-          <a href="#hives">Hives</a>
+          <a href="#features">Features</a>
+          <a href="#how">How it works</a>
+          <a href="#intelligence">Intelligence</a>
           <Link to="/login">Login</Link>
           <Link to="/signup">Sign up</Link>
         </nav>
-        <p>Copyright 2026 HIVEZ</p>
+        <span>Copyright 2026 Hivez</span>
       </footer>
     </div>
   );
