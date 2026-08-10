@@ -89,7 +89,6 @@ export default function IssueCommunityPage() {
   const [evidenceActivityId, setEvidenceActivityId] = useState("");
   const [evidenceDescription, setEvidenceDescription] = useState("");
   const [evidenceUrl, setEvidenceUrl] = useState("");
-  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!user) return;
