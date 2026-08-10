@@ -155,31 +155,31 @@ html.light,
 
 @layer components {
   .app-page {
-    @apply min-h-full bg-white text-zinc-900 dark:bg-black dark:text-white;
+    @apply min-h-full bg-[#f7f7f2] text-zinc-900 dark:bg-[#070707] dark:text-white;
   }
 
   .app-sticky-header {
-    @apply sticky top-0 z-10 border-b border-zinc-200 bg-white/95 backdrop-blur-xl dark:border-zinc-800 dark:bg-black/95;
+    @apply sticky top-0 z-10 border-b border-zinc-200/80 bg-[#f7f7f2]/90 backdrop-blur-xl dark:border-zinc-800/80 dark:bg-[#070707]/90;
   }
 
   .app-icon-button {
-    @apply inline-flex items-center justify-center rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800;
+    @apply inline-flex items-center justify-center rounded-full p-2 transition hover:bg-zinc-200/70 active:scale-95 dark:hover:bg-zinc-800/80;
   }
 
   .app-primary-button {
-    @apply inline-flex items-center justify-center gap-2 rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200;
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-zinc-950 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-zinc-800 active:scale-[0.98] disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200;
   }
 
   .app-secondary-button {
-    @apply inline-flex items-center justify-center gap-2 rounded-full border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-white dark:hover:bg-zinc-900;
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-zinc-300/90 bg-white/70 px-4 py-2 text-sm font-semibold text-zinc-900 transition hover:bg-white active:scale-[0.98] dark:border-zinc-700/90 dark:bg-zinc-900/60 dark:text-white dark:hover:bg-zinc-900;
   }
 
   .app-surface {
-    @apply rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950;
+    @apply rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_0_rgba(0,0,0,0.03)] dark:border-zinc-800/80 dark:bg-zinc-950;
   }
 
   .app-field {
-    @apply w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:focus:border-zinc-500;
+    @apply w-full rounded-2xl border border-zinc-300/90 bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-zinc-500 focus:ring-4 focus:ring-zinc-900/5 dark:border-zinc-700/90 dark:bg-zinc-950 dark:text-white dark:focus:border-zinc-500 dark:focus:ring-white/10;
   }
 
   .app-section-label {
@@ -239,4 +239,206 @@ html.light,
 
 *::-webkit-scrollbar {
   display: none;
+}
+
+.app-shell {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(16, 185, 129, 0.06), transparent 28%),
+    #f7f7f2;
+}
+
+.dark .app-shell {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(16, 185, 129, 0.08), transparent 28%),
+    #070707;
+}
+
+.app-desktop-header,
+.app-mobile-header {
+  background: rgba(247, 247, 242, 0.88) !important;
+  border-color: rgba(24, 24, 27, 0.08) !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.45) inset;
+  backdrop-filter: blur(18px) saturate(140%);
+}
+
+.dark .app-desktop-header,
+.dark .app-mobile-header {
+  background: rgba(7, 7, 7, 0.9) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: none;
+}
+
+.app-desktop-header h1,
+.app-mobile-header h1,
+.app-mobile-drawer h1 {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.app-sidebar {
+  background: rgba(247, 247, 242, 0.82) !important;
+  border-color: rgba(24, 24, 27, 0.08) !important;
+  backdrop-filter: blur(18px);
+}
+
+.dark .app-sidebar {
+  background: rgba(7, 7, 7, 0.92) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.app-sidebar button,
+.app-mobile-drawer button,
+.app-desktop-header button,
+.app-mobile-header button,
+.app-bottom-nav button,
+.app-bottom-nav a {
+  border-radius: 999px;
+}
+
+.app-sidebar button {
+  margin: 2px 8px;
+  width: calc(100% - 16px) !important;
+}
+
+.app-sidebar button:hover,
+.app-mobile-drawer button:hover {
+  background: rgba(255, 255, 255, 0.72) !important;
+}
+
+.dark .app-sidebar button:hover,
+.dark .app-mobile-drawer button:hover {
+  background: rgba(39, 39, 42, 0.72) !important;
+}
+
+.app-main {
+  background: transparent;
+}
+
+.app-feed-shell {
+  min-height: calc(100svh - 64px);
+  background: rgba(255, 255, 255, 0.58);
+  border-inline: 1px solid rgba(24, 24, 27, 0.06);
+}
+
+.dark .app-feed-shell {
+  background: rgba(10, 10, 10, 0.68);
+  border-inline-color: rgba(255, 255, 255, 0.06);
+}
+
+.app-feed-card {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(24, 24, 27, 0.08) !important;
+}
+
+.app-feed-card:hover {
+  background: rgba(255, 255, 255, 0.95) !important;
+}
+
+.dark .app-feed-card {
+  background: rgba(10, 10, 10, 0.72);
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark .app-feed-card:hover {
+  background: rgba(24, 24, 27, 0.58) !important;
+}
+
+.app-feed-card img {
+  box-shadow: 0 0 0 1px rgba(24, 24, 27, 0.08);
+}
+
+.dark .app-feed-card img {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.app-popover-menu {
+  border-color: rgba(24, 24, 27, 0.1) !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.16);
+  backdrop-filter: blur(18px);
+}
+
+.dark .app-popover-menu {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(24, 24, 27, 0.94) !important;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.42);
+}
+
+.app-updates {
+  background: rgba(247, 247, 242, 0.68);
+  border-color: rgba(24, 24, 27, 0.08) !important;
+}
+
+.dark .app-updates {
+  background: rgba(7, 7, 7, 0.72);
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.app-updates-card {
+  border: 1px solid rgba(24, 24, 27, 0.08);
+  background: rgba(255, 255, 255, 0.72) !important;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.06);
+}
+
+.dark .app-updates-card {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(24, 24, 27, 0.56) !important;
+  box-shadow: none;
+}
+
+.app-mobile-drawer {
+  background: rgba(247, 247, 242, 0.96) !important;
+  backdrop-filter: blur(18px);
+}
+
+.dark .app-mobile-drawer {
+  background: rgba(10, 10, 10, 0.96) !important;
+}
+
+.app-bottom-nav {
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+  background: rgba(247, 247, 242, 0.92) !important;
+  border-color: rgba(24, 24, 27, 0.08) !important;
+  box-shadow: 0 -16px 50px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(18px) saturate(140%);
+}
+
+.dark .app-bottom-nav {
+  background: rgba(7, 7, 7, 0.92) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.app-bottom-nav button,
+.app-bottom-nav a {
+  min-width: 44px;
+  min-height: 42px;
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.app-bottom-nav button:active,
+.app-bottom-nav a:active {
+  transform: scale(0.94);
+}
+
+@media (max-width: 1023px) {
+  .app-feed-shell {
+    border-inline: 0;
+    background: transparent;
+  }
+
+  .dark .app-feed-shell {
+    background: transparent;
+  }
+
+  .app-feed-card {
+    margin: 10px 10px 0;
+    border: 1px solid rgba(24, 24, 27, 0.08) !important;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.82);
+  }
+
+  .dark .app-feed-card {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    background: rgba(24, 24, 27, 0.52);
+  }
 }

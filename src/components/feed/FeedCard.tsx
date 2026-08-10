@@ -237,7 +237,7 @@ export default function FeedCard({ post, onCommentClick }: Props) {
 
   return (
     <>
-      <article className="border-b border-zinc-200 dark:border-zinc-800 px-4 py-3 transition hover:bg-zinc-50 dark:hover:bg-zinc-900/40">
+      <article className="app-feed-card border-b border-zinc-200 dark:border-zinc-800 px-4 py-3 transition hover:bg-zinc-50 dark:hover:bg-zinc-900/40">
         <div className="flex gap-3">
           {/* Avatar column */}
           <div className="flex flex-col items-center">
@@ -286,7 +286,7 @@ export default function FeedCard({ post, onCommentClick }: Props) {
                 {menuOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-                    <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 py-1 shadow-xl">
+                    <div className="app-popover-menu absolute right-0 top-full z-50 mt-1 w-48 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 py-1 shadow-xl">
                       <button
                         onClick={handleCopyText}
                         className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
@@ -414,7 +414,7 @@ export default function FeedCard({ post, onCommentClick }: Props) {
                 {shareMenuOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShareMenuOpen(false)} />
-                    <div className="absolute left-0 top-full z-50 mt-1 w-48 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 py-1 shadow-xl">
+                    <div className="app-popover-menu absolute left-0 top-full z-50 mt-1 w-48 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 py-1 shadow-xl">
                       <button
                         onClick={handleShare}
                         className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"

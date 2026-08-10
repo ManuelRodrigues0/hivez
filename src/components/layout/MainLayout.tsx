@@ -239,11 +239,11 @@ export default function MainLayout() {
 
   return (
     <div
-      className="flex min-h-screen bg-white dark:bg-black text-zinc-900 dark:text-white"
+      className="app-shell flex min-h-screen bg-white dark:bg-black text-zinc-900 dark:text-white"
       style={layoutVars}
     >
       {/* Desktop Header - Fixed at top */}
-      <header className="hidden lg:fixed lg:top-0 lg:left-0 lg:right-0 lg:z-50 lg:flex lg:items-center lg:justify-between lg:border-b lg:border-zinc-200 dark:lg:border-zinc-800 lg:bg-white dark:lg:bg-black lg:px-4 lg:h-16">
+      <header className="app-desktop-header hidden lg:fixed lg:top-0 lg:left-0 lg:right-0 lg:z-50 lg:flex lg:items-center lg:justify-between lg:border-b lg:border-zinc-200 dark:lg:border-zinc-800 lg:bg-white dark:lg:bg-black lg:px-4 lg:h-16">
         {/* Left side - Menu + Logo */}
         <div className="flex items-center gap-4">
           <button 
@@ -259,7 +259,7 @@ export default function MainLayout() {
             {sidebarCollapsed ? <Menu size={24} className="text-zinc-900 dark:text-white" /> : <X size={24} className="text-zinc-900 dark:text-white" />}
           </button>
           <button onClick={() => navigate("/")} className="flex items-center gap-2">
-            <h1 className="text-2xl font-black tracking-wide text-zinc-900 dark:text-white">🐝 HIVEZ</h1>
+            <h1 className="text-2xl font-black tracking-wide text-zinc-900 dark:text-white">Hivez</h1>
           </button>
         </div>
 
@@ -318,7 +318,7 @@ export default function MainLayout() {
 
       {/* Desktop Sidebar - Below header */}
       <aside 
-        className="hidden lg:fixed lg:left-0 lg:top-16 lg:z-40 lg:flex lg:h-[calc(100vh-64px)] lg:w-[var(--layout-left)] lg:flex-col lg:border-r lg:border-zinc-200 lg:bg-white transition-[width] duration-300 dark:lg:border-zinc-800 dark:lg:bg-black"
+        className="app-sidebar hidden lg:fixed lg:left-0 lg:top-16 lg:z-40 lg:flex lg:h-[calc(100vh-64px)] lg:w-[var(--layout-left)] lg:flex-col lg:border-r lg:border-zinc-200 lg:bg-white transition-[width] duration-300 dark:lg:border-zinc-800 dark:lg:bg-black"
         onMouseEnter={handleSidebarMouseEnter}
         onMouseLeave={handleSidebarMouseLeave}
       >
@@ -352,8 +352,8 @@ export default function MainLayout() {
       {/* Main Content Area */}
       <div className="flex w-full flex-col transition-[margin] duration-300 lg:ml-[var(--layout-left)]">
         {/* Updates Sidebar - Desktop only */}
-        <aside className="fixed right-0 top-16 hidden h-[calc(100vh-64px)] w-[var(--layout-right)] overflow-y-auto border-l border-zinc-200 px-4 py-6 dark:border-zinc-800 lg:block">
-          <div className="rounded-2xl bg-zinc-100 p-4 dark:bg-zinc-950">
+        <aside className="app-updates fixed right-0 top-16 hidden h-[calc(100vh-64px)] w-[var(--layout-right)] overflow-y-auto border-l border-zinc-200 px-4 py-6 dark:border-zinc-800 lg:block">
+          <div className="app-updates-card rounded-2xl bg-zinc-100 p-4 dark:bg-zinc-950">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Updates</h2>
               <button className="text-sm font-medium text-sky-600 transition hover:text-sky-500 dark:text-sky-400">
@@ -392,12 +392,12 @@ export default function MainLayout() {
         {/* Content wrapper */}
         <div className="flex w-full flex-col transition-[padding] duration-300 lg:pr-[var(--layout-right)]">
           {/* Mobile Top Bar */}
-          <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-black/95 lg:hidden">
+          <header className="app-mobile-header sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-black/95 lg:hidden">
             <div className="flex items-center justify-between px-4 py-3">
               <button onClick={() => setSidebarOpen(true)} className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
                 <Menu size={22} className="text-zinc-900 dark:text-white" />
               </button>
-              <h1 className="text-lg font-bold tracking-wide text-zinc-900 dark:text-white">🐝 HIVEZ</h1>
+              <h1 className="text-lg font-bold tracking-wide text-zinc-900 dark:text-white">Hivez</h1>
               <button 
                 onClick={() => navigate("/notifications")}
                 className="relative rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
@@ -412,9 +412,9 @@ export default function MainLayout() {
           {sidebarOpen && (
             <>
               <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
-              <div className="fixed left-0 top-0 z-50 flex h-screen w-80 max-w-[85%] flex-col border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 lg:hidden">
+              <div className="app-mobile-drawer fixed left-0 top-0 z-50 flex h-screen w-80 max-w-[85%] flex-col border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 lg:hidden">
                 <div className="border-b border-zinc-200 dark:border-zinc-800 px-5 pt-4 pb-2">
-                  <h1 className="text-2xl font-black tracking-wide text-zinc-900 dark:text-white">🐝 HIVEZ</h1>
+                  <h1 className="text-2xl font-black tracking-wide text-zinc-900 dark:text-white">Hivez</h1>
                   <p className="text-xs text-zinc-500 dark:text-zinc-400">Report. React. Resolve.</p>
                 </div>
                 {sidebarContent}
@@ -423,14 +423,14 @@ export default function MainLayout() {
           )}
 
         {/* Page Content - left aligned, same width */}
-        <main className="flex-1 overflow-y-auto pb-20 lg:pb-0 lg:pt-16">
-          <div className="mr-auto w-full max-w-[var(--feed-max)] px-0 transition-[max-width] duration-300 lg:px-[var(--layout-gap)]">
+        <main className="app-main flex-1 overflow-y-auto pb-20 lg:pb-0 lg:pt-16">
+          <div className="app-feed-shell mr-auto w-full max-w-[var(--feed-max)] px-0 transition-[max-width] duration-300 lg:px-[var(--layout-gap)]">
             <Outlet />
           </div>
         </main>
 
           {/* Mobile Bottom Nav */}
-          <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-200 bg-white dark:border-zinc-800 dark:bg-black lg:hidden">
+          <nav className="app-bottom-nav fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-200 bg-white dark:border-zinc-800 dark:bg-black lg:hidden">
             <div className="flex items-center justify-around py-2">
               <button onClick={() => navigate("/")} className="flex flex-col items-center gap-0.5 px-3 py-1">
                 <Home size={22} className={isActive("/") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
