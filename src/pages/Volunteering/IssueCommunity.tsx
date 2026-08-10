@@ -240,15 +240,15 @@ export default function IssueCommunityPage() {
   return (
     <div className="app-page">
       <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-black">
-        <div className="px-4 py-4">
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-zinc-950 px-3 py-1 text-xs font-bold uppercase text-white dark:bg-white dark:text-black">{pretty(community.status)}</span>
-            {community.location && <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300"><MapPin size={13} />{community.location}</span>}
-            <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300"><Users size={13} />{community.memberCount} members</span>
+        <div className="px-4 py-3 sm:py-4">
+          <div className="mb-2 flex flex-wrap items-center gap-2 sm:mb-3">
+            <span className="rounded-full bg-zinc-950 px-2.5 py-0.5 text-[11px] font-bold uppercase text-white dark:bg-white dark:text-black sm:px-3 sm:py-1 sm:text-xs">{pretty(community.status)}</span>
+            {community.location && <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-0.5 text-[11px] font-bold text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 sm:px-3 sm:py-1 sm:text-xs"><MapPin size={12} />{community.location}</span>}
+            <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-0.5 text-[11px] font-bold text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 sm:px-3 sm:py-1 sm:text-xs"><Users size={12} />{community.memberCount} members</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-start gap-2.5 sm:gap-3">
             {community.mediaUrl && (
-              <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-900">
+              <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-900 sm:h-10 sm:w-10">
                 {community.mediaType === "video" ? (
                   <video src={community.mediaUrl} className="h-full w-full object-cover" playsInline />
                 ) : (
@@ -257,11 +257,11 @@ export default function IssueCommunityPage() {
               </div>
             )}
             <Link to={`/issue-community/${community.id}/details`} className="group block flex-1">
-              <h1 className="text-2xl font-black tracking-tight text-zinc-950 transition group-hover:underline dark:text-white sm:text-3xl">{community.title}</h1>
+              <h1 className="text-lg font-black tracking-tight text-zinc-950 transition group-hover:underline dark:text-white sm:text-xl sm:font-black md:text-2xl">{community.title}</h1>
             </Link>
           </div>
-          <p className="mt-2 text-sm leading-6 text-zinc-700 dark:text-zinc-300">{community.description}</p>
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">@{community.owner.username}</p>
+          <p className="mt-1.5 text-xs leading-5 text-zinc-700 dark:text-zinc-300 sm:mt-2 sm:text-sm sm:leading-6">{community.description}</p>
+          <p className="mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400 sm:mt-1 sm:text-xs">@{community.owner.username}</p>
         </div>
       </header>
 
