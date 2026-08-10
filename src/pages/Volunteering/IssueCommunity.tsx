@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
-import { CalendarDays, CheckCircle2, HandHeart, MapPin, Send, ShieldCheck, Users } from "lucide-react";
+import { CalendarDays, CheckCircle2, MapPin, Send, ShieldCheck, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -10,9 +10,7 @@ import {
   createVolunteerActivity,
   getUserSummary,
   joinActivity,
-  joinIssueCommunity,
   leaveActivity,
-  leaveIssueCommunity,
   listenActivityEvidence,
   listenActivityParticipant,
   listenCommunityMember,
@@ -127,33 +125,6 @@ export default function IssueCommunityPage() {
   useEffect(() => {
     if (!evidenceActivityId && activities[0]) setEvidenceActivityId(activities[0].id);
   }, [activities, evidenceActivityId]);
-
-  async function handleJoinCommunity() {
-    if (!community || !summary || busy) return;
-    setBusy(true);
-    try {
-      await joinIssueCommunity(community, summary);
-      toast.success("Joined issue community");
-    } catch (error) {
-      console.error(error);
-      toast.error("Could not join community");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleLeaveCommunity() {
-    if (!community || !member || busy) return;
-    setBusy(true);
-    try {
-      await leaveIssueCommunity(community, member);
-      toast.success("Left community");
-    } catch (error: any) {
-      toast.error(error?.message || "Could not leave community");
-    } finally {
-      setBusy(false);
-    }
-  }
 
   async function handleSendMessage(event: FormEvent) {
     event.preventDefault();
