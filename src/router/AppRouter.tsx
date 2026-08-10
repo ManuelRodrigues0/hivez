@@ -21,6 +21,7 @@ import Login from "@/pages/Login/Login";
 import Signup from "@/pages/Signup/Signup";
 import CompleteProfile from "@/pages/Signup/CompleteProfile";
 import AdminSetup from "@/pages/AdminSetup";
+import Landing from "@/pages/Landing/Landing";
 
 import AdminLayout from "../components/admin/AdminLayout";
 import {
@@ -58,7 +59,8 @@ export default function AppRouter() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/admin-setup" element={<AdminSetup />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<Landing />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
   }
