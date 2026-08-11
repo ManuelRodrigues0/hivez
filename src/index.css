@@ -587,6 +587,8 @@ html.light,
 @media (max-width: 1023px) {
   .app-feed-shell {
     border-inline: 0;
+    width: 100% !important;
+    max-width: none !important;
   }
 
   .app-feed-card {
