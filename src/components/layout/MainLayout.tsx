@@ -49,8 +49,10 @@ export default function MainLayout() {
   const layoutVars = {
     "--layout-left": isSidebarExpanded ? "280px" : "72px",
     "--layout-right": "384px",
-    "--layout-gap": isSidebarExpanded ? "10px" : "8px",
-    "--feed-max": isSidebarExpanded ? "640px" : "820px",
+    "--layout-gap": "16px",
+    "--feed-max": isSidebarExpanded
+      ? "min(760px, calc(100vw - var(--layout-left) - var(--layout-right) - var(--layout-gap)))"
+      : "calc(100vw - var(--layout-left) - var(--layout-right) - var(--layout-gap))",
     "--media-card-width": isSidebarExpanded ? "204px" : "236px",
   } as CSSProperties;
 
@@ -352,8 +354,8 @@ export default function MainLayout() {
       {/* Main Content Area */}
       <div className="flex w-full flex-col transition-[margin] duration-300 lg:ml-[var(--layout-left)]">
         {/* Updates Sidebar - Desktop only */}
-        <aside className="app-updates fixed right-0 top-16 hidden h-[calc(100vh-64px)] w-[var(--layout-right)] overflow-y-auto border-l border-zinc-200 px-4 py-6 dark:border-zinc-800 lg:block">
-          <div className="app-updates-card rounded-2xl bg-zinc-100 p-4 dark:bg-zinc-950">
+        <aside className="app-updates fixed right-0 top-16 hidden h-[calc(100vh-64px)] w-[var(--layout-right)] overflow-y-auto px-4 py-6 lg:block">
+          <div className="app-updates-card rounded-2xl border border-zinc-200/80 bg-zinc-100 p-4 dark:border-zinc-800/80 dark:bg-zinc-950">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Updates</h2>
               <button className="text-sm font-medium text-sky-600 transition hover:text-sky-500 dark:text-sky-400">
@@ -424,7 +426,7 @@ export default function MainLayout() {
 
         {/* Page Content - left aligned, same width */}
         <main className="app-main flex-1 overflow-y-auto pb-20 lg:pb-0 lg:pt-16">
-          <div className="app-feed-shell mr-auto w-full max-w-[var(--feed-max)] px-0 transition-[max-width] duration-300 lg:px-[var(--layout-gap)]">
+          <div className="app-feed-shell mr-auto w-full max-w-[var(--feed-max)] px-0 transition-[max-width] duration-300 lg:px-0">
             <Outlet />
           </div>
         </main>

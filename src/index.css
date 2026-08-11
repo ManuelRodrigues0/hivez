@@ -324,38 +324,75 @@ html.light,
 }
 
 .app-sidebar {
-  background: var(--hivez-bg) !important;
+  background: color-mix(in srgb, var(--hivez-bg) 96%, var(--hivez-surface) 4%) !important;
   border-color: var(--hivez-border) !important;
+  padding: 12px 0;
 }
 
 .app-sidebar button {
-  margin: 2px 8px;
-  width: calc(100% - 16px) !important;
+  margin: 1px 12px;
+  width: calc(100% - 24px) !important;
   min-height: 42px;
+  justify-content: flex-start;
+  border-radius: 8px;
+  padding-inline: 12px !important;
+  color: var(--hivez-text);
+  font-weight: 500;
+}
+
+.app-sidebar button svg,
+.app-mobile-drawer button svg {
+  flex-shrink: 0;
+}
+
+.app-sidebar button span,
+.app-mobile-drawer button span {
+  line-height: 1.2;
+}
+
+.app-sidebar button:hover,
+.app-mobile-drawer button:hover {
+  background: color-mix(in srgb, var(--hivez-text) 6%, transparent) !important;
+}
+
+.app-sidebar .overflow-y-auto,
+.app-mobile-drawer .overflow-y-auto {
+  padding-block: 6px 12px;
+}
+
+.app-sidebar .text-xs.uppercase,
+.app-mobile-drawer .text-xs.uppercase {
+  margin: 14px 16px 8px;
+  padding: 12px 0 0 !important;
+  border-top: 1px solid color-mix(in srgb, var(--hivez-border) 70%, transparent);
+  letter-spacing: 0.06em;
+  font-size: 11px;
 }
 
 .app-sidebar button[class*="bg-zinc-100"],
 .app-mobile-drawer button[class*="bg-zinc-100"] {
-  background: var(--hivez-text) !important;
+  background: color-mix(in srgb, var(--hivez-text) 8%, transparent) !important;
+  box-shadow: none;
 }
 
 .app-sidebar button[class*="bg-zinc-100"] svg,
 .app-sidebar button[class*="bg-zinc-100"] span,
 .app-mobile-drawer button[class*="bg-zinc-100"] svg,
 .app-mobile-drawer button[class*="bg-zinc-100"] span {
-  color: var(--hivez-bg) !important;
+  color: var(--hivez-text) !important;
 }
 
 .dark .app-sidebar button[class*="dark:bg-zinc-800"],
 .dark .app-mobile-drawer button[class*="dark:bg-zinc-800"] {
-  background: var(--hivez-text) !important;
+  background: color-mix(in srgb, var(--hivez-text) 10%, transparent) !important;
+  box-shadow: none;
 }
 
 .dark .app-sidebar button[class*="dark:bg-zinc-800"] svg,
 .dark .app-sidebar button[class*="dark:bg-zinc-800"] span,
 .dark .app-mobile-drawer button[class*="dark:bg-zinc-800"] svg,
 .dark .app-mobile-drawer button[class*="dark:bg-zinc-800"] span {
-  color: var(--hivez-bg) !important;
+  color: var(--hivez-text) !important;
 }
 
 .app-main,
@@ -365,7 +402,8 @@ html.light,
 
 .app-feed-shell {
   min-height: calc(100svh - 64px);
-  border-inline: 1px solid var(--hivez-border);
+  border-left: 1px solid var(--hivez-border);
+  border-right: 1px solid var(--hivez-border);
 }
 
 .app-feed-card {
@@ -394,10 +432,17 @@ html.light,
 
 .app-updates {
   background: var(--hivez-bg) !important;
-  border-color: var(--hivez-border) !important;
+  border-left: 0 !important;
+  padding-inline: var(--layout-gap) !important;
 }
 
-.app-updates-card,
+.app-updates-card {
+  background: var(--hivez-surface) !important;
+  border: 1px solid var(--hivez-border) !important;
+  border-radius: var(--hivez-radius) !important;
+  box-shadow: none !important;
+}
+
 .app-surface,
 .app-create-page > div > div,
 .app-community-page > section,
@@ -420,6 +465,20 @@ html.light,
   background: color-mix(in srgb, var(--hivez-bg) 94%, transparent) !important;
   border-color: var(--hivez-border) !important;
   backdrop-filter: blur(18px) saturate(140%);
+}
+
+.app-mobile-drawer {
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+.app-mobile-drawer button {
+  margin: 1px 12px;
+  width: calc(100% - 24px) !important;
+  min-height: 44px;
+  justify-content: flex-start;
+  border-radius: 8px;
+  padding-inline: 12px !important;
+  font-weight: 500;
 }
 
 .app-bottom-nav {
