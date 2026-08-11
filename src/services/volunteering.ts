@@ -227,7 +227,9 @@ export async function deleteCommunityMessage(messageId: string) {
 export function listenCommunityPolls(communityId: string, uid: string | undefined, onNext: (polls: Array<CommunityPoll & { myVote?: PollVote }>) => void) {
   const pollsQ = query(collection(db, "communityPolls"), where("communityId", "==", communityId));
   return onSnapshot(pollsQ, async (snapshot) => {
-    const polls = snapshot.docs.map((item) => ({ id: item.id, ...item.data() } as CommunityPoll));
+    const polls = snapshot.docs
+      .map((item) => ({ id: item.id, ...item.data() } as CommunityPoll))
+      .filter((poll) => !poll.deleted);
     polls.sort((a, b) => (b.createdAt?.toDate?.().getTime?.() || 0) - (a.createdAt?.toDate?.().getTime?.() || 0));
 
     if (!uid || polls.length === 0) {
@@ -291,6 +293,14 @@ export async function votePoll(poll: CommunityPoll, uid: string, optionIndex: nu
 
 export async function closePoll(pollId: string) {
   await updateDoc(doc(db, "communityPolls", pollId), { status: "CLOSED" });
+}
+
+export async function reopenPoll(pollId: string) {
+  await updateDoc(doc(db, "communityPolls", pollId), { status: "OPEN" });
+}
+
+export async function deletePoll(pollId: string) {
+  await updateDoc(doc(db, "communityPolls", pollId), { status: "CLOSED", deleted: true });
 }
 
 export function listenVolunteerActivities(communityId: string, onNext: (activities: VolunteerActivity[]) => void) {
@@ -394,6 +404,20 @@ export async function updateActivityStatus(activityId: string, status: Volunteer
   await updateDoc(doc(db, "volunteerActivities", activityId), { status, updatedAt: serverTimestamp() });
 }
 
+export async function updateActivityDetails(
+  activityId: string,
+  input: Pick<VolunteerActivity, "title" | "description" | "location" | "meetingPoint" | "startDate" | "startTime" | "volunteerLimit" | "roles">
+) {
+  await updateDoc(doc(db, "volunteerActivities", activityId), {
+    ...input,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function cancelActivity(activityId: string) {
+  await updateActivityStatus(activityId, "CANCELLED");
+}
+
 export async function submitActivityEvidence(input: Omit<ActivityEvidence, "id" | "status" | "createdAt">) {
   await addDoc(collection(db, "activityEvidence"), {
     ...input,
@@ -405,7 +429,9 @@ export async function submitActivityEvidence(input: Omit<ActivityEvidence, "id" 
 export function listenActivityEvidence(communityId: string, onNext: (evidence: ActivityEvidence[]) => void) {
   const q = query(collection(db, "activityEvidence"), where("communityId", "==", communityId));
   return onSnapshot(q, (snapshot) => {
-    onNext(snapshot.docs.map((item) => ({ id: item.id, ...item.data() } as ActivityEvidence)));
+    const data = snapshot.docs.map((item) => ({ id: item.id, ...item.data() } as ActivityEvidence));
+    data.sort((a, b) => (b.createdAt?.toDate?.().getTime?.() || 0) - (a.createdAt?.toDate?.().getTime?.() || 0));
+    onNext(data);
   });
 }
 
@@ -473,6 +499,26 @@ export async function updateCommunityStatus(communityId: string, status: IssueCo
     archived: status === "ARCHIVED",
     updatedAt: serverTimestamp(),
   });
+}
+
+export async function updateCommunityMemberRole(member: CommunityMember, role: CommunityRole) {
+  if (member.role === "owner") throw new Error("Owner role cannot be changed here.");
+  await updateDoc(doc(db, "communityMembers", member.id), { role });
+}
+
+export async function removeCommunityMember(community: IssueCommunity, member: CommunityMember) {
+  if (member.role === "owner") throw new Error("Owner cannot be removed.");
+  const batch = writeBatch(db);
+  batch.delete(doc(db, "communityMembers", member.id));
+  batch.update(doc(db, "issueCommunities", community.id), {
+    memberCount: increment(-1),
+    updatedAt: serverTimestamp(),
+  });
+  await batch.commit();
+}
+
+export async function reviewActivityEvidence(evidenceId: string, status: ActivityEvidence["status"]) {
+  await updateDoc(doc(db, "activityEvidence", evidenceId), { status });
 }
 
 export async function listMyActivityParticipants(uid: string) {

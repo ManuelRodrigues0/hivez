@@ -6,7 +6,7 @@ export default function App() {
   return (
     <>
       <AppRouter />
-      <Toaster richColors closeButton position="top-right" duration={Infinity} />
+      <Toaster richColors closeButton position="top-right" duration={2000} />
     </>
   );
 }

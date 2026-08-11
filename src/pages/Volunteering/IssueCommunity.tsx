@@ -1,16 +1,20 @@
 import { useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
-import { CalendarDays, CheckCircle2, MapPin, Send, ShieldCheck, Users } from "lucide-react";
+import { CalendarDays, CheckCircle2, MapPin, Send, ShieldCheck, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import {
   closePoll,
+  deletePoll,
   createPoll,
   createVolunteerActivity,
   getUserSummary,
   joinActivity,
   leaveActivity,
+  removeCommunityMember,
+  reopenPoll,
+  reviewActivityEvidence,
   listenActivityEvidence,
   listenActivityParticipant,
   listenCommunityMember,
@@ -21,7 +25,9 @@ import {
   listenVolunteerActivities,
   sendCommunityMessage,
   submitActivityEvidence,
+  updateActivityDetails,
   updateActivityStatus,
+  updateCommunityMemberRole,
   updateCommunityStatus,
   votePoll,
 } from "@/services/volunteering";
@@ -119,6 +125,7 @@ export default function IssueCommunityPage() {
   }, [communityId, user?.uid]);
 
   const canManage = member?.role === "owner" || member?.role === "organizer" || member?.role === "moderator";
+  const isOwner = member?.role === "owner";
   const isMember = Boolean(member);
 
   useEffect(() => {
@@ -258,26 +265,37 @@ export default function IssueCommunityPage() {
               </form>
             )}
             {polls.map((poll) => (
-              <div key={poll.id} className="rounded-3xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+              <div key={poll.id} className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
                 <div className="flex items-start justify-between gap-3">
                   <h3 className="font-black text-zinc-950 dark:text-white">{poll.question}</h3>
-                  {canManage && poll.status === "OPEN" && <button onClick={() => closePoll(poll.id)} className="text-xs font-bold text-zinc-500">Close</button>}
+                  {canManage && (
+                    <div className="flex items-center gap-2">
+                      {poll.status === "OPEN" ? (
+                        <button onClick={() => closePoll(poll.id)} className="text-xs font-bold text-zinc-500 hover:text-zinc-950 dark:hover:text-white">Close</button>
+                      ) : (
+                        <button onClick={() => reopenPoll(poll.id)} className="text-xs font-bold text-zinc-500 hover:text-zinc-950 dark:hover:text-white">Reopen</button>
+                      )}
+                      {isOwner && <button onClick={() => deletePoll(poll.id)} className="text-red-500 hover:text-red-400"><Trash2 size={15} /></button>}
+                    </div>
+                  )}
                 </div>
                 <div className="mt-4 space-y-2">
                   {poll.options.map((option, index) => {
                     const count = poll.counts[index] || 0;
                     const percent = poll.totalVotes ? Math.round((count / poll.totalVotes) * 100) : 0;
+                    const selected = poll.myVote?.optionIndex === index;
                     return (
-                      <button key={option} disabled={!isMember || Boolean(poll.myVote) || poll.status !== "OPEN"} onClick={() => user && votePoll(poll, user.uid, index)} className="relative h-11 w-full overflow-hidden rounded-2xl border border-zinc-200 px-4 text-left text-sm font-bold disabled:cursor-default dark:border-zinc-800">
-                        <span className="absolute inset-y-0 left-0 bg-zinc-100 dark:bg-zinc-900" style={{ width: `${percent}%` }} />
+                      <button key={option} disabled={!isMember || Boolean(poll.myVote) || poll.status !== "OPEN"} onClick={() => user && votePoll(poll, user.uid, index).then(() => toast.success("Vote recorded"))} className={`relative h-11 w-full overflow-hidden rounded-xl border px-4 text-left text-sm font-bold disabled:cursor-default ${selected ? "border-emerald-400" : "border-zinc-200 dark:border-zinc-800"}`}>
+                        <span className={`absolute inset-y-0 left-0 ${selected ? "bg-emerald-100 dark:bg-emerald-950" : "bg-zinc-100 dark:bg-zinc-900"}`} style={{ width: `${percent}%` }} />
                         <span className="relative flex justify-between"><span>{option}</span><span>{percent}%</span></span>
                       </button>
                     );
                   })}
                 </div>
-                <p className="mt-3 text-xs font-semibold text-zinc-500">{poll.totalVotes} votes</p>
+                <p className="mt-3 text-xs font-semibold text-zinc-500">{poll.totalVotes} votes • {pretty(poll.status)}</p>
               </div>
             ))}
+            {!polls.length && <EmptyBlock text="No polls yet. Owners and organizers can create one above." />}
           </section>
         )}
 
@@ -298,8 +316,9 @@ export default function IssueCommunityPage() {
               </form>
             )}
             {activities.map((activity) => (
-              <ActivityCard key={activity.id} activity={activity} summary={summary} canManage={canManage} isCommunityMember={isMember} />
+              <ActivityCard key={activity.id} activity={activity} summary={summary} canManage={canManage} isOwner={isOwner} isCommunityMember={isMember} />
             ))}
+            {!activities.length && <EmptyBlock text="No volunteer actions yet." />}
           </section>
         )}
 
@@ -327,6 +346,12 @@ export default function IssueCommunityPage() {
 
         {activeTab === "Members" && (
           <section className="space-y-3">
+            {isOwner && (
+              <div className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-600 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300">
+                <p className="font-bold text-zinc-950 dark:text-white">Owner controls</p>
+                <p className="mt-1">Promote trusted members, assign moderators, or remove people from this issue community.</p>
+              </div>
+            )}
             {members.map((item) => (
               <div key={item.id} className="flex items-center gap-3 rounded-3xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
                 <img src={item.user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.user.displayName)}&background=111&color=fff`} alt="" className="h-11 w-11 rounded-full object-cover" />
@@ -334,7 +359,16 @@ export default function IssueCommunityPage() {
                   <p className="truncate text-sm font-black text-zinc-950 dark:text-white">{item.user.displayName}</p>
                   <p className="truncate text-xs text-zinc-500">@{item.user.username || "hivez"}</p>
                 </div>
-                <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold capitalize text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">{item.role}</span>
+                {isOwner && item.role !== "owner" ? (
+                  <div className="flex items-center gap-2">
+                    <select value={item.role} onChange={(e) => updateCommunityMemberRole(item, e.target.value as CommunityMember["role"]).then(() => toast.success("Role updated")).catch((error) => toast.error(error.message))} className="h-9 rounded-full border border-zinc-200 bg-white px-3 text-xs font-bold capitalize dark:border-zinc-800 dark:bg-zinc-950 dark:text-white">
+                      {["member", "moderator", "organizer"].map((role) => <option key={role} value={role}>{role}</option>)}
+                    </select>
+                    <button onClick={() => removeCommunityMember(community, item).then(() => toast.success("Member removed")).catch((error) => toast.error(error.message))} className="grid h-9 w-9 place-items-center rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"><Trash2 size={15} /></button>
+                  </div>
+                ) : (
+                  <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold capitalize text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">{item.role}</span>
+                )}
               </div>
             ))}
           </section>
@@ -342,6 +376,12 @@ export default function IssueCommunityPage() {
 
         {activeTab === "Evidence" && (
           <section className="space-y-4">
+            {canManage && (
+              <div className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-600 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300">
+                <p className="font-bold text-zinc-950 dark:text-white">Evidence review</p>
+                <p className="mt-1">Review submitted proof and mark it accepted or rejected so the community can track real progress.</p>
+              </div>
+            )}
             {isMember && activities.length > 0 && (
               <form onSubmit={handleSubmitEvidence} className="space-y-3 rounded-3xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
                 <select value={evidenceActivityId} onChange={(e) => setEvidenceActivityId(e.target.value)} className="h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-white">
@@ -363,8 +403,18 @@ export default function IssueCommunityPage() {
                 </div>
                 <p className="mt-3 text-sm leading-6 text-zinc-700 dark:text-zinc-300">{item.description}</p>
                 {item.mediaUrl && <img src={item.mediaUrl} alt="" className="mt-3 max-h-80 w-full rounded-2xl object-cover" />}
+                {canManage && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {(["REVIEWED", "ACCEPTED", "REJECTED"] as ActivityEvidence["status"][]).map((status) => (
+                      <button key={status} onClick={() => reviewActivityEvidence(item.id, status).then(() => toast.success("Evidence updated"))} className="h-9 rounded-full border border-zinc-200 px-3 text-xs font-bold text-zinc-700 hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-900">
+                        {pretty(status)}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
+            {!evidence.length && <EmptyBlock text="No evidence submitted yet." />}
           </section>
         )}
       </main>
@@ -399,9 +449,17 @@ function MessagePanel({ messages, canPost, value, onChange, onSubmit, mode }: { 
   );
 }
 
-function ActivityCard({ activity, summary, canManage, isCommunityMember }: { activity: VolunteerActivity; summary: VolunteerUserSummary | null; canManage: boolean; isCommunityMember: boolean }) {
+function ActivityCard({ activity, summary, canManage, isOwner, isCommunityMember }: { activity: VolunteerActivity; summary: VolunteerUserSummary | null; canManage: boolean; isOwner: boolean; isCommunityMember: boolean }) {
   const [participant, setParticipant] = useState<ActivityParticipant | null>(null);
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [title, setTitle] = useState(activity.title);
+  const [description, setDescription] = useState(activity.description);
+  const [location, setLocation] = useState(activity.location);
+  const [startDate, setStartDate] = useState(activity.startDate);
+  const [startTime, setStartTime] = useState(activity.startTime);
+  const [limit, setLimit] = useState(String(activity.volunteerLimit || ""));
+  const [roles, setRoles] = useState(activity.roles.join(", "));
   const joined = Boolean(participant);
 
   useEffect(() => {
@@ -422,8 +480,51 @@ function ActivityCard({ activity, summary, canManage, isCommunityMember }: { act
     }
   }
 
+  async function saveActivity(event: FormEvent) {
+    event.preventDefault();
+    if (!title.trim() || busy) return;
+    setBusy(true);
+    try {
+      await updateActivityDetails(activity.id, {
+        title: title.trim(),
+        description: description.trim(),
+        location: location.trim(),
+        meetingPoint: location.trim(),
+        startDate,
+        startTime,
+        volunteerLimit: Number(limit) || 0,
+        roles: roles.split(",").map((item) => item.trim()).filter(Boolean),
+      });
+      setEditing(false);
+      toast.success("Action updated");
+    } catch (error) {
+      console.error(error);
+      toast.error("Could not update action");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
-    <div className="rounded-3xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+    <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+      {editing ? (
+        <form onSubmit={saveActivity} className="space-y-3">
+          <input value={title} onChange={(e) => setTitle(e.target.value)} className="h-11 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm font-bold outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="min-h-24 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+          <div className="grid gap-2 sm:grid-cols-2">
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-11 rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+            <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="h-11 rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+            <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Meeting point" className="h-11 rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+            <input value={limit} onChange={(e) => setLimit(e.target.value)} placeholder="Volunteer limit" className="h-11 rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+          </div>
+          <input value={roles} onChange={(e) => setRoles(e.target.value)} placeholder="Roles" className="h-11 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+          <div className="flex gap-2">
+            <button disabled={busy} className="h-9 rounded-full bg-zinc-950 px-4 text-xs font-bold text-white dark:bg-white dark:text-black">Save</button>
+            <button type="button" onClick={() => setEditing(false)} className="h-9 rounded-full border border-zinc-200 px-4 text-xs font-bold dark:border-zinc-800">Cancel</button>
+          </div>
+        </form>
+      ) : (
+        <>
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="font-black text-zinc-950 dark:text-white">{activity.title}</h3>
@@ -445,7 +546,19 @@ function ActivityCard({ activity, summary, canManage, isCommunityMember }: { act
             {activityStatuses.map((status) => <option key={status} value={status}>{pretty(status)}</option>)}
           </select>
         )}
+        {canManage && <button onClick={() => setEditing(true)} className="h-10 rounded-full border border-zinc-200 px-4 text-sm font-bold dark:border-zinc-800">Edit</button>}
+        {isOwner && activity.status !== "CANCELLED" && <button onClick={() => updateActivityStatus(activity.id, "CANCELLED").then(() => toast.success("Action cancelled"))} className="h-10 rounded-full border border-red-200 px-4 text-sm font-bold text-red-500 dark:border-red-950">Cancel action</button>}
       </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function EmptyBlock({ text }: { text: string }) {
+  return (
+    <div className="rounded-2xl border border-dashed border-zinc-300 p-8 text-center text-sm font-semibold text-zinc-500 dark:border-zinc-800">
+      {text}
     </div>
   );
 }

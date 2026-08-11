@@ -76,6 +76,7 @@ export interface CommunityPoll {
   status: "OPEN" | "CLOSED";
   createdBy: string;
   expiresAt?: string | null;
+  deleted?: boolean;
   createdAt: any;
 }
 

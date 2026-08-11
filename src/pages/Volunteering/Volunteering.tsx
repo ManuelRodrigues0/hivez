@@ -192,7 +192,7 @@ export default function Volunteering() {
           <div className="grid gap-3 sm:grid-cols-2">
             {communities.slice(0, 6).map((community) => (
               <Link key={community.id} to={`/issue-community/${community.id}`} className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950">
-                {community.mediaUrl && <img src={community.mediaUrl} alt="" className="h-36 w-full object-cover" loading="lazy" />}
+                <IssuePreview community={community} />
                 <div className="p-4">
                   <p className="text-base font-black text-zinc-950 dark:text-white">{community.title}</p>
                   <p className="mt-1 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">{community.description}</p>
@@ -235,5 +235,30 @@ export default function Volunteering() {
         </section>
       </main>
     </div>
+  );
+}
+
+function IssuePreview({ community }: { community: IssueCommunity }) {
+  if (!community.mediaUrl) return null;
+
+  if (community.mediaType === "video") {
+    return (
+      <video
+        src={community.mediaUrl}
+        className="h-36 w-full object-cover"
+        muted
+        playsInline
+        preload="metadata"
+      />
+    );
+  }
+
+  return (
+    <img
+      src={community.mediaUrl}
+      alt=""
+      className="h-36 w-full object-cover"
+      loading="lazy"
+    />
   );
 }
