@@ -205,6 +205,66 @@ html.light,
     @apply flex flex-col items-center justify-center px-6 py-24 text-center text-zinc-500 dark:text-zinc-400;
   }
 
+  .app-not-found-page {
+    min-height: calc(100svh - 64px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--hivez-bg);
+    padding: clamp(24px, 5vw, 72px) clamp(16px, 4vw, 48px);
+    color: var(--hivez-text);
+  }
+
+  .app-not-found-composition {
+    width: min(100%, 680px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(14px, 2vw, 18px);
+    animation: not-found-enter 220ms ease-out both;
+  }
+
+  .app-not-found-video {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: contain;
+  }
+
+  .app-not-found-button {
+    min-height: 46px;
+    min-width: 156px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: var(--hivez-text);
+    color: var(--hivez-bg);
+    padding: 0.72rem 1.35rem;
+    font-size: 0.9rem;
+    font-weight: 750;
+    line-height: 1;
+    text-decoration: none;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.16) inset, 0 14px 28px rgba(0, 0, 0, 0.12);
+    transition: background 160ms ease, color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+    cursor: pointer;
+  }
+
+  .app-not-found-button:hover {
+    background: color-mix(in srgb, var(--hivez-text) 88%, var(--hivez-accent));
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.18) inset, 0 18px 36px rgba(0, 0, 0, 0.16);
+  }
+
+  .app-not-found-button:active {
+    transform: scale(0.97);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 8px 18px rgba(0, 0, 0, 0.14);
+  }
+
+  .app-not-found-button:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--hivez-accent) 70%, white);
+    outline-offset: 4px;
+  }
+
   .app-tab {
     @apply flex-1 border-b-2 border-transparent py-3 text-center text-sm font-medium text-zinc-500 transition hover:text-zinc-900 dark:hover:text-white;
   }
@@ -240,6 +300,17 @@ html.light,
 @keyframes flash {
   0% { opacity: 1; }
   100% { opacity: 0; }
+}
+
+@keyframes not-found-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-flash {
@@ -601,5 +672,24 @@ html.light,
   .app-create-page > div > div {
     margin: 10px;
     border-radius: 20px;
+  }
+}
+
+@media (max-width: 767px) {
+  .app-not-found-page {
+    min-height: calc(100svh - 120px);
+    align-items: center;
+    padding: 20px 16px 28px;
+  }
+
+  .app-not-found-composition {
+    width: min(100%, 430px);
+    gap: 12px;
+  }
+
+  .app-not-found-button {
+    min-height: 48px;
+    min-width: 152px;
+    padding-inline: 1.2rem;
   }
 }

@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import MainLayout from "../components/layout/MainLayout";
 import MobileLayout from "../components/layout/MobileLayout";
 
@@ -24,6 +24,7 @@ import Signup from "@/pages/Signup/Signup";
 import CompleteProfile from "@/pages/Signup/CompleteProfile";
 import AdminSetup from "@/pages/AdminSetup";
 import Landing from "@/pages/Landing/Landing";
+import NotFound from "@/pages/NotFound/NotFound";
 
 import AdminLayout from "../components/admin/AdminLayout";
 import {
@@ -62,7 +63,7 @@ export default function AppRouter() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/admin-setup" element={<AdminSetup />} />
         <Route path="/" element={<Landing />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     );
   }
@@ -118,7 +119,7 @@ export default function AppRouter() {
       </Route>
 
       <Route path="/admin-setup" element={<AdminSetup />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }
