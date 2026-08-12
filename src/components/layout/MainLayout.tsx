@@ -419,7 +419,7 @@ export default function MainLayout() {
               <button onClick={() => setSidebarOpen(true)} className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
                 <Menu size={22} className="text-zinc-900 dark:text-white" />
               </button>
-              <div className="flex items-center gap-1.5" aria-label="Hivez">
+              <div className="app-mobile-brand flex items-center gap-1.5" aria-label="Hivez">
                 <h1 className="text-lg font-bold tracking-wide text-zinc-900 dark:text-white">Hivez</h1>
                 <UltraBeeMark />
               </div>

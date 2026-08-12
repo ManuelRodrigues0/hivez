@@ -482,8 +482,8 @@ html.light,
 }
 
 .app-ultra-bee-mark {
-  width: clamp(112px, 8.8vw, 144px);
-  height: 108px;
+  width: clamp(72px, 5.4vw, 92px);
+  height: 68px;
   display: block;
   object-fit: contain;
   flex-shrink: 0;
@@ -492,8 +492,8 @@ html.light,
 
 @media (max-width: 360px) {
   .app-ultra-bee-mark {
-    width: 88px;
-    height: 88px;
+    width: 52px;
+    height: 48px;
   }
 }
 
@@ -893,6 +893,7 @@ html.light,
   background: color-mix(in srgb, var(--hivez-bg) 82%, transparent) !important;
   border-color: var(--hivez-border) !important;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3) inset;
+  overflow: hidden;
 }
 
 .dark .app-desktop-header,
@@ -934,10 +935,14 @@ html.light,
 }
 
 .app-ultra-bee-mark {
-  width: clamp(112px, 8.8vw, 144px);
-  height: 108px;
-  margin-left: -8px;
-  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.14));
+  width: clamp(72px, 5.4vw, 92px);
+  height: 68px;
+  margin-left: -6px;
+  filter: none;
+}
+
+.app-mobile-brand {
+  pointer-events: none;
 }
 
 .app-sidebar {
@@ -1201,10 +1206,21 @@ html.light,
     height: 64px !important;
   }
 
+  .app-mobile-header > div {
+    position: relative;
+  }
+
+  .app-mobile-brand {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+
   .app-ultra-bee-mark {
-    width: 96px;
-    height: 82px;
-    margin-left: -12px;
+    width: 58px;
+    height: 52px;
+    margin-left: -4px;
   }
 
   .app-feed-shell {
@@ -1225,9 +1241,9 @@ html.light,
 
 @media (max-width: 420px) {
   .app-ultra-bee-mark {
-    width: 74px;
-    height: 66px;
-    margin-left: -14px;
+    width: 52px;
+    height: 48px;
+    margin-left: -4px;
   }
 
   .app-mobile-header h1 {
@@ -1428,10 +1444,7 @@ html.light,
 }
 
 @media (max-width: 767px) {
-  .app-sticky-header {
-    top: 64px;
-  }
-
+  .app-sticky-header,
   .app-search-page .app-sticky-header,
   .app-notifications-page .app-sticky-header,
   .app-settings-page .app-sticky-header {
