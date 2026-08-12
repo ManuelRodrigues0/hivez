@@ -10,6 +10,25 @@ import { db } from "@/firebase/firebase";
 import { listenToNotifications, listenToUnreadNotificationsCount } from "@/services/notifications";
 import { listenForForegroundPushNotifications } from "@/services/pushNotifications";
 
+const ultraBeeSrc = "/assets/hivez-ultra-bee.webm";
+
+function UltraBeeMark() {
+  return (
+    <video
+      className="app-ultra-bee-mark"
+      src={ultraBeeSrc}
+      autoPlay
+      loop
+      muted
+      playsInline
+      disablePictureInPicture
+      controlsList="nodownload nofullscreen noremoteplayback"
+      aria-hidden="true"
+      preload="metadata"
+    />
+  );
+}
+
 export default function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -260,8 +279,9 @@ export default function MainLayout() {
           >
             {sidebarCollapsed ? <Menu size={24} className="text-zinc-900 dark:text-white" /> : <X size={24} className="text-zinc-900 dark:text-white" />}
           </button>
-          <button onClick={() => navigate("/")} className="flex items-center gap-2">
+          <button onClick={() => navigate("/")} className="flex items-center gap-1.5">
             <h1 className="text-2xl font-black tracking-wide text-zinc-900 dark:text-white">Hivez</h1>
+            <UltraBeeMark />
           </button>
         </div>
 
@@ -399,7 +419,10 @@ export default function MainLayout() {
               <button onClick={() => setSidebarOpen(true)} className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
                 <Menu size={22} className="text-zinc-900 dark:text-white" />
               </button>
-              <h1 className="text-lg font-bold tracking-wide text-zinc-900 dark:text-white">Hivez</h1>
+              <div className="flex items-center gap-1.5" aria-label="Hivez">
+                <h1 className="text-lg font-bold tracking-wide text-zinc-900 dark:text-white">Hivez</h1>
+                <UltraBeeMark />
+              </div>
               <button 
                 onClick={() => navigate("/notifications")}
                 className="relative rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"

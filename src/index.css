@@ -481,6 +481,22 @@ html.light,
   text-transform: none;
 }
 
+.app-ultra-bee-mark {
+  width: clamp(38px, 3.2vw, 52px);
+  height: 42px;
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+@media (max-width: 360px) {
+  .app-ultra-bee-mark {
+    width: 34px;
+    height: 36px;
+  }
+}
+
 .app-desktop-header button,
 .app-mobile-header button,
 .app-sidebar button,
