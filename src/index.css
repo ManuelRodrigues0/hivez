@@ -834,3 +834,629 @@ html.light,
     padding-inline: 1.2rem;
   }
 }
+
+/* Authenticated Hivez redesign layer */
+.app-shell {
+  --hivez-bg: #f3f0e8;
+  --hivez-surface: rgba(255, 255, 255, 0.78);
+  --hivez-surface-solid: #fffdf8;
+  --hivez-surface-soft: #f8f5ed;
+  --hivez-elevated: rgba(255, 255, 255, 0.92);
+  --hivez-border: rgba(32, 30, 25, 0.11);
+  --hivez-border-strong: rgba(32, 30, 25, 0.18);
+  --hivez-text: #181610;
+  --hivez-muted: #716b5e;
+  --hivez-faint: #9a9384;
+  --hivez-accent: #4c7a49;
+  --hivez-accent-strong: #2f5f3e;
+  --hivez-warning: #d98a1d;
+  --hivez-danger: #d84444;
+  --hivez-radius: 22px;
+  --hivez-radius-sm: 14px;
+  --hivez-shadow: 0 18px 48px rgba(32, 30, 25, 0.09);
+  --hivez-shadow-soft: 0 8px 24px rgba(32, 30, 25, 0.06);
+  background:
+    radial-gradient(circle at 16% 0%, rgba(76, 122, 73, 0.1), transparent 28%),
+    linear-gradient(180deg, #fbfaf6 0%, var(--hivez-bg) 44%, #ece8dd 100%) !important;
+  color: var(--hivez-text) !important;
+}
+
+.dark .app-shell {
+  --hivez-bg: #0b0d0e;
+  --hivez-surface: rgba(18, 21, 23, 0.76);
+  --hivez-surface-solid: #141719;
+  --hivez-surface-soft: #1a1e21;
+  --hivez-elevated: rgba(20, 23, 25, 0.94);
+  --hivez-border: rgba(219, 228, 235, 0.12);
+  --hivez-border-strong: rgba(219, 228, 235, 0.2);
+  --hivez-text: #eef3f6;
+  --hivez-muted: #a7b2ba;
+  --hivez-faint: #73818a;
+  --hivez-accent: #ffd43b;
+  --hivez-accent-strong: #ffe066;
+  --hivez-warning: #ffb84d;
+  --hivez-danger: #ff5f57;
+  --hivez-shadow: 0 22px 54px rgba(0, 0, 0, 0.42);
+  --hivez-shadow-soft: 0 10px 28px rgba(0, 0, 0, 0.3);
+  background:
+    radial-gradient(circle at 50% -8%, rgba(255, 212, 59, 0.1), transparent 26%),
+    linear-gradient(180deg, #101315 0%, var(--hivez-bg) 48%, #070809 100%) !important;
+}
+
+.app-shell * {
+  letter-spacing: 0;
+}
+
+.app-desktop-header,
+.app-mobile-header {
+  height: 72px !important;
+  background: color-mix(in srgb, var(--hivez-bg) 82%, transparent) !important;
+  border-color: var(--hivez-border) !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3) inset;
+}
+
+.dark .app-desktop-header,
+.dark .app-mobile-header {
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+}
+
+.dark .app-desktop-header,
+.dark .app-mobile-header,
+.dark .app-sidebar,
+.dark .app-bottom-nav,
+.dark .app-mobile-drawer {
+  background: rgba(11, 13, 14, 0.92) !important;
+}
+
+.dark .app-feed-shell {
+  background: rgba(15, 18, 20, 0.58) !important;
+}
+
+.dark .app-feed-card,
+.dark .app-updates-card,
+.dark .app-surface,
+.dark .app-settings-page .app-surface,
+.dark .app-search-page section.app-surface {
+  background: #141719 !important;
+  border-color: rgba(219, 228, 235, 0.13) !important;
+}
+
+.dark .app-feed-card:hover {
+  background: #191d20 !important;
+  border-color: rgba(255, 212, 59, 0.28) !important;
+}
+
+.app-desktop-header h1,
+.app-mobile-header h1,
+.app-mobile-drawer h1 {
+  color: var(--hivez-text) !important;
+  font-weight: 950;
+}
+
+.app-ultra-bee-mark {
+  width: clamp(112px, 8.8vw, 144px);
+  height: 108px;
+  margin-left: -8px;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.14));
+}
+
+.app-sidebar {
+  top: 72px !important;
+  height: calc(100vh - 72px) !important;
+  border-color: var(--hivez-border) !important;
+  background: color-mix(in srgb, var(--hivez-bg) 88%, transparent) !important;
+  backdrop-filter: blur(18px) saturate(140%);
+}
+
+.app-sidebar button,
+.app-mobile-drawer button {
+  min-height: 48px;
+  border-radius: 16px !important;
+  color: var(--hivez-text) !important;
+}
+
+.app-sidebar button:hover,
+.app-mobile-drawer button:hover,
+.app-desktop-header button:hover,
+.app-mobile-header button:hover {
+  background: color-mix(in srgb, var(--hivez-accent) 12%, transparent) !important;
+}
+
+.app-sidebar button[class*="bg-zinc-100"],
+.app-mobile-drawer button[class*="bg-zinc-100"] {
+  background: color-mix(in srgb, var(--hivez-accent) 16%, transparent) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hivez-accent) 24%, transparent);
+}
+
+.app-updates {
+  top: 72px !important;
+  height: calc(100vh - 72px) !important;
+}
+
+.app-updates-card,
+.app-surface,
+.app-settings-page .app-surface,
+.app-search-page section.app-surface {
+  border: 1px solid var(--hivez-border) !important;
+  border-radius: var(--hivez-radius) !important;
+  background: var(--hivez-elevated) !important;
+  box-shadow: var(--hivez-shadow-soft) !important;
+  backdrop-filter: blur(14px) saturate(130%);
+}
+
+.app-main {
+  padding-top: 72px !important;
+}
+
+.app-feed-shell {
+  min-height: calc(100svh - 72px);
+  border-color: var(--hivez-border) !important;
+  background: color-mix(in srgb, var(--hivez-surface) 58%, transparent) !important;
+}
+
+.app-page,
+.app-profile-page,
+.app-search-page,
+.app-community-page,
+.app-create-page,
+.app-notifications-page,
+.app-chats-page,
+.app-settings-page {
+  background: transparent !important;
+  color: var(--hivez-text) !important;
+}
+
+.app-sticky-header {
+  border-color: var(--hivez-border) !important;
+  background: color-mix(in srgb, var(--hivez-bg) 86%, transparent) !important;
+  backdrop-filter: blur(18px) saturate(140%);
+}
+
+.app-feed-card {
+  margin: 14px;
+  border: 1px solid var(--hivez-border) !important;
+  border-radius: 26px !important;
+  background: var(--hivez-elevated) !important;
+  box-shadow: var(--hivez-shadow-soft);
+  overflow: visible;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.app-feed-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--hivez-border-strong) !important;
+  background: var(--hivez-surface-solid) !important;
+  box-shadow: var(--hivez-shadow);
+}
+
+.app-feed-card img,
+.app-profile-page img,
+.app-chats-page img,
+.app-settings-page img {
+  box-shadow: 0 0 0 1px var(--hivez-border), 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.app-feed-card [class*="rounded-full"],
+.app-icon-button,
+.app-bottom-nav button {
+  transition: transform 160ms ease, background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.app-feed-card button:active,
+.app-icon-button:active,
+.app-primary-button:active,
+.app-secondary-button:active {
+  transform: scale(0.96);
+}
+
+.app-feed-card video,
+.app-feed-card img[class*="object-cover"],
+.app-profile-page video,
+.app-profile-page img[class*="object-cover"] {
+  border-radius: 20px;
+}
+
+.app-primary-button {
+  min-height: 44px;
+  border-radius: 999px;
+  background: var(--hivez-text) !important;
+  color: var(--hivez-bg) !important;
+  box-shadow: 0 12px 26px color-mix(in srgb, var(--hivez-text) 18%, transparent);
+}
+
+.app-secondary-button {
+  min-height: 44px;
+  border-color: var(--hivez-border) !important;
+  background: color-mix(in srgb, var(--hivez-elevated) 76%, transparent) !important;
+  color: var(--hivez-text) !important;
+}
+
+.app-field,
+.app-search-page input,
+.app-chats-page input,
+.app-chats-page textarea,
+.app-create-page input,
+.app-create-page textarea,
+.app-settings-page input,
+.app-settings-page textarea {
+  min-height: 46px;
+  border: 1px solid var(--hivez-border) !important;
+  border-radius: 18px !important;
+  background: color-mix(in srgb, var(--hivez-surface-solid) 84%, transparent) !important;
+  color: var(--hivez-text) !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.35) inset;
+}
+
+.app-field:focus,
+.app-search-page input:focus,
+.app-chats-page input:focus,
+.app-chats-page textarea:focus,
+.app-create-page input:focus,
+.app-create-page textarea:focus {
+  border-color: color-mix(in srgb, var(--hivez-accent) 55%, var(--hivez-border)) !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--hivez-accent) 14%, transparent) !important;
+}
+
+.app-section-label {
+  color: var(--hivez-faint) !important;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.08em !important;
+}
+
+.app-tab {
+  color: var(--hivez-muted) !important;
+  font-weight: 750;
+}
+
+.app-tab-active {
+  border-color: var(--hivez-accent) !important;
+  color: var(--hivez-text) !important;
+}
+
+.app-popover-menu,
+.fixed.inset-0.z-50 > div,
+.fixed.inset-0.z-\[80\] > div,
+.fixed.inset-x-0.bottom-0.z-\[100\] {
+  border: 1px solid var(--hivez-border) !important;
+  border-radius: 24px !important;
+  background: var(--hivez-elevated) !important;
+  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.24) !important;
+  backdrop-filter: blur(18px) saturate(140%);
+}
+
+.app-empty-state {
+  color: var(--hivez-muted) !important;
+}
+
+.app-bottom-nav {
+  left: 10px !important;
+  right: 10px !important;
+  bottom: max(10px, env(safe-area-inset-bottom)) !important;
+  border: 1px solid var(--hivez-border) !important;
+  border-radius: 26px !important;
+  background: color-mix(in srgb, var(--hivez-elevated) 84%, transparent) !important;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.16);
+  overflow: hidden;
+}
+
+.app-bottom-nav > div {
+  padding: 8px !important;
+}
+
+.app-bottom-nav button {
+  min-width: 48px;
+  min-height: 46px;
+  border-radius: 18px !important;
+}
+
+.app-bottom-nav button:hover {
+  background: color-mix(in srgb, var(--hivez-accent) 13%, transparent) !important;
+}
+
+.app-notifications-page > div:last-child > button,
+.app-search-page .divide-y > button {
+  border-color: var(--hivez-border) !important;
+  background: transparent !important;
+}
+
+.app-notifications-page > div:last-child > button:hover,
+.app-search-page .divide-y > button:hover {
+  background: color-mix(in srgb, var(--hivez-accent) 8%, transparent) !important;
+}
+
+.app-settings-page .app-surface button:hover,
+.app-settings-page button.app-surface:hover {
+  background: color-mix(in srgb, var(--hivez-accent) 9%, transparent) !important;
+}
+
+.app-chats-page aside,
+.app-chats-page section > div:first-child,
+.app-chats-page .bg-zinc-50,
+.app-chats-page .dark\:bg-zinc-950\/60 {
+  background: color-mix(in srgb, var(--hivez-surface) 72%, transparent) !important;
+  border-color: var(--hivez-border) !important;
+}
+
+.app-chats-page [class*="rounded-3xl"],
+.app-chats-page [class*="rounded-[32px]"] {
+  border-radius: 24px !important;
+}
+
+.app-community-page > section,
+.app-create-page > div > div {
+  margin: 14px;
+  border: 1px solid var(--hivez-border) !important;
+  border-radius: var(--hivez-radius) !important;
+  background: var(--hivez-elevated) !important;
+  box-shadow: var(--hivez-shadow-soft);
+}
+
+@media (max-width: 1023px) {
+  .app-main {
+    padding-top: 0 !important;
+  }
+
+  .app-mobile-header {
+    height: 64px !important;
+  }
+
+  .app-ultra-bee-mark {
+    width: 96px;
+    height: 82px;
+    margin-left: -12px;
+  }
+
+  .app-feed-shell {
+    min-height: 100svh;
+    border-inline: 0 !important;
+    background: transparent !important;
+  }
+
+  .app-feed-card {
+    margin: 10px;
+    border-radius: 24px !important;
+  }
+
+  .app-page {
+    padding-bottom: 76px;
+  }
+}
+
+@media (max-width: 420px) {
+  .app-ultra-bee-mark {
+    width: 74px;
+    height: 66px;
+    margin-left: -14px;
+  }
+
+  .app-mobile-header h1 {
+    font-size: 1.05rem;
+  }
+}
+
+.app-profile-page > div.hidden.lg\:block > div:first-child,
+.app-profile-page > div.lg\:hidden > div:not(.app-sticky-header),
+.app-settings-page > div:not(.app-sticky-header),
+.app-notifications-page > div:not(.app-sticky-header),
+.app-search-page > div.flex-1,
+.app-create-page,
+.app-community-page {
+  animation: hivez-page-in 220ms ease-out both;
+}
+
+.app-profile-page [class*="border-b"],
+.app-notifications-page [class*="border-b"],
+.app-search-page [class*="border-t"],
+.app-search-page [class*="divide-y"],
+.app-settings-page [class*="border-b"] {
+  border-color: var(--hivez-border) !important;
+}
+
+.app-profile-page .sticky,
+.app-search-page .app-sticky-header,
+.app-notifications-page .app-sticky-header,
+.app-settings-page .app-sticky-header {
+  z-index: 30;
+}
+
+.app-profile-page button:not(.app-icon-button):not(.app-primary-button):not(.app-secondary-button),
+.app-notifications-page button,
+.app-search-page button,
+.app-settings-page button,
+.app-community-page button,
+.app-create-page button {
+  border-radius: 16px;
+}
+
+.app-profile-page button:hover,
+.app-notifications-page button:hover,
+.app-search-page button:hover,
+.app-settings-page button:hover,
+.app-community-page button:hover,
+.app-create-page button:hover {
+  background: color-mix(in srgb, var(--hivez-accent) 9%, transparent) !important;
+}
+
+.app-profile-page .grid.grid-cols-3,
+.app-search-page .divide-y,
+.app-notifications-page > div:last-child,
+.app-settings-page .app-surface {
+  overflow: hidden;
+}
+
+.app-profile-page .grid.grid-cols-3 > *,
+.app-search-page .divide-y > *,
+.app-notifications-page > div:last-child > * {
+  transition: transform 170ms ease, background 170ms ease, opacity 170ms ease;
+}
+
+.app-profile-page .grid.grid-cols-3 > *:hover,
+.app-search-page .divide-y > *:hover,
+.app-notifications-page > div:last-child > *:hover {
+  transform: translateY(-1px);
+}
+
+.app-notifications-page button[class*="bg-sky-50"] {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--hivez-accent) 16%, transparent), transparent 70%),
+    var(--hivez-elevated) !important;
+}
+
+.app-settings-page .app-surface {
+  margin-inline: 2px;
+}
+
+.app-settings-page .app-surface button {
+  min-height: 58px;
+}
+
+.app-settings-page button[class*="text-red"] {
+  border-color: color-mix(in srgb, var(--hivez-danger) 28%, transparent) !important;
+  background: color-mix(in srgb, var(--hivez-danger) 8%, transparent) !important;
+  color: var(--hivez-danger) !important;
+}
+
+.app-search-page input {
+  height: 50px;
+  padding-left: 48px !important;
+}
+
+.app-search-page [class*="Trending"],
+.app-search-page .app-secondary-button {
+  box-shadow: none;
+}
+
+.app-chats-page {
+  color: var(--hivez-text) !important;
+}
+
+.app-chats-page aside {
+  border-right: 1px solid var(--hivez-border);
+}
+
+.app-chats-page aside button,
+.app-chats-page section button {
+  border-radius: 18px !important;
+}
+
+.app-chats-page textarea {
+  line-height: 1.35;
+}
+
+.app-chats-page [class*="bg-zinc-900"][class*="text-white"],
+.app-chats-page [class*="dark:bg-white"][class*="dark:text-black"] {
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--hivez-text) 18%, transparent);
+}
+
+.app-chats-page [class*="rounded-br-lg"],
+.app-chats-page [class*="rounded-bl-lg"] {
+  border-radius: 20px !important;
+}
+
+.app-create-page > div,
+.app-create-page form,
+.app-create-page textarea {
+  color: var(--hivez-text) !important;
+}
+
+.app-community-page a,
+.app-page a {
+  text-decoration: none;
+}
+
+.app-page main section > a,
+.app-page main section > div > a,
+.app-page main section > div > div[class*="rounded-3xl"] {
+  border-color: var(--hivez-border) !important;
+  background: var(--hivez-elevated) !important;
+  box-shadow: var(--hivez-shadow-soft);
+}
+
+.app-page main section > a:hover,
+.app-page main section > div > a:hover,
+.app-page main section > div > div[class*="rounded-3xl"]:hover {
+  border-color: var(--hivez-border-strong) !important;
+  box-shadow: var(--hivez-shadow);
+}
+
+.app-page [class*="bg-zinc-100"],
+.app-page [class*="dark:bg-zinc-900"] {
+  background-color: color-mix(in srgb, var(--hivez-text) 7%, transparent) !important;
+}
+
+.app-page [class*="text-zinc-500"],
+.app-page [class*="dark:text-zinc-400"] {
+  color: var(--hivez-muted) !important;
+}
+
+.app-page [class*="text-zinc-900"],
+.app-page [class*="dark:text-white"],
+.app-page [class*="text-zinc-950"] {
+  color: var(--hivez-text) !important;
+}
+
+.hivez-loader-screen {
+  background:
+    radial-gradient(circle at 50% 38%, rgba(76, 122, 73, 0.14), transparent 30%),
+    var(--hivez-bg, #fbfaf6);
+}
+
+.hivez-loader-mascot {
+  filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.18));
+}
+
+@keyframes hivez-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 1280px) {
+  .app-feed-card {
+    margin-inline: 18px;
+  }
+
+  .app-updates-card {
+    margin-top: 10px;
+  }
+}
+
+@media (max-width: 767px) {
+  .app-sticky-header {
+    top: 64px;
+  }
+
+  .app-search-page .app-sticky-header,
+  .app-notifications-page .app-sticky-header,
+  .app-settings-page .app-sticky-header {
+    top: 0;
+  }
+
+  .app-feed-card {
+    margin: 8px 10px;
+    padding: 14px !important;
+  }
+
+  .app-feed-card > div {
+    gap: 10px;
+  }
+
+  .app-bottom-nav {
+    left: 8px !important;
+    right: 8px !important;
+  }
+
+  .app-bottom-nav button {
+    min-width: 44px;
+  }
+
+  .app-settings-page .app-surface button {
+    min-height: 56px;
+  }
+}
