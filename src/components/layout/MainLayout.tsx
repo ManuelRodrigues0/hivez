@@ -279,7 +279,7 @@ export default function MainLayout() {
           >
             {sidebarCollapsed ? <Menu size={24} className="text-zinc-900 dark:text-white" /> : <X size={24} className="text-zinc-900 dark:text-white" />}
           </button>
-          <button onClick={() => navigate("/")} className="flex items-center gap-1.5">
+          <button onClick={() => navigate("/")} className="app-brand-button flex items-center gap-1.5">
             <h1 className="text-2xl font-black tracking-wide text-zinc-900 dark:text-white">Hivez</h1>
             <UltraBeeMark />
           </button>

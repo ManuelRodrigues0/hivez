@@ -482,8 +482,8 @@ html.light,
 }
 
 .app-ultra-bee-mark {
-  width: clamp(72px, 5.4vw, 92px);
-  height: 68px;
+  width: clamp(112px, 7.2vw, 126px);
+  height: 94px;
   display: block;
   object-fit: contain;
   flex-shrink: 0;
@@ -492,8 +492,8 @@ html.light,
 
 @media (max-width: 360px) {
   .app-ultra-bee-mark {
-    width: 52px;
-    height: 48px;
+    width: 62px;
+    height: 56px;
   }
 }
 
@@ -935,14 +935,42 @@ html.light,
 }
 
 .app-ultra-bee-mark {
-  width: clamp(72px, 5.4vw, 92px);
-  height: 68px;
-  margin-left: -6px;
+  width: clamp(84px, 6.4vw, 108px);
+  height: 80px;
+  margin-left: -16px;
   filter: none;
 }
 
 .app-mobile-brand {
   pointer-events: none;
+}
+
+.app-brand-button,
+.app-brand-button:hover,
+.app-brand-button:active,
+.app-brand-button:focus {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.app-desktop-header .app-brand-button,
+.app-desktop-header .app-brand-button:hover,
+.app-desktop-header .app-brand-button:active,
+.app-desktop-header .app-brand-button:focus,
+.app-mobile-header .app-mobile-brand,
+.app-mobile-header .app-mobile-brand:hover {
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+.app-brand-button:active {
+  transform: none !important;
+}
+
+.app-brand-button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--hivez-accent) 62%, transparent);
+  outline-offset: 4px;
 }
 
 .app-sidebar {
@@ -1218,9 +1246,9 @@ html.light,
   }
 
   .app-ultra-bee-mark {
-    width: 58px;
-    height: 52px;
-    margin-left: -4px;
+    width: 64px;
+    height: 56px;
+    margin-left: -10px;
   }
 
   .app-feed-shell {
@@ -1241,9 +1269,9 @@ html.light,
 
 @media (max-width: 420px) {
   .app-ultra-bee-mark {
-    width: 52px;
-    height: 48px;
-    margin-left: -4px;
+    width: 58px;
+    height: 52px;
+    margin-left: -8px;
   }
 
   .app-mobile-header h1 {
