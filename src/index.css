@@ -1245,6 +1245,10 @@ html.light,
     transform: translate(-50%, -50%);
   }
 
+  .app-mobile-header h1 {
+    font-size: 1.5rem !important;
+  }
+
   .app-ultra-bee-mark {
     width: 64px;
     height: 56px;
