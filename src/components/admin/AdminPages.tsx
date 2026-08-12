@@ -6,6 +6,7 @@ import {
   MapPin, Hexagon, Bot, Send, Save, TrendingUp, Heart, MessageCircle, Repeat2,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import HivezLoader from "@/components/common/HivezLoader";
 import {
   getDashboardStats, subscribeToUsers, subscribeToPosts, subscribeToReports,
   searchUsers, banUser, unbanUser, suspendUser, unsuspendUser,
@@ -33,7 +34,7 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
 function Spinner() {
   return (
     <div className="flex h-64 items-center justify-center">
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-white" />
+      <HivezLoader size="md" progress={58} label="Loading admin data" />
     </div>
   );
 }

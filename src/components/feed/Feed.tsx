@@ -10,6 +10,7 @@ import {
 
 import { db } from "../../firebase/firebase";
 
+import HivezLoader from "../common/HivezLoader";
 import FeedCard from "./FeedCard";
 import type { PostMediaItem } from "./MediaGrid";
 
@@ -83,8 +84,8 @@ export default function Feed({ category, hashtag, onCommentClick }: FeedProps) {
 
   if (loading) {
     return (
-      <div className="py-20 text-center text-zinc-500 dark:text-zinc-400">
-        Loading posts...
+      <div className="flex justify-center py-20">
+        <HivezLoader size="md" progress={58} label="Loading posts" />
       </div>
     );
   }

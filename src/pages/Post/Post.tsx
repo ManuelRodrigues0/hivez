@@ -5,6 +5,7 @@ import { doc, getDoc, deleteDoc, updateDoc, increment } from "firebase/firestore
 import { toast } from "sonner";
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
+import HivezLoader from "@/components/common/HivezLoader";
 import type { FeedPost } from "../../components/feed/Feed";
 import MediaGrid from "../../components/feed/MediaGrid";
 import type { PostMediaItem } from "../../components/feed/MediaGrid";
@@ -62,11 +63,7 @@ export default function PostPage() {
   }, [id]);
 
   if (loading || authLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-white dark:bg-black">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-transparent dark:border-zinc-600" />
-      </div>
-    );
+    return <HivezLoader fullScreen size="lg" progress={authLoading ? 42 : 64} label="Loading post" />;
   }
 
   if (!post) {

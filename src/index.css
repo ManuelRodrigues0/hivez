@@ -205,6 +205,55 @@ html.light,
     @apply flex flex-col items-center justify-center px-6 py-24 text-center text-zinc-500 dark:text-zinc-400;
   }
 
+  .hivez-loader-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fbfaf6;
+  }
+
+  .hivez-loader {
+    --hivez-loader-size: 104px;
+    --hivez-loader-progress: 66%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hivez-loader-sm {
+    --hivez-loader-size: 42px;
+  }
+
+  .hivez-loader-md {
+    --hivez-loader-size: 86px;
+  }
+
+  .hivez-loader-lg {
+    --hivez-loader-size: min(34vw, 180px);
+  }
+
+  .hivez-loader-mascot {
+    position: relative;
+    width: var(--hivez-loader-size);
+    aspect-ratio: 638 / 359;
+    overflow: hidden;
+    isolation: isolate;
+    border-radius: 10px;
+  }
+
+  .hivez-loader-mascot video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    user-select: none;
+    pointer-events: none;
+  }
+
   .app-not-found-page {
     min-height: calc(100svh - 64px);
     display: flex;
@@ -367,6 +416,15 @@ html.light,
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes hivez-honey-surface {
+  from {
+    transform: translateY(1px) scaleX(0.985);
+  }
+  to {
+    transform: translateY(-1px) scaleX(1.015);
   }
 }
 

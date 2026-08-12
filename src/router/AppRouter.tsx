@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import MainLayout from "../components/layout/MainLayout";
 import MobileLayout from "../components/layout/MobileLayout";
+import HivezLoader from "@/components/common/HivezLoader";
 
 import Home from "@/pages/Home/Home";
 import Community from "@/pages/Community/Community";
@@ -48,11 +49,7 @@ export default function AppRouter() {
   const { user, loading, profileCompleted } = useAuth();
 
   if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-black text-white">
-        Loading...
-      </div>
-    );
+    return <HivezLoader fullScreen size="lg" progress={42} label="Loading Hivez" />;
   }
 
   if (!user) {

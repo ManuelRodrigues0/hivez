@@ -4,6 +4,7 @@ import { ArrowLeft, BadgeCheck, MessageCircle, UserPlus, Settings, Share2 } from
 import { doc, deleteDoc, getDoc, increment, onSnapshot, query, where, writeBatch, collection } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
+import HivezLoader from "@/components/common/HivezLoader";
 import { createNotification } from "@/services/notifications";
 import { createFollowRequest, listenToSentFollowRequests } from "@/services/followRequests";
 import type { FeedPost } from "../../components/feed/Feed";
@@ -256,7 +257,7 @@ export default function Profile() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center py-32">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-500 border-t-transparent" />
+        <HivezLoader size="md" progress={56} label="Loading profile" />
       </div>
     );
   }
@@ -403,7 +404,7 @@ export default function Profile() {
           <>
             {postsLoading ? (
               <div className="flex min-h-[300px] items-center justify-center py-16">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900 dark:border-zinc-700 dark:border-t-white" />
+                <HivezLoader size="md" progress={58} label="Loading profile posts" />
               </div>
             ) : userPosts.length > 0 ? (
               <div className="grid grid-cols-3 gap-1 p-4">
@@ -605,7 +606,7 @@ export default function Profile() {
           <>
             {postsLoading ? (
               <div className="flex min-h-[200px] items-center justify-center py-12">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900 dark:border-zinc-700 dark:border-t-white" />
+                <HivezLoader size="sm" progress={58} label="Loading profile posts" />
               </div>
             ) : userPosts.length > 0 ? (
               <div className="grid grid-cols-3 gap-0.5">

@@ -11,6 +11,7 @@ import {
 
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
+import HivezLoader from "../common/HivezLoader";
 
 interface UserProfile {
   displayName: string;
@@ -44,8 +45,8 @@ export default function ProfileHeader() {
 
   if (!profile) {
     return (
-      <div className="flex justify-center py-20 text-zinc-500 dark:text-zinc-400">
-        Loading profile...
+      <div className="flex justify-center py-20">
+        <HivezLoader size="md" progress={56} label="Loading profile" />
       </div>
     );
   }

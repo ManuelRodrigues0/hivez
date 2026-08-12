@@ -1,6 +1,7 @@
 import { Check, RotateCcw, X, ChevronDown, Zap, Grid3x3, Timer, Monitor, Layers } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import HivezLoader from "@/components/common/HivezLoader";
 
 export default function Camera() {
   const navigate = useNavigate();
@@ -340,10 +341,7 @@ export default function Camera() {
       {/* Loading */}
       {loading && (
         <div className="absolute inset-0 z-20 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="h-12 w-12 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-            <p className="text-sm font-medium text-white/70">Opening camera...</p>
-          </div>
+          <HivezLoader size="lg" progress={52} label="Opening camera" />
         </div>
       )}
 

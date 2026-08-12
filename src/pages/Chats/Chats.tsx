@@ -20,7 +20,6 @@ import {
   BadgeCheck,
   Check,
   CheckCheck,
-  Loader2,
   MessageCircle,
   MoreHorizontal,
   Search,
@@ -30,6 +29,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
+import HivezLoader from "@/components/common/HivezLoader";
 import { db } from "@/firebase/firebase";
 
 interface ChatUser {
@@ -641,9 +641,9 @@ export default function Chats() {
                   <button
                     onClick={sendMessage}
                     disabled={!messageText.trim() || sending}
-                    className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-zinc-900 text-white transition hover:bg-zinc-800 disabled:opacity-40 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+                    className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-zinc-900 text-white transition hover:bg-zinc-800 disabled:opacity-40 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
                   >
-                    {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                    {sending ? <HivezLoader size="sm" progress={76} label="Sending message" /> : <Send size={18} />}
                   </button>
                 </div>
               </div>
@@ -688,7 +688,7 @@ export default function Chats() {
             <div className="max-h-[55vh] overflow-y-auto">
               {searching ? (
                 <div className="flex justify-center py-10">
-                  <Loader2 size={24} className="animate-spin text-zinc-400" />
+                  <HivezLoader size="sm" progress={62} label="Searching people" />
                 </div>
               ) : people.length ? (
                 people.map((person) => (

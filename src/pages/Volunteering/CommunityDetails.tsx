@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Users, Shield, Crown, UserCheck, HandHeart } from "lucide-react";
 import { toast } from "sonner";
+import HivezLoader from "@/components/common/HivezLoader";
 import { useAuth } from "@/context/AuthContext";
 import { getUserSummary, joinIssueCommunity, leaveIssueCommunity, listenCommunityMember, listenCommunityMembers, listenIssueCommunity } from "@/services/volunteering";
 import type { CommunityMember, IssueCommunity, VolunteerUserSummary } from "@/types/volunteering";
@@ -90,7 +91,9 @@ export default function CommunityDetails() {
   if (!community) {
     return (
       <div className="app-page">
-        <div className="app-empty-state">Loading community details...</div>
+        <div className="app-empty-state">
+          <HivezLoader size="md" progress={58} label="Loading community details" />
+        </div>
       </div>
     );
   }

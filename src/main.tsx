@@ -6,6 +6,7 @@ import App from "./App";
 import "./index.css";
 
 import { AuthProvider } from "./context/AuthContext";
+import { LoadingProvider } from "./context/LoadingContext";
 import { ThemeProvider } from "./context/ThemeContext";
 
 ReactDOM.createRoot(
@@ -14,9 +15,11 @@ ReactDOM.createRoot(
   <React.StrictMode>
     <BrowserRouter>
       <ThemeProvider>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
+        <LoadingProvider>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </LoadingProvider>
       </ThemeProvider>
     </BrowserRouter>
   </React.StrictMode>

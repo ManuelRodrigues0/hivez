@@ -1,4 +1,5 @@
 import CommentCard from "./CommentCard";
+import HivezLoader from "../common/HivezLoader";
 
 interface Comment {
   id: string;
@@ -28,8 +29,8 @@ export default function CommentList({
 }: Props) {
   if (loading) {
     return (
-      <div className="flex flex-1 items-center justify-center text-zinc-500 dark:text-zinc-400">
-        Loading replies...
+      <div className="flex flex-1 items-center justify-center">
+        <HivezLoader size="sm" progress={54} label="Loading replies" />
       </div>
     );
   }

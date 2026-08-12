@@ -19,6 +19,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import HivezLoader from "@/components/common/HivezLoader";
 import { checkIsAdmin } from "../../services/admin";
 
 const navItems = [
@@ -57,7 +58,9 @@ export default function AdminLayout() {
     return (
       <div className="flex h-screen items-center justify-center bg-zinc-950 text-white">
         <div className="text-center">
-          <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-white" />
+          <div className="mb-3 flex justify-center">
+            <HivezLoader size="md" progress={50} label="Checking admin access" />
+          </div>
           <p className="text-sm text-zinc-400">Checking admin access...</p>
         </div>
       </div>

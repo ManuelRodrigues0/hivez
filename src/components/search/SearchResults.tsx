@@ -1,4 +1,5 @@
 import UserCard from "./UserCard";
+import HivezLoader from "../common/HivezLoader";
 
 interface SearchUser {
   uid: string;
@@ -29,8 +30,8 @@ export default function SearchResults({
 }: Props) {
   if (loading) {
     return (
-      <div className="py-10 text-center text-zinc-500 dark:text-zinc-400">
-        Searching...
+      <div className="flex justify-center py-10">
+        <HivezLoader size="sm" progress={62} label="Searching" />
       </div>
     );
   }

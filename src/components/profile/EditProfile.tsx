@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Camera, Save } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import HivezLoader from "@/components/common/HivezLoader";
 import { db } from "../../firebase/firebase";
 import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 
@@ -155,11 +156,7 @@ export default function EditProfile() {
   }
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-white dark:bg-black">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-transparent dark:border-zinc-600" />
-      </div>
-    );
+    return <HivezLoader fullScreen size="lg" progress={58} label="Loading profile editor" />;
   }
 
   return (
@@ -201,7 +198,7 @@ export default function EditProfile() {
               className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-zinc-900 text-white shadow-lg transition hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
             >
               {uploading ? (
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent dark:border-black" />
+                <HivezLoader size="sm" progress={72} label="Uploading photo" />
               ) : (
                 <Camera size={14} />
               )}

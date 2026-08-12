@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, getDocs, limit, orderBy, query } from "firebase/firestore";
-import { BadgeCheck, Heart, Loader2, MessageCircle, Search as SearchIcon, TrendingUp, User, X } from "lucide-react";
+import { BadgeCheck, Heart, MessageCircle, Search as SearchIcon, TrendingUp, User, X } from "lucide-react";
+import HivezLoader from "@/components/common/HivezLoader";
 import { db } from "../../firebase/firebase";
 import type { PostMediaItem } from "@/components/feed/MediaGrid";
 
@@ -192,7 +193,7 @@ export default function SearchPage() {
           </div>
         ) : loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 size={24} className="animate-spin text-zinc-400" />
+            <HivezLoader size="sm" progress={62} label="Searching" />
           </div>
         ) : !hasResults ? (
           <div className="app-empty-state">

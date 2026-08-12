@@ -1,4 +1,5 @@
 import { Navigate } from "react-router-dom";
+import HivezLoader from "./HivezLoader";
 import { useAuth } from "../../context/AuthContext";
 
 type Props = {
@@ -11,11 +12,7 @@ export default function ProtectedRoute({
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-black text-white">
-        Loading...
-      </div>
-    );
+    return <HivezLoader fullScreen size="lg" progress={42} label="Loading Hivez" />;
   }
 
   if (!user) {

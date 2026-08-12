@@ -3,6 +3,7 @@ import type { FormEvent, ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { CalendarDays, CheckCircle2, MapPin, Send, ShieldCheck, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
+import HivezLoader from "@/components/common/HivezLoader";
 import { useAuth } from "@/context/AuthContext";
 import {
   closePoll,
@@ -209,7 +210,9 @@ export default function IssueCommunityPage() {
   if (!communityId || !community) {
     return (
       <div className="app-page">
-        <div className="app-empty-state">Loading issue community...</div>
+        <div className="app-empty-state">
+          <HivezLoader size="md" progress={58} label="Loading issue community" />
+        </div>
       </div>
     );
   }

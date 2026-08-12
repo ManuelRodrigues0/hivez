@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Heart, Loader2, MessageCircle, UserPlus, Check, X, Megaphone } from "lucide-react";
+import { Heart, MessageCircle, UserPlus, Check, X, Megaphone } from "lucide-react";
+import HivezLoader from "@/components/common/HivezLoader";
 import { useNavigate } from "react-router-dom";
 import { deleteDoc, doc } from "firebase/firestore";
 import { db } from "@/firebase/firebase";
@@ -111,8 +112,8 @@ export default function Notifications() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center text-zinc-500 dark:text-zinc-400">
-        <Loader2 size={24} className="animate-spin" />
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <HivezLoader size="md" progress={58} label="Loading notifications" />
       </div>
     );
   }
