@@ -210,18 +210,39 @@ html.light,
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--hivez-bg);
+    overflow-x: hidden;
+    background:
+      radial-gradient(circle at 50% 12%, rgba(63, 111, 75, 0.1), transparent 34%),
+      linear-gradient(180deg, #fbfaf6 0%, #f6f4ee 58%, #efede5 100%);
     padding: clamp(24px, 5vw, 72px) clamp(16px, 4vw, 48px);
-    color: var(--hivez-text);
+    color: #111111;
   }
 
   .app-not-found-composition {
-    width: min(100%, 680px);
+    width: min(100%, 660px);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: clamp(14px, 2vw, 18px);
-    animation: not-found-enter 220ms ease-out both;
+    gap: 12px;
+    text-align: center;
+    animation: not-found-enter 260ms ease-out both;
+  }
+
+  .app-not-found-kicker {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
+    border: 1px solid rgba(17, 17, 17, 0.1);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.64);
+    padding: 0 14px;
+    color: #3f6f4b;
+    font-size: 0.74rem;
+    font-weight: 850;
+    line-height: 1;
+    letter-spacing: 0.08em;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
   }
 
   .app-not-found-video {
@@ -229,39 +250,75 @@ html.light,
     height: auto;
     display: block;
     object-fit: contain;
+    filter: drop-shadow(0 28px 46px rgba(17, 17, 17, 0.12));
+  }
+
+  .app-not-found-copy {
+    max-width: 440px;
+    margin-top: 2px;
+  }
+
+  .app-not-found-copy h1 {
+    margin: 0;
+    color: #111111;
+    font-size: clamp(1.35rem, 2.7vw, 2.1rem);
+    font-weight: 900;
+    line-height: 1.08;
+    letter-spacing: 0;
+  }
+
+  .app-not-found-copy p {
+    margin: 8px 0 0;
+    color: #62625c;
+    font-size: clamp(0.92rem, 1.4vw, 1rem);
+    font-weight: 500;
+    line-height: 1.5;
   }
 
   .app-not-found-button {
-    min-height: 46px;
-    min-width: 156px;
+    min-height: 50px;
+    min-width: 190px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 9px;
     border-radius: 999px;
-    background: var(--hivez-text);
-    color: var(--hivez-bg);
-    padding: 0.72rem 1.35rem;
-    font-size: 0.9rem;
-    font-weight: 750;
+    border: 1px solid rgba(17, 17, 17, 0.92);
+    background: #111111;
+    color: #fbfaf6;
+    margin-top: 4px;
+    padding: 0.8rem 1.22rem;
+    font-size: 0.93rem;
+    font-weight: 800;
     line-height: 1;
     text-decoration: none;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.16) inset, 0 14px 28px rgba(0, 0, 0, 0.12);
-    transition: background 160ms ease, color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.18) inset, 0 18px 34px rgba(17, 17, 17, 0.18);
+    transition: background 170ms ease, color 170ms ease, transform 170ms ease, box-shadow 170ms ease, border-color 170ms ease;
     cursor: pointer;
   }
 
   .app-not-found-button:hover {
-    background: color-mix(in srgb, var(--hivez-text) 88%, var(--hivez-accent));
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.18) inset, 0 18px 36px rgba(0, 0, 0, 0.16);
+    border-color: #2f5f3e;
+    background: #2f5f3e;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.2) inset, 0 22px 42px rgba(47, 95, 62, 0.22);
+  }
+
+  .app-not-found-button svg {
+    flex-shrink: 0;
+    transition: transform 170ms ease;
+  }
+
+  .app-not-found-button:hover svg:last-child {
+    transform: translateX(2px);
   }
 
   .app-not-found-button:active {
     transform: scale(0.97);
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 8px 18px rgba(0, 0, 0, 0.14);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.14) inset, 0 10px 20px rgba(17, 17, 17, 0.16);
   }
 
   .app-not-found-button:focus-visible {
-    outline: 3px solid color-mix(in srgb, var(--hivez-accent) 70%, white);
+    outline: 3px solid rgba(63, 111, 75, 0.38);
     outline-offset: 4px;
   }
 
@@ -679,17 +736,27 @@ html.light,
   .app-not-found-page {
     min-height: calc(100svh - 120px);
     align-items: center;
-    padding: 20px 16px 28px;
+    padding: 18px 16px 28px;
   }
 
   .app-not-found-composition {
     width: min(100%, 430px);
-    gap: 12px;
+    gap: 10px;
+  }
+
+  .app-not-found-kicker {
+    min-height: 30px;
+    padding-inline: 12px;
+    font-size: 0.7rem;
+  }
+
+  .app-not-found-copy p {
+    margin-top: 6px;
   }
 
   .app-not-found-button {
-    min-height: 48px;
-    min-width: 152px;
+    min-height: 50px;
+    min-width: 184px;
     padding-inline: 1.2rem;
   }
 }
