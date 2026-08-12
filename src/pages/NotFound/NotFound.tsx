@@ -7,8 +7,6 @@ export default function NotFound() {
   return (
     <section className="app-not-found-page" aria-labelledby="not-found-title">
       <div className="app-not-found-composition">
-        <div className="app-not-found-kicker">404</div>
-
         <video
           className="app-not-found-video"
           src={notFoundVideoSrc}
