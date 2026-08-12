@@ -482,8 +482,8 @@ html.light,
 }
 
 .app-ultra-bee-mark {
-  width: clamp(38px, 3.2vw, 52px);
-  height: 42px;
+  width: clamp(112px, 8.8vw, 144px);
+  height: 108px;
   display: block;
   object-fit: contain;
   flex-shrink: 0;
@@ -492,8 +492,8 @@ html.light,
 
 @media (max-width: 360px) {
   .app-ultra-bee-mark {
-    width: 34px;
-    height: 36px;
+    width: 88px;
+    height: 88px;
   }
 }
 
