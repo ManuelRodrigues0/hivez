@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import type { ReactNode } from "react";
 
 type Theme = "dark" | "light";
@@ -14,6 +15,7 @@ const ThemeContext = createContext<ThemeContextType>({
 });
 
 const TRANSITION_DURATION = 520;
+const EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
 
 /** Lower-left origin (matches the reference video), responsive to any viewport. */
 function getOrigin() {
@@ -74,19 +76,48 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const next: Theme = theme === "dark" ? "light" : "dark";
 
     const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const startViewTransition = (
+      document as Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void>; finished: Promise<void> } }
+    ).startViewTransition?.bind(document);
 
-    if (prefersReduced) {
+    if (prefersReduced || !startViewTransition) {
+      if (!prefersReduced) runFallbackWipe(next);
       setTheme(next);
       return;
     }
 
-    // Use the same circular wipe on ALL devices (desktop + mobile)
     animating.current = true;
-    runFallbackWipe(next);
-    setTheme(next);
-    window.setTimeout(() => {
+    const { x, y, radius } = getOrigin();
+    const root = document.documentElement;
+    // Freeze color transitions so both snapshots are the pure themes (no fade/flash).
+    root.classList.add("theme-switching");
+
+    const transition = startViewTransition(() => {
+      flushSync(() => {
+        applyThemeClass(next);
+        setTheme(next);
+      });
+    });
+
+    transition.ready
+      .then(() => {
+        root.animate(
+          {
+            clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`],
+          },
+          {
+            duration: TRANSITION_DURATION,
+            easing: EASING,
+            pseudoElement: "::view-transition-new(root)",
+          },
+        );
+      })
+      .catch(() => {});
+
+    transition.finished.finally(() => {
+      root.classList.remove("theme-switching");
       animating.current = false;
-    }, TRANSITION_DURATION + 60);
+    });
   };
 
   return (
