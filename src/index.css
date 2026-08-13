@@ -482,8 +482,8 @@ html.light,
 }
 
 .app-ultra-bee-mark {
-  width: clamp(112px, 7.2vw, 126px);
-  height: 94px;
+  width: clamp(124px, 8vw, 140px);
+  height: 104px;
   display: block;
   object-fit: contain;
   flex-shrink: 0;
@@ -492,8 +492,8 @@ html.light,
 
 @media (max-width: 360px) {
   .app-ultra-bee-mark {
-    width: 62px;
-    height: 56px;
+    width: 70px;
+    height: 62px;
   }
 }
 
@@ -934,10 +934,22 @@ html.light,
   font-weight: 950;
 }
 
+/* Desktop-only: make the Hivez logo text a little bigger next to the (now larger) bee */
+@media (min-width: 1024px) {
+  .app-desktop-header .app-brand-button {
+    gap: 0.6rem;
+  }
+
+  .app-desktop-header .app-brand-button h1 {
+    font-size: 2rem;
+    letter-spacing: 0;
+  }
+}
+
 .app-ultra-bee-mark {
-  width: clamp(84px, 6.4vw, 108px);
-  height: 80px;
-  margin-left: -16px;
+  width: clamp(116px, 8.6vw, 150px);
+  height: 110px;
+  margin-left: -20px;
   filter: none;
 }
 
@@ -1250,9 +1262,9 @@ html.light,
   }
 
   .app-ultra-bee-mark {
-    width: 64px;
-    height: 56px;
-    margin-left: -10px;
+    width: 92px;
+    height: 80px;
+    margin-left: -14px;
   }
 
   .app-feed-shell {
@@ -1273,9 +1285,9 @@ html.light,
 
 @media (max-width: 420px) {
   .app-ultra-bee-mark {
-    width: 58px;
-    height: 52px;
-    margin-left: -8px;
+    width: 82px;
+    height: 72px;
+    margin-left: -12px;
   }
 
   .app-mobile-header h1 {
