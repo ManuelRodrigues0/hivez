@@ -308,6 +308,7 @@ export default function Profile() {
                 src={profile.photoURL || "https://ui-avatars.com/api/?name=Hivez&background=6366f1&color=fff"}
                 alt={profile.username}
                 className="h-24 w-24 rounded-full border border-zinc-200 object-cover dark:border-zinc-700"
+                style={{ borderRadius: "9999px" }}
               />
               {profile.verified && (
                 <div className="absolute -bottom-0.5 -right-0.5 rounded-full bg-sky-500 p-1">
@@ -538,6 +539,7 @@ export default function Profile() {
               src={profile.photoURL || "https://ui-avatars.com/api/?name=Hivez&background=6366f1&color=fff"}
               alt={profile.username}
               className="h-20 w-20 flex-shrink-0 rounded-full border-2 border-zinc-200 object-cover dark:border-zinc-700"
+              style={{ borderRadius: "9999px" }}
             />
           </div>
 

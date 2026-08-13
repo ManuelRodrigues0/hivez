@@ -20,6 +20,7 @@ html.dark,
 .dark #root {
   background: #000;
   color: white;
+  transition: background-color 0.7s ease, color 0.7s ease;
 }
 
 html.light,
@@ -27,6 +28,32 @@ html.light,
 .light #root {
   background: #fff;
   color: #000;
+  transition: background-color 0.7s ease, color 0.7s ease;
+}
+
+html,
+body,
+#root {
+  transition: background-color 0.7s ease, color 0.7s ease;
+}
+
+#hivez-theme-transition-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  background: var(--theme-old, #050505);
+  clip-path: circle(0px at var(--theme-x, 50%) var(--theme-y, 50%));
+  transition: clip-path 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: clip-path;
+}
+
+#hivez-theme-transition-overlay.is-active {
+  visibility: visible;
+  opacity: 1;
+  clip-path: circle(200vmax at var(--theme-x, 50%) var(--theme-y, 50%));
 }
 
 @theme inline {
@@ -970,6 +997,7 @@ html.light,
     width: 70px;
     height: 62px;
   }
+
 }
 
 .app-desktop-header button,
@@ -1689,7 +1717,7 @@ html.light,
 .app-chats-page section > div:first-child,
 .app-chats-page .bg-zinc-50,
 .app-chats-page .dark\:bg-zinc-950\/60 {
-  background: color-mix(in srgb, var(--hivez-surface) 72%, transparent) !important;
+  background: color-mix(in srgb, var(--hivez-bg) 92%, transparent) !important;
   border-color: var(--hivez-border) !important;
 }
 

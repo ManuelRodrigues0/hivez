@@ -21,7 +21,7 @@ import { enablePushNotifications } from "@/services/pushNotifications";
 interface SettingsItem {
   icon: LucideIcon;
   label: string;
-  onClick: () => void;
+  onClick: (e?: any) => void;
   color: string;
   subtitle?: string;
   toggle?: boolean;
@@ -171,7 +171,7 @@ export default function Settings() {
                 return (
                   <button
                     key={item.label}
-                    onClick={item.onClick}
+                    onClick={(e) => item.onClick(e)}
                     className={`flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-zinc-50 dark:hover:bg-zinc-900 ${
                       index !== section.items.length - 1
                         ? "border-b border-zinc-200 dark:border-zinc-800"
