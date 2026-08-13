@@ -1,0 +1,15 @@
+/* View Transitions API theme switch - circular reveal from lower-left */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* Freeze all transitions while the theme snapshot is being captured */
+.theme-switching,
+.theme-switching *,
+.theme-switching *::before,
+.theme-switching *::after {
+  transition: none !important;
+  animation: none !important;
+}

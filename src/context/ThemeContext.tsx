@@ -1,5 +1,4 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import { flushSync } from "react-dom";
 import type { ReactNode } from "react";
 
 type Theme = "dark" | "light";
@@ -34,7 +33,7 @@ function applyThemeClass(theme: Theme) {
   root.classList.add(theme);
 }
 
-/** Fallback for browsers without the View Transitions API: circular color wipe. */
+/** Circular color wipe overlay - works on all devices. */
 function ensureThemeTransitionElement() {
   let overlay = document.getElementById("hivez-theme-transition-overlay");
   if (!overlay) {
@@ -76,48 +75,19 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const next: Theme = theme === "dark" ? "light" : "dark";
 
     const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const startViewTransition = (
-      document as Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void>; finished: Promise<void> } }
-    ).startViewTransition?.bind(document);
 
-    if (prefersReduced || !startViewTransition) {
-      if (!prefersReduced) runFallbackWipe(next);
+    if (prefersReduced) {
       setTheme(next);
       return;
     }
 
+    // Use the same circular wipe on ALL devices (desktop + mobile)
     animating.current = true;
-    const { x, y, radius } = getOrigin();
-    const root = document.documentElement;
-    // Freeze color transitions so both snapshots are the pure themes (no fade/flash).
-    root.classList.add("theme-switching");
-
-    const transition = startViewTransition(() => {
-      flushSync(() => {
-        applyThemeClass(next);
-        setTheme(next);
-      });
-    });
-
-    transition.ready
-      .then(() => {
-        root.animate(
-          {
-            clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`],
-          },
-          {
-            duration: TRANSITION_DURATION,
-            easing: EASING,
-            pseudoElement: "::view-transition-new(root)",
-          },
-        );
-      })
-      .catch(() => {});
-
-    transition.finished.finally(() => {
-      root.classList.remove("theme-switching");
+    runFallbackWipe(next);
+    setTheme(next);
+    window.setTimeout(() => {
       animating.current = false;
-    });
+    }, TRANSITION_DURATION + 60);
   };
 
   return (
