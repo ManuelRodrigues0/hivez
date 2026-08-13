@@ -14,7 +14,6 @@ const ThemeContext = createContext<ThemeContextType>({
 });
 
 const TRANSITION_DURATION = 520;
-const EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
 
 /** Lower-left origin (matches the reference video), responsive to any viewport. */
 function getOrigin() {
