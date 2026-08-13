@@ -32,7 +32,7 @@ function applyThemeClass(theme: Theme) {
   root.classList.add(theme);
 }
 
-/** Circular color wipe overlay - works on all devices. */
+/** Fallback for browsers without the View Transitions API: circular color wipe. */
 function ensureThemeTransitionElement() {
   let overlay = document.getElementById("hivez-theme-transition-overlay");
   if (!overlay) {
