@@ -106,9 +106,9 @@ export default function AdminLayout() {
         {/* Logo */}
         <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 text-sm font-black text-black">
-              H
-            </div>
+<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500 text-sm font-black text-black">
+  H
+</div>
             <span className="text-lg font-black tracking-tight">HIVEZ</span>
             <span className="ml-1 rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] font-bold uppercase text-zinc-400">
               Admin

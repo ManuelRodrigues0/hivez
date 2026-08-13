@@ -59,7 +59,7 @@ function ActionBtn({ icon: Icon, label, color, onClick }: { icon: any; label: st
 function StatCard({ label, value, icon: Icon, color }: { label: string; value: number; icon: any; color: string }) {
   return (
     <Card>
-      <div className={`mb-3 inline-flex rounded-xl bg-gradient-to-br ${color} p-2.5`}>
+      <div className={`mb-3 inline-flex rounded-xl ${color} p-2.5`}>
         <Icon size={20} className="text-white" />
       </div>
       <p className="text-3xl font-black text-white">{value.toLocaleString()}</p>
@@ -104,11 +104,11 @@ export function AdminDashboard() {
       <div className="mx-auto max-w-7xl">
         <PageHeader title="Dashboard" subtitle="Overview of your Hivez platform" />
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-          <StatCard label="Total Users" value={stats.totalUsers} icon={Users} color="from-blue-500 to-blue-600" />
-          <StatCard label="Active Users" value={stats.activeUsers} icon={Activity} color="from-green-500 to-green-600" />
-          <StatCard label="New Signups" value={stats.newSignups} icon={UserPlus} color="from-purple-500 to-purple-600" />
-          <StatCard label="Total Posts" value={stats.totalPosts} icon={FileText} color="from-amber-500 to-amber-600" />
-          <StatCard label="Reports Pending" value={stats.pendingReports} icon={Flag} color="from-red-500 to-red-600" />
+          <StatCard label="Total Users" value={stats.totalUsers} icon={Users} color="bg-blue-500" />
+          <StatCard label="Active Users" value={stats.activeUsers} icon={Activity} color="bg-green-500" />
+          <StatCard label="New Signups" value={stats.newSignups} icon={UserPlus} color="bg-purple-500" />
+          <StatCard label="Total Posts" value={stats.totalPosts} icon={FileText} color="bg-amber-500" />
+          <StatCard label="Reports Pending" value={stats.pendingReports} icon={Flag} color="bg-red-500" />
         </div>
         <Card className="mt-6">
           <div className="mb-4 flex items-center gap-2"><Server size={18} className="text-green-500" /><h2 className="text-sm font-bold">System Status</h2></div>
@@ -408,7 +408,7 @@ export function AdminHives() {
             {sorted.map(([name, count]) => (
               <Card key={name}>
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500"><Hexagon size={20} className="text-black" /></div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500"><Hexagon size={20} className="text-black" /></div>
                   <div><p className="font-bold capitalize">{name}</p><p className="text-xs text-zinc-400">{count} posts</p></div>
                 </div>
               </Card>
@@ -535,10 +535,10 @@ export function AdminAnalytics() {
       <div className="mx-auto max-w-7xl">
         <PageHeader title="Analytics" subtitle="Platform engagement and growth metrics" />
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <StatCard label="Total Users" value={data.totalUsers} icon={Users} color="from-blue-500 to-blue-600" />
-          <StatCard label="Total Posts" value={data.totalPosts} icon={FileText} color="from-amber-500 to-amber-600" />
-          <StatCard label="Total Likes" value={data.totalLikes} icon={Heart} color="from-red-500 to-red-600" />
-          <StatCard label="Total Comments" value={data.totalComments} icon={MessageCircle} color="from-green-500 to-green-600" />
+          <StatCard label="Total Users" value={data.totalUsers} icon={Users} color="bg-blue-500" />
+          <StatCard label="Total Posts" value={data.totalPosts} icon={FileText} color="bg-amber-500" />
+          <StatCard label="Total Likes" value={data.totalLikes} icon={Heart} color="bg-red-500" />
+          <StatCard label="Total Comments" value={data.totalComments} icon={MessageCircle} color="bg-green-500" />
         </div>
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
           <Card><h2 className="mb-4 text-sm font-bold">Daily Active Users (7d)</h2><BarChart data={data.dau} color="bg-green-500" /></Card>
@@ -576,10 +576,10 @@ export function AdminMedia() {
       <div className="mx-auto max-w-7xl">
         <PageHeader title="Media Management" subtitle="Manage uploaded images and videos" />
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <StatCard label="Total Media" value={stats.totalMedia} icon={Image} color="from-blue-500 to-blue-600" />
-          <StatCard label="Images" value={stats.imageCount} icon={Image} color="from-green-500 to-green-600" />
-          <StatCard label="Videos" value={stats.videoCount} icon={FileText} color="from-purple-500 to-purple-600" />
-          <StatCard label="Posts with Media" value={stats.totalPosts} icon={FileText} color="from-amber-500 to-amber-600" />
+          <StatCard label="Total Media" value={stats.totalMedia} icon={Image} color="bg-blue-500" />
+          <StatCard label="Images" value={stats.imageCount} icon={Image} color="bg-green-500" />
+          <StatCard label="Videos" value={stats.videoCount} icon={FileText} color="bg-purple-500" />
+          <StatCard label="Posts with Media" value={stats.totalPosts} icon={FileText} color="bg-amber-500" />
         </div>
         <Card className="mt-6">
           <div className="flex items-center gap-2"><Image size={18} className="text-zinc-400" /><h2 className="text-sm font-bold">Storage Usage</h2></div>

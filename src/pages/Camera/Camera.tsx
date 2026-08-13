@@ -359,7 +359,7 @@ export default function Camera() {
             {recording && (
               <>
                 <div className="h-3 w-3 animate-pulse rounded-full bg-red-500" />
-                <span className="text-sm font-semibold text-white drop-shadow-lg">{recordTime}s</span>
+                <span className="text-sm font-semibold text-white">{recordTime}s</span>
               </>
             )}
             {multiSnapActive && (
@@ -445,9 +445,9 @@ export default function Camera() {
                 >
                   <X size={10} />
                 </button>
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-1.5">
-                  <p className="text-[10px] font-medium text-white">{index + 1}</p>
-                </div>
+<div className="absolute bottom-0 left-0 right-0 bg-black/60 p-1.5">
+  <p className="text-[10px] font-medium text-white">{index + 1}</p>
+</div>
               </div>
             );
           })}

@@ -260,9 +260,7 @@ html.light,
     align-items: center;
     justify-content: center;
     overflow-x: hidden;
-    background:
-      radial-gradient(circle at 50% 12%, rgba(63, 111, 75, 0.1), transparent 34%),
-      linear-gradient(180deg, #fbfaf6 0%, #f6f4ee 58%, #efede5 100%);
+    background: #fbfaf6;
     padding: clamp(24px, 5vw, 72px) clamp(16px, 4vw, 48px);
     color: #111111;
   }
@@ -291,7 +289,6 @@ html.light,
     font-weight: 850;
     line-height: 1;
     letter-spacing: 0.08em;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
   }
 
   .app-not-found-video {
@@ -299,7 +296,6 @@ html.light,
     height: auto;
     display: block;
     object-fit: contain;
-    filter: drop-shadow(0 28px 46px rgba(17, 17, 17, 0.12));
   }
 
   .app-not-found-copy {
@@ -341,15 +337,13 @@ html.light,
     font-weight: 800;
     line-height: 1;
     text-decoration: none;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.18) inset, 0 18px 34px rgba(17, 17, 17, 0.18);
-    transition: background 170ms ease, color 170ms ease, transform 170ms ease, box-shadow 170ms ease, border-color 170ms ease;
+    transition: background 170ms ease, color 170ms ease, transform 170ms ease, border-color 170ms ease;
     cursor: pointer;
   }
 
   .app-not-found-button:hover {
     border-color: #2f5f3e;
     background: #2f5f3e;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.2) inset, 0 22px 42px rgba(47, 95, 62, 0.22);
   }
 
   .app-not-found-button svg {
@@ -363,7 +357,6 @@ html.light,
 
   .app-not-found-button:active {
     transform: scale(0.97);
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.14) inset, 0 10px 20px rgba(17, 17, 17, 0.16);
   }
 
   .app-not-found-button:focus-visible {
@@ -398,6 +391,488 @@ html.light,
       background-image:
         linear-gradient(to bottom, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.65)),
         url("/auth-bg-mobile.jpg");
+    }
+  }
+
+  .hivez-profile-shell {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 20px;
+    background: var(--hivez-bg);
+    color: var(--hivez-text);
+  }
+
+  .hivez-profile-card {
+    width: min(1080px, 100%);
+    border-radius: 32px;
+    border: 1px solid var(--hivez-border);
+    background: var(--hivez-surface);
+    box-shadow: none;
+    padding: 28px;
+    animation: hivez-profile-card-enter 0.45s ease both;
+  }
+
+  .hivez-profile-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--hivez-text);
+    margin-bottom: 18px;
+  }
+
+  .hivez-brand-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #7ca0ff;
+    color: #071119;
+    font-size: 0.7rem;
+    font-weight: 900;
+  }
+
+  .hivez-profile-header {
+    margin-bottom: 28px;
+  }
+
+  .hivez-kicker {
+    margin: 0 0 6px;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--hivez-accent);
+    font-weight: 700;
+  }
+
+  .hivez-profile-header h1 {
+    margin: 0;
+    font-size: clamp(2rem, 3vw, 3.2rem);
+    line-height: 1.05;
+    letter-spacing: -0.065em;
+    color: var(--hivez-text);
+  }
+
+  .hivez-profile-header p {
+    max-width: 620px;
+    margin: 10px 0 0;
+    color: var(--hivez-muted);
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .hivez-profile-content-grid {
+    display: grid;
+    grid-template-columns: minmax(280px, 410px) minmax(0, 1fr);
+    gap: 32px;
+    align-items: start;
+  }
+
+  .hivez-profile-preview-column {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .hivez-profile-photo-panel {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .hivez-profile-preview-shell {
+    position: relative;
+    width: min(100%, 360px);
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    border-radius: 50%;
+    background: #141414;
+    border: 1px solid var(--hivez-border);
+    box-shadow: none;
+  }
+
+  .hivez-profile-preview-image {
+    width: calc(100% - 26px);
+    height: calc(100% - 26px);
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: none;
+  }
+
+  .hivez-profile-preview-badge {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    border: 1px solid var(--hivez-border);
+    background: var(--hivez-surface-soft);
+    color: var(--hivez-text);
+    padding: 6px 12px;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .hivez-profile-picker-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+  }
+
+  .hivez-profile-picker-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 104px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--hivez-border);
+    background: var(--hivez-surface-soft);
+    color: var(--hivez-text);
+    font-weight: 700;
+    transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  }
+
+  .hivez-profile-picker-button:hover {
+    transform: translateY(-1px);
+    border-color: rgba(40, 82, 75, 0.25);
+    background: color-mix(in srgb, var(--hivez-surface-soft) 80%, white);
+  }
+
+  .hivez-profile-picker-button:active {
+    transform: translateY(0);
+  }
+
+  .hivez-profile-remove-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: fit-content;
+    margin: 0 auto;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: transparent;
+    border: 1px solid var(--hivez-border);
+    color: var(--hivez-muted);
+    font-size: 0.8rem;
+  }
+
+  .hivez-profile-avatar-panel {
+    border-radius: 24px;
+    padding: 18px;
+    background: var(--hivez-surface-soft);
+    border: 1px solid var(--hivez-border);
+  }
+
+  .hivez-profile-avatar-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(68px, 1fr));
+    gap: 12px;
+  }
+
+  .hivez-profile-avatar-option {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+    padding: 0;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    overflow: hidden;
+  }
+
+  .hivez-profile-avatar-option:hover {
+    transform: translateY(-2px);
+    border-color: rgba(124, 151, 255, 0.4);
+  }
+
+  .hivez-profile-avatar-option img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+  }
+
+  .hivez-profile-avatar-option.is-selected {
+    border-color: #9be4ff;
+    box-shadow: 0 0 0 2px #9be4ff;
+  }
+
+  .hivez-profile-avatar-check {
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #8fe2ff;
+    color: #071119;
+    box-shadow: none;
+  }
+
+  .hivez-profile-form-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+  }
+
+  .hivez-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .hivez-field-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--hivez-muted);
+  }
+
+  .hivez-form-input,
+  .hivez-form-textarea {
+    width: 100%;
+    border: 1px solid var(--hivez-border);
+    background: color-mix(in srgb, var(--hivez-surface-soft) 80%, transparent);
+    border-radius: 18px;
+    color: var(--hivez-text);
+    padding: 15px 16px;
+    font-size: 1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  }
+
+  .hivez-form-input:focus,
+  .hivez-form-textarea:focus {
+    outline: none;
+    border-color: rgba(63, 111, 75, 0.7);
+  }
+
+  .hivez-form-textarea {
+    min-height: 144px;
+    resize: vertical;
+  }
+
+  .hivez-username-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .hivez-username-prefix {
+    position: absolute;
+    left: 18px;
+    color: var(--hivez-muted);
+    font-weight: 700;
+    font-size: 1rem;
+  }
+
+  .hivez-username-input {
+    padding-left: 42px;
+  }
+
+  .hivez-field-help,
+  .hivez-field-meta {
+    margin: 0;
+    color: var(--hivez-muted);
+    font-size: 0.8rem;
+  }
+
+  .hivez-field-error {
+    margin: 0;
+    color: #dc3b53;
+    font-size: 0.8rem;
+  }
+
+  .hivez-alert {
+    border-radius: 16px;
+    padding: 12px 14px;
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+
+  .hivez-alert-error {
+    background: rgba(220, 59, 83, 0.08);
+    border: 1px solid rgba(220, 59, 83, 0.16);
+    color: var(--hivez-text);
+  }
+
+  .hivez-submit-button {
+    appearance: none;
+    border: none;
+    border-radius: 18px;
+    background: var(--hivez-accent);
+    color: #f8fafc;
+    font-weight: 800;
+    font-size: 1rem;
+    padding: 16px 20px;
+    min-height: 56px;
+    width: 100%;
+    box-shadow: none;
+    transition: transform 0.18s ease, opacity 0.18s ease;
+  }
+
+  .hivez-submit-button:hover {
+    transform: translateY(-1px);
+  }
+
+  .hivez-submit-button:active {
+    transform: translateY(0) scale(0.99);
+  }
+
+  .hivez-submit-button:disabled {
+    opacity: 0.72;
+    cursor: not-allowed;
+  }
+
+  .hivez-submit-button-inline {
+    width: auto;
+    min-width: 128px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 18px;
+  }
+
+  .hivez-icon-button {
+    border: 1px solid var(--hivez-border);
+    background: var(--hivez-surface-soft);
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: var(--hivez-text);
+  }
+
+  .hivez-edit-header {
+    margin-bottom: 18px;
+  }
+
+  .hivez-edit-header-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .hivez-edit-header-row > div {
+    flex: 1;
+  }
+
+  .hivez-edit-header-row h1 {
+    margin: 0;
+    font-size: clamp(1.8rem, 2.5vw, 2.6rem);
+  }
+
+  .hivez-edit-content-grid {
+    gap: 24px;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  @keyframes hivez-profile-card-enter {
+    from {
+      opacity: 0;
+      transform: translateY(12px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @media (max-width: 840px) {
+    .hivez-profile-content-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .hivez-profile-card {
+      padding: 22px 18px 20px;
+      border-radius: 24px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .hivez-profile-shell {
+      padding: 18px 14px 28px;
+      align-items: flex-start;
+    }
+
+    .hivez-profile-card {
+      width: 100%;
+      border-radius: 24px;
+      padding: 18px 14px 16px;
+    }
+
+    .hivez-profile-header {
+      margin-bottom: 20px;
+    }
+
+    .hivez-profile-header p {
+      font-size: 0.93rem;
+    }
+
+    .hivez-profile-picker-actions {
+      gap: 10px;
+    }
+
+    .hivez-profile-picker-button {
+      flex: 1 1 calc(33.333% - 10px);
+      min-width: 0;
+      padding: 10px 10px;
+      font-size: 0.8rem;
+    }
+
+    .hivez-profile-avatar-grid {
+      grid-template-columns: repeat(3, minmax(64px, 1fr));
+      gap: 10px;
+    }
+
+    .hivez-edit-header-row {
+      gap: 10px;
+    }
+
+    .hivez-submit-button-inline {
+      min-width: 90px;
+      padding: 10px 14px;
+      font-size: 0.86rem;
     }
   }
 }
@@ -629,7 +1104,7 @@ html.light,
 .fixed.inset-x-0.bottom-0.z-\[100\] {
   border-color: var(--hivez-border) !important;
   background: var(--hivez-surface) !important;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.18);
+  box-shadow: none;
 }
 
 .app-updates {
@@ -651,7 +1126,7 @@ html.light,
 .app-search-page section.app-surface {
   border-color: var(--hivez-border) !important;
   background: var(--hivez-surface) !important;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
+  box-shadow: none;
 }
 
 .dark .app-updates-card,
@@ -853,11 +1328,9 @@ html.light,
   --hivez-danger: #d84444;
   --hivez-radius: 22px;
   --hivez-radius-sm: 14px;
-  --hivez-shadow: 0 18px 48px rgba(32, 30, 25, 0.09);
-  --hivez-shadow-soft: 0 8px 24px rgba(32, 30, 25, 0.06);
-  background:
-    radial-gradient(circle at 16% 0%, rgba(76, 122, 73, 0.1), transparent 28%),
-    linear-gradient(180deg, #fbfaf6 0%, var(--hivez-bg) 44%, #ece8dd 100%) !important;
+  --hivez-shadow: 0 0 0 1px rgba(32, 30, 25, 0.08);
+  --hivez-shadow-soft: none;
+  background: var(--hivez-bg) !important;
   color: var(--hivez-text) !important;
 }
 
@@ -876,11 +1349,9 @@ html.light,
   --hivez-accent-strong: #ffe066;
   --hivez-warning: #ffb84d;
   --hivez-danger: #ff5f57;
-  --hivez-shadow: 0 22px 54px rgba(0, 0, 0, 0.42);
-  --hivez-shadow-soft: 0 10px 28px rgba(0, 0, 0, 0.3);
-  background:
-    radial-gradient(circle at 50% -8%, rgba(255, 212, 59, 0.1), transparent 26%),
-    linear-gradient(180deg, #101315 0%, var(--hivez-bg) 48%, #070809 100%) !important;
+  --hivez-shadow: 0 0 0 1px rgba(219, 228, 235, 0.12);
+  --hivez-shadow-soft: none;
+  background: var(--hivez-bg) !important;
 }
 
 .app-shell * {
@@ -1078,7 +1549,7 @@ html.light,
 .app-profile-page img,
 .app-chats-page img,
 .app-settings-page img {
-  box-shadow: 0 0 0 1px var(--hivez-border), 0 8px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 0 0 1px var(--hivez-border);
 }
 
 .app-feed-card [class*="rounded-full"],
@@ -1106,7 +1577,7 @@ html.light,
   border-radius: 999px;
   background: var(--hivez-text) !important;
   color: var(--hivez-bg) !important;
-  box-shadow: 0 12px 26px color-mix(in srgb, var(--hivez-text) 18%, transparent);
+  box-shadow: none;
 }
 
 .app-secondary-button {
@@ -1139,7 +1610,7 @@ html.light,
 .app-create-page input:focus,
 .app-create-page textarea:focus {
   border-color: color-mix(in srgb, var(--hivez-accent) 55%, var(--hivez-border)) !important;
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--hivez-accent) 14%, transparent) !important;
+  box-shadow: none;
 }
 
 .app-section-label {
@@ -1166,8 +1637,7 @@ html.light,
   border: 1px solid var(--hivez-border) !important;
   border-radius: 24px !important;
   background: var(--hivez-elevated) !important;
-  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.24) !important;
-  backdrop-filter: blur(18px) saturate(140%);
+  box-shadow: none;
 }
 
 .app-empty-state {
@@ -1181,7 +1651,7 @@ html.light,
   border: 1px solid var(--hivez-border) !important;
   border-radius: 26px !important;
   background: color-mix(in srgb, var(--hivez-elevated) 84%, transparent) !important;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.16);
+  box-shadow: none;
   overflow: hidden;
 }
 
@@ -1359,9 +1829,7 @@ html.light,
 }
 
 .app-notifications-page button[class*="bg-sky-50"] {
-  background:
-    linear-gradient(90deg, color-mix(in srgb, var(--hivez-accent) 16%, transparent), transparent 70%),
-    var(--hivez-elevated) !important;
+  background: var(--hivez-elevated) !important;
 }
 
 .app-settings-page .app-surface {
@@ -1407,7 +1875,7 @@ html.light,
 
 .app-chats-page [class*="bg-zinc-900"][class*="text-white"],
 .app-chats-page [class*="dark:bg-white"][class*="dark:text-black"] {
-  box-shadow: 0 10px 24px color-mix(in srgb, var(--hivez-text) 18%, transparent);
+  box-shadow: none;
 }
 
 .app-chats-page [class*="rounded-br-lg"],
@@ -1458,13 +1926,11 @@ html.light,
 }
 
 .hivez-loader-screen {
-  background:
-    radial-gradient(circle at 50% 38%, rgba(76, 122, 73, 0.14), transparent 30%),
-    var(--hivez-bg, #fbfaf6);
+  background: var(--hivez-bg, #fbfaf6);
 }
 
 .hivez-loader-mascot {
-  filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.18));
+  filter: none;
 }
 
 @keyframes hivez-page-in {

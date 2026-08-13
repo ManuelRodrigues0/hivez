@@ -193,7 +193,7 @@ export default function PostPage() {
 
       {/* Login/Signup prompt for unauthenticated users */}
       {!user && (
-        <div className="border-b border-zinc-200 bg-gradient-to-r from-sky-50 to-blue-50 px-4 py-3 dark:border-zinc-800 dark:from-sky-950/30 dark:to-blue-950/30">
+<div className="border-b border-zinc-200 bg-sky-50 px-4 py-3 dark:border-zinc-800 dark:bg-sky-950/30">
           <p className="text-sm text-zinc-700 dark:text-zinc-300">
             Join Hivez to like, comment, and connect with creators.
           </p>
