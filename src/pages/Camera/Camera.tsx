@@ -346,10 +346,8 @@ export default function Camera() {
       )}
 
       {/* Top Bar */}
-      <div className="absolute left-0 right-0 top-0 z-30">
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-transparent h-32" />
-        
-        <div className="relative flex items-center justify-between px-4 pt-12">
+      <div className="absolute left-0 right-0 top-0 z-30 pointer-events-none">
+        <div className="relative flex items-center justify-between px-4 pt-12 pointer-events-auto">
           <button 
             onClick={cancel} 
             className="flex h-10 w-10 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm transition hover:bg-black/50 active:scale-90"
@@ -478,8 +476,6 @@ export default function Camera() {
 
       {/* Bottom Controls */}
       <div className="absolute bottom-0 left-0 right-0 z-30">
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent h-48" />
-        
         <div className="relative flex items-center justify-center pb-8 pt-8">
           <div className="relative">
             <div className={`absolute -inset-1.5 rounded-full transition-all duration-300 ${

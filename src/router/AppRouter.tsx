@@ -94,10 +94,10 @@ export default function AppRouter() {
         <Route path="/profile/edit" element={<EditProfile />} />
       </Route>
 
-      <Route element={<MobileLayout />}>
-        <Route path="/camera" element={<Camera />} />
-        <Route path="/create" element={<Create />} />
-      </Route>
+      <Route path="/camera" element={<Camera />} />
+      <Route path="/create" element={<Create />} />
+
+      <Route element={<MobileLayout />}></Route>
 
       <Route element={<AdminLayout />}>
         <Route path="/admin" element={<AdminDashboard />} />

@@ -225,7 +225,7 @@ export default function Create() {
         </button>
       </div>
 
-      <div className={`mx-auto ${isTextOnly ? 'max-w-3xl' : 'max-w-2xl'}`}>
+      <div className={`mx-auto w-full ${isTextOnly ? 'max-w-3xl lg:p-8 p-4' : 'max-w-4xl lg:p-6 p-4'}`}>
         {/* Post Details */}
         <div className={`border-b border-zinc-200 dark:border-zinc-800 ${isTextOnly ? 'p-8' : 'p-4'}`}>
           {/* User Info */}
@@ -252,7 +252,7 @@ export default function Create() {
 
           {previewItems.length > 0 && (
             <div className="mt-4">
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                 {previewItems.map((item, index) => (
                   <div key={index} className="relative aspect-square overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900">
                     {item.type === "video" ? (
@@ -301,14 +301,14 @@ export default function Create() {
                   <button
                     key={community.id}
                     onClick={() => setCategory(community.id)}
-                    className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition ${
+                    className={`flex items-center gap-2 rounded-full border px-3 md:px-4 py-2 text-sm transition whitespace-nowrap ${
                       category === community.id
                         ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
                         : "border-zinc-300 hover:border-zinc-400 dark:border-zinc-700 dark:hover:border-zinc-600"
                     }`}
                   >
                     <span>{community.icon}</span>
-                    <span>{community.name}</span>
+                    <span className="hidden md:inline">{community.name}</span>
                   </button>
                 ))}
               </div>
@@ -326,7 +326,7 @@ export default function Create() {
                 placeholder="Add location..."
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus:border-zinc-600"
+                className="w-full md:max-w-md rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus:border-zinc-600"
               />
             </div>
           )}
