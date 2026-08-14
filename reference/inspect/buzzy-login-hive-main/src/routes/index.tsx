@@ -1,52 +1,49 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { AuthBackdrop } from "@/components/hivez/AuthBackdrop";
 import { AuthField } from "@/components/hivez/AuthField";
 import { BeeMascot, type BeeMood } from "@/components/hivez/BeeMascot";
-import { googleLogin, login } from "../../services/auth";
-import "../Auth/Auth.css";
+
+export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Sign in to Hivez — your local community feed" },
+      {
+        name: "description",
+        content:
+          "Log in to Hivez to report neighborhood issues, upvote nearby reports and follow what is happening around you.",
+      },
+      { property: "og:title", content: "Sign in to Hivez" },
+      {
+        property: "og:description",
+        content: "Log in to Hivez to report local issues and follow your community feed.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: LoginPage,
+});
 
 type Slot = "hero" | "button" | "password";
-type Status = "idle" | "loading" | "success" | "error";
 
-function getAuthMessage(error: unknown) {
-  if (error instanceof Error) {
-    return error.message.replace("Firebase: ", "").replace(/\s*\(auth\/.*\)\.?$/, ".");
-  }
-
-  return "Something went wrong. Please try again.";
-}
-
-export function GoogleIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        fill="#EA4335"
-        d="M12 10.2v3.9h5.5c-.24 1.4-1.7 4.1-5.5 4.1-3.3 0-6-2.7-6-6.2s2.7-6.2 6-6.2c1.9 0 3.2.8 3.9 1.5l2.7-2.6C16.9 2.9 14.7 2 12 2 6.9 2 2.8 6.1 2.8 12S6.9 22 12 22c5.8 0 9.6-4 9.6-9.7 0-.7-.1-1.2-.2-1.8H12z"
-      />
-    </svg>
-  );
-}
-
-export default function Login() {
+function LoginPage() {
   const reduce = useReducedMotion();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const from = (location.state as { from?: string } | null)?.from || "/";
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
-  const [status, setStatus] = useState<Status>("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [error, setError] = useState("");
   const [focusField, setFocusField] = useState<"email" | "password" | null>(null);
   const [hoverLogin, setHoverLogin] = useState(false);
   const [typing, setTyping] = useState(false);
   const [jump, setJump] = useState(0);
-  const [flying, setFlying] = useState(false);
   const typingTimer = useRef<number | null>(null);
-  const flyTimer = useRef<number | null>(null);
+
+  useEffect(() => () => {
+    if (typingTimer.current) window.clearTimeout(typingTimer.current);
+  }, []);
 
   const slot: Slot =
     focusField === "password"
@@ -54,15 +51,10 @@ export default function Login() {
       : focusField === "email" || hoverLogin || status !== "idle"
         ? "button"
         : "hero";
-  const prevSlot = useRef<Slot>(slot);
 
-  useEffect(
-    () => () => {
-      if (typingTimer.current) window.clearTimeout(typingTimer.current);
-      if (flyTimer.current) window.clearTimeout(flyTimer.current);
-    },
-    [],
-  );
+  const [flying, setFlying] = useState(false);
+  const prevSlot = useRef<Slot>(slot);
+  const flyTimer = useRef<number | null>(null);
 
   useEffect(() => {
     if (prevSlot.current === slot) return;
@@ -70,6 +62,9 @@ export default function Login() {
     setFlying(true);
     if (flyTimer.current) window.clearTimeout(flyTimer.current);
     flyTimer.current = window.setTimeout(() => setFlying(false), 1100);
+    return () => {
+      if (flyTimer.current) window.clearTimeout(flyTimer.current);
+    };
   }, [slot]);
 
   const mood: BeeMood =
@@ -77,7 +72,7 @@ export default function Login() {
       ? "happy"
       : status === "error"
         ? "sad"
-        : slot === "password" && (typing || focusField === "password")
+        : slot === "password" && typing
           ? "shy"
           : flying
             ? "fly"
@@ -93,52 +88,38 @@ export default function Login() {
 
   async function fireConfetti() {
     if (reduce) return;
-    try {
-      const confetti = (await import("canvas-confetti")).default;
-      const colors = ["#0EA5E9", "#14B8A6", "#F2C14E", "#ffffff"];
-      confetti({ particleCount: 90, spread: 78, origin: { y: 0.6 }, colors });
-      window.setTimeout(() => confetti({ particleCount: 60, spread: 110, origin: { y: 0.5 }, colors }), 280);
-    } catch {
-      // Confetti is decorative; auth should continue if the optional module is unavailable.
-    }
+    const confetti = (await import("canvas-confetti")).default;
+    const colors = ["#0EA5E9", "#14B8A6", "#F2C14E", "#ffffff"];
+    confetti({ particleCount: 90, spread: 78, origin: { y: 0.6 }, colors });
+    window.setTimeout(
+      () => confetti({ particleCount: 60, spread: 110, origin: { y: 0.5 }, colors }),
+      280,
+    );
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setJump((j) => j + 1);
     setStatus("loading");
 
-    try {
-      await login(email.trim(), password);
-      setStatus("success");
-      await fireConfetti();
-      navigate(from, { replace: true });
-    } catch (err) {
-      setStatus("error");
-      setError(getAuthMessage(err));
-      window.setTimeout(() => setStatus("idle"), 2600);
-    }
+    window.setTimeout(() => {
+      const ok = /\S+@\S+\.\S+/.test(email) && password.length >= 6;
+      if (ok) {
+        setStatus("success");
+        void fireConfetti();
+      } else {
+        setStatus("error");
+        setError(
+          !/\S+@\S+\.\S+/.test(email)
+            ? "That email doesn't look quite right yet."
+            : "Passwords need at least 6 characters. You've got this!",
+        );
+        window.setTimeout(() => setStatus("idle"), 2600);
+      }
+    }, 900);
   }
 
-  async function handleGoogleLogin() {
-    setError("");
-    setJump((j) => j + 1);
-    setStatus("loading");
-
-    try {
-      await googleLogin();
-      setStatus("success");
-      await fireConfetti();
-      navigate(from, { replace: true });
-    } catch (err) {
-      setStatus("error");
-      setError(getAuthMessage(err));
-      window.setTimeout(() => setStatus("idle"), 2600);
-    }
-  }
-
-  const busy = status === "loading";
   const bee = (
     <motion.div layoutId="hivez-bee" layout transition={{ type: "spring", stiffness: 160, damping: 20 }}>
       <BeeMascot mood={mood} jump={jump} size={slot === "hero" ? 380 : 132} />
@@ -174,11 +155,8 @@ export default function Login() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           className="glass-card relative rounded-[24px] p-6 sm:p-8"
-          aria-labelledby="login-title"
         >
-          <h2 id="login-title" className="text-2xl font-extrabold tracking-tight">
-            Welcome back
-          </h2>
+          <h2 className="text-2xl font-extrabold tracking-tight">Welcome back</h2>
           <p className="mt-1 text-sm text-muted-foreground">Log in to your hive.</p>
 
           <form onSubmit={handleSubmit} className="mt-7 space-y-4">
@@ -187,7 +165,6 @@ export default function Login() {
               type="email"
               autoComplete="email"
               value={email}
-              required
               onChange={(e) => setEmail(e.target.value)}
               onFocus={() => setFocusField("email")}
               onBlur={() => setFocusField(null)}
@@ -200,7 +177,6 @@ export default function Login() {
                 autoComplete="current-password"
                 value={password}
                 invalid={status === "error"}
-                required
                 onChange={(e) => {
                   setPassword(e.target.value);
                   markTyping();
@@ -208,7 +184,7 @@ export default function Login() {
                 onFocus={() => setFocusField("password")}
                 onBlur={() => setFocusField(null)}
               />
-              <div className="pointer-events-auto absolute -top-32 -right-6 hidden lg:block">
+              <div className="pointer-events-none absolute -top-32 -right-6 hidden lg:block">
                 <AnimatePresence>{slot === "password" && bee}</AnimatePresence>
               </div>
             </div>
@@ -243,7 +219,7 @@ export default function Login() {
                   initial={{ opacity: 0, x: 18 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 18 }}
-                  className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                  className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive-foreground"
                 >
                   {error}
                 </motion.p>
@@ -251,12 +227,12 @@ export default function Login() {
             </AnimatePresence>
 
             <div className="relative pt-28">
-              <div className="pointer-events-auto absolute top-1 left-1/2 -translate-x-1/2">
+              <div className="pointer-events-none absolute top-1 left-1/2 -translate-x-1/2">
                 <AnimatePresence>{slot === "button" && bee}</AnimatePresence>
               </div>
               <motion.button
                 type="submit"
-                disabled={busy}
+                disabled={status === "loading"}
                 onHoverStart={() => setHoverLogin(true)}
                 onHoverEnd={() => setHoverLogin(false)}
                 whileHover={{ scale: 1.02 }}
@@ -264,7 +240,7 @@ export default function Login() {
                 transition={{ type: "spring", stiffness: 400, damping: 22 }}
                 className="w-full rounded-2xl bg-gradient-to-r from-primary to-secondary px-5 py-3.5 text-base font-extrabold text-primary-foreground shadow-[0_14px_35px_-12px_var(--primary)] disabled:opacity-80"
               >
-                {status === "loading" ? "Buzzing you in..." : status === "success" ? "You're in!" : "Log in"}
+                {status === "loading" ? "Buzzing you in…" : status === "success" ? "You're in! 🎉" : "Log in"}
               </motion.button>
             </div>
 
@@ -276,11 +252,9 @@ export default function Login() {
 
             <motion.button
               type="button"
-              disabled={busy}
-              onClick={handleGoogleLogin}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="flex w-full items-center justify-center gap-3 rounded-2xl border border-border bg-card px-5 py-3 text-sm font-bold disabled:opacity-80"
+              className="flex w-full items-center justify-center gap-3 rounded-2xl border border-border bg-card px-5 py-3 text-sm font-bold"
             >
               <GoogleIcon />
               Continue with Google
@@ -296,5 +270,16 @@ export default function Login() {
         </motion.section>
       </main>
     </AuthBackdrop>
+  );
+}
+
+export function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="#EA4335"
+        d="M12 10.2v3.9h5.5c-.24 1.4-1.7 4.1-5.5 4.1-3.3 0-6-2.7-6-6.2s2.7-6.2 6-6.2c1.9 0 3.2.8 3.9 1.5l2.7-2.6C16.9 2.9 14.7 2 12 2 6.9 2 2.8 6.1 2.8 12S6.9 22 12 22c5.8 0 9.6-4 9.6-9.7 0-.7-.1-1.2-.2-1.8H12z"
+      />
+    </svg>
   );
 }

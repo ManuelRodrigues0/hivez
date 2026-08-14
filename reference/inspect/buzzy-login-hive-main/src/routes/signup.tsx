@@ -1,47 +1,50 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { AuthBackdrop } from "@/components/hivez/AuthBackdrop";
 import { AuthField } from "@/components/hivez/AuthField";
 import { BeeMascot, type BeeMood } from "@/components/hivez/BeeMascot";
-import { GoogleIcon } from "@/pages/Login/Login";
-import { googleLogin, signup } from "../../services/auth";
-import "../Auth/Auth.css";
+import { GoogleIcon } from "./index";
+
+export const Route = createFileRoute("/signup")({
+  head: () => ({
+    meta: [
+      { title: "Join Hivez — start reporting what your area needs" },
+      {
+        name: "description",
+        content:
+          "Create your Hivez account to post civic issues, support nearby reports and help local problems get seen.",
+      },
+      { property: "og:title", content: "Join Hivez" },
+      {
+        property: "og:description",
+        content: "Create a Hivez account and help your neighborhood get heard.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: SignupPage,
+});
 
 type Field = "name" | "email" | "password" | "confirm" | null;
-type Status = "idle" | "loading" | "success" | "error";
 
-function getAuthMessage(error: unknown) {
-  if (error instanceof Error) {
-    return error.message.replace("Firebase: ", "").replace(/\s*\(auth\/.*\)\.?$/, ".");
-  }
-
-  return "Something went wrong. Please try again.";
-}
-
-export default function Signup() {
+function SignupPage() {
   const reduce = useReducedMotion();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const from = (location.state as { from?: string } | null)?.from || "/";
-
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [active, setActive] = useState<Field>(null);
   const [typing, setTyping] = useState(false);
-  const [status, setStatus] = useState<Status>("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [error, setError] = useState("");
   const [jump, setJump] = useState(0);
   const timer = useRef<number | null>(null);
 
-  useEffect(
-    () => () => {
-      if (timer.current) window.clearTimeout(timer.current);
-    },
-    [],
-  );
+  useEffect(() => () => {
+    if (timer.current) window.clearTimeout(timer.current);
+  }, []);
 
   function markTyping() {
     setTyping(true);
@@ -57,7 +60,7 @@ export default function Signup() {
       ? "happy"
       : status === "error"
         ? "sad"
-        : active === "password" && (typing || active === "password")
+        : active === "password" && typing
           ? "shy"
           : mismatch
             ? "confused"
@@ -69,20 +72,16 @@ export default function Signup() {
 
   async function fireConfetti() {
     if (reduce) return;
-    try {
-      const confetti = (await import("canvas-confetti")).default;
-      confetti({
-        particleCount: 100,
-        spread: 85,
-        origin: { y: 0.6 },
-        colors: ["#0EA5E9", "#14B8A6", "#F2C14E", "#ffffff"],
-      });
-    } catch {
-      // Confetti is decorative; account creation should continue if unavailable.
-    }
+    const confetti = (await import("canvas-confetti")).default;
+    confetti({
+      particleCount: 100,
+      spread: 85,
+      origin: { y: 0.6 },
+      colors: ["#0EA5E9", "#14B8A6", "#F2C14E", "#ffffff"],
+    });
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setJump((j) => j + 1);
@@ -100,37 +99,12 @@ export default function Signup() {
       return;
     }
 
-    try {
-      setStatus("loading");
-      await signup(email.trim(), password);
+    setStatus("loading");
+    window.setTimeout(() => {
       setStatus("success");
-      await fireConfetti();
-      navigate(from, { replace: true });
-    } catch (err) {
-      setStatus("error");
-      setError(getAuthMessage(err));
-      window.setTimeout(() => setStatus("idle"), 2600);
-    }
+      void fireConfetti();
+    }, 900);
   }
-
-  async function handleGoogleSignup() {
-    setError("");
-    setJump((j) => j + 1);
-
-    try {
-      setStatus("loading");
-      await googleLogin();
-      setStatus("success");
-      await fireConfetti();
-      navigate(from, { replace: true });
-    } catch (err) {
-      setStatus("error");
-      setError(getAuthMessage(err));
-      window.setTimeout(() => setStatus("idle"), 2600);
-    }
-  }
-
-  const busy = status === "loading";
 
   return (
     <AuthBackdrop>
@@ -161,11 +135,8 @@ export default function Signup() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           className="glass-card rounded-[24px] p-6 sm:p-8"
-          aria-labelledby="signup-title"
         >
-          <h2 id="signup-title" className="text-2xl font-extrabold tracking-tight">
-            Create your account
-          </h2>
+          <h2 className="text-2xl font-extrabold tracking-tight">Create your account</h2>
           <p className="mt-1 text-sm text-muted-foreground">It takes less than a minute.</p>
 
           <form onSubmit={handleSubmit} className="mt-7 space-y-4">
@@ -173,7 +144,6 @@ export default function Signup() {
               label="Full name"
               autoComplete="name"
               value={name}
-              required
               onChange={(e) => setName(e.target.value)}
               onFocus={() => setActive("name")}
               onBlur={() => setActive(null)}
@@ -183,7 +153,6 @@ export default function Signup() {
               type="email"
               autoComplete="email"
               value={email}
-              required
               onChange={(e) => setEmail(e.target.value)}
               onFocus={() => setActive("email")}
               onBlur={() => setActive(null)}
@@ -193,8 +162,6 @@ export default function Signup() {
               type="password"
               autoComplete="new-password"
               value={password}
-              required
-              minLength={6}
               onChange={(e) => {
                 setPassword(e.target.value);
                 markTyping();
@@ -208,8 +175,6 @@ export default function Signup() {
               autoComplete="new-password"
               value={confirm}
               invalid={mismatch}
-              required
-              minLength={6}
               onChange={(e) => {
                 setConfirm(e.target.value);
                 markTyping();
@@ -226,7 +191,7 @@ export default function Signup() {
                   exit={{ opacity: 0 }}
                   className="text-sm font-semibold text-primary"
                 >
-                  Passwords match - nice one!
+                  Passwords match — nice one! 👍
                 </motion.p>
               )}
               {error && (
@@ -235,7 +200,7 @@ export default function Signup() {
                   initial={{ opacity: 0, x: 18 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 18 }}
-                  className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                  className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive-foreground"
                 >
                   {error}
                 </motion.p>
@@ -244,16 +209,16 @@ export default function Signup() {
 
             <motion.button
               type="submit"
-              disabled={busy}
+              disabled={status === "loading"}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               transition={{ type: "spring", stiffness: 400, damping: 22 }}
               className="w-full rounded-2xl bg-gradient-to-r from-secondary to-primary px-5 py-3.5 text-base font-extrabold text-primary-foreground shadow-[0_14px_35px_-12px_var(--secondary)] disabled:opacity-80"
             >
               {status === "loading"
-                ? "Building your hive..."
+                ? "Building your hive…"
                 : status === "success"
-                  ? "Welcome to Hivez!"
+                  ? "Welcome to Hivez! 🎉"
                   : "Create account"}
             </motion.button>
 
@@ -265,11 +230,9 @@ export default function Signup() {
 
             <motion.button
               type="button"
-              disabled={busy}
-              onClick={handleGoogleSignup}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="flex w-full items-center justify-center gap-3 rounded-2xl border border-border bg-card px-5 py-3 text-sm font-bold disabled:opacity-80"
+              className="flex w-full items-center justify-center gap-3 rounded-2xl border border-border bg-card px-5 py-3 text-sm font-bold"
             >
               <GoogleIcon />
               Continue with Google
@@ -277,7 +240,7 @@ export default function Signup() {
 
             <p className="pt-1 text-center text-sm text-muted-foreground">
               Already on Hivez?{" "}
-              <Link to="/login" className="link-underline font-bold text-primary">
+              <Link to="/" className="link-underline font-bold text-primary">
                 Log in
               </Link>
             </p>
