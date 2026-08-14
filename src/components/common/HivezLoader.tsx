@@ -36,6 +36,7 @@ export default function HivezLoader({
           muted
           playsInline
           preload="metadata"
+          disablePictureInPicture
         />
       </div>
     </div>

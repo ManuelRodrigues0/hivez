@@ -16,6 +16,7 @@ export default function NotFound() {
           muted
           playsInline
           preload="metadata"
+          disablePictureInPicture
         />
 
         <div className="app-not-found-copy">

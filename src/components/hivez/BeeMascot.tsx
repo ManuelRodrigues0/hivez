@@ -1,9 +1,9 @@
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import stillUrl from "@/assets/auth/stationary-bee.jpeg";
-import waveUrl from "@/assets/auth/bee-wave.mp4";
+import stillUrl from "@/assets/auth/stationary-bee.png";
+import waveUrl from "@/assets/auth/bee-wave.webm";
 import flyUrl from "@/assets/auth/bee-fly.webm";
-import shyUrl from "@/assets/auth/bee-shy.mp4";
+import shyUrl from "@/assets/auth/bee-shy.webm";
 
 export type BeeMood = "idle" | "excited" | "shy" | "happy" | "sad" | "confused" | "wave" | "fly";
 
@@ -110,8 +110,6 @@ export function BeeMascot({ mood = "idle", size = 320, className, jump = 0 }: Pr
             ease: [0.22, 1, 0.36, 1],
           }}
         >
-          <div className="pointer-events-none absolute -bottom-4 left-1/2 h-8 w-1/2 -translate-x-1/2 rounded-[50%] bg-accent/40 blur-2xl" />
-
           <button
             type="button"
             onClick={playWave}
@@ -143,6 +141,7 @@ export function BeeMascot({ mood = "idle", size = 320, className, jump = 0 }: Pr
                 playsInline
                 preload="auto"
                 loop={clip !== "wave"}
+                disablePictureInPicture
                 onCanPlay={() => setVideoReady(true)}
                 onEnded={() => {
                   if (clip === "wave") {

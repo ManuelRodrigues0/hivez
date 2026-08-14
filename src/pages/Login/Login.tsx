@@ -153,11 +153,8 @@ export default function Login() {
             Local action starts here
           </span>
           <h1 className="mt-6 text-4xl font-black leading-[1.05] tracking-tight sm:text-5xl">
-            Welcome back to
-            <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-              {" "}
-              Hivez
-            </span>
+            Welcome back to{" "}
+            <span className="text-primary">Hivez</span>
           </h1>
           <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
             Sign in to report issues, follow nearby updates, support important posts and stay
@@ -262,7 +259,7 @@ export default function Login() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 transition={{ type: "spring", stiffness: 400, damping: 22 }}
-                className="w-full rounded-2xl bg-gradient-to-r from-primary to-secondary px-5 py-3.5 text-base font-extrabold text-primary-foreground shadow-[0_14px_35px_-12px_var(--primary)] disabled:opacity-80"
+                className="w-full rounded-2xl bg-primary px-5 py-3.5 text-base font-extrabold text-primary-foreground disabled:opacity-80"
               >
                 {status === "loading" ? "Buzzing you in..." : status === "success" ? "You're in!" : "Log in"}
               </motion.button>

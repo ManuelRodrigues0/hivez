@@ -230,7 +230,7 @@ export default function IssueCommunityPage() {
             {community.mediaUrl && (
               <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-900 sm:h-10 sm:w-10">
                 {community.mediaType === "video" ? (
-                  <video src={community.mediaUrl} className="h-full w-full object-cover" playsInline />
+                  <video src={community.mediaUrl} className="h-full w-full object-cover" playsInline disablePictureInPicture />
                 ) : (
                   <img src={community.mediaUrl} alt="" className="h-full w-full object-cover" />
                 )}

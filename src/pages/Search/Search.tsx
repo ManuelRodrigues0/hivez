@@ -233,7 +233,7 @@ export default function SearchPage() {
                       {(post.mediaItems?.[0]?.url || post.mediaUrls?.[0] || post.mediaUrl) && (
                         <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-zinc-100 dark:bg-zinc-900">
                           {(post.mediaItems?.[0]?.type || post.mediaType) === "video" ? (
-                            <video src={post.mediaItems?.[0]?.url || post.mediaUrls?.[0] || post.mediaUrl} className="h-full w-full object-cover" />
+                            <video src={post.mediaItems?.[0]?.url || post.mediaUrls?.[0] || post.mediaUrl} className="h-full w-full object-cover" disablePictureInPicture />
                           ) : (
                             <img src={post.mediaItems?.[0]?.url || post.mediaUrls?.[0] || post.mediaUrl} alt="" className="h-full w-full object-cover" />
                           )}

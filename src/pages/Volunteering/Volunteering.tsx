@@ -249,6 +249,7 @@ function IssuePreview({ community }: { community: IssueCommunity }) {
         muted
         playsInline
         preload="metadata"
+        disablePictureInPicture
       />
     );
   }

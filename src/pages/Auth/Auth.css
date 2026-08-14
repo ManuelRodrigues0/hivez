@@ -500,22 +500,22 @@
 }
 
 .hivez-auth-page {
-  --background: oklch(0.075 0.01 255);
-  --foreground: oklch(0.98 0.01 85);
-  --card: oklch(0.14 0.018 255);
-  --card-foreground: oklch(0.98 0.01 85);
-  --primary: oklch(0.82 0.16 84);
-  --primary-foreground: oklch(0.12 0.02 70);
-  --secondary: oklch(0.78 0.09 225);
-  --secondary-foreground: oklch(0.09 0.015 250);
-  --muted: oklch(0.18 0.018 255);
-  --muted-foreground: oklch(0.78 0.02 245);
-  --accent: oklch(0.88 0.16 82);
-  --accent-foreground: oklch(0.14 0.025 75);
-  --destructive: oklch(0.68 0.21 25);
-  --border: oklch(1 0 0 / 14%);
-  --input: oklch(1 0 0 / 10%);
-  --ring: oklch(0.82 0.16 84);
+  --background: #f7f7f2;
+  --foreground: #101010;
+  --card: #ffffff;
+  --card-foreground: #101010;
+  --primary: #3f6f4b;
+  --primary-foreground: #ffffff;
+  --secondary: #e8e6df;
+  --secondary-foreground: #101010;
+  --muted: #f0efe9;
+  --muted-foreground: #62625c;
+  --accent: #f2c14e;
+  --accent-foreground: #101010;
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: rgba(16, 16, 16, 0.1);
+  --input: rgba(16, 16, 16, 0.1);
+  --ring: #3f6f4b;
   font-family: "Geist Variable", Inter, system-ui, sans-serif;
 }
 
@@ -535,12 +535,8 @@
 }
 
 .hivez-auth-page .glass-card {
-  background: color-mix(in oklab, var(--card) 82%, transparent);
+  background: var(--card);
   border: 1px solid var(--border);
-  backdrop-filter: blur(22px) saturate(140%);
-  box-shadow:
-    0 24px 70px -34px rgb(255 207 72 / 0.38),
-    0 2px 10px -2px rgb(120 190 230 / 0.08);
 }
 
 .hivez-auth-page .field-glow {
@@ -552,8 +548,7 @@
 
 .hivez-auth-page .field-glow:focus {
   outline: none;
-  border-color: color-mix(in oklab, var(--primary) 70%, transparent);
-  box-shadow: 0 0 0 4px color-mix(in oklab, var(--primary) 18%, transparent);
+  border-color: var(--primary);
 }
 
 .hivez-auth-page .link-underline {

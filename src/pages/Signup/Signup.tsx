@@ -140,11 +140,8 @@ export default function Signup() {
             Join your local network
           </span>
           <h1 className="mt-6 text-4xl font-black leading-[1.05] tracking-tight sm:text-5xl">
-            Start reporting what your
-            <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-              {" "}
-              community needs
-            </span>
+            Start reporting what your{" "}
+            <span className="text-primary">community needs</span>
           </h1>
           <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
             Create an account to post civic issues, support nearby reports, join conversations and
@@ -248,7 +245,7 @@ export default function Signup() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               transition={{ type: "spring", stiffness: 400, damping: 22 }}
-              className="w-full rounded-2xl bg-gradient-to-r from-secondary to-primary px-5 py-3.5 text-base font-extrabold text-primary-foreground shadow-[0_14px_35px_-12px_var(--secondary)] disabled:opacity-80"
+              className="w-full rounded-2xl bg-primary px-5 py-3.5 text-base font-extrabold text-primary-foreground disabled:opacity-80"
             >
               {status === "loading"
                 ? "Building your hive..."

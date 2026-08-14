@@ -425,6 +425,7 @@ export default function Profile() {
                               src={mediaUrl}
                               className="h-full w-full object-cover transition group-hover:opacity-80"
                               muted
+                              disablePictureInPicture
                             />
                           ) : (
                             <img
@@ -628,6 +629,7 @@ export default function Profile() {
                             src={mediaUrl}
                             className="h-full w-full object-cover"
                             muted
+                            disablePictureInPicture
                           />
                         ) : (
                           <img

@@ -309,6 +309,7 @@ export default function Camera() {
           autoPlay
           playsInline
           muted
+          disablePictureInPicture
           className="h-full w-full object-cover"
         />
       </div>
@@ -435,7 +436,7 @@ export default function Camera() {
             return (
               <div key={`${file.name}-${index}`} className="group relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl border-2 border-white/30 bg-zinc-900 shadow-lg transition hover:scale-105">
                 {file.type.startsWith("video") ? (
-                  <video src={previewUrl} className="h-full w-full object-cover" muted playsInline controls />
+                  <video src={previewUrl} className="h-full w-full object-cover" muted playsInline controls disablePictureInPicture />
                 ) : (
                   <img src={previewUrl} alt="" className="h-full w-full object-cover" />
                 )}

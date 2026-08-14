@@ -262,6 +262,7 @@ export default function Create() {
                           className="h-full w-full object-cover"
                           muted={item.muted}
                           controls
+                          disablePictureInPicture
                         />
                         <button
                           onClick={() => toggleMute(index)}

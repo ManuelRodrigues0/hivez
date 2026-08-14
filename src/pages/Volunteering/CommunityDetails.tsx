@@ -120,7 +120,7 @@ export default function CommunityDetails() {
         {community.mediaUrl && (
           <div className="mb-4 aspect-video w-full overflow-hidden rounded-2xl bg-zinc-100 dark:bg-zinc-900">
             {community.mediaType === "video" ? (
-              <video src={community.mediaUrl} className="h-full w-full object-cover" controls playsInline />
+              <video src={community.mediaUrl} className="h-full w-full object-cover" controls playsInline disablePictureInPicture />
             ) : (
               <img src={community.mediaUrl} alt="" className="h-full w-full object-cover" />
             )}

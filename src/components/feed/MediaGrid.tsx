@@ -62,6 +62,7 @@ function MediaItem({
           playsInline
           autoPlay
           loop
+          disablePictureInPicture
           className={`w-full ${single ? `${singleClass} object-contain` : "h-full object-cover"}`}
         />
         <button
