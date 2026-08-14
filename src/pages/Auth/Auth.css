@@ -600,26 +600,107 @@
 
 @media (max-width: 520px) {
   .hivez-auth-page main {
-    gap: 20px;
-    padding: 20px 14px 28px;
+    min-height: 100dvh;
+    gap: 12px;
+    padding: max(12px, env(safe-area-inset-top)) 12px max(16px, env(safe-area-inset-bottom));
+  }
+
+  .hivez-auth-page section:first-child > span {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.65rem;
+    line-height: 1.1;
+  }
+
+  .hivez-auth-page section:first-child h1 {
+    margin-top: 12px;
+    max-width: 22rem;
+    font-size: clamp(1.75rem, 8vw, 2.35rem);
+    line-height: 1.04;
+  }
+
+  .hivez-auth-page section:first-child p {
+    margin-top: 8px;
+    max-width: 21rem;
+    font-size: 0.8rem;
+    line-height: 1.4;
   }
 
   .hivez-auth-page .glass-card {
     border-radius: 20px;
-    padding: 20px;
+    padding: 16px;
+  }
+
+  .hivez-auth-page .glass-card h2 {
+    font-size: 1.35rem;
+    line-height: 1.1;
+  }
+
+  .hivez-auth-page .glass-card form {
+    margin-top: 1rem;
   }
 
   .hivez-auth-page section:first-child > div:last-child {
-    min-height: 118px;
+    min-height: 86px;
+    margin-top: 10px;
   }
 
   .hivez-auth-page section:first-child img,
   .hivez-auth-page section:first-child video {
-    max-height: 132px;
+    max-height: 100px;
+  }
+
+  .hivez-auth-page section:first-child > div:last-child > div {
+    width: min(38vw, 118px) !important;
+    height: min(33vw, 103px) !important;
   }
 
   .hivez-auth-page form .relative.pt-28 {
-    padding-top: 6.25rem;
+    padding-top: 4.5rem;
+  }
+
+  .hivez-auth-page .field-glow {
+    min-height: 3.05rem;
+    border-radius: 0.9rem;
+    padding-top: 1.32rem;
+    padding-bottom: 0.4rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .hivez-auth-page main {
+    gap: 8px;
+    padding-inline: 10px;
+  }
+
+  .hivez-auth-page section:first-child h1 {
+    font-size: 1.65rem;
+  }
+
+  .hivez-auth-page section:first-child p {
+    display: none;
+  }
+
+  .hivez-auth-page section:first-child > div:last-child {
+    min-height: 70px;
+    margin-top: 6px;
+  }
+
+  .hivez-auth-page section:first-child > div:last-child > div {
+    width: 94px !important;
+    height: 82px !important;
+  }
+
+  .hivez-auth-page .glass-card {
+    padding: 14px;
+  }
+
+  .hivez-auth-page .glass-card form {
+    margin-top: 0.8rem;
+  }
+
+  .hivez-auth-page form .relative.pt-28 {
+    padding-top: 3.85rem;
   }
 }
 
