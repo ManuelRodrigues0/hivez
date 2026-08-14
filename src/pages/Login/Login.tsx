@@ -172,7 +172,7 @@ export default function Login() {
           </p>
 
           <div className="auth-mobile-bee-home mt-8 flex min-h-[220px] w-full items-center justify-center lg:hidden">
-            <BeeMascot mood={mobileMood} jump={jump} size={380} />
+            <BeeMascot mood={mobileMood} jump={jump} size={760} />
           </div>
 
           <div className="auth-desktop-bee-home mt-8 hidden min-h-[220px] w-full items-center justify-center lg:flex lg:justify-start">

@@ -641,7 +641,7 @@
 
   .hivez-auth-page section:first-child > div:last-child,
   .hivez-auth-page .auth-mobile-bee-home {
-    min-height: 86px;
+    min-height: 180px;
     margin-top: 10px;
   }
 
@@ -653,13 +653,13 @@
 
   .hivez-auth-page section:first-child img,
   .hivez-auth-page section:first-child video {
-    max-height: 100px;
+    max-height: 200px;
   }
 
   .hivez-auth-page section:first-child > div:last-child > div,
   .hivez-auth-page .auth-mobile-bee-home > div {
-    width: min(38vw, 118px) !important;
-    height: min(33vw, 103px) !important;
+    width: min(76vw, 236px) !important;
+    height: min(66vw, 206px) !important;
   }
 
   .hivez-auth-page form .relative.pt-28 {
@@ -695,14 +695,14 @@
 
   .hivez-auth-page section:first-child > div:last-child,
   .hivez-auth-page .auth-mobile-bee-home {
-    min-height: 70px;
+    min-height: 164px;
     margin-top: 6px;
   }
 
   .hivez-auth-page section:first-child > div:last-child > div,
   .hivez-auth-page .auth-mobile-bee-home > div {
-    width: 94px !important;
-    height: 82px !important;
+    width: 188px !important;
+    height: 164px !important;
   }
 
   .hivez-auth-page .glass-card {
