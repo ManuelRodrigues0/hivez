@@ -20,8 +20,17 @@
 
 /* Ensure landing page uses proper background and foreground colors from design system */
 .landing-page {
-  background-color: var(--background);
-  color: var(--foreground);
+  --landing-bg: #f7f7f2;
+  --landing-surface: #ffffff;
+  --landing-soft: #f0efe9;
+  --landing-ink: #101010;
+  --landing-muted: #62625c;
+  --landing-green: #3f6f4b;
+  --landing-green-deep: #2f5f3e;
+  --landing-honey: #f2c14e;
+  --landing-border: rgba(16, 16, 16, 0.1);
+  background-color: var(--landing-bg);
+  color: var(--landing-ink);
 }
 
 /* Font display utility for headings */
@@ -73,13 +82,13 @@
 }
 
 .landing-page .text-foreground\/70 {
-  color: hsl(var(--foreground) / 0.7);
+  color: color-mix(in srgb, var(--landing-ink) 70%, transparent);
 }
 
 /* Dark mode support for primary section */
 .landing-page section.bg-primary {
-  background-color: var(--primary);
-  color: var(--primary-foreground);
+  background-color: var(--landing-green-deep);
+  color: #ffffff;
 }
 
 /* Grid layouts */
@@ -106,4 +115,94 @@
     padding-top: 1.5rem;
     padding-bottom: 1.5rem;
   }
+}
+
+.landing-page header {
+  border-color: var(--landing-border) !important;
+  background: color-mix(in srgb, var(--landing-bg) 86%, transparent) !important;
+  color: var(--landing-ink);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.45) inset;
+}
+
+.landing-page header a {
+  color: inherit;
+}
+
+.landing-page header nav {
+  color: var(--landing-muted) !important;
+}
+
+.landing-page header nav a:hover,
+.landing-page footer nav a:hover {
+  color: var(--landing-green) !important;
+}
+
+.landing-page a.bg-primary,
+.landing-page .bg-primary {
+  background-color: var(--landing-green) !important;
+  color: #ffffff !important;
+}
+
+.landing-page .border-border {
+  border-color: var(--landing-border) !important;
+}
+
+.landing-page .bg-background {
+  background-color: var(--landing-bg) !important;
+}
+
+.landing-page .bg-card {
+  background-color: var(--landing-surface) !important;
+}
+
+.landing-page .bg-secondary,
+.landing-page .bg-secondary\/40,
+.landing-page .bg-secondary\/50 {
+  background-color: color-mix(in srgb, var(--landing-soft) 82%, transparent) !important;
+}
+
+.landing-page .text-muted-foreground,
+.landing-page .text-foreground\/80,
+.landing-page .text-foreground\/75 {
+  color: var(--landing-muted) !important;
+}
+
+.landing-page .text-accent {
+  color: var(--landing-green) !important;
+}
+
+.landing-page .bg-accent {
+  background-color: var(--landing-green) !important;
+}
+
+.landing-page .rounded-3xl,
+.landing-page .rounded-2xl,
+.landing-page .rounded-xl {
+  box-shadow: none;
+}
+
+.landing-page [class*="shadow-"] {
+  box-shadow: 0 0 0 1px rgba(63, 111, 75, 0.08) !important;
+}
+
+.landing-page section.bg-primary .text-accent {
+  color: var(--landing-honey) !important;
+}
+
+.landing-page section.bg-primary [class*="border-primary-foreground"] {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.landing-page .group:hover {
+  background-color: color-mix(in srgb, var(--landing-green) 8%, var(--landing-surface)) !important;
+}
+
+.landing-page footer {
+  border-color: var(--landing-border) !important;
+  background: var(--landing-soft);
+}
+
+.grain-overlay {
+  opacity: 0.22;
+  mix-blend-mode: multiply;
 }
