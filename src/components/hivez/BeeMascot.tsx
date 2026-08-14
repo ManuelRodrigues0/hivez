@@ -1,6 +1,6 @@
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import stillUrl from "@/assets/auth/stationary-bee.png";
+import stillUrl from "@/assets/auth/stationary-bee.jpg";
 import waveUrl from "@/assets/auth/bee-wave.webm";
 import flyUrl from "@/assets/auth/bee-fly.webm";
 import shyUrl from "@/assets/auth/bee-shy.webm";

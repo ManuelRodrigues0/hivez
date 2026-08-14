@@ -1879,26 +1879,7 @@ body,
   padding-left: 48px !important;
 }
 
-.app-page [class*="text-sky-"],
-.app-page [class*="text-blue-"],
-.app-shell [class*="text-sky-"],
-.app-shell [class*="text-blue-"] {
-  color: var(--hivez-accent) !important;
-}
 
-.app-page [class*="bg-sky-"],
-.app-page [class*="bg-blue-"],
-.app-shell [class*="bg-sky-"],
-.app-shell [class*="bg-blue-"] {
-  background-color: color-mix(in srgb, var(--hivez-accent) 14%, transparent) !important;
-}
-
-.app-page [class*="hover:bg-sky-"]:hover,
-.app-page [class*="hover:bg-blue-"]:hover,
-.app-shell [class*="hover:bg-sky-"]:hover,
-.app-shell [class*="hover:bg-blue-"]:hover {
-  background-color: color-mix(in srgb, var(--hivez-accent) 10%, transparent) !important;
-}
 
 .app-search-page [class*="Trending"],
 .app-search-page .app-secondary-button {
