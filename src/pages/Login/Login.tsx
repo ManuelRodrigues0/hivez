@@ -84,6 +84,16 @@ export default function Login() {
             : hoverLogin
               ? "excited"
               : "idle";
+  const mobileMood: BeeMood =
+    status === "success"
+      ? "happy"
+      : status === "error"
+        ? "sad"
+        : focusField === "password" && (typing || focusField === "password")
+          ? "shy"
+          : focusField === "email" || status !== "idle"
+            ? "excited"
+            : "idle";
 
   function markTyping() {
     setTyping(true);
@@ -161,7 +171,11 @@ export default function Login() {
             connected with what is happening around you.
           </p>
 
-          <div className="mt-8 flex min-h-[220px] w-full items-center justify-center lg:justify-start">
+          <div className="auth-mobile-bee-home mt-8 flex min-h-[220px] w-full items-center justify-center lg:hidden">
+            <BeeMascot mood={mobileMood} jump={jump} size={380} />
+          </div>
+
+          <div className="auth-desktop-bee-home mt-8 hidden min-h-[220px] w-full items-center justify-center lg:flex lg:justify-start">
             <AnimatePresence>{slot === "hero" && bee}</AnimatePresence>
           </div>
         </section>
@@ -247,8 +261,8 @@ export default function Login() {
               )}
             </AnimatePresence>
 
-            <div className="relative pt-28">
-              <div className="pointer-events-auto absolute top-1 left-1/2 -translate-x-1/2">
+            <div className="auth-login-submit relative pt-28 max-lg:pt-0">
+              <div className="pointer-events-auto absolute top-1 left-1/2 -translate-x-1/2 hidden lg:block">
                 <AnimatePresence>{slot === "button" && bee}</AnimatePresence>
               </div>
               <motion.button
