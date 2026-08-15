@@ -34,10 +34,42 @@ export default function MapPage() {
   } | null>(null);
   const dragCleanupRef = useRef<(() => void) | null>(null);
   const dragFrameRef = useRef<number | null>(null);
+  const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const pinchRef = useRef<{ distance: number; zoom: number } | null>(null);
   const [dragging, setDragging] = useState(false);
 
   const bounds = useMemo(() => boundsFor(queryCenter, queryZoom), [queryCenter, queryZoom]);
   const tiles = useMemo(() => visibleTiles(center, zoom), [center, zoom]);
+
+  useEffect(() => {
+    if (params.get("lat") || params.get("lng") || userLocation.location) return;
+    void userLocation.requestLocation().then((detected) => {
+      if (!detected) return;
+      setCenter(detected);
+      setQueryCenter(detected);
+    });
+  }, [params, userLocation]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("hivez.last-map-center");
+    if (!saved || params.get("lat") || params.get("lng") || userLocation.location) return;
+    try {
+      const parsed = JSON.parse(saved) as GeoPointLike;
+      if (Number.isFinite(parsed.latitude) && Number.isFinite(parsed.longitude)) {
+        setCenter(parsed);
+        setQueryCenter(parsed);
+      }
+    } catch {
+      localStorage.removeItem("hivez.last-map-center");
+    }
+  }, [params, userLocation.location]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      localStorage.setItem("hivez.last-map-center", JSON.stringify(center));
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [center]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -92,6 +124,15 @@ export default function MapPage() {
   function startDrag(event: React.PointerEvent<HTMLDivElement>) {
     if (event.button !== 0 && event.pointerType === "mouse") return;
     event.preventDefault();
+    pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (pointersRef.current.size === 2) {
+      const points = [...pointersRef.current.values()];
+      pinchRef.current = { distance: distanceBetween(points[0], points[1]), zoom };
+      dragRef.current = null;
+      setDragging(false);
+      return;
+    }
+
     event.currentTarget.setPointerCapture(event.pointerId);
     dragRef.current = {
       pointerId: event.pointerId,
@@ -103,9 +144,18 @@ export default function MapPage() {
 
     const move = (pointerEvent: PointerEvent) => {
       pointerEvent.preventDefault();
+      pointersRef.current.set(pointerEvent.pointerId, { x: pointerEvent.clientX, y: pointerEvent.clientY });
+      if (pointersRef.current.size >= 2 && pinchRef.current) {
+        const points = [...pointersRef.current.values()];
+        const ratio = distanceBetween(points[0], points[1]) / Math.max(1, pinchRef.current.distance);
+        setZoom(clamp(Math.round(pinchRef.current.zoom + Math.log2(ratio)), 4, 18));
+        return;
+      }
       updateDrag(pointerEvent.pointerId, pointerEvent.clientX, pointerEvent.clientY);
     };
     const end = (pointerEvent: PointerEvent) => {
+      pointersRef.current.delete(pointerEvent.pointerId);
+      if (pointersRef.current.size < 2) pinchRef.current = null;
       stopDrag(pointerEvent.pointerId);
     };
 
@@ -144,7 +194,7 @@ export default function MapPage() {
   }
 
   return (
-    <div className="sticky top-0 h-[calc(100dvh-104px)] min-h-[520px] overflow-hidden bg-zinc-100 dark:bg-zinc-950 lg:top-16 lg:h-[calc(100dvh-64px)]">
+    <div className="sticky top-0 h-[calc(100dvh-9.5rem)] min-h-[420px] overflow-hidden bg-zinc-100 dark:bg-zinc-950 lg:top-16 lg:h-[calc(100dvh-64px)] lg:min-h-[520px]">
       <div className="absolute left-4 top-4 z-20 flex gap-2">
         <button className="app-icon-button bg-white/90 dark:bg-zinc-900/90" onClick={() => navigate(-1)} aria-label="Close map">
           <X size={18} />
@@ -198,7 +248,7 @@ export default function MapPage() {
         ))}
       </div>
 
-      <div className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 gap-2">
+      <div className="absolute bottom-28 left-1/2 z-20 flex -translate-x-1/2 gap-2 lg:bottom-5">
         <button className="rounded-full bg-white/90 px-3 py-2 text-xs font-semibold text-zinc-700 shadow dark:bg-zinc-900/90 dark:text-zinc-200" onClick={() => pan(0, 0.2)}>North</button>
         <button className="rounded-full bg-white/90 px-3 py-2 text-xs font-semibold text-zinc-700 shadow dark:bg-zinc-900/90 dark:text-zinc-200" onClick={() => pan(-0.2, 0)}>West</button>
         <button className="rounded-full bg-white/90 px-3 py-2 text-xs font-semibold text-zinc-700 shadow dark:bg-zinc-900/90 dark:text-zinc-200" onClick={() => pan(0.2, 0)}>East</button>
@@ -302,4 +352,8 @@ function clamp(value: number, min: number, max: number) {
 
 function wrap(value: number) {
   return ((((value + 180) % 360) + 360) % 360) - 180;
+}
+
+function distanceBetween(a: { x: number; y: number }, b: { x: number; y: number }) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
 }
