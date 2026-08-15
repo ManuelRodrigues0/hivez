@@ -18,6 +18,7 @@ import CreateModal from "@/components/feed/CreateModal";
 import type { FeedPost } from "@/components/feed/Feed";
 import MediaGrid from "@/components/feed/MediaGrid";
 import type { PostMediaItem } from "@/components/feed/MediaGrid";
+import { recordPostEngagement } from "@/services/engagementEvents";
 
 export default function Home() {
   const [selectedPost, setSelectedPost] = useState<FeedPost | null>(null);
@@ -96,6 +97,13 @@ function CommentsView({ post, onClose }: { post: FeedPost; onClose: () => void }
       });
       await updateDoc(doc(db, "posts", post.id), {
         comments: increment(1),
+      });
+      await recordPostEngagement({
+        postId: post.id,
+        actorId: user.uid,
+        authorId: post.uid,
+        type: "comment",
+        category: post.category,
       });
       setText("");
     } finally {

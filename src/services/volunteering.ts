@@ -30,6 +30,7 @@ import type {
   VolunteerUserSummary,
 } from "@/types/volunteering";
 import { createNotification } from "@/services/notifications";
+import type { LocationSnapshot } from "@/services/location";
 
 export function issueCommunityId(postId: string) {
   return `issue_${postId}`;
@@ -66,6 +67,7 @@ export async function createIssueCommunityForPost(input: {
   caption: string;
   category?: string;
   location?: string | null;
+  locationSnapshot?: LocationSnapshot | null;
   mediaUrl?: string;
   mediaType?: string;
 }) {
@@ -84,6 +86,7 @@ export async function createIssueCommunityForPost(input: {
     description: input.caption || "Community issue",
     category: input.category || "community",
     location: input.location || null,
+    locationSnapshot: input.locationSnapshot || null,
     mediaUrl: input.mediaUrl || "",
     mediaType: input.mediaType || "text",
     ownerId: input.ownerId,

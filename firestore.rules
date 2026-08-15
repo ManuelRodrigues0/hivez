@@ -61,7 +61,8 @@ service cloud.firestore {
           "reports",
           "broadcasts",
           "settings",
-          "admin_logs"
+          "admin_logs",
+          "postEngagements"
         ];
     }
 

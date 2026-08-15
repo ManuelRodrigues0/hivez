@@ -17,6 +17,7 @@ import { db } from "../../firebase/firebase";
 
 import { useAuth } from "../../context/AuthContext";
 import { createNotification } from "@/services/notifications";
+import { recordPostEngagement } from "@/services/engagementEvents";
 
 import type { FeedPost } from "../feed/Feed";
 
@@ -105,6 +106,14 @@ export default function CommentsSheet({
 
       await updateDoc(doc(db, "posts", post.id), {
         comments: increment(1),
+      });
+
+      await recordPostEngagement({
+        postId: post.id,
+        actorId: user.uid,
+        authorId: post.uid,
+        type: "comment",
+        category: post.category,
       });
 
       await createNotification({

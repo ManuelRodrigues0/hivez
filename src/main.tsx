@@ -8,6 +8,7 @@ import "./styles/theme-transition.css";
 
 import { AuthProvider } from "./context/AuthContext";
 import { LoadingProvider } from "./context/LoadingContext";
+import { LocationProvider } from "./context/LocationContext";
 import { ThemeProvider } from "./context/ThemeContext";
 
 ReactDOM.createRoot(
@@ -18,7 +19,9 @@ ReactDOM.createRoot(
       <ThemeProvider>
         <LoadingProvider>
           <AuthProvider>
-            <App />
+            <LocationProvider>
+              <App />
+            </LocationProvider>
           </AuthProvider>
         </LoadingProvider>
       </ThemeProvider>

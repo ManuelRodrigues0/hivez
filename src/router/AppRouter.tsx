@@ -9,6 +9,7 @@ import Profile from "@/pages/Profile/Profile";
 import Activity from "@/pages/Activity/Activity";
 import Search from "@/pages/Search/Search";
 import Notifications from "@/pages/Notifications/Notifications";
+import MapPage from "@/pages/Map/Map";
 import Settings from "@/pages/Settings/Settings";
 import Volunteering from "@/pages/Volunteering/Volunteering";
 import IssueCommunityPage from "@/pages/Volunteering/IssueCommunity";
@@ -90,6 +91,7 @@ export default function AppRouter() {
         <Route path="/issue-community/:communityId/details" element={<CommunityDetails />} />
         <Route path="/chats" element={<Chats />} />
         <Route path="/notifications" element={<Notifications />} />
+        <Route path="/map" element={<MapPage />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/profile/edit" element={<EditProfile />} />
       </Route>

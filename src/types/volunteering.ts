@@ -1,3 +1,5 @@
+import type { LocationSnapshot } from "@/services/location";
+
 export type CommunityRole = "owner" | "organizer" | "moderator" | "member";
 
 export type IssueCommunityStatus =
@@ -33,6 +35,7 @@ export interface IssueCommunity {
   description: string;
   category: string;
   location: string | null;
+  locationSnapshot?: LocationSnapshot | null;
   mediaUrl?: string;
   mediaType?: string;
   ownerId: string;

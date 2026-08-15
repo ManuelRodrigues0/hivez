@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Bell, Home, Search, PlusSquare, User, Menu, X, Settings, LogOut, HandHeart, MessageCircle } from "lucide-react";
+import { Bell, Home, Search, PlusSquare, User, Menu, X, Settings, LogOut, HandHeart, MessageCircle, Map } from "lucide-react";
 import { collection, onSnapshot } from "firebase/firestore";
 import { useAuth } from "../../context/AuthContext";
 import { COMMUNITIES } from "../../constants/communities";
@@ -171,6 +171,8 @@ export default function MainLayout() {
         return "Chats";
       case "/notifications":
         return "Notifications";
+      case "/map":
+        return "Map";
       case "/settings":
         return "Settings";
       case "/profile/edit":
@@ -222,6 +224,16 @@ export default function MainLayout() {
           {unreadNotifications > 0 && <Badge count={unreadNotifications} />}
         </span>
         <span className="text-zinc-900 dark:text-white">Notifications</span>
+      </button>
+
+      <button
+        onClick={() => go("/map")}
+        className={`flex w-full items-center gap-4 px-5 py-4 transition ${
+          isActive("/map") ? "bg-zinc-100 font-semibold dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"
+        }`}
+      >
+        <Map size={22} className="text-zinc-900 dark:text-white flex-shrink-0" />
+        <span className="text-zinc-900 dark:text-white">Map</span>
       </button>
 
       {/* Communities */}
@@ -361,6 +373,9 @@ export default function MainLayout() {
             <button onClick={() => go("/notifications")} className={`relative p-3 transition ${isActive("/notifications") ? "bg-zinc-100 dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"}`} title="Notifications">
               <Bell size={22} className="text-zinc-900 dark:text-white" />
               {unreadNotifications > 0 && <Badge count={unreadNotifications} />}
+            </button>
+            <button onClick={() => go("/map")} className={`p-3 transition ${isActive("/map") ? "bg-zinc-100 dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"}`} title="Map">
+              <Map size={22} className="text-zinc-900 dark:text-white" />
             </button>
             {COMMUNITIES.map((community) => (
               <button key={community.id} onClick={() => go(`/hive/${community.id}`)} className={`p-3 transition ${isActive(`/hive/${community.id}`) ? "bg-zinc-100 dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"}`} title={community.name}>

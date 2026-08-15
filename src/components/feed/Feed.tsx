@@ -1,18 +1,12 @@
 import { useEffect, useState } from "react";
 
-import {
-  collection,
-  onSnapshot,
-  orderBy,
-  query,
-  where,
-} from "firebase/firestore";
-
-import { db } from "../../firebase/firebase";
-
 import HivezLoader from "../common/HivezLoader";
 import FeedCard from "./FeedCard";
 import type { PostMediaItem } from "./MediaGrid";
+import { useAuth } from "@/context/AuthContext";
+import { useUserLocation } from "@/context/LocationContext";
+import { loadRankedFeed } from "@/services/feedRanking";
+import type { LocationSnapshot } from "@/services/location";
 
 export interface FeedPost {
   id: string;
@@ -29,10 +23,17 @@ export interface FeedPost {
   likes: number;
   comments: number;
   shares: number;
+  saves?: number;
+  views?: number;
+  impressions?: number;
+  confirmations?: number;
+  urgency?: number;
   createdAt: any;
   category?: string;
   hashtags?: string[];
   location?: string | null;
+  locationSnapshot?: LocationSnapshot | null;
+  distanceKm?: number | null;
   issueCommunityId?: string;
 }
 
@@ -43,44 +44,28 @@ interface FeedProps {
 }
 
 export default function Feed({ category, hashtag, onCommentClick }: FeedProps) {
+  const { user } = useAuth();
+  const { location } = useUserLocation();
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
     setLoading(true);
 
-    let q = query(
-      collection(db, "posts"),
-      orderBy("createdAt", "desc")
-    );
+    loadRankedFeed({ uid: user?.uid, location, category, hashtag })
+      .then((data) => {
+        if (!active) return;
+        setPosts(data);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
 
-    if (category) {
-      q = query(
-        collection(db, "posts"),
-        where("category", "==", category),
-        orderBy("createdAt", "desc")
-      );
-    }
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      let data: FeedPost[] = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...(doc.data() as Omit<FeedPost, "id">),
-      }));
-
-      if (hashtag) {
-        const tag = hashtag.toLowerCase();
-        data = data.filter((post) =>
-          post.hashtags?.some((t) => t.toLowerCase() === tag)
-        );
-      }
-
-      setPosts(data);
-      setLoading(false);
-    });
-
-    return unsubscribe;
-  }, [category, hashtag]);
+    return () => {
+      active = false;
+    };
+  }, [category, hashtag, location, user?.uid]);
 
   if (loading) {
     return (

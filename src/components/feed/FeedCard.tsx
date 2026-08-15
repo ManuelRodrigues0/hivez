@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import {
   Heart,
+  MapPin,
   MessageCircle,
   Repeat2,
   Send,
@@ -32,6 +33,8 @@ import {
   listenCommunityMember,
 } from "@/services/volunteering";
 import type { CommunityMember, IssueCommunity } from "@/types/volunteering";
+import { recordPostEngagement } from "@/services/engagementEvents";
+import { formatDistance, locationLabel, normalizeLocation } from "@/services/location";
 
 import CommentsSheet from "../comments/CommentsSheet";
 import MediaGrid from "./MediaGrid";
@@ -83,6 +86,8 @@ export default function FeedCard({ post, onCommentClick }: Props) {
       : post.mediaUrl
       ? [{ url: post.mediaUrl, type: post.mediaType === "video" ? "video" : "image" }]
       : [];
+  const postLocation = normalizeLocation(post.locationSnapshot);
+  const readableLocation = locationLabel(postLocation, post.location);
 
   const menuRef = useRef<HTMLDivElement>(null);
   const shareMenuRef = useRef<HTMLDivElement>(null);
@@ -170,6 +175,13 @@ export default function FeedCard({ post, onCommentClick }: Props) {
         await updateDoc(postRef, {
           likes: increment(1),
         });
+        await recordPostEngagement({
+          postId: post.id,
+          actorId: user.uid,
+          authorId: post.uid,
+          type: "like",
+          category: post.category,
+        });
         await createNotification({
           recipientId: post.uid,
           actor: {
@@ -206,6 +218,7 @@ export default function FeedCard({ post, onCommentClick }: Props) {
           caption: post.caption,
           category: post.category,
           location: post.location,
+          locationSnapshot: post.locationSnapshot,
           mediaUrl: mediaItems[0]?.url || post.mediaUrl || "",
           mediaType: mediaItems[0]?.type || post.mediaType,
         });
@@ -217,6 +230,7 @@ export default function FeedCard({ post, onCommentClick }: Props) {
           description: post.caption || "Community issue",
           category: post.category || "community",
           location: post.location || null,
+          locationSnapshot: post.locationSnapshot || null,
           mediaUrl: mediaItems[0]?.url || post.mediaUrl || "",
           mediaType: mediaItems[0]?.type || post.mediaType,
           ownerId: post.uid,
@@ -233,6 +247,13 @@ export default function FeedCard({ post, onCommentClick }: Props) {
 
       if (!communityMember && activeCommunity.ownerId !== user.uid) {
         await joinIssueCommunity(activeCommunity, await getUserSummary(user.uid));
+        await recordPostEngagement({
+          postId: post.id,
+          actorId: user.uid,
+          authorId: post.uid,
+          type: "volunteer",
+          category: post.category,
+        });
       }
       navigate(`/issue-community/${activeCommunity.id}`);
     } catch (err) {
@@ -243,10 +264,10 @@ export default function FeedCard({ post, onCommentClick }: Props) {
     }
   }
 
-  function handleShare() {
+  async function handleShare() {
     const url = `${window.location.origin}/post/${post.id}`;
     if (navigator.share) {
-      navigator.share({
+      await navigator.share({
         title: post.caption || "Check this post on Hivez",
         url,
       });
@@ -256,15 +277,21 @@ export default function FeedCard({ post, onCommentClick }: Props) {
         setTimeout(() => setCopied(false), 2000);
       });
     }
+    if (user) {
+      await recordPostEngagement({ postId: post.id, actorId: user.uid, authorId: post.uid, type: "share", category: post.category });
+    }
     setShareMenuOpen(false);
   }
 
-  function handleCopyLink() {
+  async function handleCopyLink() {
     const url = `${window.location.origin}/post/${post.id}`;
-    navigator.clipboard.writeText(url).then(() => {
+    await navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
+    if (user) {
+      await recordPostEngagement({ postId: post.id, actorId: user.uid, authorId: post.uid, type: "share", category: post.category });
+    }
     setShareMenuOpen(false);
   }
 
@@ -347,6 +374,22 @@ export default function FeedCard({ post, onCommentClick }: Props) {
                 <span className="text-sm text-zinc-500 dark:text-zinc-400 flex-shrink-0">
                   {timeAgo(post.createdAt)}
                 </span>
+                {readableLocation && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!postLocation) return;
+                      navigate(`/map?post=${post.id}&lat=${postLocation.latitude}&lng=${postLocation.longitude}`);
+                    }}
+                    className="inline-flex min-w-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-xs text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white"
+                  >
+                    <MapPin size={13} />
+                    <span className="max-w-[150px] truncate">
+                      {readableLocation}
+                      {typeof post.distanceKm === "number" ? ` · ${formatDistance(post.distanceKm)}` : ""}
+                    </span>
+                  </button>
+                )}
               </div>
 
               {/* Three dot menu */}

@@ -15,13 +15,16 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import type { PostMediaItem } from "@/components/feed/MediaGrid";
-import { Volume2, VolumeX } from "lucide-react";
+import { LocateFixed, MapPin, Volume2, VolumeX } from "lucide-react";
 import { createIssueCommunityForPost, getUserSummary } from "@/services/volunteering";
+import { useUserLocation } from "@/context/LocationContext";
+import { createLocationSnapshot, locationLabel, type LocationSnapshot } from "@/services/location";
 
 export default function Create() {
   const { state } = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const userLocation = useUserLocation();
 
   const isTextMode = state?.textMode;
   const media: File | File[] | undefined = state?.media;
@@ -31,6 +34,7 @@ export default function Create() {
   const [posting, setPosting] = useState(false);
   const [category, setCategory] = useState(COMMUNITIES[0].id);
   const [location, setLocation] = useState("");
+  const [locationSnapshot, setLocationSnapshot] = useState<LocationSnapshot | null>(userLocation.location);
   const [mutedVideos, setMutedVideos] = useState<Set<number>>(new Set());
 
   function toggleMute(index: number) {
@@ -66,15 +70,35 @@ export default function Create() {
     return singleFile!.type.startsWith("video");
   }, [media, isMultiple, singleFile, isTextOnly]);
 
+  const extractHashtags = useCallback((text: string): string[] => {
+    const matches = text.match(/#[\w]+/g);
+    return matches ? matches.map((tag) => tag.toLowerCase()) : [];
+  }, []);
+
   if (!isTextMode && !media && !textContent) {
     navigate("/");
     return null;
   }
 
-  const extractHashtags = useCallback((text: string): string[] => {
-    const matches = text.match(/#[\w]+/g);
-    return matches ? matches.map((tag) => tag.toLowerCase()) : [];
-  }, []);
+  async function detectPostLocation() {
+    const detected = await userLocation.requestLocation();
+    if (!detected) return;
+    setLocationSnapshot(detected);
+    setLocation(locationLabel(detected));
+  }
+
+  function applyManualCoordinates() {
+    const match = location.match(/(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/);
+    if (!match) return;
+    const snapshot = createLocationSnapshot({
+      latitude: Number(match[1]),
+      longitude: Number(match[2]),
+      address: location.trim(),
+      area: location.trim(),
+    });
+    setLocationSnapshot(snapshot);
+    userLocation.setManualLocation(snapshot);
+  }
 
   async function uploadToCloudinary() {
     if (!user) return;
@@ -98,6 +122,7 @@ export default function Create() {
           hashtags,
           category,
           location: location.trim() || null,
+          locationSnapshot,
           mediaUrl: "",
           mediaType: "text",
           likes: 0,
@@ -113,6 +138,7 @@ export default function Create() {
           caption,
           category,
           location: location.trim() || null,
+          locationSnapshot,
           mediaUrl: "",
           mediaType: "text",
         });
@@ -168,6 +194,7 @@ export default function Create() {
         hashtags,
         category,
         location: location.trim() || null,
+        locationSnapshot,
         mediaUrl: mediaUrls[0],
         mediaUrls,
         mediaItems,
@@ -185,6 +212,7 @@ export default function Create() {
         caption,
         category,
         location: location.trim() || null,
+        locationSnapshot,
         mediaUrl: mediaUrls[0],
         mediaType: mediaItems[0]?.type || (isVideo ? "video" : "image"),
       });
@@ -322,13 +350,32 @@ export default function Create() {
               <label className="mb-2 block text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                 Add Location
               </label>
-              <input
-                type="text"
-                placeholder="Add location..."
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className="w-full md:max-w-md rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus:border-zinc-600"
-              />
+              <div className="flex flex-col gap-2 md:max-w-xl">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Area, city or lat,lng"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    onBlur={applyManualCoordinates}
+                    className="min-w-0 flex-1 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus:border-zinc-600"
+                  />
+                  <button
+                    type="button"
+                    onClick={detectPostLocation}
+                    className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 px-3 text-sm font-semibold transition hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
+                  >
+                    <LocateFixed size={16} />
+                    Detect
+                  </button>
+                </div>
+                <p className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+                  <MapPin size={14} />
+                  {locationSnapshot
+                    ? `${locationLabel(locationSnapshot, location)} (${locationSnapshot.latitude.toFixed(5)}, ${locationSnapshot.longitude.toFixed(5)})`
+                    : "Location is optional, but coordinates make the post visible in Nearby and Map."}
+                </p>
+              </div>
             </div>
           )}
         </div>
