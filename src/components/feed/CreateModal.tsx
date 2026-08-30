@@ -11,9 +11,9 @@ export default function CreateModal({ open, onClose }: Props) {
 
   if (!open) return null;
 
-  function handleCamera() {
+  function handlePhotoReport() {
     onClose();
-    navigate("/camera");
+    navigate("/create", { state: { reportMode: true } });
   }
 
   function handleText() {
@@ -28,15 +28,15 @@ export default function CreateModal({ open, onClose }: Props) {
         
         <div className="space-y-3">
           <button
-            onClick={handleCamera}
+            onClick={handlePhotoReport}
             className="flex w-full items-center gap-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 p-4 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
           >
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-sky-500">
               <Camera size={24} className="text-white" />
             </div>
             <div className="text-left">
-              <p className="font-semibold text-zinc-900 dark:text-white">Camera</p>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">Take a photo or video</p>
+              <p className="font-semibold text-zinc-900 dark:text-white">Photo Report</p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">Report a local issue with a photo or video</p>
             </div>
           </button>
 
