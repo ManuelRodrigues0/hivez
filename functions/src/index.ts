@@ -43,7 +43,7 @@ interface GeminiSuccessResult {
 
 const GEMINI_LOG_PREFIX = "[HIVEZ GEMINI]";
 const GEMINI_TIMEOUT_MS = 20000;
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3-flash-preview";
 
 function logGeminiStarted() {
   console.log(`${GEMINI_LOG_PREFIX} Verification started`);

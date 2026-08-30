@@ -341,39 +341,34 @@ export default function FeedCard({ post, onCommentClick }: Props) {
 
   return (
     <>
-      <article className="app-feed-card border-b border-zinc-200 dark:border-zinc-800 px-4 py-3 transition hover:bg-zinc-50 dark:hover:bg-zinc-900/40">
-        <div className="flex gap-3">
-          {/* Avatar column */}
-          <div className="flex flex-col items-center">
+      <article className="app-feed-card p-4 md:p-5">
+        {/* Header: avatar, identity, more menu */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-3">
             <img
               src={
                 post.photoURL ||
-                "https://ui-avatars.com/api/?name=Hivez&background=6366f1&color=fff"
+                "https://ui-avatars.com/api/?name=Hivez&background=3d654c&color=fff"
               }
               alt={post.username}
-              className="h-10 w-10 flex-shrink-0 rounded-full object-cover"
+              className="h-11 w-11 flex-shrink-0 rounded-full object-cover"
             />
-            <div className="mt-1 w-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
-          </div>
-
-          {/* Content column */}
-          <div className="min-w-0 flex-1">
-            {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 min-w-0">
-                <span className="truncate text-sm font-semibold text-zinc-900 dark:text-white hover:underline cursor-pointer">
+                <span className="truncate text-[15px] font-bold text-zinc-900 hover:underline cursor-pointer dark:text-white">
                   {post.displayName || post.username}
                 </span>
                 {post.verified && (
                   <BadgeCheck size={14} className="flex-shrink-0 text-sky-500" />
                 )}
-                <span className="hidden sm:inline text-sm text-zinc-500 dark:text-zinc-400 truncate">
+                <span className="min-w-0 truncate text-[13px] text-zinc-500 dark:text-zinc-400">
                   @{post.username}
                 </span>
-                <span className="text-sm text-zinc-400 dark:text-zinc-500">·</span>
-                <span className="text-sm text-zinc-500 dark:text-zinc-400 flex-shrink-0">
+                <span className="text-[13px] text-zinc-400 dark:text-zinc-500">·</span>
+                <span className="flex-shrink-0 text-[13px] text-zinc-500 dark:text-zinc-400">
                   {timeAgo(post.createdAt)}
                 </span>
+              </div>
                 {readableLocation && (
                   <button
                     type="button"
@@ -381,27 +376,28 @@ export default function FeedCard({ post, onCommentClick }: Props) {
                       if (!postLocation) return;
                       navigate(`/map?post=${post.id}&lat=${postLocation.latitude}&lng=${postLocation.longitude}`);
                     }}
-                    className="inline-flex min-w-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-xs text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white"
+                    className="mt-0.5 inline-flex max-w-full items-center gap-1 text-xs text-zinc-500 transition hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
                   >
-                    <MapPin size={13} />
-                    <span className="max-w-[150px] truncate">
+                    <MapPin size={12} className="flex-shrink-0" />
+                    <span className="truncate">
                       {readableLocation}
                       {typeof post.distanceKm === "number" ? ` · ${formatDistance(post.distanceKm)}` : ""}
                     </span>
                   </button>
                 )}
-              </div>
+            </div>
+          </div>
 
-              {/* Three dot menu */}
-              <div className="relative" ref={menuRef}>
+          {/* Three dot menu */}
+          <div className="relative flex-shrink-0" ref={menuRef}>
                 <button
                   onClick={() => {
                     setMenuOpen(!menuOpen);
                     setShareMenuOpen(false);
                   }}
-                  className="flex-shrink-0 rounded-full p-1.5 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  className="-mr-1 flex-shrink-0 rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
                 >
-                  <MoreHorizontal size={16} className="text-zinc-500 dark:text-zinc-400" />
+                  <MoreHorizontal size={20} className="text-zinc-500 dark:text-zinc-400" />
                 </button>
                 {menuOpen && (
                   <>
@@ -448,10 +444,20 @@ export default function FeedCard({ post, onCommentClick }: Props) {
               </div>
             </div>
 
+            {/* Category chip */}
+            {post.category && (
+              <div className="mt-3">
+                <span className="inline-flex items-center gap-2 rounded-full bg-[#f2c14e]/15 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-[#8a6d1f] dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500 dark:bg-[#f2c14e]" />
+                  {post.category}
+                </span>
+              </div>
+            )}
+
             {/* Caption */}
             {post.caption && (
-              <div className="mt-1">
-                <p className="whitespace-pre-wrap break-words text-[15px] leading-5 text-zinc-800 dark:text-zinc-200">
+              <div className="mt-3">
+                <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed text-zinc-800 dark:text-zinc-200">
                   {post.caption}
                 </p>
                 {post.hashtags && post.hashtags.length > 0 && (
@@ -471,13 +477,14 @@ export default function FeedCard({ post, onCommentClick }: Props) {
 
             {/* Media */}
             {mediaItems.length > 0 && (
-              <div className="mt-2.5 min-w-0 overflow-hidden">
+              <div className="mt-3 min-w-0 overflow-hidden">
                 <MediaGrid items={mediaItems} />
               </div>
             )}
 
             {/* Actions */}
-            <div className="mt-2 -ml-2 flex items-center gap-1">
+            <div className="mt-3 flex items-center justify-between border-t border-zinc-200/80 pt-1.5 dark:border-zinc-800/80">
+              <div className="-ml-2 flex items-center gap-0.5 sm:gap-1">
               <button
                 onClick={handleLike}
                 disabled={liking}
@@ -488,7 +495,7 @@ export default function FeedCard({ post, onCommentClick }: Props) {
                   transition={{ duration: 0.3 }}
                 >
                   <Heart
-                    size={18}
+                    size={20}
                     className={
                       liked
                         ? "fill-red-500 text-red-500"
@@ -496,7 +503,7 @@ export default function FeedCard({ post, onCommentClick }: Props) {
                     }
                   />
                 </motion.div>
-                <span className={`text-xs ${liked ? "text-red-500" : "text-zinc-500 dark:text-zinc-400 group-hover:text-red-500"}`}>
+                <span className={`text-[13px] font-medium ${liked ? "text-red-500" : "text-zinc-500 dark:text-zinc-400 group-hover:text-red-500"}`}>
                   {likesCount}
                 </span>
               </button>
@@ -504,17 +511,20 @@ export default function FeedCard({ post, onCommentClick }: Props) {
                 onClick={() => onCommentClick?.(post)}
                 className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-sky-50 dark:hover:bg-sky-950/30 group"
               >
-                <MessageCircle size={18} className="text-zinc-500 dark:text-zinc-400 group-hover:text-sky-500" />
-                <span className="text-xs text-zinc-500 dark:text-zinc-400 group-hover:text-sky-500">
+                <MessageCircle size={20} className="text-zinc-500 dark:text-zinc-400 group-hover:text-sky-500" />
+                <span className="text-[13px] font-medium text-zinc-500 dark:text-zinc-400 group-hover:text-sky-500">
                   {post.comments}
                 </span>
               </button>
               <button className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-green-50 dark:hover:bg-green-950/30 group">
-                <Repeat2 size={18} className="text-zinc-500 dark:text-zinc-400 group-hover:text-green-500" />
-                <span className="text-xs text-zinc-500 dark:text-zinc-400 group-hover:text-green-500">
+                <Repeat2 size={20} className="text-zinc-500 dark:text-zinc-400 group-hover:text-green-500" />
+                <span className="text-[13px] font-medium text-zinc-500 dark:text-zinc-400 group-hover:text-green-500">
                   {post.shares}
                 </span>
               </button>
+              </div>
+
+              <div className="-mr-2 flex items-center gap-0.5 sm:gap-1">
               <button
                 onClick={handleVolunteer}
                 disabled={volunteerBusy}
@@ -528,7 +538,7 @@ export default function FeedCard({ post, onCommentClick }: Props) {
                       : "text-zinc-500 dark:text-zinc-400 group-hover:text-amber-500"
                   }
                 />
-                <span className="hidden text-xs font-semibold text-zinc-500 group-hover:text-amber-500 dark:text-zinc-400 sm:inline">
+                <span className="sr-only">
                   {community?.ownerId === user?.uid ? "Manage" : communityMember ? "Joined" : "Volunteer"}
                 </span>
               </button>
@@ -545,7 +555,7 @@ export default function FeedCard({ post, onCommentClick }: Props) {
                   {copied ? (
                     <span className="text-xs text-green-500 font-medium">Copied!</span>
                   ) : (
-                    <Send size={18} className="text-zinc-500 dark:text-zinc-400 group-hover:text-blue-500" />
+                    <Send size={20} className="text-zinc-500 dark:text-zinc-400 group-hover:text-blue-500" />
                   )}
                 </button>
                 {shareMenuOpen && (
@@ -570,9 +580,8 @@ export default function FeedCard({ post, onCommentClick }: Props) {
                   </>
                 )}
               </div>
+              </div>
             </div>
-          </div>
-        </div>
       </article>
 
       <CommentsSheet

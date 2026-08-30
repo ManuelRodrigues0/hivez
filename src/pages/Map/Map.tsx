@@ -48,7 +48,7 @@ export default function MapPage() {
       setCenter(detected);
       setQueryCenter(detected);
     });
-  }, [params, userLocation]);
+  }, [params, userLocation.location, userLocation.requestLocation]);
 
   useEffect(() => {
     const saved = localStorage.getItem("hivez.last-map-center");

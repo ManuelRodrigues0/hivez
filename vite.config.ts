@@ -9,4 +9,13 @@ export default defineConfig({
     tailwindcss(),
     tsconfigPaths(),
   ],
+  server: {
+    proxy: {
+      // Local dev forwards /api calls (e.g. Gemini verification) to the deployed Vercel API.
+      "/api": {
+        target: "https://www.hivez.in",
+        changeOrigin: true,
+      },
+    },
+  },
 });

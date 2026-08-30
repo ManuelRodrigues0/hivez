@@ -1,4 +1,3 @@
-import { getFunctions, httpsCallable } from "firebase/functions";
 import { getReportCategory, type VerificationLevel, type VerificationStatus } from "@/config/reportCategories";
 import { verifyWithLocalModel, type LocalModelResult } from "@/services/teachableMachineService";
 
@@ -86,15 +85,25 @@ export async function verifyReportEvidence(categoryId: string, file: File | null
 
 async function verifyWithGemini(categoryId: string, categoryTitle: string, file: File): Promise<GeminiResult> {
   try {
-    const imageBase64 = await fileToBase64(file);
-    const verify = httpsCallable(getFunctions(), "verifyReportWithGemini");
-    const response = await verify({
-      categoryId,
-      categoryTitle,
-      mimeType: file.type,
-      imageBase64,
+    const { imageBase64 } = await compressImageForGemini(file);
+    const response = await fetch("/api/gemini-verify", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        categoryId,
+        categoryTitle,
+        mimeType: "image/jpeg",
+        imageBase64,
+      }),
     });
-    const data = response.data as { ok?: boolean; result?: Omit<GeminiResult, "enabled">; error?: string };
+
+    if (!response.ok) {
+      return { enabled: false, error: "backend_failure" };
+    }
+
+    const data = await response.json() as { ok?: boolean; result?: Omit<GeminiResult, "enabled">; error?: string };
 
     if (!data.ok || !data.result) {
       return { enabled: false, error: data.error || "gemini_unavailable" };
@@ -106,14 +115,42 @@ async function verifyWithGemini(categoryId: string, categoryTitle: string, file:
   }
 }
 
-function fileToBase64(file: File): Promise<string> {
+async function compressImageForGemini(file: File): Promise<{ imageBase64: string }> {
+  const image = await loadImageElement(file);
+  const maxEdge = 1024;
+  const scale = Math.min(1, maxEdge / Math.max(image.naturalWidth, image.naturalHeight));
+  const width = Math.max(1, Math.round(image.naturalWidth * scale));
+  const height = Math.max(1, Math.round(image.naturalHeight * scale));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new Error("Could not process image.");
+  }
+  ctx.drawImage(image, 0, 0, width, height);
+
+  const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+  const base64 = dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl;
+  if (!base64) {
+    throw new Error("Could not process image.");
+  }
+  return { imageBase64: base64 };
+}
+
+function loadImageElement(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const value = String(reader.result || "");
-      resolve(value.includes(",") ? value.split(",")[1] : value);
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(image);
     };
-    reader.onerror = () => reject(new Error("Could not read file."));
-    reader.readAsDataURL(file);
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Image failed to load."));
+    };
+    image.src = url;
   });
 }
