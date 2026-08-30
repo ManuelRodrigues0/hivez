@@ -1,6 +1,22 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, BadgeCheck, MessageCircle, UserPlus, Settings, Share2 } from "lucide-react";
+import {
+  ArrowLeft,
+  BadgeCheck,
+  MessageCircle,
+  UserPlus,
+  Settings,
+  Share2,
+  Heart,
+  MessageSquare,
+  Play,
+  Grid3X3,
+  MessageCircleReply,
+  Film,
+  Sparkles,
+  ShieldCheck,
+  Calendar,
+} from "lucide-react";
 import { doc, deleteDoc, getDoc, increment, onSnapshot, query, where, writeBatch, collection } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
@@ -60,7 +76,6 @@ export default function Profile() {
     loadProfile();
   }, [profileUid]);
 
-  // Fetch user posts
   useEffect(() => {
     if (!profileUid) {
       setPostsLoading(false);
@@ -68,32 +83,30 @@ export default function Profile() {
     }
 
     setPostsLoading(true);
-    // Only use where clause to avoid needing a composite index
-    // Sort client-side instead
-    const q = query(
-      collection(db, "posts"),
-      where("uid", "==", profileUid)
-    );
+    const q = query(collection(db, "posts"), where("uid", "==", profileUid));
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const posts: FeedPost[] = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...(doc.data() as Omit<FeedPost, "id">),
-      }));
-      
-      // Sort client-side by createdAt (descending)
-      posts.sort((a, b) => {
-        const aTime = a.createdAt?.toDate?.()?.getTime?.() || 0;
-        const bTime = b.createdAt?.toDate?.()?.getTime?.() || 0;
-        return bTime - aTime;
-      });
-      
-      setUserPosts(posts);
-      setPostsLoading(false);
-    }, (error) => {
-      console.error("Error fetching user posts:", error);
-      setPostsLoading(false);
-    });
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const posts: FeedPost[] = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...(doc.data() as Omit<FeedPost, "id">),
+        }));
+
+        posts.sort((a, b) => {
+          const aTime = a.createdAt?.toDate?.()?.getTime?.() || 0;
+          const bTime = b.createdAt?.toDate?.()?.getTime?.() || 0;
+          return bTime - aTime;
+        });
+
+        setUserPosts(posts);
+        setPostsLoading(false);
+      },
+      (error) => {
+        console.error("Error fetching user posts:", error);
+        setPostsLoading(false);
+      }
+    );
 
     return () => unsubscribe();
   }, [profileUid]);
@@ -105,7 +118,6 @@ export default function Profile() {
       return;
     }
 
-    // Subscribe to follow relationship
     const followUnsub = onSnapshot(
       doc(db, "follows", `${currentUser.uid}_${profileUid}`),
       (snap) => {
@@ -120,7 +132,6 @@ export default function Profile() {
       }
     );
 
-    // Subscribe to sent follow requests
     const requestUnsub = listenToSentFollowRequests(
       currentUser.uid,
       (requests) => {
@@ -132,7 +143,6 @@ export default function Profile() {
       }
     );
 
-    // Subscribe to profile user document for real-time count updates
     const profileUnsub = onSnapshot(
       doc(db, "users", profileUid),
       (snap) => {
@@ -162,26 +172,15 @@ export default function Profile() {
   }, [currentUser, isOwnProfile, profileUid]);
 
   async function toggleFollow() {
-    console.log("=== TOGGLE FOLLOW CLICKED ===");
-    console.log("Current user:", currentUser?.uid);
-    console.log("Profile user:", profile?.uid);
-    console.log("Is own profile:", isOwnProfile);
-    console.log("Currently following:", following);
-    console.log("Request pending:", followRequestPending);
-    console.log("Follow busy:", followBusy);
-    
     if (!currentUser || !profile || isOwnProfile || followBusy) {
-      console.log("Early return - conditions not met");
       return;
     }
-    
+
     setFollowBusy(true);
     setLocalError(null);
 
     try {
       if (following) {
-        console.log("Unfollowing...");
-        // Unfollow
         const followRef = doc(db, "follows", `${currentUser.uid}_${profile.uid}`);
         const followerRef = doc(db, "users", profile.uid, "followers", currentUser.uid);
         const followingRef = doc(db, "users", currentUser.uid, "following", profile.uid);
@@ -194,9 +193,7 @@ export default function Profile() {
         batch.update(doc(db, "users", currentUser.uid), { following: increment(-1) });
 
         await batch.commit();
-        console.log("Unfollow successful");
 
-        // Optimistically update UI
         setFollowing(false);
         setProfile((current) =>
           current
@@ -207,23 +204,13 @@ export default function Profile() {
             : current
         );
       } else if (followRequestPending) {
-        console.log("Canceling pending request...");
-        // Cancel pending request
         const requestRef = doc(db, "followRequests", `${currentUser.uid}_${profile.uid}`);
         await deleteDoc(requestRef);
         setFollowRequestPending(false);
-        console.log("Request canceled");
       } else {
-        console.log("Sending follow request...");
-        // Send follow request
         await createFollowRequest(currentUser.uid, profile.uid);
-        console.log("Follow request created");
-        
-        // Optimistically update UI
         setFollowRequestPending(true);
 
-        // Send notification
-        console.log("Sending notification...");
         const mySnap = await getDoc(doc(db, "users", currentUser.uid));
         const myProfile = mySnap.data();
 
@@ -239,24 +226,18 @@ export default function Profile() {
           text: "sent you a follow request",
           link: `/profile?uid=${currentUser.uid}`,
         });
-        console.log("Notification sent - FOLLOW REQUEST COMPLETE");
       }
     } catch (error: any) {
-      console.error("=== ERROR IN TOGGLE FOLLOW ===");
-      console.error("Error:", error);
-      console.error("Error code:", error.code);
-      console.error("Error message:", error.message);
-      console.error("Error stack:", error.stack);
+      console.error("Error in toggle follow:", error);
       setLocalError(`Failed: ${error.message}`);
     } finally {
       setFollowBusy(false);
-      console.log("=== TOGGLE FOLLOW COMPLETE ===");
     }
   }
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center py-32">
+      <div className="flex min-h-[60vh] items-center justify-center py-32">
         <HivezLoader size="md" progress={56} label="Loading profile" />
       </div>
     );
@@ -264,396 +245,291 @@ export default function Profile() {
 
   if (!profile) {
     return (
-      <div className="flex h-full items-center justify-center py-32 text-center">
-        <div>
-          <h2 className="text-xl font-bold text-zinc-900 dark:text-white">User not found</h2>
-          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">This profile doesn't exist.</p>
-          <button onClick={() => navigate(-1)} className="mt-4 text-sm text-sky-500 hover:underline">
-            Go back
-          </button>
+      <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 py-32 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#1c1d1a]/10 bg-white shadow-2xs dark:border-neutral-800 dark:bg-[#121212]">
+          <ShieldCheck size={26} className="text-[#3d654c] dark:text-[#f2c14e]" />
         </div>
+        <h2 className="mt-4 text-base font-black text-[#1c1d1a] dark:text-white">Profile Unavailable</h2>
+        <p className="mt-1 text-xs text-[#1c1d1a]/60 dark:text-neutral-400">
+          This community user account does not exist or has been relocated.
+        </p>
+        <button
+          onClick={() => navigate(-1)}
+          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#3d654c] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#32533e] dark:bg-[#f2c14e] dark:text-[#121212] dark:hover:bg-[#dfb041]"
+        >
+          <ArrowLeft size={14} /> Back
+        </button>
       </div>
     );
   }
 
   const tabs = [
-    { key: "posts" as const, label: "Posts" },
-    { key: "replies" as const, label: "Replies" },
-    { key: "media" as const, label: "Media" },
+    { key: "posts" as const, label: "Posts", icon: Grid3X3 },
+    { key: "replies" as const, label: "Replies", icon: MessageCircleReply },
+    { key: "media" as const, label: "Media", icon: Film },
   ];
 
   return (
-    <div className="app-page app-profile-page">
-      {/* Desktop-only minimalist profile layout */}
-      <div className="hidden lg:block">
-        {/* Header with back button */}
-        {!isOwnProfile && (
-          <div className="flex items-center gap-4 px-8 py-4">
-            <button 
-              onClick={() => navigate(-1)} 
-              className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
-            >
-              <ArrowLeft size={18} />
-              Back
-            </button>
+    <div className="w-full min-h-screen bg-[#f7f7f2] font-sans text-[#1c1d1a] selection:bg-[#3d654c]/20 selection:text-[#2d4d38] dark:bg-[#0a0a0a] dark:text-neutral-100 pb-16">
+      {/* Top Bar for visiting other profiles */}
+      {!isOwnProfile && (
+        <div className="sticky top-0 z-20 flex items-center justify-between border-b border-[#1c1d1a]/10 bg-[#f7f7f2]/90 px-4 py-3 backdrop-blur-md dark:border-neutral-800/80 dark:bg-[#0a0a0a]/90">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex h-8 w-8 items-center justify-center rounded-xl border border-[#1c1d1a]/10 bg-white text-[#1c1d1a] shadow-2xs transition hover:bg-[#ecece5] dark:border-neutral-800 dark:bg-[#121212] dark:text-white dark:hover:bg-neutral-800"
+          >
+            <ArrowLeft size={16} />
+          </button>
+          <div className="text-center">
+            <h2 className="text-xs font-black tracking-tight text-[#1c1d1a] dark:text-white">
+              {profile.displayName || "Citizen"}
+            </h2>
+            <p className="text-[10px] font-bold text-[#3d654c] dark:text-[#f2c14e]">
+              @{profile.username}
+            </p>
           </div>
-        )}
+          <div className="w-8" />
+        </div>
+      )}
 
-        {/* Profile Header */}
-        <div className="border-b border-zinc-200 px-8 pb-8 pt-6 dark:border-zinc-800">
-          <div className="flex items-start justify-between">
-            {/* Profile Picture */}
-            <div className="relative">
-              <img
-                src={profile.photoURL || "https://ui-avatars.com/api/?name=Hivez&background=6366f1&color=fff"}
-                alt={profile.username}
-                className="h-24 w-24 rounded-full border border-zinc-200 object-cover dark:border-zinc-700"
-                style={{ borderRadius: "9999px" }}
-              />
-              {profile.verified && (
-                <div className="absolute -bottom-0.5 -right-0.5 rounded-full bg-sky-500 p-1">
-                  <BadgeCheck size={16} className="text-white" />
-                </div>
-              )}
-            </div>
+      {/* Ambient Header Banner */}
+      <div className="relative h-28 md:h-32 w-full bg-gradient-to-r from-[#e5ebe3] via-[#f7f7f2] to-[#e8efe6] dark:from-[#111] dark:via-[#161616] dark:to-[#0d0d0d] border-b border-[#1c1d1a]/5 dark:border-neutral-900">
+        <div className="absolute inset-0 bg-[radial-gradient(#3d654c_1px,transparent_1px)] dark:bg-[radial-gradient(#f2c14e_1px,transparent_1px)] [background-size:16px_16px] opacity-15" />
+      </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-2">
-              {isOwnProfile ? (
-                <>
-                  <button 
-                    onClick={() => navigate("/profile/edit")}
-                    className="rounded-lg border border-zinc-300 px-5 py-2 text-sm font-medium text-zinc-900 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-white dark:hover:bg-zinc-800"
-                  >
-                    <Settings size={16} className="inline-block mr-1.5" />
-                    Edit Profile
-                  </button>
-                  <button className="rounded-lg border border-zinc-300 px-5 py-2 text-sm font-medium text-zinc-900 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-white dark:hover:bg-zinc-800">
-                    <Share2 size={16} className="inline-block mr-1.5" />
-                    Share
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button 
-                    onClick={toggleFollow} 
-                    disabled={followBusy}
-                    className={`rounded-lg border px-5 py-2 text-sm font-medium transition ${
-                      following 
-                        ? "border-zinc-300 text-zinc-900 hover:bg-zinc-50 dark:border-zinc-700 dark:text-white dark:hover:bg-zinc-800" 
-                        : "border-zinc-900 bg-zinc-900 text-white hover:bg-zinc-800 dark:border-white dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100"
-                    }`}
-                  >
-                    {followBusy ? "Loading..." : following ? "Following" : followRequestPending ? "Requested" : "Follow"}
-                  </button>
-                  <button className="rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-white dark:hover:bg-zinc-800">
-                    <MessageCircle size={18} />
-                  </button>
-                  <button className="rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-white dark:hover:bg-zinc-800">
-                    <UserPlus size={18} />
-                  </button>
-                </>
-              )}
-            </div>
+      {/* Profile Header Container */}
+      <div className="px-4 md:px-8 max-w-4xl mx-auto -mt-12 space-y-4">
+        {/* Avatar + Action Row */}
+        <div className="flex items-end justify-between gap-4">
+          {/* Circular Avatar */}
+          <div className="relative shrink-0">
+            <img
+              src={profile.photoURL || "https://ui-avatars.com/api/?name=Hivez&background=3d654c&color=fff"}
+              alt={profile.username}
+              className="h-24 w-24 md:h-28 md:w-28 rounded-full border-4 border-[#f7f7f2] object-cover shadow-sm dark:border-[#0a0a0a]"
+            />
+            <span className="absolute bottom-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#3d654c] text-white shadow-xs dark:bg-[#f2c14e] dark:text-[#121212]">
+              <Sparkles size={11} />
+            </span>
           </div>
 
-          {/* Profile Info */}
-          <div className="mt-5">
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
-                {profile.displayName || "Hivez User"}
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2 pb-1">
+            {isOwnProfile ? (
+              <>
+                <button
+                  onClick={() => navigate("/profile/edit")}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#1c1d1a]/15 bg-white px-4 py-2 text-xs font-bold text-[#1c1d1a] shadow-2xs transition hover:bg-[#ecece5] dark:border-neutral-700 dark:bg-[#141414] dark:text-white dark:hover:bg-neutral-800"
+                >
+                  <Settings size={14} /> Edit Profile
+                </button>
+                <button
+                  onClick={() => {
+                    if (navigator.share) {
+                      navigator.share({ title: profile.displayName, url: window.location.href });
+                    }
+                  }}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-[#1c1d1a]/15 bg-white text-[#1c1d1a] shadow-2xs transition hover:bg-[#ecece5] dark:border-neutral-700 dark:bg-[#141414] dark:text-white dark:hover:bg-neutral-800"
+                  title="Share"
+                >
+                  <Share2 size={14} />
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={toggleFollow}
+                  disabled={followBusy}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-xs font-bold shadow-xs transition ${
+                    following
+                      ? "border border-[#1c1d1a]/15 bg-white text-[#1c1d1a] hover:bg-neutral-100 dark:border-neutral-700 dark:bg-[#141414] dark:text-white"
+                      : "bg-[#3d654c] text-white hover:bg-[#32533e] dark:bg-[#f2c14e] dark:text-[#121212] dark:hover:bg-[#dfb041]"
+                  }`}
+                >
+                  {followBusy
+                    ? "Updating..."
+                    : following
+                    ? "Following"
+                    : followRequestPending
+                    ? "Requested"
+                    : "Follow"}
+                </button>
+                <button
+                  onClick={() => navigate("/chats")}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-[#1c1d1a]/15 bg-white text-[#1c1d1a] shadow-2xs transition hover:bg-[#ecece5] dark:border-neutral-700 dark:bg-[#141414] dark:text-white"
+                >
+                  <MessageCircle size={15} />
+                </button>
+                <button
+                  onClick={toggleFollow}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-[#1c1d1a]/15 bg-white text-[#1c1d1a] shadow-2xs transition hover:bg-[#ecece5] dark:border-neutral-700 dark:bg-[#141414] dark:text-white"
+                >
+                  <UserPlus size={15} />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* User Details */}
+        <div className="space-y-2 pt-1">
+          <div>
+            <div className="flex items-center gap-1.5">
+              <h1 className="text-xl md:text-2xl font-black tracking-tight text-[#1c1d1a] dark:text-white">
+                {profile.displayName || "Hivez Contributor"}
               </h1>
+              {profile.verified && (
+                <BadgeCheck size={18} className="text-[#3d654c] dark:text-[#f2c14e]" />
+              )}
             </div>
-            <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">@{profile.username}</p>
+            <p className="text-xs font-bold text-[#1c1d1a]/50 dark:text-neutral-400">
+              @{profile.username}
+            </p>
           </div>
 
           {profile.bio && (
-            <p className="mt-3 max-w-xl whitespace-pre-wrap text-sm leading-6 text-zinc-700 dark:text-zinc-300">
+            <p className="text-xs font-medium leading-relaxed text-[#1c1d1a]/85 dark:text-neutral-300 max-w-2xl whitespace-pre-wrap">
               {profile.bio}
             </p>
           )}
 
-          {/* Stats */}
-          <div className="mt-5 flex items-center gap-6 text-sm">
-            <span className="text-zinc-900 dark:text-white"><strong>{profile.posts}</strong> <span className="text-zinc-500 dark:text-zinc-400">posts</span></span>
-            <span className="text-zinc-900 dark:text-white"><strong>{profile.followers}</strong> <span className="text-zinc-500 dark:text-zinc-400">followers</span></span>
-            <span className="text-zinc-900 dark:text-white"><strong>{profile.following}</strong> <span className="text-zinc-500 dark:text-zinc-400">following</span></span>
+          {/* Civic Badges */}
+          <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px] font-bold text-[#1c1d1a]/60 dark:text-neutral-400">
+            <span className="inline-flex items-center gap-1 rounded-md bg-[#3d654c]/10 px-2 py-0.5 text-[10px] text-[#3d654c] dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
+              <ShieldCheck size={11} /> Verified Citizen
+            </span>
+            <span className="inline-flex items-center gap-1 text-[10px]">
+              <Calendar size={11} /> Active Contributor
+            </span>
+          </div>
+
+          {/* Stats Bar */}
+          <div className="flex items-center gap-5 pt-2 text-xs font-medium text-[#1c1d1a]/70 dark:text-neutral-400">
+            <div>
+              <strong className="font-extrabold text-[#1c1d1a] dark:text-white">{profile.posts || 0}</strong>{" "}
+              <span>Posts</span>
+            </div>
+            <div>
+              <strong className="font-extrabold text-[#1c1d1a] dark:text-white">{profile.followers || 0}</strong>{" "}
+              <span>Followers</span>
+            </div>
+            <div>
+              <strong className="font-extrabold text-[#1c1d1a] dark:text-white">{profile.following || 0}</strong>{" "}
+              <span>Following</span>
+            </div>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="sticky top-16 z-20 border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-black">
-          <div className="flex">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`flex-1 py-3.5 text-sm font-medium transition-colors ${
-                  activeTab === tab.key
-                    ? "border-b-2 border-zinc-900 text-zinc-900 dark:border-white dark:text-white"
-                    : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Content */}
-        {activeTab === "posts" && (
-          <>
-            {postsLoading ? (
-              <div className="flex min-h-[300px] items-center justify-center py-16">
-                <HivezLoader size="md" progress={58} label="Loading profile posts" />
-              </div>
-            ) : userPosts.length > 0 ? (
-              <div className="grid grid-cols-3 gap-1 p-4">
-                {userPosts.map((post) => {
-                  const mediaUrl = post.mediaItems?.[0]?.url || post.mediaUrls?.[0] || post.mediaUrl;
-                  const isVideo = post.mediaItems?.[0]?.type === "video" || post.mediaType === "video";
-                  
-                  return (
-                    <div key={post.id} className="group relative aspect-square overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-800">
-                      <button
-                        onClick={() => navigate(`/post/${post.id}`)}
-                        className="h-full w-full"
-                      >
-                        {mediaUrl ? (
-                          isVideo ? (
-                            <video
-                              src={mediaUrl}
-                              className="h-full w-full object-cover transition group-hover:opacity-80"
-                              muted
-                              disablePictureInPicture
-                            />
-                          ) : (
-                            <img
-                              src={mediaUrl}
-                              alt={post.caption || "Post"}
-                              className="h-full w-full object-cover transition group-hover:opacity-80"
-                            />
-                          )
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center p-4">
-                            <p className="line-clamp-4 text-center text-xs text-zinc-500 dark:text-zinc-400">
-                              {post.caption || "No content"}
-                            </p>
-                          </div>
-                        )}
-                        {/* Hover overlay with stats */}
-                        <div className="absolute inset-0 flex items-center justify-center gap-4 bg-black/60 opacity-0 transition group-hover:opacity-100">
-                          <span className="flex items-center gap-1 text-sm font-semibold text-white">
-                            <svg className="h-4 w-4 fill-white" viewBox="0 0 24 24">
-                              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                            </svg>
-                            {post.likes}
-                          </span>
-                          <span className="flex items-center gap-1 text-sm font-semibold text-white">
-                            <svg className="h-4 w-4 fill-white" viewBox="0 0 24 24">
-                              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-                            </svg>
-                            {post.comments}
-                          </span>
-                        </div>
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="flex min-h-[300px] items-center justify-center py-16">
-                <div className="text-center">
-                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
-                    <svg className="h-6 w-6 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                    </svg>
-                  </div>
-                  <h2 className="text-base font-semibold text-zinc-900 dark:text-white">No posts yet</h2>
-                  <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                    {isOwnProfile ? "Your posts will appear here." : "This user hasn't posted anything yet."}
-                  </p>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-
-        {activeTab === "replies" && (
-          <div className="flex min-h-[300px] items-center justify-center py-16">
-            <div className="text-center">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
-                <svg className="h-6 w-6 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
-              </div>
-              <h2 className="text-base font-semibold text-zinc-900 dark:text-white">No replies yet</h2>
-              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                {isOwnProfile ? "Your replies will appear here." : "This user hasn't replied to anything yet."}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {activeTab === "media" && (
-          <div className="flex min-h-[300px] items-center justify-center py-16">
-            <div className="text-center">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
-                <svg className="h-6 w-6 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h2 className="text-base font-semibold text-zinc-900 dark:text-white">No media yet</h2>
-              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                {isOwnProfile ? "Your media will appear here." : "This user hasn't shared any media yet."}
-              </p>
-            </div>
-          </div>
+        {localError && (
+          <p className="rounded-xl bg-rose-50 p-2.5 text-center text-xs font-bold text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">
+            {localError}
+          </p>
         )}
       </div>
 
-      {/* Mobile layout (unchanged) */}
-      <div className="lg:hidden">
-        {/* Header with back button */}
-        {!isOwnProfile && (
-          <div className="app-sticky-header">
-            <div className="flex items-center gap-3 px-4 py-3">
-              <button onClick={() => navigate(-1)} className="app-icon-button">
-                <ArrowLeft size={20} />
-              </button>
-              <h1 className="text-base font-semibold">{profile.displayName || "Profile"}</h1>
-            </div>
-          </div>
-        )}
-
-        {/* Profile Info */}
-        <div className="px-4 pt-6 pb-4">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-zinc-900 dark:text-white">{profile.displayName || "Hivez User"}</h1>
-                {profile.verified && <BadgeCheck size={18} className="text-sky-500" />}
-              </div>
-              <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">@{profile.username}</p>
-            </div>
-            <img
-              src={profile.photoURL || "https://ui-avatars.com/api/?name=Hivez&background=6366f1&color=fff"}
-              alt={profile.username}
-              className="h-20 w-20 flex-shrink-0 rounded-full border-2 border-zinc-200 object-cover dark:border-zinc-700"
-              style={{ borderRadius: "9999px" }}
-            />
-          </div>
-
-          {profile.bio && (
-            <p className="mt-3 whitespace-pre-wrap text-sm leading-5 text-zinc-700 dark:text-zinc-300">{profile.bio}</p>
-          )}
-
-          {/* Stats */}
-          <div className="mt-4 flex items-center gap-5 text-sm">
-            <span><strong className="text-zinc-900 dark:text-white">{profile.posts}</strong> <span className="text-zinc-500 dark:text-zinc-400">posts</span></span>
-            <span><strong className="text-zinc-900 dark:text-white">{profile.followers}</strong> <span className="text-zinc-500 dark:text-zinc-400">followers</span></span>
-            <span><strong className="text-zinc-900 dark:text-white">{profile.following}</strong> <span className="text-zinc-500 dark:text-zinc-400">following</span></span>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="mt-4 flex gap-2">
-            {isOwnProfile ? (
-              <>
-                <button onClick={() => navigate("/profile/edit")} className="app-secondary-button flex-1">
-                  Edit Profile
-                </button>
-                <button className="app-secondary-button flex-1">
-                  Share Profile
-                </button>
-              </>
-            ) : (
-              <>
-                <button 
-                  onClick={toggleFollow} 
-                  disabled={followBusy} 
-                  className="app-primary-button flex-1"
-                >
-                  {followBusy ? "Loading..." : following ? "Following" : followRequestPending ? "Requested" : "Follow"}
-                </button>
-                <button className="app-secondary-button px-3">
-                  <MessageCircle size={18} />
-                </button>
-                <button className="app-secondary-button px-3">
-                  <UserPlus size={18} />
-                </button>
-              </>
-            )}
-          </div>
-          {localError && (
-            <p className="mt-2 text-sm text-red-500">{localError}</p>
-          )}
-        </div>
-
-        {/* Tabs */}
-        <div className="border-b border-zinc-200 dark:border-zinc-800">
-          <div className="flex">
-            {tabs.map((tab) => (
+      {/* Tabs */}
+      <div className="max-w-4xl mx-auto px-4 md:px-8 mt-6 border-b border-[#1c1d1a]/10 dark:border-neutral-800">
+        <div className="flex">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.key;
+            return (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`app-tab ${activeTab === tab.key ? "app-tab-active" : ""}`}
+                className={`relative flex items-center justify-center gap-2 py-3 px-6 text-xs font-bold transition-all duration-150 ${
+                  isActive
+                    ? "text-[#3d654c] dark:text-[#f2c14e]"
+                    : "text-[#1c1d1a]/50 hover:text-[#1c1d1a] dark:text-neutral-400 dark:hover:text-white"
+                }`}
               >
-                {tab.label}
+                <Icon size={14} />
+                <span>{tab.label}</span>
+                {isActive && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#3d654c] dark:bg-[#f2c14e] rounded-full" />
+                )}
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
+      </div>
 
-        {/* Content */}
+      {/* Tab Grid Body */}
+      <div className="max-w-4xl mx-auto px-4 md:px-8 pt-4">
         {activeTab === "posts" && (
           <>
             {postsLoading ? (
-              <div className="flex min-h-[200px] items-center justify-center py-12">
-                <HivezLoader size="sm" progress={58} label="Loading profile posts" />
+              <div className="flex min-h-[220px] items-center justify-center py-16">
+                <HivezLoader size="md" progress={58} label="Loading profile posts" />
               </div>
             ) : userPosts.length > 0 ? (
-              <div className="grid grid-cols-3 gap-0.5">
+              <div className="grid grid-cols-3 gap-1.5 md:gap-2">
                 {userPosts.map((post) => {
                   const mediaUrl = post.mediaItems?.[0]?.url || post.mediaUrls?.[0] || post.mediaUrl;
                   const isVideo = post.mediaItems?.[0]?.type === "video" || post.mediaType === "video";
-                  
+
                   return (
                     <button
                       key={post.id}
                       onClick={() => navigate(`/post/${post.id}`)}
-                      className="group relative aspect-square overflow-hidden bg-zinc-100 dark:bg-zinc-800"
+                      className="group relative aspect-square w-full overflow-hidden rounded-xl border border-[#1c1d1a]/5 bg-white text-left shadow-2xs transition hover:border-[#3d654c]/30 dark:border-neutral-800/80 dark:bg-[#121212]"
                     >
                       {mediaUrl ? (
                         isVideo ? (
-                          <video
-                            src={mediaUrl}
-                            className="h-full w-full object-cover"
-                            muted
-                            disablePictureInPicture
-                          />
+                          <div className="relative h-full w-full">
+                            <video
+                              src={mediaUrl}
+                              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                              muted
+                              playsInline
+                              disablePictureInPicture
+                            />
+                            <div className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-md bg-black/60 text-white backdrop-blur-xs">
+                              <Play size={10} className="fill-white translate-x-0.5" />
+                            </div>
+                          </div>
                         ) : (
                           <img
                             src={mediaUrl}
                             alt={post.caption || "Post"}
-                            className="h-full w-full object-cover"
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            loading="lazy"
                           />
                         )
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center p-2">
-                          <p className="line-clamp-3 text-center text-[10px] text-zinc-500 dark:text-zinc-400">
-                            {post.caption || "No content"}
+                        <div className="flex h-full w-full flex-col justify-between p-3 bg-neutral-50 dark:bg-[#141414]">
+                          <p className="line-clamp-4 text-[11px] font-medium leading-snug text-[#1c1d1a]/80 dark:text-neutral-300">
+                            {post.caption || "Civic report"}
                           </p>
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-[#3d654c] dark:text-[#f2c14e]">
+                            Text Report
+                          </span>
                         </div>
                       )}
+
+                      {/* Hover Overlay Stats */}
+                      <div className="absolute inset-0 flex items-center justify-center gap-4 bg-black/50 opacity-0 backdrop-blur-2xs transition-opacity duration-200 group-hover:opacity-100">
+                        <span className="flex items-center gap-1 text-xs font-black text-white">
+                          <Heart size={13} className="fill-white" />
+                          {post.likes || 0}
+                        </span>
+                        <span className="flex items-center gap-1 text-xs font-black text-white">
+                          <MessageSquare size={13} className="fill-white" />
+                          {post.comments || 0}
+                        </span>
+                      </div>
                     </button>
                   );
                 })}
               </div>
             ) : (
-              <div className="app-empty-state">
-                <h2 className="text-base font-semibold text-zinc-900 dark:text-white">No posts yet</h2>
-                <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                  {isOwnProfile ? "Your posts will appear here." : "This user hasn't posted anything yet."}
+              <div className="flex min-h-[220px] flex-col items-center justify-center py-16 text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#1c1d1a]/10 bg-white dark:border-neutral-800 dark:bg-[#121212]">
+                  <Grid3X3 size={20} className="text-[#3d654c] dark:text-[#f2c14e]" />
+                </div>
+                <h3 className="mt-3 text-xs font-bold text-[#1c1d1a] dark:text-white">No posts published yet</h3>
+                <p className="mt-1 text-[11px] text-[#1c1d1a]/50 dark:text-neutral-400">
+                  {isOwnProfile ? "Your published reports and updates will appear here." : "This user hasn't published any posts yet."}
                 </p>
               </div>
             )}
@@ -661,19 +537,25 @@ export default function Profile() {
         )}
 
         {activeTab === "replies" && (
-          <div className="app-empty-state">
-            <h2 className="text-base font-semibold text-zinc-900 dark:text-white">No replies yet</h2>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-              {isOwnProfile ? "Your replies will appear here." : "This user hasn't replied to anything yet."}
+          <div className="flex min-h-[220px] flex-col items-center justify-center py-16 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#1c1d1a]/10 bg-white dark:border-neutral-800 dark:bg-[#121212]">
+              <MessageCircleReply size={20} className="text-[#3d654c] dark:text-[#f2c14e]" />
+            </div>
+            <h3 className="mt-3 text-xs font-bold text-[#1c1d1a] dark:text-white">No replies recorded</h3>
+            <p className="mt-1 text-[11px] text-[#1c1d1a]/50 dark:text-neutral-400">
+              {isOwnProfile ? "Responses to community posts will appear here." : "This user hasn't posted any replies."}
             </p>
           </div>
         )}
 
         {activeTab === "media" && (
-          <div className="app-empty-state">
-            <h2 className="text-base font-semibold text-zinc-900 dark:text-white">No media yet</h2>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-              {isOwnProfile ? "Your media will appear here." : "This user hasn't shared any media yet."}
+          <div className="flex min-h-[220px] flex-col items-center justify-center py-16 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#1c1d1a]/10 bg-white dark:border-neutral-800 dark:bg-[#121212]">
+              <Film size={20} className="text-[#3d654c] dark:text-[#f2c14e]" />
+            </div>
+            <h3 className="mt-3 text-xs font-bold text-[#1c1d1a] dark:text-white">No media records</h3>
+            <p className="mt-1 text-[11px] text-[#1c1d1a]/50 dark:text-neutral-400">
+              {isOwnProfile ? "Uploaded photos and videos will be indexed here." : "No media submissions found."}
             </p>
           </div>
         )}

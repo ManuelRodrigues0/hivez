@@ -1,7 +1,22 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Bell, Home, Search, PlusSquare, User, Menu, X, Settings, LogOut, HandHeart, MessageCircle, Map } from "lucide-react";
+import {
+  Bell,
+  Home,
+  Search,
+  PlusSquare,
+  User,
+  Menu,
+  X,
+  Settings,
+  LogOut,
+  HandHeart,
+  MessageCircle,
+  Map,
+  ChevronRight,
+} from "lucide-react";
 import { collection, onSnapshot } from "firebase/firestore";
+import gsap from "gsap";
 import { useAuth } from "../../context/AuthContext";
 import { COMMUNITIES } from "../../constants/communities";
 import { logout } from "../../services/auth";
@@ -15,7 +30,7 @@ const ultraBeeSrc = "/assets/hivez-ultra-bee.webm";
 function UltraBeeMark() {
   return (
     <video
-      className="app-ultra-bee-mark"
+      className="app-ultra-bee-mark h-7 w-7 object-contain"
       src={ultraBeeSrc}
       autoPlay
       loop
@@ -26,6 +41,14 @@ function UltraBeeMark() {
       aria-hidden="true"
       preload="metadata"
     />
+  );
+}
+
+function Badge({ count }: { count: number }) {
+  return (
+    <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold leading-none text-white shadow-xs">
+      {count > 9 ? "9+" : count}
+    </span>
   );
 }
 
@@ -43,7 +66,8 @@ export default function MainLayout() {
   const seenChatTimes = useRef<Record<string, number>>({});
   const chatsReady = useRef(false);
   const hoverTimeoutRef = useRef<number | null>(null);
-  
+  const sidebarRef = useRef<HTMLElement>(null);
+
   const handleSidebarMouseEnter = () => {
     if (window.innerWidth >= 1024 && sidebarCollapsed) {
       if (hoverTimeoutRef.current) {
@@ -64,7 +88,7 @@ export default function MainLayout() {
   };
 
   const isSidebarExpanded = !sidebarCollapsed || isHoveringSidebar;
-  
+
   const layoutVars = {
     "--layout-left": isSidebarExpanded ? "280px" : "72px",
     "--layout-right": "384px",
@@ -77,6 +101,17 @@ export default function MainLayout() {
 
   const isActive = (path: string) => location.pathname === path;
 
+  // GSAP: Minimalist Stagger Entrance on expansion
+  useEffect(() => {
+    if (isSidebarExpanded) {
+      gsap.fromTo(
+        ".gsap-minimal-item",
+        { opacity: 0, x: -6 },
+        { opacity: 1, x: 0, stagger: 0.02, duration: 0.22, ease: "power2.out" }
+      );
+    }
+  }, [isSidebarExpanded]);
+
   useEffect(() => {
     if (!user) return;
     return listenToUnreadNotificationsCount(user.uid, setUnreadNotifications, (error) => {
@@ -86,11 +121,9 @@ export default function MainLayout() {
 
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
-
     listenForForegroundPushNotifications().then((nextUnsubscribe) => {
       unsubscribe = nextUnsubscribe;
     });
-
     return () => {
       unsubscribe?.();
     };
@@ -190,94 +223,126 @@ export default function MainLayout() {
     setSidebarOpen(false);
   }
 
+  // Expanded Sidebar Menu View
   const sidebarContent = (
-    <>
-      {/* Home */}
-      <button
-        onClick={() => go("/")}
-        className={`flex w-full items-center gap-4 px-5 py-4 transition ${
-          isActive("/") ? "bg-zinc-100 font-semibold dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"
-        }`}
-      >
-        <Home size={22} className="text-zinc-900 dark:text-white flex-shrink-0" /> 
-        <span className="text-zinc-900 dark:text-white">Home</span>
-      </button>
+    <div className="flex h-full w-full flex-col justify-between p-3 select-none overflow-hidden bg-[#f7f7f2] dark:bg-[#0d0d0d]">
+      <div className="space-y-6">
+        {/* Core Primary Navigation */}
+        <div className="space-y-1">
+          {[
+            { label: "Home", path: "/", icon: Home },
+            { label: "Volunteering", path: "/volunteering", icon: HandHeart },
+            { label: "Notifications", path: "/notifications", icon: Bell, badge: unreadNotifications },
+            { label: "Map", path: "/map", icon: Map },
+          ].map((item) => {
+            const active = isActive(item.path);
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.label}
+                onClick={() => go(item.path)}
+                className={`gsap-minimal-item group relative flex w-full items-center justify-start rounded-xl px-3.5 py-2.5 text-xs font-semibold tracking-tight transition-all duration-200 ${
+                  active
+                    ? "bg-[#3d654c] text-white shadow-sm shadow-[#3d654c]/20 dark:bg-[#f2c14e] dark:text-[#121212] dark:shadow-[#f2c14e]/20"
+                    : "text-[#1c1d1a]/70 hover:bg-[#1c1d1a]/5 hover:text-[#1c1d1a] dark:text-neutral-400 dark:hover:bg-white/5 dark:hover:text-white"
+                }`}
+              >
+                <div className="flex items-center gap-3 truncate">
+                  <div className="relative flex shrink-0 items-center justify-center">
+                    <Icon
+                      size={18}
+                      className={`transition-transform duration-200 group-hover:scale-105 ${
+                        active
+                          ? "text-white dark:text-[#121212]"
+                          : "text-[#3d654c] dark:text-[#f2c14e]"
+                      }`}
+                    />
+                    {item.badge && item.badge > 0 ? <Badge count={item.badge} /> : null}
+                  </div>
+                  <span className="truncate text-[13px] font-bold tracking-tight">{item.label}</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
 
-      <button
-        onClick={() => go("/volunteering")}
-        className={`flex w-full items-center gap-4 px-5 py-4 transition ${
-          isActive("/volunteering") ? "bg-zinc-100 font-semibold dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"
-        }`}
-      >
-        <HandHeart size={22} className="text-zinc-900 dark:text-white flex-shrink-0" /> 
-        <span className="text-zinc-900 dark:text-white">Volunteering</span>
-      </button>
+        {/* Communities Section */}
+        <div>
+          <div className="flex items-center justify-between px-3 pb-2 text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#1c1d1a]/40 dark:text-neutral-500">
+            <span>Hives</span>
+            <span className="rounded-full bg-[#1c1d1a]/5 px-2 py-0.5 text-[9px] font-bold text-[#3d654c] dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
+              {COMMUNITIES.length} Wards
+            </span>
+          </div>
 
-      <button
-        onClick={() => go("/notifications")}
-        className={`flex w-full items-center gap-4 px-5 py-4 transition ${
-          isActive("/notifications") ? "bg-zinc-100 font-semibold dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"
-        }`}
-      >
-        <span className="relative flex-shrink-0">
-          <Bell size={22} className="text-zinc-900 dark:text-white" />
-          {unreadNotifications > 0 && <Badge count={unreadNotifications} />}
-        </span>
-        <span className="text-zinc-900 dark:text-white">Notifications</span>
-      </button>
-
-      <button
-        onClick={() => go("/map")}
-        className={`flex w-full items-center gap-4 px-5 py-4 transition ${
-          isActive("/map") ? "bg-zinc-100 font-semibold dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"
-        }`}
-      >
-        <Map size={22} className="text-zinc-900 dark:text-white flex-shrink-0" />
-        <span className="text-zinc-900 dark:text-white">Map</span>
-      </button>
-
-      {/* Communities */}
-      <div className="px-5 pt-6 pb-3 text-xs uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Hives</div>
-      <div className="flex-1 overflow-y-auto">
-        {COMMUNITIES.map((community) => (
-          <button
-            key={community.id}
-            onClick={() => go(`/hive/${community.id}`)}
-            className={`flex w-full items-center gap-4 px-5 py-3.5 text-sm transition ${
-              isActive(`/hive/${community.id}`) ? "bg-zinc-100 font-semibold dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"
-            }`}
-          >
-            <span className="text-lg flex-shrink-0">{community.icon}</span>
-            <span className="text-zinc-900 dark:text-white truncate">{community.name}</span>
-          </button>
-        ))}
+          <div className="space-y-0.5 overflow-y-auto max-h-[44vh] pr-1 scrollbar-none">
+            {COMMUNITIES.map((community) => {
+              const active = isActive(`/hive/${community.id}`);
+              return (
+                <button
+                  key={community.id}
+                  onClick={() => go(`/hive/${community.id}`)}
+                  className={`gsap-minimal-item group flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 ${
+                    active
+                      ? "bg-[#3d654c] text-white shadow-sm shadow-[#3d654c]/20 dark:bg-[#f2c14e] dark:text-[#121212] dark:shadow-[#f2c14e]/20"
+                      : "text-[#1c1d1a]/70 hover:bg-[#1c1d1a]/5 hover:text-[#1c1d1a] dark:text-neutral-400 dark:hover:bg-white/5 dark:hover:text-white"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 truncate">
+                    <span
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-sm transition-transform duration-200 group-hover:scale-110 ${
+                        active
+                          ? "bg-white/20 text-white dark:bg-black/15 dark:text-[#121212]"
+                          : "bg-white border border-[#1c1d1a]/8 shadow-2xs dark:bg-neutral-900 dark:border-neutral-800"
+                      }`}
+                    >
+                      {community.icon}
+                    </span>
+                    <span className="truncate text-xs font-semibold">{community.name}</span>
+                  </div>
+                  <ChevronRight
+                    size={13}
+                    className={`transition-all duration-200 ${
+                      active
+                        ? "opacity-90 text-white dark:text-[#121212] translate-x-0.5"
+                        : "opacity-0 text-[#1c1d1a]/30 group-hover:opacity-100 group-hover:translate-x-0.5 dark:text-neutral-500"
+                    }`}
+                  />
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
-      {/* Footer */}
-      <div className="border-t border-zinc-200 dark:border-zinc-800">
-        <button onClick={() => go("/settings")} className="flex w-full items-center gap-4 px-5 py-4 hover:bg-zinc-50 dark:hover:bg-zinc-900">
-          <Settings size={20} className="text-zinc-900 dark:text-white flex-shrink-0" /> 
-          <span className="text-zinc-900 dark:text-white">Settings</span>
+      {/* Footer Action Dock */}
+      <div className="border-t border-[#1c1d1a]/8 pt-2.5 space-y-0.5 dark:border-neutral-800/80">
+        <button
+          onClick={() => go("/settings")}
+          className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-[#1c1d1a]/70 transition hover:bg-[#1c1d1a]/5 hover:text-[#1c1d1a] dark:text-neutral-400 dark:hover:bg-white/5 dark:hover:text-white"
+        >
+          <Settings size={15} className="text-[#1c1d1a]/60 dark:text-neutral-400" />
+          <span>Settings</span>
         </button>
+
         <button
           onClick={logout}
-          className="flex w-full items-center gap-4 px-5 py-4 text-red-500 hover:bg-red-50 dark:hover:bg-red-950"
+          className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-rose-600 transition hover:bg-rose-50 dark:hover:bg-rose-950/40 dark:text-rose-400"
         >
-          <LogOut size={20} className="flex-shrink-0" /> 
-          <span className="text-zinc-900 dark:text-white">Logout</span>
+          <LogOut size={15} />
+          <span>Logout</span>
         </button>
       </div>
-    </>
+    </div>
   );
 
   return (
     <div
-      className="app-shell flex min-h-screen bg-white dark:bg-black text-zinc-900 dark:text-white"
+      className="app-shell flex min-h-screen bg-[#f7f7f2] dark:bg-[#0a0a0a] text-[#1c1d1a] dark:text-neutral-100"
       style={layoutVars}
     >
-      {/* Desktop Header - Fixed at top */}
-      <header className="app-desktop-header hidden lg:fixed lg:top-0 lg:left-0 lg:right-0 lg:z-50 lg:flex lg:items-center lg:justify-between lg:border-b lg:border-zinc-200 dark:lg:border-zinc-800 lg:bg-white dark:lg:bg-black lg:px-4 lg:h-16">
-        {/* Left side - Menu + Logo */}
+      {/* Desktop Header */}
+      <header className="app-desktop-header hidden lg:fixed lg:top-0 lg:left-0 lg:right-0 lg:z-50 lg:flex lg:items-center lg:justify-between lg:border-b lg:border-[#1c1d1a]/10 dark:lg:border-neutral-800 lg:bg-[#f7f7f2]/90 dark:lg:bg-[#0a0a0a]/90 lg:backdrop-blur-xl lg:px-4 lg:h-16">
         <div className="flex items-center gap-4">
           <button 
             onClick={() => {
@@ -287,140 +352,192 @@ export default function MainLayout() {
                 setSidebarOpen(!sidebarOpen);
               }
             }} 
-            className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className="rounded-full p-2 transition hover:bg-[#1c1d1a]/5 dark:hover:bg-white/10"
           >
-            {sidebarCollapsed ? <Menu size={24} className="text-zinc-900 dark:text-white" /> : <X size={24} className="text-zinc-900 dark:text-white" />}
+            {sidebarCollapsed ? <Menu size={22} className="text-[#1c1d1a] dark:text-white" /> : <X size={22} className="text-[#1c1d1a] dark:text-white" />}
           </button>
           <button onClick={() => navigate("/")} className="app-brand-button flex items-center gap-1.5">
-            <h1 className="text-2xl font-black tracking-wide text-zinc-900 dark:text-white">Hivez</h1>
+            <h1 className="text-2xl font-black tracking-wide text-[#1c1d1a] dark:text-white">Hivez</h1>
             <UltraBeeMark />
           </button>
         </div>
 
-        {/* Center - Page Title */}
         <div className="flex-1">
-          <h1 className="text-center text-lg font-bold text-zinc-900 dark:text-white">
+          <h1 className="text-center text-lg font-bold text-[#1c1d1a] dark:text-white">
             {getPageTitle(location.pathname)}
           </h1>
         </div>
 
-        {/* Right side - Actions */}
         <div className="flex items-center gap-2">
           <button 
             onClick={() => navigate("/notifications")}
-            className="relative rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className="relative rounded-full p-2 transition hover:bg-[#1c1d1a]/5 dark:hover:bg-white/10"
           >
-            <Bell size={20} className="text-zinc-900 dark:text-white" />
+            <Bell size={20} className="text-[#1c1d1a] dark:text-white" />
             {unreadNotifications > 0 && <Badge count={unreadNotifications} />}
           </button>
           <button 
             onClick={() => navigate("/search")}
-            className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className="rounded-full p-2 transition hover:bg-[#1c1d1a]/5 dark:hover:bg-white/10"
           >
-            <Search size={20} className="text-zinc-900 dark:text-white" />
+            <Search size={20} className="text-[#1c1d1a] dark:text-white" />
           </button>
           <button 
             onClick={() => setCreateModalOpen(true)}
-            className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className="rounded-full p-2 transition hover:bg-[#1c1d1a]/5 dark:hover:bg-white/10"
           >
-            <PlusSquare size={20} className="text-zinc-900 dark:text-white" />
+            <PlusSquare size={20} className="text-[#1c1d1a] dark:text-white" />
           </button>
           <button
             onClick={() => navigate("/volunteering")}
-            className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className="rounded-full p-2 transition hover:bg-[#1c1d1a]/5 dark:hover:bg-white/10"
           >
-            <HandHeart size={20} className="text-zinc-900 dark:text-white" />
+            <HandHeart size={20} className="text-[#1c1d1a] dark:text-white" />
           </button>
           <button
             onClick={() => navigate("/chats")}
-            className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className="rounded-full p-2 transition hover:bg-[#1c1d1a]/5 dark:hover:bg-white/10"
           >
-            <MessageCircle size={20} className="text-zinc-900 dark:text-white" />
+            <MessageCircle size={20} className="text-[#1c1d1a] dark:text-white" />
           </button>
           <button 
             onClick={() => navigate("/profile")}
-            className="rounded-full p-1 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className="rounded-full p-1 transition hover:bg-[#1c1d1a]/5 dark:hover:bg-white/10"
           >
             {user?.photoURL ? (
               <img src={user.photoURL} alt="" className="h-8 w-8 rounded-full object-cover" />
             ) : (
-              <User size={20} className="text-zinc-900 dark:text-white" />
+              <User size={20} className="text-[#1c1d1a] dark:text-white" />
             )}
           </button>
         </div>
       </header>
 
-      {/* Desktop Sidebar - Below header */}
+      {/* Desktop Sidebar Rail */}
       <aside 
-        className="app-sidebar hidden lg:fixed lg:left-0 lg:top-16 lg:z-40 lg:flex lg:h-[calc(100vh-64px)] lg:w-[var(--layout-left)] lg:flex-col lg:border-r lg:border-zinc-200 lg:bg-white transition-[width] duration-300 dark:lg:border-zinc-800 dark:lg:bg-black"
+        ref={sidebarRef}
+        className="hidden lg:fixed lg:left-0 lg:top-16 lg:z-40 lg:flex lg:h-[calc(100vh-64px)] lg:flex-col lg:border-r lg:border-[#1c1d1a]/10 lg:bg-[#f7f7f2] dark:lg:border-neutral-800/80 dark:lg:bg-[#0a0a0a] transition-[width] duration-300 overflow-hidden"
+        style={{ width: "var(--layout-left)" }}
         onMouseEnter={handleSidebarMouseEnter}
         onMouseLeave={handleSidebarMouseLeave}
       >
         {isSidebarExpanded ? (
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col h-full w-full overflow-hidden">
             <div className="flex-1 overflow-y-auto">
               {sidebarContent}
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center py-4">
-            <button onClick={() => go("/")} className={`p-3 transition ${isActive("/") ? "bg-zinc-100 dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"}`}>
-              <Home size={22} className="text-zinc-900 dark:text-white" />
-            </button>
-            <button onClick={() => go("/volunteering")} className={`p-3 transition ${isActive("/volunteering") ? "bg-zinc-100 dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"}`} title="Volunteering">
-              <HandHeart size={22} className="text-zinc-900 dark:text-white" />
-            </button>
-            <button onClick={() => go("/notifications")} className={`relative p-3 transition ${isActive("/notifications") ? "bg-zinc-100 dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"}`} title="Notifications">
-              <Bell size={22} className="text-zinc-900 dark:text-white" />
-              {unreadNotifications > 0 && <Badge count={unreadNotifications} />}
-            </button>
-            <button onClick={() => go("/map")} className={`p-3 transition ${isActive("/map") ? "bg-zinc-100 dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"}`} title="Map">
-              <Map size={22} className="text-zinc-900 dark:text-white" />
-            </button>
-            {COMMUNITIES.map((community) => (
-              <button key={community.id} onClick={() => go(`/hive/${community.id}`)} className={`p-3 transition ${isActive(`/hive/${community.id}`) ? "bg-zinc-100 dark:bg-zinc-800" : "hover:bg-zinc-50 dark:hover:bg-zinc-900"}`} title={community.name}>
-                <span className="text-lg">{community.icon}</span>
+          /* Perfectly Centered 72px Collapsed Rail */
+          <div className="flex flex-col items-center justify-between h-full w-[72px] shrink-0 py-3.5 select-none overflow-hidden">
+            <div className="flex flex-col items-center w-full space-y-1.5">
+              {/* Primary Navigation Icons */}
+              {[
+                { path: "/", icon: Home, label: "Home" },
+                { path: "/volunteering", icon: HandHeart, label: "Volunteering" },
+                { path: "/notifications", icon: Bell, label: "Notifications", badge: unreadNotifications },
+                { path: "/map", icon: Map, label: "Map" },
+              ].map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.path);
+                return (
+                  <button
+                    key={item.label}
+                    onClick={() => go(item.path)}
+                    title={item.label}
+                    className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-200 ${
+                      active
+                        ? "bg-[#3d654c] text-white shadow-sm dark:bg-[#f2c14e] dark:text-[#121212] dark:shadow-[#f2c14e]/20 scale-105"
+                        : "text-[#1c1d1a]/70 hover:bg-[#1c1d1a]/5 hover:text-[#1c1d1a] dark:text-neutral-400 dark:hover:bg-white/10 dark:hover:text-white"
+                    }`}
+                  >
+                    <Icon size={18} />
+                    {item.badge && item.badge > 0 ? <Badge count={item.badge} /> : null}
+                  </button>
+                );
+              })}
+
+              {/* Minimal Divider */}
+              <div className="h-[1px] w-5 bg-[#1c1d1a]/10 dark:bg-neutral-800 my-1 shrink-0" />
+
+              {/* Communities Icon Stream */}
+              <div className="flex flex-col items-center w-full space-y-1 overflow-y-auto max-h-[46vh] scrollbar-none py-0.5">
+                {COMMUNITIES.map((community) => {
+                  const active = isActive(`/hive/${community.id}`);
+                  return (
+                    <button
+                      key={community.id}
+                      onClick={() => go(`/hive/${community.id}`)}
+                      title={community.name}
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-base transition-all duration-200 ${
+                        active
+                          ? "bg-[#3d654c] text-white shadow-sm dark:bg-[#f2c14e] dark:text-[#121212] scale-105"
+                          : "text-[#1c1d1a]/80 hover:bg-[#1c1d1a]/5 dark:text-neutral-300 dark:hover:bg-white/10"
+                      }`}
+                    >
+                      <span className="text-base leading-none">{community.icon}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Bottom Controls */}
+            <div className="flex flex-col items-center w-full pt-2 border-t border-[#1c1d1a]/10 dark:border-neutral-800/80 space-y-1">
+              <button
+                onClick={() => go("/settings")}
+                title="Settings"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[#1c1d1a]/70 hover:bg-[#1c1d1a]/5 hover:text-[#1c1d1a] transition-all dark:text-neutral-400 dark:hover:bg-white/10"
+              >
+                <Settings size={16} />
               </button>
-            ))}
+              <button
+                onClick={logout}
+                title="Logout"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-rose-500 hover:bg-rose-50 hover:text-rose-600 transition-all dark:hover:bg-rose-950/40 dark:text-rose-400"
+              >
+                <LogOut size={16} />
+              </button>
+            </div>
           </div>
         )}
       </aside>
 
       {/* Main Content Area */}
       <div className="flex w-full flex-col transition-[margin] duration-300 lg:ml-[var(--layout-left)]">
-        {/* Updates Sidebar - Desktop only */}
+        {/* Updates Sidebar (Desktop) */}
         <aside className="app-updates fixed right-0 top-16 hidden h-[calc(100vh-64px)] w-[var(--layout-right)] overflow-y-auto px-4 py-6 lg:block">
-          <div className="app-updates-card rounded-2xl border border-zinc-200/80 bg-zinc-100 p-4 dark:border-zinc-800/80 dark:bg-zinc-950">
+          <div className="app-updates-card rounded-2xl border border-[#1c1d1a]/10 bg-white p-4 dark:border-neutral-800 dark:bg-[#121212]">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Updates</h2>
-              <button className="text-sm font-medium text-sky-600 transition hover:text-sky-500 dark:text-sky-400">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-[#1c1d1a]/60 dark:text-neutral-400">Updates</h2>
+              <button className="text-xs font-bold text-[#3d654c] dark:text-[#f2c14e] transition hover:opacity-80">
                 Clear
               </button>
             </div>
             <div className="space-y-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                  <p className="text-sm font-semibold text-zinc-900 dark:text-white">System Update</p>
+                  <div className="h-2 w-2 rounded-full bg-emerald-500 dark:bg-[#f2c14e]"></div>
+                  <p className="text-sm font-semibold text-[#1c1d1a] dark:text-white">System Update</p>
                 </div>
-                <p className="mt-1 text-sm leading-5 text-zinc-600 dark:text-zinc-300">New features have been deployed</p>
-                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-500">2 hours ago</p>
+                <p className="mt-1 text-sm leading-5 text-[#1c1d1a]/70 dark:text-neutral-400">New features have been deployed</p>
+                <p className="mt-1 text-xs text-[#1c1d1a]/50 dark:text-neutral-500">2 hours ago</p>
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-blue-500"></div>
-                  <p className="text-sm font-semibold text-zinc-900 dark:text-white">Community Growth</p>
+                  <div className="h-2 w-2 rounded-full bg-emerald-500 dark:bg-[#f2c14e]"></div>
+                  <p className="text-sm font-semibold text-[#1c1d1a] dark:text-white">Community Growth</p>
                 </div>
-                <p className="mt-1 text-sm leading-5 text-zinc-600 dark:text-zinc-300">100 new members joined this week</p>
-                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-500">5 hours ago</p>
+                <p className="mt-1 text-sm leading-5 text-[#1c1d1a]/70 dark:text-neutral-400">100 new members joined this week</p>
+                <p className="mt-1 text-xs text-[#1c1d1a]/50 dark:text-neutral-500">5 hours ago</p>
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
-                  <p className="text-sm font-semibold text-zinc-900 dark:text-white">Maintenance</p>
+                  <div className="h-2 w-2 rounded-full bg-amber-500"></div>
+                  <p className="text-sm font-semibold text-[#1c1d1a] dark:text-white">Maintenance</p>
                 </div>
-                <p className="mt-1 text-sm leading-5 text-zinc-600 dark:text-zinc-300">Scheduled maintenance tonight</p>
-                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-500">1 day ago</p>
+                <p className="mt-1 text-sm leading-5 text-[#1c1d1a]/70 dark:text-neutral-400">Scheduled maintenance tonight</p>
+                <p className="mt-1 text-xs text-[#1c1d1a]/50 dark:text-neutral-500">1 day ago</p>
               </div>
             </div>
           </div>
@@ -429,65 +546,81 @@ export default function MainLayout() {
         {/* Content wrapper */}
         <div className="flex w-full flex-col transition-[padding] duration-300 lg:pr-[var(--layout-right)]">
           {/* Mobile Top Bar */}
-          <header className="app-mobile-header sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-black/95 lg:hidden">
+          <header className="app-mobile-header sticky top-0 z-40 border-b border-[#1c1d1a]/10 bg-[#f7f7f2]/95 backdrop-blur dark:border-neutral-800 dark:bg-[#0a0a0a]/95 lg:hidden">
             <div className="flex items-center justify-between px-4 py-3">
-              <button onClick={() => setSidebarOpen(true)} className="rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
-                <Menu size={22} className="text-zinc-900 dark:text-white" />
+              <button onClick={() => setSidebarOpen(true)} className="rounded-full p-2 transition hover:bg-[#1c1d1a]/5 dark:hover:bg-white/10">
+                <Menu size={22} className="text-[#1c1d1a] dark:text-white" />
               </button>
               <div className="app-mobile-brand flex items-center gap-1.5" aria-label="Hivez">
-                <h1 className="text-lg font-bold tracking-wide text-zinc-900 dark:text-white">Hivez</h1>
+                <h1 className="text-lg font-bold tracking-wide text-[#1c1d1a] dark:text-white">Hivez</h1>
                 <UltraBeeMark />
               </div>
               <button 
                 onClick={() => navigate("/notifications")}
-                className="relative rounded-full p-2 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                className="relative rounded-full p-2 transition hover:bg-[#1c1d1a]/5 dark:hover:bg-white/10"
               >
-                <Bell size={22} className="text-zinc-900 dark:text-white" />
+                <Bell size={22} className="text-[#1c1d1a] dark:text-white" />
                 {unreadNotifications > 0 && <Badge count={unreadNotifications} />}
               </button>
             </div>
           </header>
 
-          {/* Mobile Sidebar */}
+          {/* Mobile Sidebar Slide-Over Drawer */}
           {sidebarOpen && (
             <>
-              <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
-              <div className="app-mobile-drawer fixed left-0 top-0 z-50 flex h-screen w-80 max-w-[85%] flex-col border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 lg:hidden">
-                <div className="border-b border-zinc-200 dark:border-zinc-800 px-5 pt-4 pb-2">
-                  <h1 className="text-2xl font-black tracking-wide text-zinc-900 dark:text-white">Hivez</h1>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">Report. React. Resolve.</p>
+              <div
+                className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs lg:hidden"
+                onClick={() => setSidebarOpen(false)}
+              />
+              <div
+                className="fixed left-0 top-0 z-50 flex h-screen w-72 max-w-[80vw] flex-col border-r border-[#1c1d1a]/10 bg-[#f7f7f2] shadow-2xl dark:border-neutral-800 dark:bg-[#0d0d0d] overflow-hidden lg:hidden"
+              >
+                <div className="flex w-full items-center justify-between border-b border-[#1c1d1a]/10 px-4 py-3.5 bg-white/60 dark:border-neutral-800 dark:bg-neutral-900/60 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-lg font-black tracking-tight text-[#1c1d1a] dark:text-white">Hivez</h1>
+                    <UltraBeeMark />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSidebarOpen(false)}
+                    aria-label="Close menu"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-neutral-200/70 hover:bg-neutral-300 text-[#1c1d1a] transition dark:bg-neutral-800 dark:text-white dark:hover:bg-neutral-700"
+                  >
+                    <X size={15} />
+                  </button>
                 </div>
-                {sidebarContent}
+                
+                <div className="flex-1 w-full overflow-y-auto">{sidebarContent}</div>
               </div>
             </>
           )}
 
-        {/* Page Content - left aligned, same width */}
-        <main className="app-main flex-1 overflow-y-auto pb-20 lg:pb-0 lg:pt-16">
-          <div className="app-feed-shell mr-auto w-full max-w-[var(--feed-max)] px-0 transition-[max-width] duration-300 lg:px-0">
-            <Outlet />
-          </div>
-        </main>
+          {/* Page Content */}
+          <main className="app-main flex-1 overflow-y-auto pb-20 lg:pb-0 lg:pt-16">
+            <div className="app-feed-shell mr-auto w-full max-w-[var(--feed-max)] px-0 transition-[max-width] duration-300 lg:px-0">
+              <Outlet />
+            </div>
+          </main>
 
           {/* Mobile Bottom Nav */}
-          <nav className="app-bottom-nav fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-200 bg-white dark:border-zinc-800 dark:bg-black lg:hidden">
+          <nav className="app-bottom-nav fixed bottom-0 left-0 right-0 z-40 border-t border-[#1c1d1a]/10 bg-[#f7f7f2]/95 py-2 backdrop-blur-xl dark:border-neutral-800 dark:bg-[#0a0a0a]/95 lg:hidden">
             <div className="flex items-center justify-around py-2">
               <button onClick={() => navigate("/")} className="flex flex-col items-center gap-0.5 px-3 py-1">
-                <Home size={22} className={isActive("/") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
+                <Home size={22} className={isActive("/") ? "text-[#3d654c] dark:text-[#f2c14e]" : "text-[#1c1d1a]/50 dark:text-neutral-500"} />
               </button>
               <button onClick={() => navigate("/search")} className="flex flex-col items-center gap-0.5 px-3 py-1">
-                <Search size={22} className={isActive("/search") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
+                <Search size={22} className={isActive("/search") ? "text-[#3d654c] dark:text-[#f2c14e]" : "text-[#1c1d1a]/50 dark:text-neutral-500"} />
               </button>
               <button onClick={() => setCreateModalOpen(true)} className="flex flex-col items-center gap-0.5 px-3 py-1">
-                <div className="rounded-full border-2 border-zinc-500 dark:border-zinc-400 p-1">
-                  <PlusSquare size={18} className="text-zinc-500 dark:text-zinc-400" />
+                <div className="rounded-full bg-[#3d654c] text-white p-2 shadow-md shadow-[#3d654c]/30 dark:bg-[#f2c14e] dark:text-[#121212] dark:shadow-[#f2c14e]/30">
+                  <PlusSquare size={18} />
                 </div>
               </button>
               <button onClick={() => navigate("/chats")} className="flex flex-col items-center gap-0.5 px-3 py-1">
-                <MessageCircle size={22} className={isActive("/chats") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
+                <MessageCircle size={22} className={isActive("/chats") ? "text-[#3d654c] dark:text-[#f2c14e]" : "text-[#1c1d1a]/50 dark:text-neutral-500"} />
               </button>
               <button onClick={() => navigate("/profile")} className="flex flex-col items-center gap-0.5 px-3 py-1">
-                <User size={22} className={isActive("/profile") ? "text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"} />
+                <User size={22} className={isActive("/profile") ? "text-[#3d654c] dark:text-[#f2c14e]" : "text-[#1c1d1a]/50 dark:text-neutral-500"} />
               </button>
             </div>
           </nav>
@@ -497,13 +630,5 @@ export default function MainLayout() {
         <CreateModal open={createModalOpen} onClose={() => setCreateModalOpen(false)} />
       </div>
     </div>
-  );
-}
-
-function Badge({ count }: { count: number }) {
-  return (
-    <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white">
-      {count > 9 ? "9+" : count}
-    </span>
   );
 }
