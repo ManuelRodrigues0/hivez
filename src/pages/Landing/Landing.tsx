@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowUpRight,
@@ -10,7 +10,6 @@ import {
   Layers,
   MapPin,
   MessageCircle,
-  Search,
   Share2,
   ShieldCheck,
   Sparkles,
@@ -377,13 +376,10 @@ export default function Landing() {
           gsap.set(bee, { x: window.innerWidth * 0.65, y: 160 });
 
           let lastX = window.innerWidth * 0.65;
-          let lastY = 160;
 
           const onMouseMove = (e: MouseEvent) => {
             const deltaX = e.clientX - lastX;
-            const deltaY = e.clientY - lastY;
             lastX = e.clientX;
-            lastY = e.clientY;
 
             const tilt = Math.max(-20, Math.min(20, deltaX * 1.2));
             const direction = deltaX < 0 ? -1 : 1;
@@ -406,7 +402,7 @@ export default function Landing() {
             y: 130,
           };
           let isUserGuiding = false;
-          let resumeTimer: NodeJS.Timeout;
+          let resumeTimer: ReturnType<typeof setTimeout>;
           let activeTween: gsap.core.Tween | null = null;
 
           // Lock orientation permanently to 0 deg on mobile
