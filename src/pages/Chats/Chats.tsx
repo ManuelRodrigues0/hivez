@@ -26,6 +26,7 @@ import {
   Send,
   UserPlus,
   X,
+  Sparkles,
 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
@@ -478,35 +479,47 @@ export default function Chats() {
   const showThreadOnMobile = Boolean(selectedChatId && mobileThreadOpen);
 
   return (
-    <div className="app-chats-page fixed inset-0 top-[64px] bottom-[44px] overflow-hidden md:static md:inset-auto md:h-[calc(100vh-64px)] md:app-page">
-      <div className="flex h-full">
-        <aside className={`${showThreadOnMobile ? "hidden md:flex" : "flex"} relative w-full flex-col md:w-80 lg:w-[340px]`}>
-          <div className="flex items-center justify-between px-4 pb-3 pt-5 md:pt-5">
+    <div className="w-full min-h-[calc(100vh-64px)] bg-[#f7f7f2] font-sans text-[#1c1d1a] selection:bg-[#3d654c]/20 selection:text-[#2d4d38] dark:bg-[#0a0a0a] dark:text-neutral-100 fixed inset-0 top-[64px] bottom-[64px] md:static md:inset-auto md:h-[calc(100vh-64px)] overflow-hidden select-none">
+      <div className="flex h-full w-full">
+        {/* Sidebar Chat List */}
+        <aside className={`${showThreadOnMobile ? "hidden md:flex" : "flex"} relative w-full flex-col md:w-80 lg:w-[340px] border-r border-[#1c1d1a]/10 bg-white dark:border-neutral-800 dark:bg-[#121212]`}>
+          <div className="flex items-center justify-between px-4 pb-3 pt-4">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white md:text-xl">Chats</h1>
-              <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">Private conversations</p>
+              <h1 className="text-lg font-black tracking-tight text-[#1c1d1a] dark:text-white">Direct Messages</h1>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#3d654c] dark:text-[#f2c14e]">
+                Citizen Triage Network
+              </p>
             </div>
-            <button onClick={() => setSearchOpen(true)} className="app-icon-button hidden md:inline-flex">
-              <UserPlus size={20} />
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="hidden md:flex h-8 w-8 items-center justify-center rounded-xl border border-[#1c1d1a]/10 bg-[#f7f7f2] text-[#3d654c] transition hover:bg-[#ecece5] dark:border-neutral-800 dark:bg-[#181818] dark:text-[#f2c14e]"
+              title="New Chat"
+            >
+              <UserPlus size={16} />
             </button>
           </div>
 
-          <div className="px-4 pb-3 md:px-3 md:pb-4">
-            <button onClick={() => setSearchOpen(true)} className="flex w-full items-center gap-2 rounded-full bg-zinc-100 px-4 py-3 text-left text-sm text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400 md:py-2.5">
-              <Search size={17} />
-              Search people to message
+          <div className="px-3 pb-3">
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="flex w-full items-center gap-2 rounded-xl border border-[#1c1d1a]/10 bg-[#f7f7f2] px-3.5 py-2.5 text-left text-xs font-medium text-[#1c1d1a]/60 dark:border-neutral-800 dark:bg-[#181818] dark:text-neutral-400 transition hover:border-[#3d654c]/30"
+            >
+              <Search size={15} className="text-[#3d654c] dark:text-[#f2c14e]" />
+              <span>Search people to message...</span>
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-2 pb-24 md:pb-3">
+          <div className="flex-1 overflow-y-auto px-2 pb-24 md:pb-3 space-y-1">
             {displayChats.length === 0 ? (
-              <div className="mx-2 mt-8 rounded-3xl bg-zinc-50 px-5 py-10 text-center dark:bg-zinc-950">
-                <MessageCircle size={36} className="mb-3 text-zinc-300 dark:text-zinc-600" />
-                <p className="font-semibold text-zinc-900 dark:text-white">No chats yet</p>
-                <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Search someone and start a conversation.</p>
-                <button onClick={() => setSearchOpen(true)} className="app-primary-button mt-5">
-                  <UserPlus size={16} />
-                  New chat
+              <div className="mx-2 mt-8 rounded-2xl border border-[#1c1d1a]/10 bg-[#f7f7f2] px-5 py-8 text-center dark:border-neutral-800 dark:bg-[#181818]">
+                <MessageCircle size={32} className="mx-auto mb-2 text-[#3d654c] dark:text-[#f2c14e]" />
+                <p className="text-xs font-bold text-[#1c1d1a] dark:text-white">No active chats</p>
+                <p className="mt-0.5 text-[11px] text-[#1c1d1a]/60 dark:text-neutral-400">Search someone to initiate a direct message.</p>
+                <button
+                  onClick={() => setSearchOpen(true)}
+                  className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[#3d654c] px-4 py-2 text-xs font-bold text-white shadow-2xs transition hover:bg-[#32533e] dark:bg-[#f2c14e] dark:text-[#121212] dark:hover:bg-[#dfb041]"
+                >
+                  <UserPlus size={14} /> New Chat
                 </button>
               </div>
             ) : (
@@ -521,22 +534,28 @@ export default function Chats() {
                       setSelectedChatId(chat.id);
                       setMobileThreadOpen(true);
                     }}
-                    className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition ${
-                      selectedChatId === chat.id ? "bg-zinc-100 dark:bg-zinc-900" : "hover:bg-zinc-50 dark:hover:bg-zinc-950"
+                    className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-all ${
+                      selectedChatId === chat.id
+                        ? "bg-[#3d654c]/10 dark:bg-[#f2c14e]/10 border border-[#3d654c]/20 dark:border-[#f2c14e]/20"
+                        : "hover:bg-[#1c1d1a]/5 dark:hover:bg-white/5"
                     }`}
                   >
                     <Avatar user={person} />
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="truncate text-base font-semibold text-zinc-900 dark:text-white md:text-sm">{person?.displayName || "Hivez User"}</p>
-                        <span className="flex-shrink-0 text-xs text-zinc-500">{formatListTime(chat.lastMessageAt)}</span>
+                      <div className="flex items-center justify-between gap-1">
+                        <p className="truncate text-xs font-bold text-[#1c1d1a] dark:text-white">
+                          {person?.displayName || "Hivez User"}
+                        </p>
+                        <span className="shrink-0 text-[10px] font-bold text-[#1c1d1a]/40 dark:text-neutral-500">
+                          {formatListTime(chat.lastMessageAt)}
+                        </span>
                       </div>
-                      <div className="mt-0.5 flex items-center justify-between gap-2">
-                        <p className={`truncate text-sm ${unread ? "font-semibold text-zinc-900 dark:text-white" : "text-zinc-500 dark:text-zinc-400"}`}>
+                      <div className="mt-0.5 flex items-center justify-between gap-1">
+                        <p className={`truncate text-[11px] ${unread ? "font-bold text-[#1c1d1a] dark:text-white" : "text-[#1c1d1a]/60 dark:text-neutral-400"}`}>
                           {chat.lastMessage || `@${person?.username || "user"}`}
                         </p>
                         {unread > 0 && (
-                          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-sky-500 px-1.5 text-[11px] font-bold text-white">
+                          <span className="flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-[#3d654c] px-1 text-[10px] font-bold text-white dark:bg-[#f2c14e] dark:text-[#121212]">
                             {unread}
                           </span>
                         )}
@@ -547,37 +566,48 @@ export default function Chats() {
               })
             )}
           </div>
+
           <button
             onClick={() => setSearchOpen(true)}
-            className="absolute bottom-5 right-5 flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-white shadow-xl transition active:scale-95 dark:bg-white dark:text-black md:hidden"
+            className="absolute bottom-16 right-5 flex h-12 w-12 items-center justify-center rounded-full bg-[#3d654c] text-white shadow-lg transition active:scale-95 dark:bg-[#f2c14e] dark:text-[#121212] md:hidden z-10"
           >
-            <UserPlus size={22} />
+            <UserPlus size={20} />
           </button>
         </aside>
 
-        <section className={`${showThreadOnMobile ? "flex" : "hidden md:flex"} min-w-0 flex-1 flex-col relative`}>
+        {/* Message Thread Viewport */}
+        <section className={`${showThreadOnMobile ? "flex" : "hidden md:flex"} min-w-0 flex-1 flex-col relative bg-[#f7f7f2] dark:bg-[#0a0a0a]`}>
           {selectedChat && otherUser ? (
             <>
-              <div className="flex-shrink-0 flex items-center justify-between px-4 py-4">
+              {/* Thread Header */}
+              <div className="flex shrink-0 items-center justify-between border-b border-[#1c1d1a]/10 bg-white px-4 py-3 dark:border-neutral-800 dark:bg-[#121212]">
                 <div className="flex min-w-0 items-center gap-3">
-                  <button onClick={() => setMobileThreadOpen(false)} className="app-icon-button md:hidden">
-                    <ArrowLeft size={20} />
+                  <button
+                    onClick={() => setMobileThreadOpen(false)}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#1c1d1a]/10 bg-[#f7f7f2] text-[#1c1d1a] dark:border-neutral-800 dark:bg-[#181818] dark:text-white md:hidden"
+                  >
+                    <ArrowLeft size={16} />
                   </button>
                   <Avatar user={otherUser} />
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <h2 className="truncate text-sm font-semibold text-zinc-900 dark:text-white">{otherUser.displayName || otherUser.username}</h2>
-                      {otherUser.verified && <BadgeCheck size={14} className="text-sky-500" />}
+                      <h2 className="truncate text-xs font-bold text-[#1c1d1a] dark:text-white">
+                        {otherUser.displayName || otherUser.username}
+                      </h2>
+                      {otherUser.verified && <BadgeCheck size={14} className="text-[#3d654c] dark:text-[#f2c14e]" />}
                     </div>
-                    <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">@{otherUser.username}</p>
+                    <p className="truncate text-[10px] font-medium text-[#1c1d1a]/50 dark:text-neutral-400">
+                      @{otherUser.username}
+                    </p>
                   </div>
                 </div>
-                <button className="app-icon-button">
-                  <MoreHorizontal size={20} />
+                <button className="flex h-8 w-8 items-center justify-center rounded-xl text-[#1c1d1a]/60 hover:bg-[#1c1d1a]/5 dark:text-neutral-400 dark:hover:bg-white/10">
+                  <MoreHorizontal size={18} />
                 </button>
               </div>
 
-              <div className="flex-1 min-h-0 space-y-2 overflow-y-auto rounded-t-[28px] bg-zinc-50 px-4 py-4 dark:bg-zinc-950/60">
+              {/* Message List */}
+              <div className="flex-1 min-h-0 space-y-2 overflow-y-auto px-4 py-4 bg-[#f7f7f2] dark:bg-[#0a0a0a] pb-24 md:pb-6">
                 {[
                   ...new Map(
                     [...localMessages[selectedChat.id] || [], ...pendingMessages[selectedChat.id] || [], ...messages]
@@ -591,7 +621,7 @@ export default function Chats() {
                   return (
                     <div key={message.id}>
                       {showTime && (
-                        <div className="my-4 text-center text-xs text-zinc-400">
+                        <div className="my-3 text-center text-[10px] font-bold uppercase tracking-wider text-[#1c1d1a]/40 dark:text-neutral-500">
                           {message.createdAt?.toDate?.().toLocaleString([], {
                             month: "short",
                             day: "numeric",
@@ -603,17 +633,17 @@ export default function Chats() {
                       <div className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                         <div className={`max-w-[78%] ${mine ? "items-end" : "items-start"} flex flex-col`}>
                           <div
-                            className={`rounded-3xl px-4 py-2.5 text-sm leading-5 shadow-sm ${
+                            className={`rounded-2xl px-3.5 py-2 text-xs leading-relaxed shadow-2xs ${
                               mine
-                                ? "rounded-br-lg bg-zinc-900 text-white dark:bg-white dark:text-black"
-                                : "rounded-bl-lg bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-white"
+                                ? "rounded-br-xs bg-[#3d654c] text-white dark:bg-[#f2c14e] dark:text-[#121212]"
+                                : "rounded-bl-xs bg-white text-[#1c1d1a] border border-[#1c1d1a]/10 dark:border-neutral-800 dark:bg-[#121212] dark:text-white"
                             }`}
                           >
                             {message.text}
                           </div>
-                          <div className="mt-1 flex items-center gap-1 px-1 text-[11px] text-zinc-400">
+                          <div className="mt-1 flex items-center gap-1 px-1 text-[10px] font-bold text-[#1c1d1a]/40 dark:text-neutral-500">
                             <span>{formatTime(message.createdAt)}</span>
-                            {mine && (read ? <CheckCheck size={13} className="text-sky-500" /> : <Check size={13} />)}
+                            {mine && (read ? <CheckCheck size={12} className="text-[#3d654c] dark:text-[#f2c14e]" /> : <Check size={12} />)}
                           </div>
                         </div>
                       </div>
@@ -623,8 +653,9 @@ export default function Chats() {
                 <div ref={bottomRef} />
               </div>
 
-              <div className="flex-shrink-0 bg-zinc-50 p-3 dark:bg-zinc-950/60">
-                <div className="flex items-end gap-2 rounded-3xl bg-zinc-100 p-2 dark:bg-zinc-900">
+              {/* Chat Input Bar (Safely padded above mobile bottom navigation) */}
+              <div className="absolute bottom-0 left-0 right-0 shrink-0 border-t border-[#1c1d1a]/10 bg-white p-3 dark:border-neutral-800 dark:bg-[#121212] pb-[76px] md:pb-3 z-20">
+                <div className="flex items-end gap-2 rounded-2xl border border-[#1c1d1a]/15 bg-[#f7f7f2] p-2 dark:border-neutral-800 dark:bg-[#181818]">
                   <textarea
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
@@ -635,28 +666,30 @@ export default function Chats() {
                       }
                     }}
                     rows={1}
-                    placeholder={`Message ${otherUser.displayName || otherUser.username}`}
-                    className="max-h-32 min-h-10 flex-1 resize-none bg-transparent px-3 py-2 text-sm outline-none placeholder:text-zinc-500"
+                    placeholder={`Message ${otherUser.displayName || otherUser.username}...`}
+                    className="max-h-32 min-h-9 flex-1 resize-none bg-transparent px-2.5 py-1.5 text-xs font-medium text-[#1c1d1a] placeholder:text-[#1c1d1a]/40 outline-none dark:text-white dark:placeholder:text-neutral-500"
                   />
                   <button
                     onClick={sendMessage}
                     disabled={!messageText.trim() || sending}
-                    className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-zinc-900 text-white transition hover:bg-zinc-800 disabled:opacity-40 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#3d654c] text-white shadow-2xs transition hover:bg-[#32533e] disabled:opacity-40 dark:bg-[#f2c14e] dark:text-[#121212] dark:hover:bg-[#dfb041]"
                   >
-                    {sending ? <HivezLoader size="sm" progress={76} label="Sending message" /> : <Send size={18} />}
+                    {sending ? <HivezLoader size="sm" progress={76} label="Sending" /> : <Send size={15} />}
                   </button>
                 </div>
               </div>
             </>
           ) : (
             <div className="hidden flex-1 items-center justify-center px-6 md:flex">
-              <div className="max-w-sm rounded-[32px] bg-zinc-50 p-10 text-center dark:bg-zinc-950">
-                <MessageCircle size={44} className="mx-auto mb-4 text-zinc-300 dark:text-zinc-600" />
-                <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Your conversations</h2>
-                <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Pick a chat or search someone to start messaging.</p>
-                <button onClick={() => setSearchOpen(true)} className="app-primary-button mt-5">
-                  <UserPlus size={16} />
-                  Start chat
+              <div className="max-w-xs rounded-3xl border border-[#1c1d1a]/10 bg-white p-8 text-center shadow-xs dark:border-neutral-800 dark:bg-[#121212]">
+                <MessageCircle size={36} className="mx-auto mb-3 text-[#3d654c] dark:text-[#f2c14e]" />
+                <h2 className="text-sm font-bold text-[#1c1d1a] dark:text-white">Direct Messaging</h2>
+                <p className="mt-1 text-xs text-[#1c1d1a]/60 dark:text-neutral-400">Select an active conversation or search a citizen to chat.</p>
+                <button
+                  onClick={() => setSearchOpen(true)}
+                  className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[#3d654c] px-4 py-2 text-xs font-bold text-white shadow-2xs transition hover:bg-[#32533e] dark:bg-[#f2c14e] dark:text-[#121212] dark:hover:bg-[#dfb041]"
+                >
+                  <UserPlus size={14} /> Start Chat
                 </button>
               </div>
             </div>
@@ -664,51 +697,59 @@ export default function Chats() {
         </section>
       </div>
 
+      {/* New Chat Search Modal */}
       {searchOpen && (
-        <div className="fixed inset-0 z-[80] flex items-start justify-center bg-black/60 px-4 pt-20 backdrop-blur-sm">
-          <div className="w-full max-w-lg overflow-hidden rounded-[28px] bg-white shadow-2xl dark:bg-zinc-950">
-            <div className="flex items-center justify-between px-4 py-3">
-              <h2 className="font-semibold text-zinc-900 dark:text-white">New chat</h2>
-              <button onClick={() => setSearchOpen(false)} className="app-icon-button">
-                <X size={18} />
+        <div className="fixed inset-0 z-[80] flex items-start justify-center bg-black/60 px-4 pt-20 backdrop-blur-xs">
+          <div className="w-full max-w-md overflow-hidden rounded-3xl border border-[#1c1d1a]/10 bg-white shadow-2xl dark:border-neutral-800 dark:bg-[#121212]">
+            <div className="flex items-center justify-between border-b border-[#1c1d1a]/10 px-4 py-3.5 dark:border-neutral-800">
+              <h2 className="text-xs font-black uppercase tracking-wider text-[#1c1d1a] dark:text-white">New Direct Message</h2>
+              <button
+                onClick={() => setSearchOpen(false)}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-[#f7f7f2] text-[#1c1d1a] transition hover:bg-[#ecece5] dark:bg-[#1a1a1a] dark:text-white"
+              >
+                <X size={15} />
               </button>
             </div>
-            <div className="px-3 pb-3">
-              <div className="flex items-center gap-2 rounded-full bg-zinc-100 px-4 py-2.5 dark:bg-zinc-900">
-                <Search size={17} className="text-zinc-400" />
+            <div className="p-3 border-b border-[#1c1d1a]/5 dark:border-neutral-800/60">
+              <div className="flex items-center gap-2 rounded-xl border border-[#1c1d1a]/10 bg-[#f7f7f2] px-3.5 py-2.5 dark:border-neutral-800 dark:bg-[#181818]">
+                <Search size={15} className="text-[#3d654c] dark:text-[#f2c14e]" />
                 <input
                   value={userSearch}
                   onChange={(e) => setUserSearch(e.target.value)}
                   autoFocus
-                  placeholder="Search by name or username"
-                  className="flex-1 bg-transparent text-sm outline-none placeholder:text-zinc-500"
+                  placeholder="Search citizen by name or username..."
+                  className="flex-1 bg-transparent text-xs font-medium text-[#1c1d1a] placeholder:text-[#1c1d1a]/40 outline-none dark:text-white dark:placeholder:text-neutral-500"
                 />
               </div>
             </div>
-            <div className="max-h-[55vh] overflow-y-auto">
+            <div className="max-h-[50vh] overflow-y-auto p-2">
               {searching ? (
-                <div className="flex justify-center py-10">
-                  <HivezLoader size="sm" progress={62} label="Searching people" />
+                <div className="flex justify-center py-8">
+                  <HivezLoader size="sm" progress={62} label="Searching citizens" />
                 </div>
               ) : people.length ? (
                 people.map((person) => (
-                  <button key={person.uid} onClick={() => startChat(person)} className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                  <button
+                    key={person.uid}
+                    onClick={() => startChat(person)}
+                    className="flex w-full items-center gap-3 rounded-2xl p-2.5 text-left transition hover:bg-[#1c1d1a]/5 dark:hover:bg-white/5"
+                  >
                     <Avatar user={person} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
-                        <p className="truncate text-sm font-semibold text-zinc-900 dark:text-white">{person.displayName}</p>
-                        {person.verified && <BadgeCheck size={14} className="text-sky-500" />}
+                        <p className="truncate text-xs font-bold text-[#1c1d1a] dark:text-white">{person.displayName}</p>
+                        {person.verified && <BadgeCheck size={14} className="text-[#3d654c] dark:text-[#f2c14e]" />}
                       </div>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400">@{person.username}</p>
-                      {person.bio && <p className="mt-0.5 truncate text-xs text-zinc-500">{person.bio}</p>}
+                      <p className="text-[10px] font-bold text-[#1c1d1a]/50 dark:text-neutral-400">@{person.username}</p>
+                      {person.bio && <p className="mt-0.5 truncate text-[11px] text-[#1c1d1a]/70 dark:text-neutral-300">{person.bio}</p>}
                     </div>
                   </button>
                 ))
               ) : (
-                <div className="app-empty-state py-12">
-                  <Search size={34} className="mb-3 text-zinc-300 dark:text-zinc-600" />
-                  <p className="font-semibold text-zinc-900 dark:text-white">{userSearch ? "No people found" : "Find someone"}</p>
-                  <p className="mt-1 text-sm">Search users to start a private chat.</p>
+                <div className="py-12 text-center">
+                  <Sparkles size={28} className="mx-auto mb-2 text-[#3d654c] dark:text-[#f2c14e]" />
+                  <p className="text-xs font-bold text-[#1c1d1a] dark:text-white">{userSearch ? "No citizens found" : "Search to start chat"}</p>
+                  <p className="mt-0.5 text-[11px] text-[#1c1d1a]/50 dark:text-neutral-400">Type a name or username to message.</p>
                 </div>
               )}
             </div>
@@ -723,9 +764,9 @@ function Avatar({ user }: { user?: ChatUser | null }) {
   const name = user?.displayName || user?.username || "Hivez";
   return (
     <img
-      src={user?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=27272a&color=fff`}
+      src={user?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=3d654c&color=fff`}
       alt={name}
-      className="h-11 w-11 flex-shrink-0 rounded-full object-cover"
+      className="h-10 w-10 shrink-0 rounded-full object-cover border border-[#1c1d1a]/10 dark:border-neutral-700 shadow-2xs"
     />
   );
 }

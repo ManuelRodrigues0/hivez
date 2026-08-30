@@ -270,7 +270,7 @@ export default function Profile() {
   ];
 
   return (
-    <div className="w-full min-h-screen bg-[#f7f7f2] font-sans text-[#1c1d1a] selection:bg-[#3d654c]/20 selection:text-[#2d4d38] dark:bg-[#0a0a0a] dark:text-neutral-100 pb-16">
+    <div className="w-full min-h-screen bg-[#f7f7f2] font-sans text-[#1c1d1a] selection:bg-[#3d654c]/20 selection:text-[#2d4d38] dark:bg-[#0a0a0a] dark:text-neutral-100 pb-20">
       {/* Top Bar for visiting other profiles */}
       {!isOwnProfile && (
         <div className="sticky top-0 z-20 flex items-center justify-between border-b border-[#1c1d1a]/10 bg-[#f7f7f2]/90 px-4 py-3 backdrop-blur-md dark:border-neutral-800/80 dark:bg-[#0a0a0a]/90">
@@ -298,7 +298,7 @@ export default function Profile() {
       </div>
 
       {/* Profile Header Container */}
-      <div className="px-4 md:px-8 max-w-4xl mx-auto -mt-12 space-y-4">
+      <div className="px-4 md:px-6 w-full -mt-12 space-y-4">
         {/* Avatar + Action Row */}
         <div className="flex items-end justify-between gap-4">
           {/* Circular Avatar */}
@@ -388,7 +388,7 @@ export default function Profile() {
           </div>
 
           {profile.bio && (
-            <p className="text-xs font-medium leading-relaxed text-[#1c1d1a]/85 dark:text-neutral-300 max-w-2xl whitespace-pre-wrap">
+            <p className="text-xs font-medium leading-relaxed text-[#1c1d1a]/85 dark:text-neutral-300 whitespace-pre-wrap">
               {profile.bio}
             </p>
           )}
@@ -428,7 +428,7 @@ export default function Profile() {
       </div>
 
       {/* Tabs */}
-      <div className="max-w-4xl mx-auto px-4 md:px-8 mt-6 border-b border-[#1c1d1a]/10 dark:border-neutral-800">
+      <div className="w-full px-4 md:px-6 mt-6 border-b border-[#1c1d1a]/10 dark:border-neutral-800">
         <div className="flex">
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -437,7 +437,7 @@ export default function Profile() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`relative flex items-center justify-center gap-2 py-3 px-6 text-xs font-bold transition-all duration-150 ${
+                className={`relative flex flex-1 items-center justify-center gap-2 py-3 px-4 text-xs font-bold transition-all duration-150 ${
                   isActive
                     ? "text-[#3d654c] dark:text-[#f2c14e]"
                     : "text-[#1c1d1a]/50 hover:text-[#1c1d1a] dark:text-neutral-400 dark:hover:text-white"
@@ -455,7 +455,7 @@ export default function Profile() {
       </div>
 
       {/* Tab Grid Body */}
-      <div className="max-w-4xl mx-auto px-4 md:px-8 pt-4">
+      <div className="w-full px-4 md:px-6 pt-4">
         {activeTab === "posts" && (
           <>
             {postsLoading ? (

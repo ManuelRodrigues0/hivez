@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Heart, MessageCircle, UserPlus, Check, X, Megaphone } from "lucide-react";
+﻿import { useEffect, useMemo, useState } from "react";
+import { Heart, MessageCircle, UserPlus, Check, X, Megaphone, Bell, Sparkles } from "lucide-react";
 import HivezLoader from "@/components/common/HivezLoader";
 import { useNavigate } from "react-router-dom";
 import { deleteDoc, doc } from "firebase/firestore";
@@ -17,7 +17,7 @@ import { acceptFollowRequest, declineFollowRequest } from "@/services/followRequ
 function timeAgo(timestamp: any) {
   if (!timestamp?.toDate) return "Now";
   const seconds = Math.floor((Date.now() - timestamp.toDate().getTime()) / 1000);
-  if (seconds < 60) return "Now";
+  if (seconds < 60) return "Just now";
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m`;
   const hours = Math.floor(minutes / 60);
@@ -28,18 +28,18 @@ function timeAgo(timestamp: any) {
 }
 
 function iconFor(type: NotificationDoc["type"]) {
-  if (type === "comment") return <MessageCircle size={18} className="text-sky-500" />;
-  if (type === "follow") return <UserPlus size={18} className="text-emerald-500" />;
-  if (type === "broadcast") return <Megaphone size={18} className="text-amber-500" />;
-  if (type === "message") return <MessageCircle size={18} className="text-emerald-500" />;
-  return <Heart size={18} className="fill-red-500 text-red-500" />;
+  if (type === "comment") return <MessageCircle size={14} className="text-sky-500" />;
+  if (type === "follow") return <UserPlus size={14} className="text-emerald-500 dark:text-[#f2c14e]" />;
+  if (type === "broadcast") return <Megaphone size={14} className="text-amber-500" />;
+  if (type === "message") return <MessageCircle size={14} className="text-emerald-500" />;
+  return <Heart size={14} className="fill-rose-500 text-rose-500" />;
 }
 
 function titleFor(notification: NotificationDoc) {
   const name = notification.actorDisplayName || notification.actorUsername || "Someone";
   if (notification.type === "comment") return `${name} commented on your post`;
   if (notification.type === "follow") return `${name} sent you a follow request`;
-  if (notification.type === "broadcast") return `📢 ${notification.actorDisplayName || "Hivez"}`;
+  if (notification.type === "broadcast") return `${notification.actorDisplayName || "Hivez Official"}`;
   if (notification.type === "message") return `${name} sent you a message`;
   return `${name} liked your post`;
 }
@@ -49,6 +49,8 @@ export default function Notifications() {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<NotificationDoc[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+
   const unreadCount = useMemo(
     () => notifications.filter((notification) => !notification.read).length,
     [notifications]
@@ -80,28 +82,32 @@ export default function Notifications() {
   async function handleAcceptFollowRequest(notification: NotificationDoc, e: React.MouseEvent) {
     e.stopPropagation();
     if (!user) return;
+    setActionLoadingId(notification.id);
     
     try {
       await acceptFollowRequest(notification.actorId, user.uid);
-      // Delete the notification so it doesn't reappear after refresh
       try { await deleteDoc(doc(db, "notifications", notification.id)); } catch {}
       setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
     } catch (error) {
       console.error("Failed to accept follow request:", error);
+    } finally {
+      setActionLoadingId(null);
     }
   }
 
   async function handleDeclineFollowRequest(notification: NotificationDoc, e: React.MouseEvent) {
     e.stopPropagation();
     if (!user) return;
+    setActionLoadingId(notification.id);
     
     try {
       await declineFollowRequest(notification.actorId, user.uid);
-      // Delete the notification so it doesn't reappear after refresh
       try { await deleteDoc(doc(db, "notifications", notification.id)); } catch {}
       setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
     } catch (error) {
       console.error("Failed to decline follow request:", error);
+    } finally {
+      setActionLoadingId(null);
     }
   }
 
@@ -112,93 +118,130 @@ export default function Notifications() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="flex min-h-[60vh] items-center justify-center py-32">
         <HivezLoader size="md" progress={58} label="Loading notifications" />
       </div>
     );
   }
 
   return (
-    <section className="app-notifications-page min-h-[calc(100vh-64px)]">
-      <div className="app-sticky-header flex items-center justify-between px-4 py-4">
-        <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Notifications</h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            {unreadCount ? `${unreadCount} unread` : "All caught up"}
-          </p>
+    <div className="w-full min-h-screen px-4 py-5 md:px-6 space-y-4 select-none">
+      {/* Top Banner Navigation Header */}
+      <div className="flex items-center justify-between pb-3 border-b border-[#1c1d1a]/10 dark:border-neutral-800">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#1c1d1a]/10 bg-white text-[#3d654c] shadow-2xs dark:border-neutral-800 dark:bg-[#121212] dark:text-[#f2c14e]">
+            <Bell size={18} />
+          </div>
+          <div>
+            <h1 className="text-lg font-black tracking-tight text-[#1c1d1a] dark:text-white">Notifications</h1>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-[#3d654c] dark:text-[#f2c14e]">
+              {unreadCount ? `${unreadCount} unread alerts` : "All caught up"}
+            </p>
+          </div>
         </div>
+
         <button
           onClick={markAllRead}
           disabled={!unreadCount}
-          className="rounded-full px-4 py-2 text-sm font-semibold text-sky-600 transition hover:bg-sky-50 disabled:text-zinc-400 disabled:hover:bg-transparent dark:text-sky-400 dark:hover:bg-sky-950/30"
+          className="rounded-full border border-[#3d654c]/20 bg-[#3d654c]/10 px-3.5 py-1 text-xs font-bold text-[#3d654c] transition hover:bg-[#3d654c]/20 disabled:opacity-40 disabled:hover:bg-[#3d654c]/10 dark:border-[#f2c14e]/25 dark:bg-[#f2c14e]/10 dark:text-[#f2c14e] dark:hover:bg-[#f2c14e]/20"
         >
           Mark all read
         </button>
       </div>
 
-      {notifications.length === 0 ? (
-        <div className="flex min-h-[48vh] items-center justify-center px-8 text-center">
-          <div>
-            <Heart size={40} className="mx-auto mb-3 text-zinc-300 dark:text-zinc-700" />
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">No notifications yet</h2>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-              Comments, likes, and follows will show up here.
+      {/* Notifications List Container */}
+      <div className="w-full space-y-2.5 pb-16">
+        {notifications.length === 0 ? (
+          <div className="flex min-h-[40vh] flex-col items-center justify-center px-8 text-center rounded-2xl border border-[#1c1d1a]/10 bg-white dark:border-neutral-800/90 dark:bg-[#121212] p-8 shadow-xs">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f7f7f2] text-[#1c1d1a]/30 dark:bg-[#1a1a1a] dark:text-neutral-500 mb-3">
+              <Sparkles size={24} />
+            </div>
+            <h2 className="text-sm font-bold text-[#1c1d1a] dark:text-white">No notifications yet</h2>
+            <p className="mt-1 text-xs font-medium text-[#1c1d1a]/60 dark:text-neutral-400 max-w-xs">
+              When citizens interact with your triage posts or send follow requests, they will show up right here.
             </p>
           </div>
-        </div>
-      ) : (
-        <div>
-          {notifications.map((notification) => (
-            <button
-              key={notification.id}
-              onClick={() => openNotification(notification)}
-              className={`flex w-full gap-3 border-b border-zinc-200 px-4 py-4 text-left transition hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900/50 ${
-                notification.read ? "" : "bg-sky-50/70 dark:bg-sky-950/20"
-              }`}
-            >
-              <img
-                src={
-                  notification.actorPhotoURL ||
-                  `https://ui-avatars.com/api/?name=${encodeURIComponent(notification.actorDisplayName || "Hivez")}&background=27272a&color=fff`
-                }
-                alt={notification.actorDisplayName}
-                className="h-11 w-11 flex-shrink-0 rounded-full object-cover"
-              />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-zinc-900 dark:text-white">{titleFor(notification)}</p>
-                    <p className="mt-1 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-300">{notification.text}</p>
+        ) : (
+          <div className="space-y-2">
+            {notifications.map((notification) => {
+              const isUnread = !notification.read;
+              return (
+                <button
+                  key={notification.id}
+                  onClick={() => openNotification(notification)}
+                  className={`group relative flex w-full gap-3.5 rounded-2xl border p-3.5 text-left transition-all duration-200 ${
+                    isUnread
+                      ? "border-[#3d654c]/30 bg-white shadow-2xs dark:border-[#f2c14e]/30 dark:bg-[#141414]"
+                      : "border-[#1c1d1a]/10 bg-white/70 hover:bg-white dark:border-neutral-800/80 dark:bg-[#101010] dark:hover:bg-[#141414]"
+                  }`}
+                >
+                  {/* Actor Avatar */}
+                  <div className="relative shrink-0">
+                    <img
+                      src={
+                        notification.actorPhotoURL ||
+                        `https://ui-avatars.com/api/?name=${encodeURIComponent(notification.actorDisplayName || "Hivez")}&background=3d654c&color=fff`
+                      }
+                      alt={notification.actorDisplayName || "Actor"}
+                      className="h-10 w-10 rounded-full object-cover border border-[#1c1d1a]/10 dark:border-neutral-700 shadow-2xs"
+                    />
+                    <div className="absolute -bottom-0.5 -right-0.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-white shadow-2xs dark:bg-[#181818] border border-[#1c1d1a]/10 dark:border-neutral-700">
+                      {iconFor(notification.type)}
+                    </div>
                   </div>
-                  <div className="flex flex-shrink-0 items-center gap-2">
-                    {iconFor(notification.type)}
-                    {!notification.read && <span className="h-2 w-2 rounded-full bg-sky-500" />}
+
+                  {/* Content Details */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-bold text-[#1c1d1a] dark:text-white">
+                          {titleFor(notification)}
+                        </p>
+                        {notification.text && (
+                          <p className="mt-0.5 line-clamp-2 text-xs font-medium text-[#1c1d1a]/70 dark:text-neutral-300">
+                            {notification.text}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex shrink-0 items-center gap-2 pt-0.5">
+                        <span className="text-[10px] font-bold text-[#1c1d1a]/40 dark:text-neutral-500">
+                          {timeAgo(notification.createdAt)}
+                        </span>
+                        {isUnread && (
+                          <span className="h-2 w-2 rounded-full bg-[#3d654c] dark:bg-[#f2c14e] shadow-2xs" />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Follow Request Actions */}
+                    {notification.type === "follow" && (
+                      <div className="mt-2.5 flex items-center gap-2">
+                        <button
+                          onClick={(e) => handleAcceptFollowRequest(notification, e)}
+                          disabled={actionLoadingId === notification.id}
+                          className="inline-flex items-center gap-1 rounded-xl bg-[#3d654c] px-3 py-1.5 text-xs font-bold text-white shadow-2xs transition hover:bg-[#32533e] disabled:opacity-50 dark:bg-[#f2c14e] dark:text-[#121212] dark:hover:bg-[#dfb041]"
+                        >
+                          <Check size={13} />
+                          <span>Accept</span>
+                        </button>
+                        <button
+                          onClick={(e) => handleDeclineFollowRequest(notification, e)}
+                          disabled={actionLoadingId === notification.id}
+                          className="inline-flex items-center gap-1 rounded-xl border border-[#1c1d1a]/15 bg-[#f7f7f2] px-3 py-1.5 text-xs font-bold text-[#1c1d1a] shadow-2xs transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50 dark:border-neutral-700 dark:bg-[#1a1a1a] dark:text-neutral-300 dark:hover:bg-rose-950/40 dark:hover:text-rose-400"
+                        >
+                          <X size={13} />
+                          <span>Decline</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
-                </div>
-                {notification.type === "follow" && (
-                  <div className="mt-3 flex gap-2">
-                    <button
-                      onClick={(e) => handleAcceptFollowRequest(notification, e)}
-                      className="flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-600"
-                    >
-                      <Check size={14} />
-                      Accept
-                    </button>
-                    <button
-                      onClick={(e) => handleDeclineFollowRequest(notification, e)}
-                      className="flex items-center gap-1.5 rounded-lg bg-zinc-200 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-                    >
-                      <X size={14} />
-                      Decline
-                    </button>
-                  </div>
-                )}
-                <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-500">{timeAgo(notification.createdAt)}</p>
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
-    </section>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
