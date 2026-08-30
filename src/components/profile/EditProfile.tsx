@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Save, Sparkles, ShieldCheck, AtSign, User, FileText, AlertCircle, Camera } from "lucide-react";
+import { ArrowLeft, Save, ShieldCheck, AtSign, User, FileText, AlertCircle, Camera } from "lucide-react";
 import { deleteDoc, doc, getDoc, setDoc } from "firebase/firestore";
 import { useAuth } from "../../context/AuthContext";
 import HivezLoader from "@/components/common/HivezLoader";
