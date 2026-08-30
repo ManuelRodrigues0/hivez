@@ -31,6 +31,7 @@ interface UserProfile {
   username: string;
   bio: string;
   photoURL: string;
+  bannerURL?: string;
   verified: boolean;
   posts: number;
   followers: number;
@@ -293,8 +294,16 @@ export default function Profile() {
       )}
 
       {/* Ambient Header Banner */}
-      <div className="relative h-28 md:h-32 w-full bg-gradient-to-r from-[#e5ebe3] via-[#f7f7f2] to-[#e8efe6] dark:from-[#111] dark:via-[#161616] dark:to-[#0d0d0d] border-b border-[#1c1d1a]/5 dark:border-neutral-900">
-        <div className="absolute inset-0 bg-[radial-gradient(#3d654c_1px,transparent_1px)] dark:bg-[radial-gradient(#f2c14e_1px,transparent_1px)] [background-size:16px_16px] opacity-15" />
+      <div className="relative h-28 md:h-32 w-full bg-gradient-to-r from-[#e5ebe3] via-[#f7f7f2] to-[#e8efe6] dark:from-[#111] dark:via-[#161616] dark:to-[#0d0d0d] border-b border-[#1c1d1a]/5 dark:border-neutral-900 overflow-hidden">
+        {profile.bannerURL ? (
+          <img
+            src={profile.bannerURL}
+            alt={`${profile.displayName}'s banner`}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-[radial-gradient(#3d654c_1px,transparent_1px)] dark:bg-[radial-gradient(#f2c14e_1px,transparent_1px)] [background-size:16px_16px] opacity-15" />
+        )}
       </div>
 
       {/* Profile Header Container */}
