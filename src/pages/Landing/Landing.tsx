@@ -24,6 +24,12 @@ import heroStreet from "@/assets/hero-street.jpg";
 
 gsap.registerPlugin(ScrollTrigger);
 
+const heroStats = [
+  { val: "14,280+", label: "Issues Fixed" },
+  { val: "420+", label: "Active Wards" },
+  { val: "94.2%", label: "AI Verification" },
+];
+
 const features = [
   {
     icon: Camera,
@@ -122,7 +128,6 @@ function BeeChromaVideo() {
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
-    // Dedicated offscreen processing canvas to prevent buffer bleed
     const offCanvas = document.createElement("canvas");
     const offCtx = offCanvas.getContext("2d", { willReadFrequently: true });
     if (!offCtx) return;
@@ -134,11 +139,10 @@ function BeeChromaVideo() {
         const nativeW = video.videoWidth || 320;
         const nativeH = video.videoHeight || 180;
 
-        // 5% edge crop
         const cropX = nativeW * 0.05;
         const cropY = nativeH * 0.05;
-        const cropW = nativeW * 0.90;
-        const cropH = nativeH * 0.90;
+        const cropW = nativeW * 0.9;
+        const cropH = nativeH * 0.9;
 
         const targetW = 320;
         const targetH = 180;
@@ -150,19 +154,16 @@ function BeeChromaVideo() {
           offCanvas.height = targetH;
         }
 
-        // 1. Draw raw cropped video into offscreen canvas
         offCtx.clearRect(0, 0, targetW, targetH);
         offCtx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, targetW, targetH);
         const frame = offCtx.getImageData(0, 0, targetW, targetH);
         const data = frame.data;
 
-        // 2. Flood-fill background isolation (protects black eyes and dark stripes)
         const visited = new Uint8Array(targetW * targetH);
         const queue = new Int32Array(targetW * targetH);
         let head = 0;
         let tail = 0;
 
-        // Seed boundary edges
         for (let x = 0; x < targetW; x++) {
           const idxTop = x;
           const idxBottom = (targetH - 1) * targetW + x;
@@ -195,11 +196,11 @@ function BeeChromaVideo() {
           const maxVal = Math.max(r, g, b);
 
           if (maxVal < 25) {
-            data[dataIdx + 3] = 0; // Pure Transparent
+            data[dataIdx + 3] = 0;
           } else if (maxVal < 55) {
-            data[dataIdx + 3] = ((maxVal - 25) / 30) * 255; // Anti-aliased edge
+            data[dataIdx + 3] = ((maxVal - 25) / 30) * 255;
           } else {
-            continue; // Stop at bee edge
+            continue;
           }
 
           const px = pixelIdx % targetW;
@@ -223,7 +224,6 @@ function BeeChromaVideo() {
           }
         }
 
-        // 3. Clear target canvas completely to eliminate all after-images
         ctx.clearRect(0, 0, targetW, targetH);
         ctx.putImageData(frame, 0, 0);
       }
@@ -282,15 +282,22 @@ export default function Landing() {
     };
     window.addEventListener("resize", handleResize);
 
-    const hexSize = 28;
+    const hexSize = window.innerWidth < 768 ? 22 : 28;
     const hexHeight = hexSize * Math.sqrt(3);
     let mouse = { x: -1000, y: -1000 };
 
-    const handleCanvasMouse = (e: MouseEvent) => {
-      mouse.x = e.clientX;
-      mouse.y = e.clientY;
+    const handleCanvasMouse = (e: MouseEvent | TouchEvent) => {
+      if ("touches" in e && e.touches.length > 0) {
+        mouse.x = e.touches[0].clientX;
+        mouse.y = e.touches[0].clientY;
+      } else if ("clientX" in e) {
+        mouse.x = (e as MouseEvent).clientX;
+        mouse.y = (e as MouseEvent).clientY;
+      }
     };
+
     window.addEventListener("mousemove", handleCanvasMouse);
+    window.addEventListener("touchmove", handleCanvasMouse, { passive: true });
 
     function drawHexagon(cx: number, cy: number, r: number, alpha: number) {
       if (!ctx) return;
@@ -321,7 +328,7 @@ export default function Landing() {
           const py = y;
 
           const dist = Math.hypot(mouse.x - px, mouse.y - py);
-          const maxDist = 180;
+          const maxDist = window.innerWidth < 768 ? 140 : 180;
           let alpha = 0.04;
 
           if (dist < maxDist) {
@@ -341,13 +348,16 @@ export default function Landing() {
     return () => {
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("mousemove", handleCanvasMouse);
+      window.removeEventListener("touchmove", handleCanvasMouse);
       cancelAnimationFrame(animationFrameId);
     };
   }, []);
 
-  // 2. Master GSAP Timeline & ScrollTrigger Core
+  // 2. Master GSAP Engine
   useEffect(() => {
     const ctx = gsap.context(() => {
+      const isMobile = window.matchMedia("(max-width: 768px)").matches;
+
       // Hero Entrance Timeline
       const heroTl = gsap.timeline({ defaults: { ease: "power4.out" } });
 
@@ -359,90 +369,202 @@ export default function Landing() {
         .from(".gsap-hero-stat", { y: 25, opacity: 0, stagger: 0.08, duration: 0.6 }, "-=0.4")
         .from(".gsap-hero-card-wrap", { scale: 0.92, opacity: 0, duration: 1.2, ease: "power3.out" }, "-=0.9");
 
-      // Bee Cursor Tracking with GSAP physics
+      // Bee Behavior
       const bee = beeContainerRef.current;
       if (bee) {
-        gsap.set(bee, { x: window.innerWidth * 0.65, y: 160 });
+        if (!isMobile) {
+          // --- DESKTOP (100% ORIGINAL & UNTOUCHED) ---
+          gsap.set(bee, { x: window.innerWidth * 0.65, y: 160 });
 
-        let lastX = window.innerWidth * 0.65;
-        let lastY = 160;
+          let lastX = window.innerWidth * 0.65;
+          let lastY = 160;
 
-        const onMouseMove = (e: MouseEvent) => {
-          const deltaX = e.clientX - lastX;
-          const deltaY = e.clientY - lastY;
-          lastX = e.clientX;
-          lastY = e.clientY;
+          const onMouseMove = (e: MouseEvent) => {
+            const deltaX = e.clientX - lastX;
+            const deltaY = e.clientY - lastY;
+            lastX = e.clientX;
+            lastY = e.clientY;
 
-          const tilt = Math.max(-20, Math.min(20, deltaX * 1.2));
-          const direction = deltaX < 0 ? -1 : 1;
+            const tilt = Math.max(-20, Math.min(20, deltaX * 1.2));
+            const direction = deltaX < 0 ? -1 : 1;
 
+            gsap.to(bee, {
+              x: e.clientX - 100,
+              y: e.clientY - 60,
+              rotation: tilt,
+              scaleX: direction,
+              duration: 0.7,
+              ease: "power2.out",
+            });
+          };
+
+          window.addEventListener("mousemove", onMouseMove);
+        } else {
+          // --- MOBILE: SMOOTH 0° FIXED-UPRIGHT PROCEDURAL ROAM & GENTLE TOUCH FOLLOW ---
+          let currentPos = {
+            x: window.innerWidth * 0.5 - 60,
+            y: 130,
+          };
+          let isUserGuiding = false;
+          let resumeTimer: NodeJS.Timeout;
+          let activeTween: gsap.core.Tween | null = null;
+
+          // Lock orientation permanently to 0 deg on mobile
+          gsap.set(bee, { x: currentPos.x, y: currentPos.y, rotation: 0, scaleX: 1, scaleY: 1 });
+
+          // Ambient hovering breath (vertical sine motion only)
           gsap.to(bee, {
-            x: e.clientX - 100,
-            y: e.clientY - 60,
-            rotation: tilt,
-            scaleX: direction,
-            duration: 0.7,
-            ease: "power2.out",
+            y: "+=12",
+            duration: 1.5,
+            repeat: -1,
+            yoyo: true,
+            ease: "sine.inOut",
           });
-        };
 
-        window.addEventListener("mousemove", onMouseMove);
+          // Constant multi-waypoint roaming loop
+          const startAutonomousRoam = () => {
+            if (isUserGuiding) return;
+
+            const padding = 16;
+            const targetX = padding + Math.random() * (window.innerWidth - 145);
+            const targetY = 70 + Math.random() * (window.innerHeight - 170);
+
+            const dist = Math.hypot(targetX - currentPos.x, targetY - currentPos.y);
+            const duration = Math.max(2.8, dist / 90);
+
+            activeTween = gsap.to(bee, {
+              x: targetX,
+              y: targetY,
+              rotation: 0,
+              duration,
+              ease: "sine.inOut",
+              onUpdate: () => {
+                currentPos.x = Number(gsap.getProperty(bee, "x"));
+                currentPos.y = Number(gsap.getProperty(bee, "y"));
+              },
+              onComplete: () => {
+                if (!isUserGuiding) {
+                  startAutonomousRoam();
+                }
+              },
+            });
+          };
+
+          startAutonomousRoam();
+
+          // Smooth touch guidance (Slowly navigates to touched spot without snapping/teleporting)
+          const handleTouchGlide = (e: TouchEvent) => {
+            if (e.touches.length === 0) return;
+            isUserGuiding = true;
+            clearTimeout(resumeTimer);
+            if (activeTween) activeTween.kill();
+
+            const touch = e.touches[0];
+            const destX = Math.max(10, Math.min(window.innerWidth - 135, touch.clientX - 60));
+            const destY = Math.max(50, Math.min(window.innerHeight - 110, touch.clientY - 45));
+
+            gsap.to(bee, {
+              x: destX,
+              y: destY,
+              rotation: 0,
+              duration: 1.5,
+              ease: "power1.out",
+              overwrite: "auto",
+              onUpdate: () => {
+                currentPos.x = Number(gsap.getProperty(bee, "x"));
+                currentPos.y = Number(gsap.getProperty(bee, "y"));
+              },
+            });
+
+            resumeTimer = setTimeout(() => {
+              isUserGuiding = false;
+              startAutonomousRoam();
+            }, 3000);
+          };
+
+          window.addEventListener("touchstart", handleTouchGlide, { passive: true });
+          window.addEventListener("touchmove", handleTouchGlide, { passive: true });
+
+          return () => {
+            clearTimeout(resumeTimer);
+            if (activeTween) activeTween.kill();
+            window.removeEventListener("touchstart", handleTouchGlide);
+            window.removeEventListener("touchmove", handleTouchGlide);
+          };
+        }
       }
 
       // 3D Card Hover & Scroll Levitation
       const card = card3DRef.current;
       if (card) {
-        const onCardMove = (e: MouseEvent) => {
-          const rect = card.getBoundingClientRect();
-          const x = e.clientX - rect.left - rect.width / 2;
-          const y = e.clientY - rect.top - rect.height / 2;
+        if (!isMobile) {
+          const onCardMove = (e: MouseEvent) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left - rect.width / 2;
+            const y = e.clientY - rect.top - rect.height / 2;
+            gsap.to(card, {
+              rotationY: x * 0.045,
+              rotationX: -y * 0.045,
+              transformPerspective: 1200,
+              ease: "power1.out",
+              duration: 0.35,
+            });
+          };
+
+          const onCardLeave = () => {
+            gsap.to(card, { rotationY: 0, rotationX: 0, duration: 0.8, ease: "power2.out" });
+          };
+
+          card.addEventListener("mousemove", onCardMove);
+          card.addEventListener("mouseleave", onCardLeave);
+
           gsap.to(card, {
-            rotationY: x * 0.045,
-            rotationX: -y * 0.045,
-            transformPerspective: 1200,
-            ease: "power1.out",
-            duration: 0.35,
+            scrollTrigger: {
+              trigger: card,
+              start: "top 60%",
+              end: "bottom top",
+              scrub: 1.5,
+            },
+            y: -80,
+            rotationZ: -2,
+            scale: 0.98,
           });
-        };
+        } else {
+          // Mobile: Kinetic Tilt Fade on Scroll
+          gsap.from(card, {
+            scrollTrigger: {
+              trigger: card,
+              start: "top 85%",
+            },
+            y: 45,
+            opacity: 0,
+            scale: 0.95,
+            duration: 0.8,
+            ease: "power3.out",
+          });
+        }
+      }
 
-        const onCardLeave = () => {
-          gsap.to(card, { rotationY: 0, rotationX: 0, duration: 0.8, ease: "power2.out" });
-        };
-
-        card.addEventListener("mousemove", onCardMove);
-        card.addEventListener("mouseleave", onCardLeave);
-
-        gsap.to(card, {
-          scrollTrigger: {
-            trigger: card,
-            start: "top 60%",
-            end: "bottom top",
-            scrub: 1.5,
-          },
-          y: -80,
-          rotationZ: -2,
-          scale: 0.98,
+      // Interactive Magnetic Buttons (Desktop only)
+      if (!isMobile) {
+        const magnetics = gsap.utils.toArray<HTMLElement>(".gsap-magnetic");
+        magnetics.forEach((btn) => {
+          btn.addEventListener("mousemove", (e) => {
+            const rect = btn.getBoundingClientRect();
+            const x = e.clientX - rect.left - rect.width / 2;
+            const y = e.clientY - rect.top - rect.height / 2;
+            gsap.to(btn, { x: x * 0.35, y: y * 0.35, duration: 0.25, ease: "power2.out" });
+          });
+          btn.addEventListener("mouseleave", () => {
+            gsap.to(btn, { x: 0, y: 0, duration: 0.6, ease: "elastic.out(1, 0.35)" });
+          });
         });
       }
 
-      // Interactive Magnetic Buttons
-      const magnetics = gsap.utils.toArray<HTMLElement>(".gsap-magnetic");
-      magnetics.forEach((btn) => {
-        btn.addEventListener("mousemove", (e) => {
-          const rect = btn.getBoundingClientRect();
-          const x = e.clientX - rect.left - rect.width / 2;
-          const y = e.clientY - rect.top - rect.height / 2;
-          gsap.to(btn, { x: x * 0.35, y: y * 0.35, duration: 0.25, ease: "power2.out" });
-        });
-        btn.addEventListener("mouseleave", () => {
-          gsap.to(btn, { x: 0, y: 0, duration: 0.6, ease: "elastic.out(1, 0.35)" });
-        });
-      });
-
-      // Horizontal Scroll Pipeline
+      // Horizontal Scroll Pipeline (Pinned Stage on Desktop, stacked on Mobile)
       const track = horizontalTrackRef.current;
       const section = horizontalSectionRef.current;
-      if (track && section) {
+      if (track && section && !isMobile) {
         const totalScroll = track.scrollWidth - window.innerWidth;
         gsap.to(track, {
           x: () => -totalScroll - 96,
@@ -458,31 +580,70 @@ export default function Landing() {
         });
       }
 
-      // Feature Cards Stagger
-      gsap.from(".gsap-feature-card", {
-        scrollTrigger: {
-          trigger: "#features",
-          start: "top 75%",
-        },
-        y: 60,
-        opacity: 0,
-        stagger: 0.12,
-        duration: 0.9,
-        ease: "power3.out",
-      });
+      // Mobile Specific Scroll Staggers
+      if (isMobile) {
+        gsap.from(".gsap-mobile-stat-box", {
+          scrollTrigger: {
+            trigger: ".gsap-hero-stat",
+            start: "top 90%",
+          },
+          scale: 0.85,
+          opacity: 0,
+          stagger: 0.1,
+          duration: 0.6,
+          ease: "back.out(1.5)",
+        });
 
-      // Intelligence Section Cards
-      gsap.from(".gsap-intel-card", {
-        scrollTrigger: {
-          trigger: "#intelligence",
-          start: "top 80%",
-        },
-        y: 40,
-        opacity: 0,
-        stagger: 0.1,
-        duration: 0.8,
-        ease: "power3.out",
-      });
+        gsap.from(".gsap-mobile-feature-card", {
+          scrollTrigger: {
+            trigger: "#features",
+            start: "top 85%",
+          },
+          x: -25,
+          opacity: 0,
+          stagger: 0.12,
+          duration: 0.7,
+          ease: "power2.out",
+        });
+
+        gsap.from(".gsap-mobile-step-card", {
+          scrollTrigger: {
+            trigger: "#how",
+            start: "top 80%",
+          },
+          y: 35,
+          opacity: 0,
+          stagger: 0.15,
+          duration: 0.7,
+          ease: "power2.out",
+        });
+      } else {
+        // Desktop Features Reveal
+        gsap.from(".gsap-feature-card", {
+          scrollTrigger: {
+            trigger: "#features",
+            start: "top 75%",
+          },
+          y: 60,
+          opacity: 0,
+          stagger: 0.12,
+          duration: 0.9,
+          ease: "power3.out",
+        });
+
+        // Desktop Intelligence Section Cards
+        gsap.from(".gsap-intel-card", {
+          scrollTrigger: {
+            trigger: "#intelligence",
+            start: "top 80%",
+          },
+          y: 40,
+          opacity: 0,
+          stagger: 0.1,
+          duration: 0.8,
+          ease: "power3.out",
+        });
+      }
 
       // Velocity Marquee
       let marqueeSpeed = 1;
@@ -519,16 +680,16 @@ export default function Landing() {
       {/* Floating Animated Bee Video Companion */}
       <div
         ref={beeContainerRef}
-        className="pointer-events-none fixed top-0 left-0 z-50 hidden md:block w-52 h-32"
+        className="pointer-events-none fixed top-0 left-0 z-50 w-32 h-20 md:w-52 md:h-32 touch-none select-none"
         style={{ willChange: "transform" }}
       >
         <BeeChromaVideo />
       </div>
 
       {/* Top Navbar */}
-      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-[#1c1d1a]/10 bg-[#f7f7f2]/85 px-6 py-4 backdrop-blur-xl md:px-12">
-        <Link to="/" className="flex items-center gap-2 text-2xl font-black tracking-tight text-[#1c1d1a]">
-          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#3d654c] text-white text-base">H</span>
+      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-[#1c1d1a]/10 bg-[#f7f7f2]/85 px-4 py-3.5 backdrop-blur-xl md:px-12 md:py-4">
+        <Link to="/" className="flex items-center gap-2 text-xl font-black tracking-tight text-[#1c1d1a] md:text-2xl">
+          <span className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-xl bg-[#3d654c] text-white text-sm md:text-base">H</span>
           <span>Hivez</span>
         </Link>
         <nav className="hidden items-center gap-8 text-xs font-extrabold uppercase tracking-[0.16em] text-[#1c1d1a]/70 md:flex">
@@ -537,7 +698,7 @@ export default function Landing() {
           <a href="#intelligence" className="transition hover:text-[#3d654c]">Intelligence</a>
           <a href="#community" className="transition hover:text-[#3d654c]">Community</a>
         </nav>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
           <Link
             to="/signup"
             className="hidden text-xs font-bold uppercase tracking-wider text-[#1c1d1a]/80 hover:text-[#1c1d1a] sm:inline-block px-3 py-2"
@@ -546,7 +707,7 @@ export default function Landing() {
           </Link>
           <Link
             to="/signup"
-            className="gsap-magnetic inline-flex items-center rounded-full bg-[#3d654c] px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-[#32533e]"
+            className="gsap-magnetic inline-flex items-center rounded-full bg-[#3d654c] px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-[#32533e] md:px-6 md:py-2.5 md:text-xs"
           >
             Join Hivez
           </Link>
@@ -555,124 +716,122 @@ export default function Landing() {
 
       <main className="relative z-10">
         {/* HERO SECTION */}
-        <section className="relative mx-auto grid max-w-7xl items-center gap-12 px-6 pt-12 pb-20 md:grid-cols-[1.1fr_0.9fr] md:px-12 md:pt-20 md:pb-28">
+        <section className="relative mx-auto grid max-w-7xl items-center gap-8 px-4 pt-6 pb-12 md:grid-cols-[1.1fr_0.9fr] md:gap-12 md:px-12 md:pt-20 md:pb-28">
           <div>
-            <div className="gsap-hero-badge inline-flex items-center gap-2 rounded-full border border-[#3d654c]/20 bg-[#3d654c]/10 px-4 py-1.5 text-xs font-bold tracking-wider text-[#3d654c] uppercase">
-              <Sparkles size={14} /> The Civic Action Network
+            <div className="gsap-hero-badge inline-flex items-center gap-2 rounded-full border border-[#3d654c]/20 bg-[#3d654c]/10 px-3.5 py-1 text-[11px] font-bold tracking-wider text-[#3d654c] uppercase md:px-4 md:py-1.5 md:text-xs">
+              <Sparkles size={13} /> The Civic Action Network
             </div>
 
-            <h1 className="mt-6 text-4xl font-black tracking-tight text-[#1c1d1a] sm:text-6xl md:text-7xl leading-[1.03]">
+            <h1 className="mt-4 text-3xl font-black tracking-tight text-[#1c1d1a] sm:text-5xl md:text-7xl leading-[1.05]">
               <span className="gsap-title-word block">Report the flaws.</span>
               <span className="gsap-title-word block text-[#3d654c]">Rally the street.</span>
               <span className="gsap-title-word block">See real fixes.</span>
             </h1>
 
-            <p className="gsap-hero-desc mt-6 max-w-xl text-base leading-relaxed text-[#1c1d1a]/70 md:text-lg font-medium">
+            <p className="gsap-hero-desc mt-4 max-w-xl text-sm leading-relaxed text-[#1c1d1a]/70 sm:text-base md:mt-6 md:text-lg font-medium">
               Transform every broken streetlight, road hazard, and water burst into an actionable, community-backed ticket with AI verified resolution tracking.
             </p>
 
-            <div className="mt-10 flex flex-wrap items-center gap-4">
+            <div className="mt-6 flex flex-wrap items-center gap-3 md:mt-10 md:gap-4">
               <Link
                 to="/signup"
-                className="gsap-hero-btn gsap-magnetic inline-flex items-center gap-2.5 rounded-full bg-[#3d654c] px-8 py-4 text-sm font-bold text-white shadow-lg shadow-[#3d654c]/25 transition hover:bg-[#32533e]"
+                className="gsap-hero-btn gsap-magnetic inline-flex items-center gap-2 rounded-full bg-[#3d654c] px-6 py-3 text-xs font-bold text-white shadow-lg shadow-[#3d654c]/25 transition hover:bg-[#32533e] md:px-8 md:py-4 md:text-sm"
               >
-                Start Reporting Now <ArrowUpRight size={17} />
+                Start Reporting Now <ArrowUpRight size={16} />
               </Link>
               <a
                 href="#how"
-                className="gsap-hero-btn gsap-magnetic inline-flex items-center gap-2 rounded-full border border-[#1c1d1a]/15 bg-white px-7 py-4 text-sm font-bold text-[#1c1d1a] shadow-sm transition hover:bg-[#ecece5]"
+                className="gsap-hero-btn gsap-magnetic inline-flex items-center gap-2 rounded-full border border-[#1c1d1a]/15 bg-white px-5 py-3 text-xs font-bold text-[#1c1d1a] shadow-sm transition hover:bg-[#ecece5] md:px-7 md:py-4 md:text-sm"
               >
                 Watch Workflow
               </a>
             </div>
 
-            <div className="mt-14 grid grid-cols-3 gap-6 border-t border-[#1c1d1a]/10 pt-6">
-              {[
-                ["14,280+", "Issues Fixed"],
-                ["420+", "Active Wards"],
-                ["94.2%", "AI Verification"],
-              ].map(([val, label]) => (
-                <div key={label} className="gsap-hero-stat">
-                  <p className="text-2xl font-black text-[#1c1d1a] md:text-3xl tracking-tight">{val}</p>
-                  <p className="mt-1 text-[11px] font-bold tracking-wider text-[#1c1d1a]/60 uppercase">{label}</p>
+            <div className="mt-8 grid grid-cols-3 gap-2 border-t border-[#1c1d1a]/10 pt-4 md:mt-14 md:gap-6 md:pt-6">
+              {heroStats.map((stat) => (
+                <div key={stat.label} className="gsap-hero-stat gsap-mobile-stat-box">
+                  <p className="text-lg font-black text-[#1c1d1a] sm:text-2xl md:text-3xl tracking-tight">{stat.val}</p>
+                  <p className="mt-0.5 text-[10px] font-bold tracking-wider text-[#1c1d1a]/60 uppercase md:text-[11px]">{stat.label}</p>
                 </div>
               ))}
             </div>
           </div>
 
           {/* 3D Glass Incident Preview Card */}
-          <div className="gsap-hero-card-wrap relative flex justify-center">
+          <div className="gsap-hero-card-wrap relative flex justify-center mt-2 md:mt-0">
             <div
               ref={card3DRef}
-              className="w-full max-w-md rounded-3xl border border-[#1c1d1a]/10 bg-white p-6 shadow-2xl backdrop-blur-xl transition-shadow duration-500 hover:shadow-3xl"
+              className="w-full max-w-md rounded-2xl border border-[#1c1d1a]/10 bg-white p-4 shadow-xl backdrop-blur-xl transition-shadow duration-500 hover:shadow-2xl md:rounded-3xl md:p-6"
               style={{ transformStyle: "preserve-3d" }}
             >
-              <div className="flex items-center justify-between border-b border-[#1c1d1a]/10 pb-4">
-                <div className="flex items-center gap-2.5">
-                  <span className="relative flex h-3 w-3">
+              <div className="flex items-center justify-between border-b border-[#1c1d1a]/10 pb-3 md:pb-4">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2.5 w-2.5 md:h-3 md:w-3">
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#3d654c] opacity-75"></span>
-                    <span className="relative inline-flex h-3 w-3 rounded-full bg-[#3d654c]"></span>
+                    <span className="relative inline-flex h-2.5 w-2.5 md:h-3 md:w-3 rounded-full bg-[#3d654c]"></span>
                   </span>
                   <div>
-                    <h4 className="font-extrabold text-[#1c1d1a] text-sm uppercase tracking-wider">Live Ward Signal</h4>
-                    <p className="text-[11px] text-[#1c1d1a]/60 font-semibold">Ward 112 • Indiranagar</p>
+                    <h4 className="font-extrabold text-[#1c1d1a] text-xs uppercase tracking-wider md:text-sm">Live Ward Signal</h4>
+                    <p className="text-[10px] text-[#1c1d1a]/60 font-semibold md:text-[11px]">Ward 112 • Indiranagar</p>
                   </div>
                 </div>
-                <span className="rounded-full bg-[#3d654c]/10 px-3 py-1 text-xs font-bold text-[#3d654c]">Urgent</span>
+                <span className="rounded-full bg-[#3d654c]/10 px-2.5 py-0.5 text-[11px] font-bold text-[#3d654c] md:px-3 md:py-1 md:text-xs">
+                  Urgent
+                </span>
               </div>
 
-              <div className="mt-4 overflow-hidden rounded-2xl border border-[#1c1d1a]/10 bg-[#f7f7f2]">
-                <div className="relative h-48 w-full overflow-hidden">
+              <div className="mt-3 overflow-hidden rounded-xl border border-[#1c1d1a]/10 bg-[#f7f7f2] md:mt-4 md:rounded-2xl">
+                <div className="relative h-36 w-full overflow-hidden sm:h-44 md:h-48">
                   <img
                     src={heroStreet}
                     alt="Active street issue"
                     className="h-full w-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                  <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1 text-xs font-bold text-white backdrop-blur-md">
-                    <MapPin size={12} className="text-emerald-400" /> 8th Main Road • 0.3 km
+                  <span className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 rounded-full bg-black/70 px-2.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-md md:bottom-3 md:left-3 md:gap-1.5 md:px-3 md:py-1 md:text-xs">
+                    <MapPin size={11} className="text-emerald-400" /> 8th Main Road • 0.3 km
                   </span>
                 </div>
 
-                <div className="p-4 bg-white">
-                  <span className="inline-block rounded-full bg-[#f3f4ee] px-2.5 py-0.5 text-[11px] font-extrabold text-[#3d654c] uppercase tracking-wider">
+                <div className="p-3.5 bg-white md:p-4">
+                  <span className="inline-block rounded-full bg-[#f3f4ee] px-2 py-0.5 text-[10px] font-extrabold text-[#3d654c] uppercase tracking-wider md:px-2.5 md:text-[11px]">
                     Infrastructure & Water
                   </span>
-                  <h5 className="mt-2 font-black text-[#1c1d1a] text-base leading-snug">
+                  <h5 className="mt-1.5 font-black text-[#1c1d1a] text-sm leading-snug md:mt-2 md:text-base">
                     Severe Main Pipe Burst Flooding Roadway
                   </h5>
-                  <p className="mt-1 text-xs leading-relaxed text-[#1c1d1a]/70">
+                  <p className="mt-1 text-[11px] leading-relaxed text-[#1c1d1a]/70 md:text-xs">
                     High pressure leak eroding subgrade asphalt for 3+ hours near bus interchange.
                   </p>
 
-                  <div className="mt-4 flex items-center justify-between border-t border-[#1c1d1a]/10 pt-3 text-xs font-bold text-[#1c1d1a]/80">
-                    <span className="flex items-center gap-1.5 text-[#3d654c]">
-                      <ThumbsUp size={14} /> 312 Backed
+                  <div className="mt-3 flex items-center justify-between border-t border-[#1c1d1a]/10 pt-2.5 text-[11px] font-bold text-[#1c1d1a]/80 md:mt-4 md:pt-3 md:text-xs">
+                    <span className="flex items-center gap-1 text-[#3d654c] md:gap-1.5">
+                      <ThumbsUp size={13} /> 312 Backed
                     </span>
                     <span className="flex items-center gap-1">
-                      <MessageCircle size={14} /> 48 Comments
+                      <MessageCircle size={13} /> 48
                     </span>
                     <span className="flex items-center gap-1 text-[#1c1d1a]/60 hover:text-[#1c1d1a] cursor-pointer">
-                      <Share2 size={14} /> Share
+                      <Share2 size={13} /> Share
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-3.5 flex items-center justify-between rounded-xl bg-[#f3f4ee] p-3 text-xs font-bold text-[#1c1d1a]">
-                <div className="flex items-center gap-2">
-                  <Zap size={14} className="text-amber-600" />
-                  <span>AI Urgency Metric: 88/100 (Critical Hazard)</span>
+              <div className="mt-2.5 flex items-center justify-between rounded-xl bg-[#f3f4ee] p-2.5 text-[11px] font-bold text-[#1c1d1a] md:mt-3.5 md:p-3 md:text-xs">
+                <div className="flex items-center gap-1.5 md:gap-2">
+                  <Zap size={13} className="text-amber-600" />
+                  <span>AI Urgency: 88/100 (Critical)</span>
                 </div>
-                <ChevronRight size={14} className="text-[#1c1d1a]/40" />
+                <ChevronRight size={13} className="text-[#1c1d1a]/40" />
               </div>
             </div>
           </div>
         </section>
 
         {/* INFINITE SCROLLING VELOCITY MARQUEE */}
-        <section className="border-y border-[#1c1d1a]/10 bg-[#f3f4ee] py-5 overflow-hidden whitespace-nowrap">
-          <div className="gsap-marquee-content inline-flex gap-8 text-sm font-black uppercase tracking-[0.2em] text-[#1c1d1a]/60">
+        <section className="border-y border-[#1c1d1a]/10 bg-[#f3f4ee] py-3.5 md:py-5 overflow-hidden whitespace-nowrap">
+          <div className="gsap-marquee-content inline-flex gap-6 md:gap-8 text-xs md:text-sm font-black uppercase tracking-[0.2em] text-[#1c1d1a]/60">
             {Array.from({ length: 4 }).flatMap(() => [
               "Pothole Repair",
               "•",
@@ -694,34 +853,34 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* PINNED HORIZONTAL WORKFLOW SECTION */}
-        <section ref={horizontalSectionRef} id="how" className="relative h-screen bg-[#1c1d1a] text-[#f7f7f2] flex flex-col justify-center overflow-hidden">
-          <div className="px-6 md:px-16 mb-8 max-w-7xl w-full">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.24em] text-[#9bc59f]">
-              <Layers size={14} /> Pinned Architecture
+        {/* WORKFLOW SECTION */}
+        <section ref={horizontalSectionRef} id="how" className="relative bg-[#1c1d1a] text-[#f7f7f2] flex flex-col justify-center py-14 md:py-0 md:h-screen overflow-hidden">
+          <div className="px-4 md:px-16 mb-6 md:mb-8 max-w-7xl w-full">
+            <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.24em] text-[#9bc59f] md:text-xs">
+              <Layers size={13} /> Pinned Architecture
             </div>
-            <h2 className="mt-2 text-3xl md:text-5xl font-black text-white">How An Issue Gets Fixed</h2>
+            <h2 className="mt-1.5 text-2xl md:text-5xl font-black text-white">How An Issue Gets Fixed</h2>
           </div>
 
-          <div ref={horizontalTrackRef} className="flex gap-8 pl-6 md:pl-16 w-max items-stretch">
+          <div ref={horizontalTrackRef} className="flex flex-col md:flex-row gap-4 px-4 md:px-0 md:gap-8 md:pl-16 w-full md:w-max">
             {horizontalSteps.map((step) => (
               <div
                 key={step.n}
-                className="w-[340px] md:w-[460px] shrink-0 rounded-3xl border border-white/10 bg-white/5 p-8 md:p-10 backdrop-blur-xl flex flex-col justify-between"
+                className="gsap-mobile-step-card w-full md:w-[460px] shrink-0 rounded-2xl md:rounded-3xl border border-white/10 bg-white/5 p-5 md:p-10 backdrop-blur-xl flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-5xl font-black text-white/20">{step.n}</span>
-                    <span className="rounded-full bg-white/10 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-[#9bc59f]">
+                    <span className="font-mono text-3xl md:text-5xl font-black text-white/20">{step.n}</span>
+                    <span className="rounded-full bg-white/10 px-3 py-0.5 text-[10px] md:text-xs font-bold uppercase tracking-wider text-[#9bc59f]">
                       {step.phase}
                     </span>
                   </div>
-                  <h3 className="mt-6 text-2xl font-black text-white leading-tight">{step.title}</h3>
-                  <p className="mt-4 text-sm md:text-base leading-relaxed text-white/70">{step.desc}</p>
+                  <h3 className="mt-3.5 md:mt-6 text-lg md:text-2xl font-black text-white leading-tight">{step.title}</h3>
+                  <p className="mt-2 md:mt-4 text-xs md:text-base leading-relaxed text-white/70">{step.desc}</p>
                 </div>
-                <div className="mt-8 pt-4 border-t border-white/10 flex items-center justify-between text-xs font-bold text-[#9bc59f]">
+                <div className="mt-5 pt-3 md:mt-8 md:pt-4 border-t border-white/10 flex items-center justify-between text-[11px] md:text-xs font-bold text-[#9bc59f]">
                   <span>{step.badge}</span>
-                  <CheckCircle2 size={16} />
+                  <CheckCircle2 size={15} />
                 </div>
               </div>
             ))}
@@ -729,29 +888,29 @@ export default function Landing() {
         </section>
 
         {/* HIGH-IMPACT FEATURES GRID */}
-        <section id="features" className="mx-auto max-w-7xl px-6 py-28 md:px-12">
+        <section id="features" className="mx-auto max-w-7xl px-4 py-14 md:px-12 md:py-28">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#3d654c]">Engineered for Impact</p>
-            <h2 className="mt-3 text-3xl font-black tracking-tight text-[#1c1d1a] md:text-5xl">
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#3d654c] md:text-xs">Engineered for Impact</p>
+            <h2 className="mt-1.5 text-2xl font-black tracking-tight text-[#1c1d1a] md:text-5xl">
               Tools that turn complaints into coordination.
             </h2>
           </div>
 
-          <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 md:mt-16 md:gap-6">
             {features.map((f) => (
               <div
                 key={f.title}
-                className="gsap-feature-card group rounded-3xl border border-[#1c1d1a]/10 bg-white p-8 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:border-[#3d654c]/40"
+                className="gsap-feature-card gsap-mobile-feature-card group rounded-2xl border border-[#1c1d1a]/10 bg-white p-5 md:p-8 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:border-[#3d654c]/40 md:rounded-3xl"
               >
                 <div className="flex items-center justify-between">
-                  <div className="inline-flex rounded-2xl bg-[#f3f4ee] p-3.5 text-[#3d654c] transition group-hover:bg-[#3d654c] group-hover:text-white">
-                    <f.icon size={22} />
+                  <div className="inline-flex rounded-xl bg-[#f3f4ee] p-2.5 text-[#3d654c] transition group-hover:bg-[#3d654c] group-hover:text-white md:rounded-2xl md:p-3.5">
+                    <f.icon size={20} />
                   </div>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#1c1d1a]/50">{f.tag}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#1c1d1a]/50 md:text-[11px]">{f.tag}</span>
                 </div>
-                <h3 className="mt-6 text-xl font-bold text-[#1c1d1a] leading-tight">{f.title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-[#1c1d1a]/70">{f.text}</p>
-                <div className="mt-6 pt-4 border-t border-[#1c1d1a]/10 text-xs font-bold text-[#3d654c]">
+                <h3 className="mt-4 text-base md:text-xl font-bold text-[#1c1d1a] leading-tight md:mt-6">{f.title}</h3>
+                <p className="mt-2 text-xs md:text-sm leading-relaxed text-[#1c1d1a]/70 md:mt-3">{f.text}</p>
+                <div className="mt-4 pt-3 border-t border-[#1c1d1a]/10 text-[11px] md:text-xs font-bold text-[#3d654c] md:mt-6 md:pt-4">
                   {f.stat}
                 </div>
               </div>
@@ -760,81 +919,83 @@ export default function Landing() {
         </section>
 
         {/* BUILT-IN AI INTELLIGENCE */}
-        <section id="intelligence" className="border-t border-[#1c1d1a]/10 bg-[#f3f4ee] px-6 py-28 md:px-12">
-          <div className="mx-auto max-w-7xl grid items-center gap-12 lg:grid-cols-2">
+        <section id="intelligence" className="border-t border-[#1c1d1a]/10 bg-[#f3f4ee] px-4 py-14 md:px-12 md:py-28">
+          <div className="mx-auto max-w-7xl grid items-center gap-8 md:gap-12 lg:grid-cols-2">
             <div>
-              <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[#3d654c]">
-                <Bot size={16} /> Autonomous Verification
+              <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-[#3d654c] md:text-xs">
+                <Bot size={15} /> Autonomous Verification
               </div>
-              <h2 className="mt-3 text-3xl font-black text-[#1c1d1a] md:text-5xl leading-tight">
+              <h2 className="mt-2 text-2xl md:text-5xl font-black text-[#1c1d1a] leading-tight">
                 Computer vision that prevents fake closures.
               </h2>
-              <p className="mt-4 text-[#1c1d1a]/70 leading-relaxed text-base">
+              <p className="mt-3 text-xs md:text-base text-[#1c1d1a]/70 leading-relaxed">
                 Civic authorities can no longer mark an issue "Resolved" without verifiable digital evidence. Hivez matches landmark geometry, perspective angles, and GPS metadata against the initial submission.
               </p>
 
-              <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              <div className="mt-6 grid gap-3 sm:grid-cols-2 md:mt-8 md:gap-4">
                 {intelligenceItems.map((item) => (
-                  <div key={item.title} className="gsap-intel-card rounded-2xl bg-white p-5 border border-[#1c1d1a]/10 shadow-sm">
-                    <CheckCircle2 size={18} className="text-[#3d654c] mb-2" />
-                    <h4 className="font-bold text-sm text-[#1c1d1a]">{item.title}</h4>
-                    <p className="mt-1 text-xs text-[#1c1d1a]/65 leading-relaxed">{item.desc}</p>
+                  <div key={item.title} className="gsap-intel-card rounded-xl bg-white p-4 border border-[#1c1d1a]/10 shadow-sm md:rounded-2xl">
+                    <CheckCircle2 size={16} className="text-[#3d654c] mb-1.5" />
+                    <h4 className="font-bold text-xs md:text-sm text-[#1c1d1a]">{item.title}</h4>
+                    <p className="mt-1 text-[11px] md:text-xs text-[#1c1d1a]/65 leading-relaxed">{item.desc}</p>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="rounded-3xl border border-[#1c1d1a]/10 bg-white p-8 shadow-xl">
-              <div className="flex items-center justify-between border-b border-[#1c1d1a]/10 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#3d654c] text-white">
-                    <ShieldCheck size={20} />
+            <div className="rounded-2xl border border-[#1c1d1a]/10 bg-white p-5 shadow-xl md:rounded-3xl">
+              <div className="flex items-center justify-between border-b border-[#1c1d1a]/10 pb-3 md:pb-4">
+                <div className="flex items-center gap-2.5 md:gap-3">
+                  <div className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-xl bg-[#3d654c] text-white md:rounded-2xl">
+                    <ShieldCheck size={18} />
                   </div>
                   <div>
-                    <h4 className="font-black text-sm text-[#1c1d1a]">AI Resolution Gate</h4>
-                    <p className="text-xs text-[#1c1d1a]/60">Verification Status: Verified Complete</p>
+                    <h4 className="font-black text-xs md:text-sm text-[#1c1d1a]">AI Resolution Gate</h4>
+                    <p className="text-[10px] md:text-xs text-[#1c1d1a]/60">Verification Status: Verified Complete</p>
                   </div>
                 </div>
-                <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">99.4% Match</span>
+                <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] md:text-xs font-bold text-emerald-800">
+                  99.4% Match
+                </span>
               </div>
 
-              <div className="mt-6 grid grid-cols-2 gap-4">
-                <div className="rounded-2xl border border-rose-200 bg-rose-50/50 p-4">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-rose-700">Before (Incident)</span>
-                  <div className="mt-2 h-28 rounded-xl bg-neutral-300 flex items-center justify-center text-xs font-bold text-neutral-600">
+              <div className="mt-4 grid grid-cols-2 gap-3 md:mt-6 md:gap-4">
+                <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-3 md:rounded-2xl md:p-4">
+                  <span className="text-[10px] md:text-[11px] font-bold uppercase tracking-wider text-rose-700">Before (Incident)</span>
+                  <div className="mt-2 h-20 md:h-28 rounded-lg md:rounded-xl bg-neutral-300 flex items-center justify-center text-[10px] md:text-xs font-bold text-neutral-600">
                     Depth Defect: 18cm
                   </div>
                 </div>
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">After (Repaved)</span>
-                  <div className="mt-2 h-28 rounded-xl bg-[#3d654c]/20 flex items-center justify-center text-xs font-bold text-[#3d654c]">
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3 md:rounded-2xl md:p-4">
+                  <span className="text-[10px] md:text-[11px] font-bold uppercase tracking-wider text-emerald-700">After (Repaved)</span>
+                  <div className="mt-2 h-20 md:h-28 rounded-lg md:rounded-xl bg-[#3d654c]/20 flex items-center justify-center text-xs font-bold text-[#3d654c]">
                     Surface Restored
                   </div>
                 </div>
               </div>
 
-              <p className="mt-5 text-xs text-[#1c1d1a]/70 leading-relaxed font-medium">
-                Both photos matched at latitude coordinates `12.9783° N, 77.6408° E` with timestamped digital certificates signed by 12 neighbourhood witnesses.
+              <p className="mt-4 text-[11px] md:text-xs text-[#1c1d1a]/70 leading-relaxed font-medium md:mt-5">
+                Both photos matched at latitude coordinates 12.9783° N, 77.6408° E with timestamped digital certificates signed by 12 neighbourhood witnesses.
               </p>
             </div>
           </div>
         </section>
 
         {/* FINAL CALL TO ACTION */}
-        <section className="relative px-6 py-28 text-center bg-white border-t border-[#1c1d1a]/10 md:px-12">
+        <section className="relative px-4 py-16 text-center bg-white border-t border-[#1c1d1a]/10 md:px-12 md:py-28">
           <div className="mx-auto max-w-3xl">
-            <h2 className="text-4xl font-black text-[#1c1d1a] sm:text-6xl tracking-tight leading-tight">
+            <h2 className="text-3xl font-black text-[#1c1d1a] sm:text-5xl md:text-6xl tracking-tight leading-tight">
               Start reporting what your community needs.
             </h2>
-            <p className="mx-auto mt-4 max-w-lg text-[#1c1d1a]/70 font-medium">
+            <p className="mx-auto mt-3 max-w-lg text-xs md:text-base text-[#1c1d1a]/70 font-medium md:mt-4">
               Join your local neighbourhood network in under a minute and start making a visible difference.
             </p>
-            <div className="mt-8 flex justify-center">
+            <div className="mt-6 flex justify-center md:mt-8">
               <Link
                 to="/signup"
-                className="gsap-magnetic inline-flex items-center gap-2 rounded-full bg-[#3d654c] px-9 py-4 text-base font-bold text-white shadow-xl shadow-[#3d654c]/25 transition hover:bg-[#32533e]"
+                className="gsap-magnetic inline-flex items-center gap-2 rounded-full bg-[#3d654c] px-7 py-3.5 text-xs md:text-base font-bold text-white shadow-xl shadow-[#3d654c]/25 transition hover:bg-[#32533e] md:px-9 md:py-4"
               >
-                Create your account <ArrowUpRight size={18} />
+                Create your account <ArrowUpRight size={17} />
               </Link>
             </div>
           </div>
@@ -842,9 +1003,9 @@ export default function Landing() {
       </main>
 
       {/* FOOTER */}
-      <footer className="flex flex-col items-center justify-between gap-6 border-t border-[#1c1d1a]/10 bg-[#f7f7f2] px-6 py-10 text-xs text-[#1c1d1a]/60 md:flex-row md:px-12">
+      <footer className="flex flex-col items-center justify-between gap-4 border-t border-[#1c1d1a]/10 bg-[#f7f7f2] px-5 py-8 text-xs text-[#1c1d1a]/60 md:flex-row md:px-12 md:py-10">
         <span className="font-extrabold tracking-wider text-[#1c1d1a] text-sm">HIVEZ CIVIC NETWORK</span>
-        <div className="flex gap-6 font-bold">
+        <div className="flex flex-wrap justify-center gap-4 md:gap-6 font-bold">
           <a href="#features" className="hover:text-[#1c1d1a]">Features</a>
           <a href="#how" className="hover:text-[#1c1d1a]">Architecture</a>
           <a href="#intelligence" className="hover:text-[#1c1d1a]">AI Intelligence</a>
