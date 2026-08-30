@@ -27,10 +27,15 @@ import { listenForForegroundPushNotifications } from "@/services/pushNotificatio
 
 const ultraBeeSrc = "/assets/hivez-ultra-bee.webm";
 
-function UltraBeeMark() {
+function UltraBeeMark({ size = "md" }: { size?: "sm" | "md" }) {
+  const sizeClasses = {
+    sm: "h-5 w-5",
+    md: "h-7 w-7",
+  };
+
   return (
     <video
-      className="app-ultra-bee-mark h-7 w-7 object-contain"
+      className={`app-ultra-bee-mark object-contain shrink-0 ${sizeClasses[size]}`}
       src={ultraBeeSrc}
       autoPlay
       loop
@@ -223,12 +228,13 @@ export default function MainLayout() {
     setSidebarOpen(false);
   }
 
-  // Expanded Sidebar Menu View
+  // Properly Scrollable Expanded Sidebar Menu View
   const sidebarContent = (
-    <div className="flex h-full w-full flex-col justify-between p-3 select-none overflow-hidden bg-[#f7f7f2] dark:bg-[#0d0d0d]">
-      <div className="space-y-6">
+    <div className="flex h-full w-full flex-col justify-between bg-[#f7f7f2] dark:bg-[#0d0d0d] select-none overflow-hidden">
+      {/* Scrollable Upper Section */}
+      <div className="flex-1 overflow-y-auto px-3.5 py-4 space-y-6 scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-neutral-800">
         {/* Core Primary Navigation */}
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           {[
             { label: "Home", path: "/", icon: Home },
             { label: "Volunteering", path: "/volunteering", icon: HandHeart },
@@ -241,16 +247,16 @@ export default function MainLayout() {
               <button
                 key={item.label}
                 onClick={() => go(item.path)}
-                className={`gsap-minimal-item group relative flex w-full items-center justify-start rounded-xl px-3.5 py-2.5 text-xs font-semibold tracking-tight transition-all duration-200 ${
+                className={`gsap-minimal-item group relative flex w-full items-center justify-start rounded-xl px-3.5 py-3 text-sm font-bold tracking-tight transition-all duration-200 ${
                   active
                     ? "bg-[#3d654c] text-white shadow-sm shadow-[#3d654c]/20 dark:bg-[#f2c14e] dark:text-[#121212] dark:shadow-[#f2c14e]/20"
-                    : "text-[#1c1d1a]/70 hover:bg-[#1c1d1a]/5 hover:text-[#1c1d1a] dark:text-neutral-400 dark:hover:bg-white/5 dark:hover:text-white"
+                    : "text-[#1c1d1a]/80 hover:bg-[#1c1d1a]/5 hover:text-[#1c1d1a] dark:text-neutral-300 dark:hover:bg-white/5 dark:hover:text-white"
                 }`}
               >
-                <div className="flex items-center gap-3 truncate">
+                <div className="flex items-center gap-3.5 truncate">
                   <div className="relative flex shrink-0 items-center justify-center">
                     <Icon
-                      size={18}
+                      size={20}
                       className={`transition-transform duration-200 group-hover:scale-105 ${
                         active
                           ? "text-white dark:text-[#121212]"
@@ -259,7 +265,7 @@ export default function MainLayout() {
                     />
                     {item.badge && item.badge > 0 ? <Badge count={item.badge} /> : null}
                   </div>
-                  <span className="truncate text-[13px] font-bold tracking-tight">{item.label}</span>
+                  <span className="truncate text-[15px] font-bold tracking-tight">{item.label}</span>
                 </div>
               </button>
             );
@@ -268,29 +274,29 @@ export default function MainLayout() {
 
         {/* Communities Section */}
         <div>
-          <div className="flex items-center justify-between px-3 pb-2 text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#1c1d1a]/40 dark:text-neutral-500">
+          <div className="flex items-center justify-between px-3 pb-2.5 text-xs font-black uppercase tracking-[0.2em] text-[#1c1d1a]/45 dark:text-neutral-400">
             <span>Hives</span>
-            <span className="rounded-full bg-[#1c1d1a]/5 px-2 py-0.5 text-[9px] font-bold text-[#3d654c] dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
+            <span className="rounded-full bg-[#1c1d1a]/5 px-2.5 py-0.5 text-[10px] font-bold text-[#3d654c] dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
               {COMMUNITIES.length} Wards
             </span>
           </div>
 
-          <div className="space-y-0.5 overflow-y-auto max-h-[44vh] pr-1 scrollbar-none">
+          <div className="space-y-1">
             {COMMUNITIES.map((community) => {
               const active = isActive(`/hive/${community.id}`);
               return (
                 <button
                   key={community.id}
                   onClick={() => go(`/hive/${community.id}`)}
-                  className={`gsap-minimal-item group flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 ${
+                  className={`gsap-minimal-item group flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200 ${
                     active
                       ? "bg-[#3d654c] text-white shadow-sm shadow-[#3d654c]/20 dark:bg-[#f2c14e] dark:text-[#121212] dark:shadow-[#f2c14e]/20"
-                      : "text-[#1c1d1a]/70 hover:bg-[#1c1d1a]/5 hover:text-[#1c1d1a] dark:text-neutral-400 dark:hover:bg-white/5 dark:hover:text-white"
+                      : "text-[#1c1d1a]/75 hover:bg-[#1c1d1a]/5 hover:text-[#1c1d1a] dark:text-neutral-300 dark:hover:bg-white/5 dark:hover:text-white"
                   }`}
                 >
-                  <div className="flex items-center gap-2.5 truncate">
+                  <div className="flex items-center gap-3 truncate">
                     <span
-                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-sm transition-transform duration-200 group-hover:scale-110 ${
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-base transition-transform duration-200 group-hover:scale-110 ${
                         active
                           ? "bg-white/20 text-white dark:bg-black/15 dark:text-[#121212]"
                           : "bg-white border border-[#1c1d1a]/8 shadow-2xs dark:bg-neutral-900 dark:border-neutral-800"
@@ -298,10 +304,10 @@ export default function MainLayout() {
                     >
                       {community.icon}
                     </span>
-                    <span className="truncate text-xs font-semibold">{community.name}</span>
+                    <span className="truncate text-sm font-semibold">{community.name}</span>
                   </div>
                   <ChevronRight
-                    size={13}
+                    size={15}
                     className={`transition-all duration-200 ${
                       active
                         ? "opacity-90 text-white dark:text-[#121212] translate-x-0.5"
@@ -315,21 +321,21 @@ export default function MainLayout() {
         </div>
       </div>
 
-      {/* Footer Action Dock */}
-      <div className="border-t border-[#1c1d1a]/8 pt-2.5 space-y-0.5 dark:border-neutral-800/80">
+      {/* Pinned Footer Action Dock */}
+      <div className="shrink-0 border-t border-[#1c1d1a]/8 px-3.5 py-3 space-y-1 bg-[#f7f7f2] dark:bg-[#0d0d0d] dark:border-neutral-800/80">
         <button
           onClick={() => go("/settings")}
-          className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-[#1c1d1a]/70 transition hover:bg-[#1c1d1a]/5 hover:text-[#1c1d1a] dark:text-neutral-400 dark:hover:bg-white/5 dark:hover:text-white"
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-[#1c1d1a]/75 transition hover:bg-[#1c1d1a]/5 hover:text-[#1c1d1a] dark:text-neutral-300 dark:hover:bg-white/5 dark:hover:text-white"
         >
-          <Settings size={15} className="text-[#1c1d1a]/60 dark:text-neutral-400" />
+          <Settings size={18} className="text-[#1c1d1a]/60 dark:text-neutral-400" />
           <span>Settings</span>
         </button>
 
         <button
           onClick={logout}
-          className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-rose-600 transition hover:bg-rose-50 dark:hover:bg-rose-950/40 dark:text-rose-400"
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-rose-600 transition hover:bg-rose-50 dark:hover:bg-rose-950/40 dark:text-rose-400"
         >
-          <LogOut size={15} />
+          <LogOut size={18} />
           <span>Logout</span>
         </button>
       </div>
@@ -429,8 +435,8 @@ export default function MainLayout() {
           </div>
         ) : (
           /* Perfectly Centered 72px Collapsed Rail */
-          <div className="flex flex-col items-center justify-between h-full w-[72px] shrink-0 py-3.5 select-none overflow-hidden">
-            <div className="flex flex-col items-center w-full space-y-1.5">
+          <div className="flex flex-col items-center justify-between h-full w-[72px] shrink-0 py-4 select-none overflow-hidden">
+            <div className="flex flex-col items-center w-full space-y-2">
               {/* Primary Navigation Icons */}
               {[
                 { path: "/", icon: Home, label: "Home" },
@@ -445,23 +451,23 @@ export default function MainLayout() {
                     key={item.label}
                     onClick={() => go(item.path)}
                     title={item.label}
-                    className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-200 ${
+                    className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all duration-200 ${
                       active
                         ? "bg-[#3d654c] text-white shadow-sm dark:bg-[#f2c14e] dark:text-[#121212] dark:shadow-[#f2c14e]/20 scale-105"
                         : "text-[#1c1d1a]/70 hover:bg-[#1c1d1a]/5 hover:text-[#1c1d1a] dark:text-neutral-400 dark:hover:bg-white/10 dark:hover:text-white"
                     }`}
                   >
-                    <Icon size={18} />
+                    <Icon size={20} />
                     {item.badge && item.badge > 0 ? <Badge count={item.badge} /> : null}
                   </button>
                 );
               })}
 
               {/* Minimal Divider */}
-              <div className="h-[1px] w-5 bg-[#1c1d1a]/10 dark:bg-neutral-800 my-1 shrink-0" />
+              <div className="h-[1px] w-6 bg-[#1c1d1a]/10 dark:bg-neutral-800 my-1 shrink-0" />
 
               {/* Communities Icon Stream */}
-              <div className="flex flex-col items-center w-full space-y-1 overflow-y-auto max-h-[46vh] scrollbar-none py-0.5">
+              <div className="flex flex-col items-center w-full space-y-1.5 overflow-y-auto max-h-[46vh] scrollbar-none py-0.5">
                 {COMMUNITIES.map((community) => {
                   const active = isActive(`/hive/${community.id}`);
                   return (
@@ -469,7 +475,7 @@ export default function MainLayout() {
                       key={community.id}
                       onClick={() => go(`/hive/${community.id}`)}
                       title={community.name}
-                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-base transition-all duration-200 ${
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg transition-all duration-200 ${
                         active
                           ? "bg-[#3d654c] text-white shadow-sm dark:bg-[#f2c14e] dark:text-[#121212] scale-105"
                           : "text-[#1c1d1a]/80 hover:bg-[#1c1d1a]/5 dark:text-neutral-300 dark:hover:bg-white/10"
@@ -483,20 +489,20 @@ export default function MainLayout() {
             </div>
 
             {/* Bottom Controls */}
-            <div className="flex flex-col items-center w-full pt-2 border-t border-[#1c1d1a]/10 dark:border-neutral-800/80 space-y-1">
+            <div className="flex flex-col items-center w-full pt-2 border-t border-[#1c1d1a]/10 dark:border-neutral-800/80 space-y-1.5">
               <button
                 onClick={() => go("/settings")}
                 title="Settings"
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[#1c1d1a]/70 hover:bg-[#1c1d1a]/5 hover:text-[#1c1d1a] transition-all dark:text-neutral-400 dark:hover:bg-white/10"
               >
-                <Settings size={16} />
+                <Settings size={18} />
               </button>
               <button
                 onClick={logout}
                 title="Logout"
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-rose-500 hover:bg-rose-50 hover:text-rose-600 transition-all dark:hover:bg-rose-950/40 dark:text-rose-400"
               >
-                <LogOut size={16} />
+                <LogOut size={18} />
               </button>
             </div>
           </div>
@@ -575,10 +581,11 @@ export default function MainLayout() {
               <div
                 className="fixed left-0 top-0 z-50 flex h-screen w-72 max-w-[80vw] flex-col border-r border-[#1c1d1a]/10 bg-[#f7f7f2] shadow-2xl dark:border-neutral-800 dark:bg-[#0d0d0d] overflow-hidden lg:hidden"
               >
-                <div className="flex w-full items-center justify-between border-b border-[#1c1d1a]/10 px-4 py-3.5 bg-white/60 dark:border-neutral-800 dark:bg-neutral-900/60 shrink-0">
+                {/* Mobile Drawer Header */}
+                <div className="flex w-full items-center justify-between border-b border-[#1c1d1a]/10 px-4 py-3 bg-white/60 dark:border-neutral-800 dark:bg-neutral-900/60 shrink-0">
                   <div className="flex items-center gap-2">
-                    <h1 className="text-lg font-black tracking-tight text-[#1c1d1a] dark:text-white">Hivez</h1>
-                    <UltraBeeMark />
+                    <h1 className="text-base font-black tracking-tight text-[#1c1d1a] dark:text-white">Hivez</h1>
+                    <UltraBeeMark size="md" />
                   </div>
                   <button
                     type="button"
