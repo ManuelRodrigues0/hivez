@@ -338,6 +338,11 @@ export default function Create() {
 
   async function submitReport() {
     if (!user || !selectedReportCategory) return;
+    if (selectedReportCategory.requiresMedia && verification?.finalDecision !== "VERIFIED") {
+      setReportError("This report needs a verified image before it can be submitted.");
+      setReportStep(verification ? "verify" : "media");
+      return;
+    }
     if (!canContinueDetails()) {
       setReportError("Add the required report details.");
       return;
@@ -360,7 +365,7 @@ export default function Create() {
       const captionText = reportDescription.trim();
       const localModel = verification?.localModel;
       const gemini = verification?.gemini;
-      const verificationConfidence = localModel?.confidence ?? gemini?.confidence ?? null;
+      const verificationConfidence = verification?.verificationScore ?? localModel?.confidence ?? gemini?.confidence ?? null;
       const verificationModelVersion = localModel?.modelVersion || null;
       const verificationStatus = verification?.status || "pending";
 
@@ -389,8 +394,13 @@ export default function Create() {
           localModel: localModel
             ? {
                 available: localModel.available,
-                prediction: localModel.predictedClass,
-                confidence: localModel.confidence,
+                status: localModel.status,
+                predictions: localModel.predictions,
+                topLabel: localModel.topLabel,
+                topClassType: localModel.topClassType,
+                topConfidence: localModel.topConfidence,
+                topConfidencePercent: localModel.topConfidencePercent,
+                relevant: localModel.relevant,
                 modelVersion: localModel.modelVersion,
                 passed: localModel.passed,
                 source: localModel.source,
@@ -398,6 +408,12 @@ export default function Create() {
               }
             : null,
           gemini: gemini || { enabled: false },
+          providers: verification.providers,
+          finalDecision: verification.finalDecision,
+          verificationScore: verification.verificationScore,
+          agreement: verification.agreement,
+          consensus: verification.consensus,
+          verifiedAt: verification.verifiedAt,
           finalClassification: verification.finalClassification,
           message: verification.message,
         } : null,
@@ -644,6 +660,19 @@ export default function Create() {
 
               {reportError && <p className="mt-4 text-sm font-medium text-red-500">{reportError}</p>}
 
+              {verificationBusy && (
+                <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
+                  <div className="flex items-center gap-2 font-semibold">
+                    <Loader2 size={16} className="animate-spin" />
+                    Checking image...
+                  </div>
+                  <div className="mt-3 space-y-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+                    <p>Local AI analysis is running first.</p>
+                    <p>Cloud checks will stop early if enough systems agree.</p>
+                  </div>
+                </div>
+              )}
+
               <div className="mt-6 flex justify-end gap-2">
                 {mediaValidation?.warnings.length ? <button type="button" onClick={runVerification} className="rounded-full border border-zinc-200 px-4 py-2 text-sm font-semibold dark:border-zinc-700">Continue Anyway</button> : null}
                 <button type="button" onClick={runVerification} disabled={verificationBusy || (currentCategory.requiresMedia && !reportFile)} className="inline-flex items-center gap-2 rounded-full bg-zinc-950 px-5 py-2 text-sm font-semibold text-white disabled:opacity-50 dark:bg-white dark:text-black">
@@ -656,11 +685,11 @@ export default function Create() {
 
           {reportStep === "verify" && currentCategory && verification && (
             <section>
-              <h1 className="text-2xl font-bold tracking-tight">AI Check Complete</h1>
+              <h1 className="text-2xl font-bold tracking-tight">{verificationTitle(verification)}</h1>
               <div className="mt-5 rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800">
                 <div className="flex items-start gap-3">
-                  <span className={`flex h-11 w-11 items-center justify-center rounded-full ${verification.status === "ai_checked" || verification.status === "local_model_only" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"}`}>
-                    {verification.status === "ai_checked" || verification.status === "local_model_only" ? <Check size={22} /> : <AlertTriangle size={22} />}
+                  <span className={`flex h-11 w-11 items-center justify-center rounded-full ${verification.finalDecision === "VERIFIED" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"}`}>
+                    {verification.finalDecision === "VERIFIED" ? <Check size={22} /> : <AlertTriangle size={22} />}
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold">{currentCategory.title}</p>
@@ -668,15 +697,15 @@ export default function Create() {
                   </div>
                 </div>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <Metric label="Local model" value={verification.localModel?.available ? verification.localModel.predictedClass || "Analyzed" : "Unavailable"} />
-                  <Metric label="Local confidence" value={formatConfidence(verification.localModel?.confidence)} />
-                  <Metric label="Image relevance" value={verification.gemini.enabled ? (verification.gemini.imageRelevant ? "Good" : "Needs review") : "Not checked"} />
-                  <Metric label="Image quality" value={verification.gemini.imageQuality || "Not checked"} />
+                  <Metric label="Local model" value={verification.localModel?.available ? verification.localModel.topLabel || "Analyzed" : "Unavailable"} />
+                  <Metric label="Local confidence" value={formatConfidence(verification.localModel?.topConfidence)} />
+                  <Metric label="AI checks" value={verification.consensus ? `${verification.consensus.successfulChecks} completed` : "Not checked"} />
+                  <Metric label="Consensus" value={verification.consensus?.earlyConsensusReached ? "Reached early" : verification.finalDecision.toLowerCase()} />
                 </div>
               </div>
               <div className="mt-6 flex flex-wrap justify-end gap-2">
-                {verification.status === "requires_review" && <button type="button" onClick={() => setReportStep("media")} className="rounded-full border border-zinc-200 px-4 py-2 text-sm font-semibold dark:border-zinc-700">Upload Another</button>}
-                <button type="button" onClick={() => setReportStep("location")} className="rounded-full bg-zinc-950 px-5 py-2 text-sm font-semibold text-white dark:bg-white dark:text-black">Continue</button>
+                {verification.finalDecision !== "VERIFIED" && <button type="button" onClick={() => setReportStep("media")} className="rounded-full border border-zinc-200 px-4 py-2 text-sm font-semibold dark:border-zinc-700">Try Another Image</button>}
+                {verification.finalDecision === "VERIFIED" && <button type="button" onClick={() => setReportStep("location")} className="rounded-full bg-zinc-950 px-5 py-2 text-sm font-semibold text-white dark:bg-white dark:text-black">Continue</button>}
               </div>
             </section>
           )}
@@ -821,10 +850,15 @@ function formatConfidence(confidence: number | undefined) {
 
 function verificationLabel(verification: ReportVerificationResult | null) {
   if (!verification) return "Pending";
-  if (verification.status === "ai_checked") return "AI Checked";
-  if (verification.status === "local_model_only") return "Local AI Checked";
-  if (verification.status === "requires_review") return "Requires Review";
-  return "Pending";
+  if (verification.finalDecision === "VERIFIED") return "Verified";
+  if (verification.finalDecision === "REJECTED") return "Image Does Not Match";
+  return "Uncertain";
+}
+
+function verificationTitle(verification: ReportVerificationResult) {
+  if (verification.finalDecision === "VERIFIED") return "Verified";
+  if (verification.finalDecision === "REJECTED") return "Image Does Not Match Category";
+  return "Verification Uncertain";
 }
 
 function cleanUndefined<T>(value: T): T {

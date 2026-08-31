@@ -3,12 +3,27 @@ import { classifyConfidence, getReportCategory, type VerificationLevel } from "@
 export interface LocalModelResult {
   available: boolean;
   category: string;
+  provider: "teachable-machine";
+  providerGroup: "local";
+  status: "completed" | "failed" | "unsupported";
+  predictions: Array<{
+    label: string;
+    confidence: number;
+    confidencePercent: number;
+  }>;
+  topClassType?: "positive" | "normal" | "negative";
   predictedClass?: string;
+  topLabel?: string;
   confidence?: number;
+  topConfidence?: number;
+  topConfidencePercent?: number;
   modelVersion?: string;
   passed: boolean;
   level?: VerificationLevel;
-  source: "teachable_machine";
+  source: "teachable-machine";
+  relevant: boolean;
+  issueDetected: boolean;
+  imageQuality: "good" | "acceptable" | "poor";
   reason?: string;
 }
 
@@ -62,23 +77,49 @@ export async function verifyWithLocalModel(categoryId: string, file: File): Prom
     input.dispose();
     prediction.dispose();
 
-    const best = values.reduce(
-      (winner, value, index) => (value > winner.value ? { index, value } : winner),
-      { index: 0, value: -Infinity },
-    );
-    const predictedClass = metadata.labels[best.index] || `Class ${best.index + 1}`;
-    const confidence = Number(best.value) || 0;
+    const predictions = values
+      .map((value, index) => {
+        const confidence = Number(value) || 0;
+        return {
+          label: metadata.labels[index] || `Class ${index + 1}`,
+          confidence,
+          confidencePercent: Math.round(confidence * 100),
+        };
+      })
+      .sort((a, b) => b.confidence - a.confidence);
+    const best = predictions[0];
+    const predictedClass = best?.label || "Unknown";
+    const confidence = best?.confidence || 0;
     const level = classifyConfidence(confidence, category.verification);
+    const topClassType = classifyModelClass(predictedClass);
+    const relevant = topClassType !== "negative" && confidence >= category.verification.mediumConfidence;
+    const issueDetected = topClassType === "positive" && confidence >= category.verification.mediumConfidence;
 
     return {
       available: true,
       category: categoryId,
+      provider: "teachable-machine",
+      providerGroup: "local",
+      status: "completed",
+      predictions,
       predictedClass,
+      topLabel: predictedClass,
+      topClassType,
       confidence,
+      topConfidence: confidence,
+      topConfidencePercent: Math.round(confidence * 100),
       modelVersion: metadata.version || `${category.verificationModel}-v1`,
-      passed: confidence >= category.verification.mediumConfidence,
+      passed: issueDetected,
       level,
-      source: "teachable_machine",
+      source: "teachable-machine",
+      relevant,
+      issueDetected,
+      imageQuality: "acceptable",
+      reason: topClassType === "negative"
+        ? "The strongest local model prediction is a negative/not-relevant class."
+        : topClassType === "normal"
+        ? "The strongest local model prediction is a normal/non-issue class."
+        : "The local model found a visually relevant top class.",
     };
   } catch {
     return unavailable(categoryId, "Model loading failure.");
@@ -90,10 +131,33 @@ function unavailable(categoryId: string, reason: string): LocalModelResult {
   return {
     available: false,
     category: categoryId,
+    provider: "teachable-machine",
+    providerGroup: "local",
+    status: "failed",
+    predictions: [],
     passed: false,
-    source: "teachable_machine",
+    source: "teachable-machine",
+    relevant: false,
+    issueDetected: false,
+    imageQuality: "acceptable",
     reason,
   };
+}
+
+function classifyModelClass(label: string): "positive" | "normal" | "negative" {
+  const normalized = label.trim().toLowerCase();
+  if (
+    normalized.startsWith("no ") ||
+    normalized.includes("not relevant") ||
+    normalized.includes("irrelevant") ||
+    normalized === "clean"
+  ) {
+    return "negative";
+  }
+  if (normalized.startsWith("normal") || normalized.startsWith("legal ")) {
+    return "normal";
+  }
+  return "positive";
 }
 
 async function loadMetadata(modelPath: string): Promise<{ labels: string[]; version?: string } | null> {
@@ -118,8 +182,10 @@ async function loadMetadata(modelPath: string): Promise<{ labels: string[]; vers
 
 async function loadTensorFlowRuntime(): Promise<TfRuntime | null> {
   try {
-    const dynamicImport = new Function("specifier", "return import(specifier)") as (specifier: string) => Promise<TfRuntime>;
-    return await dynamicImport("@tensorflow/tfjs");
+    // Literal dynamic import (not `new Function`) so Vite/Rollup can statically
+    // resolve "@tensorflow/tfjs" and emit it as a lazy, code-split chunk.
+    const tf = (await import("@tensorflow/tfjs")) as unknown as TfRuntime;
+    return tf;
   } catch {
     return null;
   }

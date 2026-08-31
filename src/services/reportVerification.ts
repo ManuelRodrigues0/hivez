@@ -13,20 +13,71 @@ export interface GeminiResult {
   error?: string;
 }
 
+export type FinalVerificationDecision = "VERIFIED" | "UNCERTAIN" | "REJECTED";
+export type ProviderStatus = "completed" | "failed" | "skipped" | "disabled" | "missing_config" | "unsupported";
+
+export interface ProviderVerificationResult {
+  provider: string;
+  providerGroup: string;
+  model: string;
+  status: ProviderStatus;
+  success: boolean;
+  relevant?: boolean;
+  issueDetected?: boolean;
+  confidence?: number;
+  imageQuality?: "good" | "acceptable" | "poor";
+  visibleEvidence?: string;
+  reason: string;
+}
+
+export interface ConsensusSummary {
+  finalDecision: FinalVerificationDecision;
+  verificationScore: number;
+  agreement: number;
+  successfulChecks: number;
+  independentGroups: number;
+  relevantCount: number;
+  notRelevantCount: number;
+  issueDetectedCount: number;
+  strongContradiction: boolean;
+  earlyConsensusReached: boolean;
+  reason: string;
+}
+
 export interface ReportVerificationResult {
   status: VerificationStatus;
+  finalDecision: FinalVerificationDecision;
   localModel?: LocalModelResult;
   gemini: GeminiResult;
+  providers: ProviderVerificationResult[];
+  consensus?: ConsensusSummary;
+  verificationScore?: number;
+  agreement?: number;
+  verifiedAt?: string;
   finalClassification?: VerificationLevel;
   message: string;
 }
+
+type CloudVerificationApiResponse =
+  | {
+      ok: true;
+      providers: ProviderVerificationResult[];
+      finalDecision: FinalVerificationDecision;
+      verificationScore: number;
+      agreement: number;
+      consensus: ConsensusSummary;
+      verifiedAt: string;
+    }
+  | { ok: false; error: string };
 
 export async function verifyReportEvidence(categoryId: string, file: File | null): Promise<ReportVerificationResult> {
   const category = getReportCategory(categoryId);
   if (!category) {
     return {
       status: "requires_review",
+      finalDecision: "UNCERTAIN",
       gemini: { enabled: false },
+      providers: [],
       message: "This report category needs review.",
     };
   }
@@ -34,59 +85,58 @@ export async function verifyReportEvidence(categoryId: string, file: File | null
   if (!file || !file.type.startsWith("image/")) {
     return {
       status: "pending",
+      finalDecision: "UNCERTAIN",
       gemini: { enabled: false },
+      providers: [],
       message: category.requiresMedia ? "Add media to run an AI check." : "This report can continue without image AI.",
     };
   }
 
+  console.info(`[Verification] Category selected: ${category.title}`);
   const localModel = await verifyWithLocalModel(categoryId, file);
-  const shouldUseGemini =
-    category.verification.geminiMode === "always" ||
-    (category.verification.geminiMode === "on_uncertain" && (!localModel.available || !localModel.passed));
-  const gemini = shouldUseGemini ? await verifyWithGemini(categoryId, category.title, file) : { enabled: false };
+  const cloud = await verifyWithCloudProviders(categoryId, category.title, category.description, file, localModel);
 
-  if (localModel.available && localModel.passed && (!gemini.enabled || gemini.matchesCategory !== false)) {
-    return {
-      status: gemini.enabled ? "ai_checked" : "local_model_only",
-      localModel,
-      gemini,
-      finalClassification: localModel.level,
-      message: "The uploaded media appears consistent with the selected report category. It does not guarantee that the report is true.",
-    };
-  }
-
-  if (gemini.enabled && gemini.matchesCategory && gemini.imageRelevant) {
-    return {
-      status: "ai_checked",
-      localModel,
-      gemini,
-      finalClassification: localModel.level,
-      message: "The uploaded media appears consistent with the selected report category. It does not guarantee that the report is true.",
-    };
-  }
-
-  if (!localModel.available && !gemini.enabled) {
+  if (!cloud.ok) {
     return {
       status: "requires_review",
+      finalDecision: "UNCERTAIN",
       localModel,
-      gemini,
-      message: "AI verification is unavailable right now. You can continue and the report will be marked for review.",
+      gemini: { enabled: false, error: cloud.error },
+      providers: [],
+      finalClassification: localModel.level,
+      message: "AI verification is unavailable right now. Please try again with another image.",
     };
   }
 
+  const geminiProvider = cloud.providers.find((provider) => provider.provider === "gemini");
+  const gemini = providerToGemini(geminiProvider);
+  const status = cloud.finalDecision === "VERIFIED" ? "ai_checked" : "requires_review";
+
   return {
-    status: "requires_review",
+    status,
+    finalDecision: cloud.finalDecision,
     localModel,
     gemini,
+    providers: cloud.providers,
+    consensus: cloud.consensus,
+    verificationScore: cloud.verificationScore,
+    agreement: cloud.agreement,
+    verifiedAt: cloud.verifiedAt,
     finalClassification: localModel.level,
-    message: "We could not confidently identify this issue. You can upload another file or continue for review.",
+    message: messageForDecision(cloud.finalDecision),
   };
 }
 
-async function verifyWithGemini(categoryId: string, categoryTitle: string, file: File): Promise<GeminiResult> {
+async function verifyWithCloudProviders(
+  categoryId: string,
+  categoryTitle: string,
+  categoryDescription: string,
+  file: File,
+  localModelResult: LocalModelResult,
+): Promise<CloudVerificationApiResponse> {
   try {
     const { imageBase64 } = await compressImageForGemini(file);
-    const response = await fetch("/api/gemini-verify", {
+    const response = await fetch("/api/verify-report", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -94,25 +144,48 @@ async function verifyWithGemini(categoryId: string, categoryTitle: string, file:
       body: JSON.stringify({
         categoryId,
         categoryTitle,
+        categoryDescription,
         mimeType: "image/jpeg",
         imageBase64,
+        localModelResult,
       }),
     });
 
     if (!response.ok) {
-      return { enabled: false, error: "backend_failure" };
+      return { ok: false, error: "backend_failure" };
     }
 
-    const data = await response.json() as { ok?: boolean; result?: Omit<GeminiResult, "enabled">; error?: string };
+    const data = await response.json() as CloudVerificationApiResponse;
 
-    if (!data.ok || !data.result) {
-      return { enabled: false, error: data.error || "gemini_unavailable" };
+    if (!data.ok) {
+      return { ok: false, error: data.error || "verification_unavailable" };
     }
 
-    return { enabled: true, ...data.result };
+    return data;
   } catch {
-    return { enabled: false, error: "backend_failure" };
+    return { ok: false, error: "backend_failure" };
   }
+}
+
+function providerToGemini(provider: ProviderVerificationResult | undefined): GeminiResult {
+  if (!provider) return { enabled: false };
+  if (!provider.success) return { enabled: false, error: provider.reason };
+  return {
+    enabled: true,
+    matchesCategory: provider.relevant,
+    imageRelevant: provider.issueDetected,
+    imageQuality: provider.imageQuality === "acceptable" ? "fair" : provider.imageQuality,
+    detectedObjects: provider.visibleEvidence ? [provider.visibleEvidence] : [],
+    confidence: provider.confidence,
+    severity: "unknown",
+    reason: provider.reason,
+  };
+}
+
+function messageForDecision(decision: FinalVerificationDecision) {
+  if (decision === "VERIFIED") return "Your image appears to match the selected report category.";
+  if (decision === "REJECTED") return "The uploaded image does not appear to match the selected report category.";
+  return "We could not confidently verify this image. Please try another image.";
 }
 
 async function compressImageForGemini(file: File): Promise<{ imageBase64: string }> {

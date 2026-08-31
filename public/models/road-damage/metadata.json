@@ -1,0 +1,1 @@
+{"tfjsVersion":"1.7.4","tmVersion":"2.4.12","packageVersion":"0.8.4-alpha2","packageName":"@teachablemachine/image","timeStamp":"2026-03-12T19:48:48.093Z","userMetadata":{},"modelName":"tm-my-image-model","labels":["pothole","construction_debris","damaged_footpath","normal_road","indoor_room"],"imageSize":224}
