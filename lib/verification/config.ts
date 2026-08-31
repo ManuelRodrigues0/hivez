@@ -1,4 +1,4 @@
-import type { NormalizedProviderResult } from "./types";
+import type { NormalizedProviderResult } from "./types.js";
 
 export const MAX_BASE64_LENGTH = 3_800_000;
 

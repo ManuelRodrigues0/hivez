@@ -1,5 +1,5 @@
-import { providerConfigs, skippedProvider, verificationThresholds } from "./config";
-import type { ConsensusSummary, NormalizedLocalModelResult, NormalizedProviderResult, ProviderStatus, VerificationDecision } from "./types";
+import { providerConfigs, skippedProvider, verificationThresholds } from "./config.js";
+import type { ConsensusSummary, NormalizedLocalModelResult, NormalizedProviderResult, ProviderStatus, VerificationDecision } from "./types.js";
 
 interface ConsensusInput {
   localModel: NormalizedLocalModelResult | null;

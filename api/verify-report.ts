@@ -1,7 +1,7 @@
-import { getCategoryContext, MAX_BASE64_LENGTH, providerConfigs, skippedProvider } from "../lib/verification/config";
-import { applyEarlySkipped, calculateConsensus } from "../lib/verification/consensus";
-import { callProvider } from "../lib/verification/providerCalls";
-import type { NormalizedProviderResult, VerificationFailureResponse, VerificationRequest, VerificationResponse } from "../lib/verification/types";
+import { getCategoryContext, MAX_BASE64_LENGTH, providerConfigs, skippedProvider } from "../lib/verification/config.js";
+import { applyEarlySkipped, calculateConsensus } from "../lib/verification/consensus.js";
+import { callProvider } from "../lib/verification/providerCalls.js";
+import type { NormalizedProviderResult, VerificationFailureResponse, VerificationRequest, VerificationResponse } from "../lib/verification/types.js";
 
 type ApiRequest = { method?: string; body?: unknown };
 type ApiResponse = {

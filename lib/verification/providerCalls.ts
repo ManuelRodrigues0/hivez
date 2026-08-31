@@ -1,5 +1,5 @@
-import { getCategoryContext, type ProviderConfig, verificationThresholds } from "./config";
-import type { NormalizedProviderResult, VerificationRequest } from "./types";
+import { getCategoryContext, type ProviderConfig, verificationThresholds } from "./config.js";
+import type { NormalizedProviderResult, VerificationRequest } from "./types.js";
 
 type ChatEndpoint = "gemini" | "xai" | "nvidia" | "openrouter";
 
