@@ -1,3 +1,5 @@
+declare const process: { env: Record<string, string | undefined> };
+
 import { getCategoryContext, MAX_BASE64_LENGTH, providerConfigs, skippedProvider } from "../lib/verification/config.js";
 import { applyEarlySkipped, calculateConsensus } from "../lib/verification/consensus.js";
 import { callProvider } from "../lib/verification/providerCalls.js";
@@ -36,7 +38,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   for (const batch of Array.from(grouped.keys()).sort((a, b) => a - b)) {
     const batchProviders = grouped.get(batch) || [];
-    const callable = batchProviders.filter((provider) => provider.enabled && provider.supportsImage && (!provider.envKey || process.env[provider.envKey]));
+    const callable = batchProviders.filter((provider) => provider.enabled && provider.supportsImage && providerHasConfig(provider));
     const skipped = batchProviders.filter((provider) => !callable.includes(provider));
     providers.push(
       ...skipped.map((provider) => skippedProvider(provider, unavailableStatus(provider), unavailableReason(provider))),
@@ -135,13 +137,21 @@ function attemptedAll(providers: NormalizedProviderResult[]) {
 function unavailableStatus(provider: (typeof providerConfigs)[number]): NormalizedProviderResult["status"] {
   if (!provider.enabled) return "disabled";
   if (!provider.supportsImage) return "unsupported";
-  if (provider.envKey && !process.env[provider.envKey]) return "missing_config";
+  if (!providerHasConfig(provider)) return "missing_config";
   return "skipped";
 }
 
 function unavailableReason(provider: (typeof providerConfigs)[number]) {
   if (!provider.enabled) return "Provider disabled by configuration.";
   if (!provider.supportsImage) return "Model is not configured as supporting image verification.";
-  if (provider.envKey && !process.env[provider.envKey]) return `Missing ${provider.envKey}.`;
+  if (!providerHasConfig(provider)) return `Missing ${provider.envKey}.`;
   return "Provider skipped.";
+}
+
+function providerHasConfig(provider: (typeof providerConfigs)[number]) {
+  const keys = provider.envKeys || (provider.envKey ? [provider.envKey] : []);
+  return !keys.length || keys.some((key) => {
+    const value = process.env[key];
+    return Boolean(value && value !== "[SENSITIVE]");
+  });
 }

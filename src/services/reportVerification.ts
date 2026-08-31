@@ -93,10 +93,17 @@ export async function verifyReportEvidence(categoryId: string, file: File | null
   }
 
   console.info(`[Verification] Category selected: ${category.title}`);
+  console.info(`[Verification] Image received: ${file.type}, ${Math.round(file.size / 1024)} KB`);
+  console.info("[Verification] Local model started");
   const localModel = await verifyWithLocalModel(categoryId, file);
+  console.info(
+    `[Verification] Local model completed: ${localModel.topLabel || "unavailable"} (${formatLogConfidence(localModel.topConfidence ?? localModel.confidence)})`,
+  );
+  console.info("[Verification] Cloud verification request started");
   const cloud = await verifyWithCloudProviders(categoryId, category.title, category.description, file, localModel);
 
   if (!cloud.ok) {
+    console.warn(`[Verification] Cloud verification failed: ${cloud.error}`);
     return {
       status: "requires_review",
       finalDecision: "UNCERTAIN",
@@ -111,6 +118,9 @@ export async function verifyReportEvidence(categoryId: string, file: File | null
   const geminiProvider = cloud.providers.find((provider) => provider.provider === "gemini");
   const gemini = providerToGemini(geminiProvider);
   const status = cloud.finalDecision === "VERIFIED" ? "ai_checked" : "requires_review";
+  console.info(
+    `[Verification] Cloud verification completed: ${cloud.finalDecision}, checks=${cloud.consensus.successfulChecks}, agreement=${Math.round(cloud.agreement * 100)}%`,
+  );
 
   return {
     status,
@@ -135,7 +145,9 @@ async function verifyWithCloudProviders(
   localModelResult: LocalModelResult,
 ): Promise<CloudVerificationApiResponse> {
   try {
+    console.info("[Verification] Preparing image payload for server-side AI checks");
     const { imageBase64 } = await compressImageForGemini(file);
+    console.info("[Verification] Sending image to server-side AI verification");
     const response = await fetch("/api/verify-report", {
       method: "POST",
       headers: {
@@ -152,17 +164,20 @@ async function verifyWithCloudProviders(
     });
 
     if (!response.ok) {
+      console.warn(`[Verification] Server verification route failed with HTTP ${response.status}`);
       return { ok: false, error: "backend_failure" };
     }
 
     const data = await response.json() as CloudVerificationApiResponse;
 
     if (!data.ok) {
+      console.warn(`[Verification] Server verification returned error: ${data.error || "verification_unavailable"}`);
       return { ok: false, error: data.error || "verification_unavailable" };
     }
 
     return data;
-  } catch {
+  } catch (error) {
+    console.warn(`[Verification] Cloud verification request failed: ${error instanceof Error ? error.message : "unknown error"}`);
     return { ok: false, error: "backend_failure" };
   }
 }
@@ -186,6 +201,10 @@ function messageForDecision(decision: FinalVerificationDecision) {
   if (decision === "VERIFIED") return "Your image appears to match the selected report category.";
   if (decision === "REJECTED") return "The uploaded image does not appear to match the selected report category.";
   return "We could not confidently verify this image. Please try another image.";
+}
+
+function formatLogConfidence(confidence: number | undefined) {
+  return typeof confidence === "number" ? `${Math.round(confidence * 100)}%` : "n/a";
 }
 
 async function compressImageForGemini(file: File): Promise<{ imageBase64: string }> {

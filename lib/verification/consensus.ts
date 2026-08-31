@@ -1,3 +1,5 @@
+declare const process: { env: Record<string, string | undefined> };
+
 import { providerConfigs, skippedProvider, verificationThresholds } from "./config.js";
 import type { ConsensusSummary, NormalizedLocalModelResult, NormalizedProviderResult, ProviderStatus, VerificationDecision } from "./types.js";
 
@@ -85,7 +87,7 @@ export function applyEarlySkipped(providers: NormalizedProviderResult[], reason:
 
 export function hasRemainingUsefulProviders(providers: NormalizedProviderResult[]) {
   const known = new Set(providers.map((provider) => provider.provider));
-  return providerConfigs.some((config) => !known.has(config.provider) && config.enabled && config.supportsImage && (!config.envKey || process.env[config.envKey]));
+  return providerConfigs.some((config) => !known.has(config.provider) && config.enabled && config.supportsImage && hasProviderConfig(config));
 }
 
 export function statusForUnavailableProvider(configProvider: string): ProviderStatus {
@@ -93,8 +95,16 @@ export function statusForUnavailableProvider(configProvider: string): ProviderSt
   if (!config) return "skipped";
   if (!config.enabled) return "disabled";
   if (!config.supportsImage) return "unsupported";
-  if (config.envKey && !process.env[config.envKey]) return "missing_config";
+  if (!hasProviderConfig(config)) return "missing_config";
   return "skipped";
+}
+
+function hasProviderConfig(config: (typeof providerConfigs)[number]) {
+  const keys = config.envKeys || (config.envKey ? [config.envKey] : []);
+  return !keys.length || keys.some((key) => {
+    const value = process.env[key];
+    return Boolean(value && value !== "[SENSITIVE]");
+  });
 }
 
 function decide(input: {

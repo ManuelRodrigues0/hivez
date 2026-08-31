@@ -1,3 +1,5 @@
+declare const process: { env: Record<string, string | undefined> };
+
 import type { NormalizedProviderResult } from "./types.js";
 
 export const MAX_BASE64_LENGTH = 3_800_000;
@@ -15,6 +17,7 @@ export interface ProviderConfig {
   providerGroup: string;
   model: string;
   envKey?: string;
+  envKeys?: string[];
   enabled: boolean;
   supportsImage: boolean;
   endpoint: "gemini" | "xai" | "nvidia" | "openrouter";
@@ -150,6 +153,7 @@ export const providerConfigs: ProviderConfig[] = [
     providerGroup: "nvidia",
     model: process.env.NVIDIA_NEMOTRON_NANO_OMNI_MODEL || "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
     envKey: "NVIDIA_API_KEY",
+    envKeys: ["NVIDIA_API_KEY", "NVIDIA_API_KEY2"],
     enabled: process.env.NVIDIA_VERIFICATION_ENABLED !== "false",
     supportsImage: true,
     endpoint: "nvidia",
@@ -160,6 +164,7 @@ export const providerConfigs: ProviderConfig[] = [
     providerGroup: "openrouter",
     model: "openrouter/free",
     envKey: "OPENROUTER_API_KEY",
+    envKeys: ["OPENROUTER_API_KEY", "OPENROUTER_API_KEY2", "OPENROUTER_API_KEY3", "OPENROUTER_API_KEY4"],
     enabled: process.env.OPENROUTER_VERIFICATION_ENABLED !== "false",
     supportsImage: true,
     endpoint: "openrouter",
@@ -170,6 +175,7 @@ export const providerConfigs: ProviderConfig[] = [
     providerGroup: "openrouter",
     model: "nvidia/nemotron-nano-12b-v2-vl:free",
     envKey: "OPENROUTER_API_KEY",
+    envKeys: ["OPENROUTER_API_KEY", "OPENROUTER_API_KEY2", "OPENROUTER_API_KEY3", "OPENROUTER_API_KEY4"],
     enabled: process.env.OPENROUTER_VERIFICATION_ENABLED !== "false",
     supportsImage: true,
     endpoint: "openrouter",
@@ -180,6 +186,7 @@ export const providerConfigs: ProviderConfig[] = [
     providerGroup: "openrouter",
     model: "google/gemma-4-31b-it:free",
     envKey: "OPENROUTER_API_KEY",
+    envKeys: ["OPENROUTER_API_KEY", "OPENROUTER_API_KEY2", "OPENROUTER_API_KEY3", "OPENROUTER_API_KEY4"],
     enabled: process.env.OPENROUTER_VERIFICATION_ENABLED !== "false",
     supportsImage: process.env.OPENROUTER_GEMMA_VISION_ENABLED === "true",
     endpoint: "openrouter",
@@ -190,6 +197,7 @@ export const providerConfigs: ProviderConfig[] = [
     providerGroup: "openrouter",
     model: "google/gemma-4-26b-a4b-it:free",
     envKey: "OPENROUTER_API_KEY",
+    envKeys: ["OPENROUTER_API_KEY", "OPENROUTER_API_KEY2", "OPENROUTER_API_KEY3", "OPENROUTER_API_KEY4"],
     enabled: process.env.OPENROUTER_VERIFICATION_ENABLED !== "false",
     supportsImage: process.env.OPENROUTER_GEMMA_VISION_ENABLED === "true",
     endpoint: "openrouter",

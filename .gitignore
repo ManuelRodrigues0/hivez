@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 functions/lib
+.tmp-esmtest
 
 # Editor directories and files
 .vscode/*
@@ -23,3 +24,6 @@ functions/lib
 *.njsproj
 *.sln
 *.sw?
+
+.vercel
+.env*

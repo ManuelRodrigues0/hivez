@@ -1,3 +1,5 @@
+declare const process: { env: Record<string, string | undefined> };
+
 type ApiRequestBody = {
   categoryId?: unknown;
   categoryTitle?: unknown;

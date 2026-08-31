@@ -1,10 +1,12 @@
+declare const process: { env: Record<string, string | undefined> };
+
 import { getCategoryContext, type ProviderConfig, verificationThresholds } from "./config.js";
 import type { NormalizedProviderResult, VerificationRequest } from "./types.js";
 
 type ChatEndpoint = "gemini" | "xai" | "nvidia" | "openrouter";
 
 export async function callProvider(config: ProviderConfig, request: VerificationRequest): Promise<NormalizedProviderResult> {
-  const apiKey = config.envKey ? process.env[config.envKey] || "" : "";
+  const apiKey = readProviderApiKey(config);
   if (!config.enabled) return skipped(config, "disabled", "Provider disabled by configuration.");
   if (!config.supportsImage) return skipped(config, "unsupported", "Model is not configured as supporting image verification.");
   if (!apiKey) return skipped(config, "missing_config", `Missing ${config.envKey}.`);
@@ -20,11 +22,12 @@ export async function callProvider(config: ProviderConfig, request: Verification
   } catch (error) {
     const reason = error instanceof Error ? error.message : "Provider request failed.";
     console.error(`[Verification] ${config.provider} failed: ${safeReason(reason)}`);
+    const status = reason.includes("unsupported_model") || reason.includes("No endpoints found") ? "unsupported" : "failed";
     return {
       provider: config.provider,
       providerGroup: config.providerGroup,
       model: config.model,
-      status: "failed",
+      status,
       success: false,
       reason: safeReason(reason),
     };
@@ -32,12 +35,20 @@ export async function callProvider(config: ProviderConfig, request: Verification
 }
 
 async function callEndpoint(endpoint: ChatEndpoint, config: ProviderConfig, request: VerificationRequest, apiKey: string) {
+  if (endpoint === "xai") return callXaiResponses(config, request, apiKey);
   if (endpoint === "gemini") return callGemini(config, request, apiKey);
+  return callOpenAiCompatibleEndpoint(endpoint, config, request, apiKey);
+}
 
+async function callOpenAiCompatibleEndpoint(
+  endpoint: Exclude<ChatEndpoint, "gemini" | "xai">,
+  config: ProviderConfig,
+  request: VerificationRequest,
+  apiKey: string,
+  attempt = 1,
+) {
   const url =
-    endpoint === "xai"
-      ? "https://api.x.ai/v1/chat/completions"
-      : endpoint === "nvidia"
+    endpoint === "nvidia"
       ? "https://integrate.api.nvidia.com/v1/chat/completions"
       : "https://openrouter.ai/api/v1/chat/completions";
 
@@ -52,7 +63,11 @@ async function callEndpoint(endpoint: ChatEndpoint, config: ProviderConfig, requ
       model: config.model,
       temperature: 0.1,
       max_tokens: 450,
-      ...(endpoint === "xai" ? { store: false } : {}),
+      ...(endpoint === "nvidia"
+        ? {
+            chat_template_kwargs: { enable_thinking: false },
+          }
+        : {}),
       messages: [
         {
           role: "user",
@@ -70,15 +85,65 @@ async function callEndpoint(endpoint: ChatEndpoint, config: ProviderConfig, requ
     }),
   });
 
-  if (!response.ok) throw new Error(`API request failure (${response.status})`);
-  const raw = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
+  if (!response.ok && endpoint === "nvidia" && attempt === 1 && (response.status === 503 || response.status === 504)) {
+    await new Promise((resolve) => setTimeout(resolve, 900));
+    return callOpenAiCompatibleEndpoint(endpoint, config, request, apiKey, attempt + 1);
+  }
+
+  if (!response.ok) throw new Error(await providerError(response));
+  const raw = await response.json() as { choices?: Array<{ message?: { content?: string } }>; model?: string };
   const text = raw.choices?.[0]?.message?.content;
   if (!text) throw new Error("Invalid provider response.");
   return { text, raw };
 }
 
+async function callXaiResponses(config: ProviderConfig, request: VerificationRequest, apiKey: string) {
+  const response = await fetch("https://api.x.ai/v1/responses", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: config.model,
+      store: false,
+      temperature: 0.1,
+      max_output_tokens: 450,
+      input: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_image",
+              image_url: `data:${request.mimeType};base64,${request.imageBase64}`,
+              detail: "high",
+            },
+            {
+              type: "input_text",
+              text: buildVerificationPrompt(request),
+            },
+          ],
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) throw new Error(await providerError(response));
+  const raw = await response.json() as {
+    output_text?: string;
+    output?: Array<{ content?: Array<{ text?: string; type?: string }> }>;
+  };
+  const text =
+    raw.output_text ||
+    raw.output
+      ?.flatMap((item) => item.content || [])
+      .find((content) => typeof content.text === "string")?.text;
+  if (!text) throw new Error("Invalid provider response.");
+  return { text, raw };
+}
+
 async function callGemini(config: ProviderConfig, request: VerificationRequest, apiKey: string) {
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${config.model}:generateContent?key=${apiKey}`, {
+  let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${config.model}:generateContent?key=${apiKey}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -98,7 +163,30 @@ async function callGemini(config: ProviderConfig, request: VerificationRequest, 
     }),
   });
 
-  if (!response.ok) throw new Error(`API request failure (${response.status})`);
+  if (!response.ok && (response.status === 503 || response.status === 504)) {
+    await new Promise((resolve) => setTimeout(resolve, 900));
+    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${config.model}:generateContent?key=${apiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        generationConfig: {
+          temperature: 0.1,
+          response_mime_type: "application/json",
+        },
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { text: buildVerificationPrompt(request) },
+              { inline_data: { mime_type: request.mimeType, data: request.imageBase64 } },
+            ],
+          },
+        ],
+      }),
+    });
+  }
+
+  if (!response.ok) throw new Error(await providerError(response));
   const raw = await response.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
   const text = raw.candidates?.[0]?.content?.parts?.find((part) => typeof part.text === "string")?.text;
   if (!text) throw new Error("Invalid provider response.");
@@ -133,7 +221,7 @@ function normalizeProviderText(config: ProviderConfig, text: string, raw: unknow
   return {
     provider: config.provider,
     providerGroup: config.providerGroup,
-    model: config.model,
+    model: raw && typeof raw === "object" && typeof (raw as { model?: unknown }).model === "string" ? (raw as { model: string }).model : config.model,
     status: "completed",
     success: true,
     relevant: candidate.relevant,
@@ -144,6 +232,20 @@ function normalizeProviderText(config: ProviderConfig, text: string, raw: unknow
     reason,
     rawResponse: process.env.STORE_PROVIDER_RAW_RESPONSES === "true" ? raw : undefined,
   };
+}
+
+async function providerError(response: Response) {
+  let detail = "";
+  try {
+    const text = await response.text();
+    detail = text.slice(0, 220);
+  } catch {
+    detail = "";
+  }
+  if (response.status === 404 && detail.includes("No endpoints found")) {
+    return safeReason(`unsupported_model (${response.status}): ${detail}`);
+  }
+  return safeReason(`API request failure (${response.status})${detail ? `: ${detail}` : ""}`);
 }
 
 function parseJson(text: string): unknown {
@@ -183,5 +285,17 @@ function skipped(config: ProviderConfig, status: NormalizedProviderResult["statu
 }
 
 function safeReason(reason: string) {
-  return reason.replace(/Bearer\s+[A-Za-z0-9._-]+/g, "Bearer [redacted]").slice(0, 300);
+  return reason
+    .replace(/Bearer\s+[A-Za-z0-9._-]+/g, "Bearer [redacted]")
+    .replace(/"user_id"\s*:\s*"[^"]+"/g, "\"user_id\":\"[redacted]\"")
+    .slice(0, 300);
+}
+
+function readProviderApiKey(config: ProviderConfig) {
+  const keys = config.envKeys || (config.envKey ? [config.envKey] : []);
+  for (const key of keys) {
+    const value = process.env[key];
+    if (value && value !== "[SENSITIVE]") return value;
+  }
+  return "";
 }

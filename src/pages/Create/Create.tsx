@@ -134,10 +134,15 @@ export default function Create() {
   }
 
   async function detectPostLocation() {
+    logReport("Location detection requested");
     const detected = await userLocation.requestLocation();
-    if (!detected) return;
+    if (!detected) {
+      logReport("Location detection unavailable or denied");
+      return;
+    }
     setLocationSnapshot(detected);
     setLocation(locationLabel(detected));
+    logReport(`Location captured: ${detected.latitude.toFixed(5)}, ${detected.longitude.toFixed(5)}`);
   }
 
   async function detectReportLocation() {
@@ -160,6 +165,7 @@ export default function Create() {
     });
     setLocationSnapshot(snapshot);
     userLocation.setManualLocation(snapshot);
+    logReport(`Manual location applied: ${snapshot.latitude.toFixed(5)}, ${snapshot.longitude.toFixed(5)}`);
   }
 
   async function uploadFilesToCloudinary(files: File[]) {
@@ -185,6 +191,7 @@ export default function Create() {
 
     try {
       setPosting(true);
+      logReport(isTextOnly ? "Text post submission started" : "Media post submission started");
 
       if (isTextOnly) {
         const userDoc = await getDoc(doc(db, "users", user.uid));
@@ -223,12 +230,15 @@ export default function Create() {
         });
 
         await updateDoc(doc(db, "users", user.uid), { posts: increment(1) });
+        logReport(`Text post submitted: ${postRef.id}`);
         navigate("/");
         return;
       }
 
       const filesToUpload = isMultiple ? media : singleFile ? [singleFile] : [];
+      logReport(`Uploading ${filesToUpload.length} media file(s)`);
       const uploadResults = await uploadFilesToCloudinary(filesToUpload);
+      logReport("Cloudinary upload completed");
       const mediaItems: PostMediaItem[] = uploadResults.map((result, index) => ({
         url: result.secure_url,
         type: filesToUpload[index].type.startsWith("video") ? "video" : "image",
@@ -274,9 +284,10 @@ export default function Create() {
       });
 
       await updateDoc(doc(db, "users", user.uid), { posts: increment(1) });
+      logReport(`Media post submitted: ${postRef.id}`);
       navigate("/");
     } catch (error) {
-      console.error(error);
+      console.error("[Report] Upload failed", error);
       alert("Upload failed.");
     } finally {
       setPosting(false);
@@ -285,17 +296,20 @@ export default function Create() {
 
   async function handleReportFile(file: File | undefined | null) {
     if (!file) return;
+    logReport(`Evidence selected: ${file.type}, ${Math.round(file.size / 1024)} KB`);
     setReportError("");
     setVerification(null);
 
     const validation = await validateReportMedia(file);
     setMediaValidation(validation);
     if (!validation.ok) {
+      logReport(`Evidence validation blocked: ${validation.blockingError || "unknown reason"}`);
       setReportError(validation.blockingError || "This file cannot be used.");
       return;
     }
 
     setReportFile(file);
+    logReport(validation.warnings.length ? `Evidence accepted with warnings: ${validation.warnings.join("; ")}` : "Evidence accepted");
   }
 
   async function runVerification() {
@@ -308,15 +322,21 @@ export default function Create() {
     setReportError("");
     setVerificationBusy(true);
     try {
+      logReport(`AI verification started for ${selectedReportCategory.title}`);
       const result = await verifyReportEvidence(selectedReportCategory.id, reportFile);
       setVerification(result);
+      logReport(`AI verification finished: ${result.finalDecision}`);
       setReportStep("verify");
+    } catch (error) {
+      console.error("[Report] AI verification crashed", error);
+      setReportError("AI verification failed. Please try again.");
     } finally {
       setVerificationBusy(false);
     }
   }
 
   function selectReportCategory(nextCategory: ReportCategoryConfig) {
+    logReport(`Category selected: ${nextCategory.title}`);
     setSelectedReportCategory(nextCategory);
     setCategory(nextCategory.communityId);
     setReportFields({});
@@ -859,6 +879,10 @@ function verificationTitle(verification: ReportVerificationResult) {
   if (verification.finalDecision === "VERIFIED") return "Verified";
   if (verification.finalDecision === "REJECTED") return "Image Does Not Match Category";
   return "Verification Uncertain";
+}
+
+function logReport(message: string) {
+  console.info(`[Report] ${message}`);
 }
 
 function cleanUndefined<T>(value: T): T {
