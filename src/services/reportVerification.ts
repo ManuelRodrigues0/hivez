@@ -99,6 +99,19 @@ export async function verifyReportEvidence(categoryId: string, file: File | null
   console.info(
     `[Verification] Local model completed: ${localModel.topLabel || "unavailable"} (${formatLogConfidence(localModel.topConfidence ?? localModel.confidence)})`,
   );
+  if (localModel.predictions.length > 0) {
+    console.groupCollapsed("[Verification] Local model scores (all classes)");
+    console.table(
+      localModel.predictions.map((prediction) => ({
+        class: prediction.label,
+        confidence: `${prediction.confidencePercent}%`,
+      })),
+    );
+    console.info(
+      `[Verification] Top class: ${localModel.topLabel ?? localModel.predictedClass ?? "n/a"} | type: ${localModel.topClassType ?? "n/a"} | passed: ${localModel.passed} | level: ${localModel.level ?? "n/a"}`,
+    );
+    console.groupEnd();
+  }
   console.info("[Verification] Cloud verification request started");
   const cloud = await verifyWithCloudProviders(categoryId, category.title, category.description, file, localModel);
 
@@ -121,6 +134,46 @@ export async function verifyReportEvidence(categoryId: string, file: File | null
   console.info(
     `[Verification] Cloud verification completed: ${cloud.finalDecision}, checks=${cloud.consensus.successfulChecks}, agreement=${Math.round(cloud.agreement * 100)}%`,
   );
+
+  console.groupCollapsed("[Verification] ===== AI SCORE REPORT =====");
+  console.info(`[Verification] Report category: ${category.title} (${categoryId})`);
+
+  console.info("[Verification] — 1. Cloud AI providers (per-provider scores) —");
+  console.table(
+    cloud.providers.map((provider) => ({
+      provider: provider.provider,
+      group: provider.providerGroup,
+      model: provider.model,
+      status: provider.status,
+      success: provider.success,
+      relevant: provider.relevant ?? "n/a",
+      issueDetected: provider.issueDetected ?? "n/a",
+      confidence: typeof provider.confidence === "number" ? `${Math.round(provider.confidence * 100)}%` : "n/a",
+      imageQuality: provider.imageQuality ?? "n/a",
+      reason: provider.reason,
+    })),
+  );
+
+  console.info("[Verification] — 2. Consensus (how the scores combine) —");
+  console.info(
+    `[Verification] Final decision: ${cloud.consensus.finalDecision} | verificationScore: ${Math.round(cloud.verificationScore * 100)}% | agreement: ${Math.round(cloud.agreement * 100)}%`,
+  );
+  console.info(
+    `[Verification] Successful checks: ${cloud.consensus.successfulChecks} | independent groups: ${cloud.consensus.independentGroups} | relevant: ${cloud.consensus.relevantCount} | not relevant: ${cloud.consensus.notRelevantCount} | issue detected: ${cloud.consensus.issueDetectedCount}`,
+  );
+  console.info(
+    `[Verification] Strong contradiction: ${cloud.consensus.strongContradiction} | early consensus reached: ${cloud.consensus.earlyConsensusReached}`,
+  );
+  console.info(`[Verification] Consensus reason: ${cloud.consensus.reason}`);
+
+  console.info("[Verification] — 3. How this post is scored —");
+  console.info(
+    `[Verification] Post verification status: ${status}${status === "ai_checked" ? " (post badge: AI-verified)" : " (post flagged: needs manual review)"}`,
+  );
+  console.info(
+    `[Verification] Post final classification: ${localModel.level ?? "n/a"} | shown to user: ${messageForDecision(cloud.finalDecision)}`,
+  );
+  console.groupEnd();
 
   return {
     status,
