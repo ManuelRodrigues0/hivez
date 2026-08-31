@@ -474,28 +474,28 @@ export default function Create() {
   }
 
   return (
-    <main className="app-create-page min-h-screen bg-white dark:bg-black">
-      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-200 bg-white/95 px-4 py-3 backdrop-blur dark:border-zinc-800 dark:bg-black/95">
-        <button onClick={() => navigate(-1)} className="text-sm text-zinc-500 transition hover:text-zinc-700 dark:hover:text-zinc-300">
+    <main className="app-create-page min-h-screen bg-background">
+      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
+        <button onClick={() => navigate(-1)} className="text-sm text-muted-foreground transition hover:text-foreground">
           Cancel
         </button>
-        <h1 className="text-base font-semibold text-zinc-900 dark:text-white">New Post</h1>
+        <h1 className="text-base font-semibold text-foreground">New Post</h1>
         <button
           onClick={uploadToCloudinary}
           disabled={posting}
-          className="rounded-full bg-black px-5 py-1.5 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+          className="rounded-full bg-primary px-5 py-1.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
         >
           {posting ? "Posting..." : "Share"}
         </button>
       </div>
 
       <div className={`mx-auto w-full ${isTextOnly ? "max-w-3xl lg:p-8 p-4" : "max-w-4xl lg:p-6 p-4"}`}>
-        <div className={`border-b border-zinc-200 dark:border-zinc-800 ${isTextOnly ? "p-8" : "p-4"}`}>
+        <div className={`border-b border-border ${isTextOnly ? "p-8" : "p-4"}`}>
           <div className="mb-4 flex items-center gap-3">
             <img src={user?.photoURL || "https://ui-avatars.com/api/?name=Hivez&background=6366f1&color=fff"} alt="" className="h-10 w-10 rounded-full object-cover" />
             <div>
-              <p className="text-sm font-semibold text-zinc-900 dark:text-white">{user?.displayName || "Hivez User"}</p>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">@{user?.email?.split("@")[0] || "user"}</p>
+              <p className="text-sm font-semibold text-foreground">{user?.displayName || "Hivez User"}</p>
+              <p className="text-xs text-muted-foreground">@{user?.email?.split("@")[0] || "user"}</p>
             </div>
           </div>
 
@@ -504,13 +504,13 @@ export default function Create() {
             value={caption}
             onChange={(e) => setCaption(e.target.value)}
             rows={isTextOnly ? 12 : 4}
-            className={`w-full resize-none rounded-xl border border-zinc-200 bg-white p-3 text-sm outline-none transition focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus:border-zinc-600 ${isTextOnly ? "text-base" : ""}`}
+            className={`w-full resize-none rounded-xl border border-border bg-card p-3 text-sm text-foreground outline-none transition focus:border-primary/50 ${isTextOnly ? "text-base" : ""}`}
           />
 
           {previewItems.length > 0 && (
             <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
               {previewItems.map((item, index) => (
-                <div key={index} className="relative aspect-square overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900">
+                <div key={index} className="relative aspect-square overflow-hidden rounded-xl border border-border bg-muted">
                   {item.type === "video" ? (
                     <>
                       <video src={item.url} className="h-full w-full object-cover" muted={item.muted} controls disablePictureInPicture />
@@ -529,14 +529,14 @@ export default function Create() {
           {extractHashtags(caption).length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
               {extractHashtags(caption).map((tag) => (
-                <span key={tag} className="text-xs text-sky-500">{tag}</span>
+                <span key={tag} className="text-xs text-primary">{tag}</span>
               ))}
             </div>
           )}
 
           {showOptions && (
             <div className="mt-4">
-              <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Add to Hive</label>
+              <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted-foreground">Add to Hive</label>
               <div className="flex flex-wrap gap-2">
                 {COMMUNITIES.map((community) => (
                   <button
@@ -544,8 +544,8 @@ export default function Create() {
                     onClick={() => setCategory(community.id)}
                     className={`flex items-center gap-2 whitespace-nowrap rounded-full border px-3 py-2 text-sm transition md:px-4 ${
                       category === community.id
-                        ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
-                        : "border-zinc-300 hover:border-zinc-400 dark:border-zinc-700 dark:hover:border-zinc-600"
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border hover:border-primary/50"
                     }`}
                   >
                     <span>{community.icon}</span>
@@ -558,7 +558,7 @@ export default function Create() {
 
           {showOptions && (
             <div className="mt-4">
-              <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Add Location</label>
+              <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted-foreground">Add Location</label>
               <div className="flex flex-col gap-2 md:max-w-xl">
                 <div className="flex gap-2">
                   <input
@@ -567,14 +567,14 @@ export default function Create() {
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     onBlur={applyManualCoordinates}
-                    className="min-w-0 flex-1 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus:border-zinc-600"
+                    className="min-w-0 flex-1 rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-primary/50"
                   />
-                  <button type="button" onClick={detectPostLocation} className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 px-3 text-sm font-semibold transition hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900">
+                  <button type="button" onClick={detectPostLocation} className="inline-flex items-center gap-2 rounded-xl border border-border px-3 text-sm font-semibold transition hover:bg-muted">
                     <LocateFixed size={16} />
                     Detect
                   </button>
                 </div>
-                <p className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+                <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <MapPin size={14} />
                   {locationSnapshot ? `${locationLabel(locationSnapshot, location)} (${locationSnapshot.latitude.toFixed(5)}, ${locationSnapshot.longitude.toFixed(5)})` : "Location is optional, but coordinates make the post visible in Nearby and Map."}
                 </p>
@@ -591,24 +591,24 @@ export default function Create() {
     const reportPreviewUrl = reportFile ? URL.createObjectURL(reportFile) : "";
 
     return (
-      <main className="min-h-screen bg-white text-zinc-950 dark:bg-black dark:text-white">
-        <div className="sticky top-0 z-20 border-b border-zinc-200 bg-white/95 px-4 py-3 backdrop-blur dark:border-zinc-800 dark:bg-black/95">
+      <main className="app-create-page min-h-screen bg-background text-foreground">
+        <div className="sticky top-0 z-20 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
           <div className="mx-auto flex max-w-4xl items-center justify-between">
-            <button type="button" onClick={() => (reportStep === "category" ? navigate(-1) : setReportStep(previousReportStep(reportStep)))} className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-zinc-100 dark:hover:bg-zinc-900">
+            <button type="button" onClick={() => (reportStep === "category" ? navigate(-1) : setReportStep(previousReportStep(reportStep)))} className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-muted">
               <ArrowLeft size={20} />
             </button>
             <div className="text-center">
               <p className="text-sm font-semibold">Photo Report</p>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">{stepLabel(reportStep)}</p>
+              <p className="text-xs text-muted-foreground">{stepLabel(reportStep)}</p>
             </div>
-            <button type="button" onClick={() => navigate("/")} className="text-sm font-medium text-zinc-500 transition hover:text-zinc-900 dark:hover:text-white">Cancel</button>
+            <button type="button" onClick={() => navigate("/")} className="text-sm font-medium text-muted-foreground transition hover:text-foreground">Cancel</button>
           </div>
         </div>
 
         <div className="mx-auto max-w-4xl px-4 py-6">
           <div className="mb-6 grid grid-cols-6 gap-1.5">
             {(["category", "media", "verify", "location", "details", "preview"] as ReportStep[]).map((step) => (
-              <div key={step} className={`h-1.5 rounded-full ${stepOrder(step) <= stepOrder(reportStep) ? "bg-zinc-950 dark:bg-white" : "bg-zinc-200 dark:bg-zinc-800"}`} />
+              <div key={step} className={`h-1.5 rounded-full ${stepOrder(step) <= stepOrder(reportStep) ? "bg-primary" : "bg-muted"}`} />
             ))}
           </div>
 
@@ -619,13 +619,13 @@ export default function Create() {
                 {REPORT_CATEGORIES.map((item) => {
                   const Icon = iconMap[item.icon] || CircleHelp;
                   return (
-                    <button key={item.id} type="button" onClick={() => selectReportCategory(item)} className="flex min-h-24 items-center gap-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-left transition hover:border-zinc-400 hover:bg-white dark:border-zinc-800 dark:bg-zinc-900/60 dark:hover:border-zinc-600 dark:hover:bg-zinc-900">
-                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-zinc-950 text-white dark:bg-white dark:text-black"><Icon size={22} /></span>
+                    <button key={item.id} type="button" onClick={() => selectReportCategory(item)} className="flex min-h-24 items-center gap-4 rounded-2xl border border-border bg-card p-4 text-left transition hover:border-primary/50 hover:bg-muted">
+                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground"><Icon size={22} /></span>
                       <span className="min-w-0 flex-1">
                         <span className="block font-semibold">{item.title}</span>
-                        <span className="mt-1 block text-sm leading-5 text-zinc-500 dark:text-zinc-400">{item.description}</span>
+                        <span className="mt-1 block text-sm leading-5 text-muted-foreground">{item.description}</span>
                       </span>
-                      <ChevronRight size={18} className="text-zinc-400" />
+                      <ChevronRight size={18} className="text-muted-foreground" />
                     </button>
                   );
                 })}
@@ -636,7 +636,7 @@ export default function Create() {
           {reportStep === "media" && currentCategory && (
             <section>
               <h1 className="text-2xl font-bold tracking-tight">{currentCategory.mediaTitle}</h1>
-              <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">{currentCategory.mediaHelp}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{currentCategory.mediaHelp}</p>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
                 {currentCategory.cameraAllowed && <ReportAction onClick={() => cameraInputRef.current?.click()} icon={Camera} label={currentCategory.cameraLabel || "Open Camera"} />}
@@ -649,16 +649,16 @@ export default function Create() {
               <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={(event) => handleReportFile(event.target.files?.[0])} />
 
               {reportFile && (
-                <div className="mt-5 overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
-                  <div className="aspect-[4/3] bg-zinc-100 dark:bg-zinc-900">
+                <div className="mt-5 overflow-hidden rounded-2xl border border-border bg-card">
+                  <div className="aspect-[4/3] bg-muted">
                     {reportFile.type.startsWith("video") ? <video src={reportPreviewUrl} className="h-full w-full object-cover" controls playsInline disablePictureInPicture /> : <img src={reportPreviewUrl} alt="" className="h-full w-full object-cover" />}
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-3 p-4">
                     <div>
                       <p className="text-sm font-semibold">{reportFile.name}</p>
-                      <p className="text-xs text-zinc-500">{Math.round(reportFile.size / 1024)} KB</p>
+                      <p className="text-xs text-muted-foreground">{Math.round(reportFile.size / 1024)} KB</p>
                     </div>
-                    <button type="button" onClick={() => { setReportFile(null); setMediaValidation(null); setVerification(null); }} className="inline-flex items-center gap-2 rounded-full border border-zinc-200 px-3 py-2 text-sm font-semibold dark:border-zinc-700">
+                    <button type="button" onClick={() => { setReportFile(null); setMediaValidation(null); setVerification(null); }} className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-2 text-sm font-semibold">
                       <RefreshCw size={16} />
                       Replace
                     </button>
@@ -681,12 +681,12 @@ export default function Create() {
               {reportError && <p className="mt-4 text-sm font-medium text-red-500">{reportError}</p>}
 
               {verificationBusy && (
-                <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
+                <div className="mt-4 rounded-2xl border border-border bg-card p-4 text-sm text-foreground">
                   <div className="flex items-center gap-2 font-semibold">
                     <Loader2 size={16} className="animate-spin" />
                     Checking image...
                   </div>
-                  <div className="mt-3 space-y-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+                  <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
                     <p>Local AI analysis is running first.</p>
                     <p>Cloud checks will stop early if enough systems agree.</p>
                   </div>
@@ -694,8 +694,8 @@ export default function Create() {
               )}
 
               <div className="mt-6 flex justify-end gap-2">
-                {mediaValidation?.warnings.length ? <button type="button" onClick={runVerification} className="rounded-full border border-zinc-200 px-4 py-2 text-sm font-semibold dark:border-zinc-700">Continue Anyway</button> : null}
-                <button type="button" onClick={runVerification} disabled={verificationBusy || (currentCategory.requiresMedia && !reportFile)} className="inline-flex items-center gap-2 rounded-full bg-zinc-950 px-5 py-2 text-sm font-semibold text-white disabled:opacity-50 dark:bg-white dark:text-black">
+                {mediaValidation?.warnings.length ? <button type="button" onClick={runVerification} className="rounded-full border border-border px-4 py-2 text-sm font-semibold">Continue Anyway</button> : null}
+                <button type="button" onClick={runVerification} disabled={verificationBusy || (currentCategory.requiresMedia && !reportFile)} className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
                   {verificationBusy && <Loader2 size={16} className="animate-spin" />}
                   Run AI Check
                 </button>
@@ -706,14 +706,14 @@ export default function Create() {
           {reportStep === "verify" && currentCategory && verification && (
             <section>
               <h1 className="text-2xl font-bold tracking-tight">{verificationTitle(verification)}</h1>
-              <div className="mt-5 rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800">
+              <div className="mt-5 rounded-2xl border border-border bg-card p-5">
                 <div className="flex items-start gap-3">
-                  <span className={`flex h-11 w-11 items-center justify-center rounded-full ${verification.finalDecision === "VERIFIED" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"}`}>
+                  <span className={`flex h-11 w-11 items-center justify-center rounded-full ${verification.finalDecision === "VERIFIED" ? "bg-[#3f6f4b]/12 text-[#2f5f3e] dark:bg-primary/25 dark:text-primary" : "bg-[#f2c14e]/25 text-[#8a6100] dark:bg-accent/25 dark:text-accent"}`}>
                     {verification.finalDecision === "VERIFIED" ? <Check size={22} /> : <AlertTriangle size={22} />}
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold">{currentCategory.title}</p>
-                    <p className="mt-1 text-sm leading-5 text-zinc-600 dark:text-zinc-300">{verification.message}</p>
+                    <p className="mt-1 text-sm leading-5 text-muted-foreground">{verification.message}</p>
                   </div>
                 </div>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -724,8 +724,8 @@ export default function Create() {
                 </div>
               </div>
               <div className="mt-6 flex flex-wrap justify-end gap-2">
-                {verification.finalDecision !== "VERIFIED" && <button type="button" onClick={() => setReportStep("media")} className="rounded-full border border-zinc-200 px-4 py-2 text-sm font-semibold dark:border-zinc-700">Try Another Image</button>}
-                {verification.finalDecision === "VERIFIED" && <button type="button" onClick={() => setReportStep("location")} className="rounded-full bg-zinc-950 px-5 py-2 text-sm font-semibold text-white dark:bg-white dark:text-black">Continue</button>}
+                {verification.finalDecision !== "VERIFIED" && <button type="button" onClick={() => setReportStep("media")} className="rounded-full border border-border px-4 py-2 text-sm font-semibold">Try Another Image</button>}
+                {verification.finalDecision === "VERIFIED" && <button type="button" onClick={() => setReportStep("location")} className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground">Continue</button>}
               </div>
             </section>
           )}
@@ -733,22 +733,22 @@ export default function Create() {
           {reportStep === "location" && currentCategory && (
             <section>
               <h1 className="text-2xl font-bold tracking-tight">Where did this happen?</h1>
-              <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">Use your current location or type an area. Coordinates help this report appear on the Hivez map.</p>
+              <p className="mt-2 text-sm text-muted-foreground">Use your current location or type an area. Coordinates help this report appear on the Hivez map.</p>
               <div className="mt-5 flex flex-col gap-3">
                 <div className="flex gap-2">
-                  <input type="text" placeholder="Area, city or lat,lng" value={location} onChange={(event) => setLocation(event.target.value)} onBlur={applyManualCoordinates} className="min-w-0 flex-1 rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900" />
-                  <button type="button" onClick={detectReportLocation} className="inline-flex items-center gap-2 rounded-2xl border border-zinc-200 px-4 text-sm font-semibold dark:border-zinc-700">
+                  <input type="text" placeholder="Area, city or lat,lng" value={location} onChange={(event) => setLocation(event.target.value)} onBlur={applyManualCoordinates} className="min-w-0 flex-1 rounded-2xl border border-border bg-card px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary/50" />
+                  <button type="button" onClick={detectReportLocation} className="inline-flex items-center gap-2 rounded-2xl border border-border px-4 text-sm font-semibold">
                     {locationBusy ? <Loader2 size={16} className="animate-spin" /> : <LocateFixed size={16} />}
                     Detect
                   </button>
                 </div>
-                <p className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+                <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <MapPin size={14} />
                   {locationSnapshot ? `${locationLabel(locationSnapshot, location)} (${locationSnapshot.latitude.toFixed(5)}, ${locationSnapshot.longitude.toFixed(5)})` : "Location permission is optional. You can continue with a typed location."}
                 </p>
               </div>
               <div className="mt-6 flex justify-end">
-                <button type="button" onClick={() => setReportStep("details")} className="rounded-full bg-zinc-950 px-5 py-2 text-sm font-semibold text-white dark:bg-white dark:text-black">Continue</button>
+                <button type="button" onClick={() => setReportStep("details")} className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground">Continue</button>
               </div>
             </section>
           )}
@@ -759,19 +759,19 @@ export default function Create() {
               <div className="mt-5 space-y-4">
                 <div>
                   <label className="mb-2 block text-sm font-semibold">What happened?</label>
-                  <textarea value={reportDescription} onChange={(event) => setReportDescription(event.target.value)} rows={5} placeholder="Describe the issue clearly..." className="w-full resize-none rounded-2xl border border-zinc-200 bg-white p-4 text-sm outline-none transition focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900" />
+                  <textarea value={reportDescription} onChange={(event) => setReportDescription(event.target.value)} rows={5} placeholder="Describe the issue clearly..." className="w-full resize-none rounded-2xl border border-border bg-card p-4 text-sm text-foreground outline-none transition focus:border-primary/50" />
                 </div>
                 {currentCategory.fields.map((field) => (
                   <div key={field.id}>
                     <label className="mb-2 block text-sm font-semibold">{field.label}{field.required ? " *" : ""}</label>
-                    <input value={reportFields[field.id] || ""} onChange={(event) => updateReportField(field.id, event.target.value)} placeholder={field.placeholder} className="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900" />
+                    <input value={reportFields[field.id] || ""} onChange={(event) => updateReportField(field.id, event.target.value)} placeholder={field.placeholder} className="w-full rounded-2xl border border-border bg-card px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary/50" />
                   </div>
                 ))}
                 <div>
                   <label className="mb-2 block text-sm font-semibold">Urgency</label>
                   <div className="grid grid-cols-3 gap-2">
                     {(["normal", "important", "urgent"] as ReportUrgency[]).map((item) => (
-                      <button key={item} type="button" onClick={() => setReportUrgency(item)} className={`rounded-2xl border px-4 py-3 text-sm font-semibold capitalize ${reportUrgency === item ? "border-zinc-950 bg-zinc-950 text-white dark:border-white dark:bg-white dark:text-black" : "border-zinc-200 dark:border-zinc-700"}`}>
+                      <button key={item} type="button" onClick={() => setReportUrgency(item)} className={`rounded-2xl border px-4 py-3 text-sm font-semibold capitalize ${reportUrgency === item ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>
                         {item}
                       </button>
                     ))}
@@ -780,7 +780,7 @@ export default function Create() {
               </div>
               {reportError && <p className="mt-4 text-sm font-medium text-red-500">{reportError}</p>}
               <div className="mt-6 flex justify-end">
-                <button type="button" onClick={() => canContinueDetails() ? setReportStep("preview") : setReportError("Add the required report details.")} className="rounded-full bg-zinc-950 px-5 py-2 text-sm font-semibold text-white dark:bg-white dark:text-black">Preview</button>
+                <button type="button" onClick={() => canContinueDetails() ? setReportStep("preview") : setReportError("Add the required report details.")} className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground">Preview</button>
               </div>
             </section>
           )}
@@ -788,29 +788,29 @@ export default function Create() {
           {reportStep === "preview" && currentCategory && (
             <section>
               <h1 className="text-2xl font-bold tracking-tight">Preview report</h1>
-              <div className="mt-5 overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+              <div className="mt-5 overflow-hidden rounded-2xl border border-border bg-card">
                 {reportFile && (
-                  <div className="aspect-[4/3] bg-zinc-100 dark:bg-zinc-900">
+                  <div className="aspect-[4/3] bg-muted">
                     {reportFile.type.startsWith("video") ? <video src={reportPreviewUrl} className="h-full w-full object-cover" controls playsInline disablePictureInPicture /> : <img src={reportPreviewUrl} alt="" className="h-full w-full object-cover" />}
                   </div>
                 )}
                 <div className="p-5">
                   <div className="flex items-center gap-2 text-sm font-semibold">
-                    <BadgeCheck size={18} className="text-sky-500" />
+                    <BadgeCheck size={18} className="text-primary" />
                     <span>{currentCategory.title}</span>
                   </div>
-                  <p className="mt-3 whitespace-pre-wrap text-[15px] leading-6 text-zinc-800 dark:text-zinc-200">{reportDescription}</p>
+                  <p className="mt-3 whitespace-pre-wrap text-[15px] leading-6 text-foreground">{reportDescription}</p>
                   <div className="mt-4 flex flex-wrap gap-2 text-xs">
-                    <span className="rounded-full bg-zinc-100 px-3 py-1.5 font-semibold capitalize dark:bg-zinc-900">{reportUrgency}</span>
-                    <span className="rounded-full bg-zinc-100 px-3 py-1.5 font-semibold dark:bg-zinc-900">{verificationLabel(verification)}</span>
-                    {(location || locationSnapshot) && <span className="rounded-full bg-zinc-100 px-3 py-1.5 font-semibold dark:bg-zinc-900">{locationLabel(locationSnapshot, location)}</span>}
+                    <span className="rounded-full bg-muted px-3 py-1.5 font-semibold capitalize">{reportUrgency}</span>
+                    <span className="rounded-full bg-muted px-3 py-1.5 font-semibold">{verificationLabel(verification)}</span>
+                    {(location || locationSnapshot) && <span className="rounded-full bg-muted px-3 py-1.5 font-semibold">{locationLabel(locationSnapshot, location)}</span>}
                   </div>
                 </div>
               </div>
               {reportError && <p className="mt-4 text-sm font-medium text-red-500">{reportError}</p>}
               <div className="mt-6 flex flex-wrap justify-end gap-2">
-                <button type="button" onClick={() => setReportStep("details")} className="rounded-full border border-zinc-200 px-4 py-2 text-sm font-semibold dark:border-zinc-700">Edit</button>
-                <button type="button" onClick={submitReport} disabled={posting} className="inline-flex items-center gap-2 rounded-full bg-zinc-950 px-5 py-2 text-sm font-semibold text-white disabled:opacity-50 dark:bg-white dark:text-black">
+                <button type="button" onClick={() => setReportStep("details")} className="rounded-full border border-border px-4 py-2 text-sm font-semibold">Edit</button>
+                <button type="button" onClick={submitReport} disabled={posting} className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
                   {posting && <Loader2 size={16} className="animate-spin" />}
                   Submit Report
                 </button>
@@ -825,7 +825,7 @@ export default function Create() {
 
 function ReportAction({ onClick, icon: Icon, label }: { onClick: () => void; icon: LucideIcon; label: string }) {
   return (
-    <button type="button" onClick={onClick} className="flex min-h-24 flex-col items-center justify-center gap-3 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm font-semibold transition hover:border-zinc-400 hover:bg-white dark:border-zinc-800 dark:bg-zinc-900/60 dark:hover:border-zinc-600">
+    <button type="button" onClick={onClick} className="flex min-h-24 flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-card p-4 text-sm font-semibold transition hover:border-primary/50 hover:bg-muted">
       <Icon size={24} />
       <span>{label}</span>
     </button>
@@ -834,8 +834,8 @@ function ReportAction({ onClick, icon: Icon, label }: { onClick: () => void; ico
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
-      <p className="text-xs font-medium uppercase text-zinc-500">{label}</p>
+    <div className="rounded-2xl bg-muted p-4">
+      <p className="text-xs font-medium uppercase text-muted-foreground">{label}</p>
       <p className="mt-1 text-sm font-semibold capitalize">{value}</p>
     </div>
   );
