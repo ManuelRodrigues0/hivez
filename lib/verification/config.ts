@@ -4,12 +4,21 @@ import type { NormalizedProviderResult } from "./types.js";
 
 export const MAX_BASE64_LENGTH = 3_800_000;
 
+/**
+ * What "issueDetected" means for a category.
+ * - "issue_visible": the actual physical issue/hazard/damage is visibly present.
+ * - "subject_visible": the expected subject is visibly present (the image cannot
+ *   prove the real-world situation, e.g. that an animal is actually lost).
+ */
+export type CategoryVerificationMode = "issue_visible" | "subject_visible";
+
 export interface CategoryVerificationContext {
   id: string;
   title: string;
   description: string;
   expectedObjects: string[];
   prompt: string;
+  verificationMode: CategoryVerificationMode;
 }
 
 export interface ProviderConfig {
@@ -45,13 +54,23 @@ export const categoryContexts: Record<string, CategoryVerificationContext> = {
     title: "Lost Pet",
     description: "Report a missing or lost animal",
     expectedObjects: ["animal", "pet", "dog", "cat", "bird"],
+    verificationMode: "subject_visible",
     prompt: "Determine whether the image visibly contains a relevant animal. Do not determine whether the animal is actually lost.",
+  },
+  missing_person: {
+    id: "missing_person",
+    title: "Missing Person",
+    description: "Share a missing person alert without facial recognition",
+    expectedObjects: ["person", "people", "reference photo of a person"],
+    verificationMode: "subject_visible",
+    prompt: "Assess only whether the image is usable and a relevant person reference is visible. Do not identify or verify the identity of any person. Do not determine whether the person is actually missing.",
   },
   garbage: {
     id: "garbage",
     title: "Garbage / Waste",
     description: "Overflowing bins, dumping, or waste hazards",
     expectedObjects: ["garbage", "trash", "waste", "overflowing bin", "dumping"],
+    verificationMode: "issue_visible",
     prompt: "Determine whether visible garbage or waste is present.",
   },
   broken_road: {
@@ -59,6 +78,7 @@ export const categoryContexts: Record<string, CategoryVerificationContext> = {
     title: "Broken Road",
     description: "Potholes, cracks, or unsafe road damage",
     expectedObjects: ["pothole", "road crack", "damaged road", "unsafe road"],
+    verificationMode: "issue_visible",
     prompt: "Determine whether potholes, cracks, or relevant road damage are visible.",
   },
   street_light: {
@@ -66,6 +86,7 @@ export const categoryContexts: Record<string, CategoryVerificationContext> = {
     title: "Street Light",
     description: "Broken lights, dark roads, or unsafe lighting",
     expectedObjects: ["street light", "light pole", "lamp post", "broken light"],
+    verificationMode: "issue_visible",
     prompt: "Determine whether a street light is visible and whether obvious damage or lighting issue evidence is visible.",
   },
   water_leakage: {
@@ -73,6 +94,7 @@ export const categoryContexts: Record<string, CategoryVerificationContext> = {
     title: "Water Leakage",
     description: "Leaks, burst pipes, or water waste",
     expectedObjects: ["water leak", "burst pipe", "leaking infrastructure", "water flow"],
+    verificationMode: "issue_visible",
     prompt: "Determine whether visible water leakage from relevant infrastructure is present.",
   },
   electrical: {
@@ -80,6 +102,7 @@ export const categoryContexts: Record<string, CategoryVerificationContext> = {
     title: "Dangerous Electrical Wire",
     description: "Exposed wires, damaged poles, or electrical risk",
     expectedObjects: ["wire", "electrical pole", "exposed cable", "fallen wire"],
+    verificationMode: "issue_visible",
     prompt: "Determine whether potentially dangerous exposed or fallen electrical infrastructure is visually present. Do not make definitive safety or legal claims.",
   },
   illegal_parking: {
@@ -87,6 +110,7 @@ export const categoryContexts: Record<string, CategoryVerificationContext> = {
     title: "Illegal Parking",
     description: "Blocked roads, gates, or unsafe parking",
     expectedObjects: ["vehicle", "blocked road", "blocked sidewalk", "parking obstruction"],
+    verificationMode: "issue_visible",
     prompt: "Determine whether the image visually shows a vehicle blocking a road, gate, or sidewalk where applicable. Do not make definitive legal conclusions.",
   },
   fallen_tree: {
@@ -94,6 +118,7 @@ export const categoryContexts: Record<string, CategoryVerificationContext> = {
     title: "Fallen Tree",
     description: "Fallen trees or branches blocking access",
     expectedObjects: ["fallen tree", "fallen branch", "blocked road", "tree debris"],
+    verificationMode: "issue_visible",
     prompt: "Determine whether a fallen tree or fallen branch is visibly present.",
   },
   flooded_road: {
@@ -101,6 +126,7 @@ export const categoryContexts: Record<string, CategoryVerificationContext> = {
     title: "Flooded Road",
     description: "Waterlogged roads or flooding",
     expectedObjects: ["flooding", "waterlogged road", "standing water", "flooded street"],
+    verificationMode: "issue_visible",
     prompt: "Determine whether flooding or significant waterlogging is visibly present.",
   },
   animal_in_danger: {
@@ -108,6 +134,7 @@ export const categoryContexts: Record<string, CategoryVerificationContext> = {
     title: "Animal in Danger",
     description: "Injured, trapped, or unsafe animals",
     expectedObjects: ["animal", "injured animal", "trapped animal", "animal danger"],
+    verificationMode: "issue_visible",
     prompt: "Determine whether an animal and visually observable signs of a potentially dangerous situation are present. Do not make unsupported medical claims.",
   },
   damaged_property: {
@@ -115,6 +142,7 @@ export const categoryContexts: Record<string, CategoryVerificationContext> = {
     title: "Damaged Property",
     description: "Public or shared property damage",
     expectedObjects: ["broken property", "damaged public asset", "cracked wall", "broken sign"],
+    verificationMode: "issue_visible",
     prompt: "Determine whether visually observable property damage is present.",
   },
 };
@@ -212,8 +240,14 @@ export function getCategoryContext(categoryId: string, title?: string, descripti
     title: title || categoryId,
     description: description || "Hivez local issue report",
     expectedObjects: [],
+    verificationMode: "issue_visible",
     prompt: "Assess only whether the visible media appears relevant to the selected Hivez report category.",
   };
+}
+
+/** Resolves the verification mode for a category (defaults to hazard-style "issue_visible"). */
+export function getCategoryVerificationMode(categoryId: string): CategoryVerificationMode {
+  return categoryContexts[categoryId]?.verificationMode || "issue_visible";
 }
 
 export function skippedProvider(config: ProviderConfig, status: NormalizedProviderResult["status"], reason: string): NormalizedProviderResult {

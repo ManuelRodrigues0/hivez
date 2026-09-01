@@ -1,12 +1,14 @@
 declare const process: { env: Record<string, string | undefined> };
 
-import { providerConfigs, skippedProvider, verificationThresholds } from "./config.js";
+import { providerConfigs, skippedProvider, verificationThresholds, type CategoryVerificationMode } from "./config.js";
 import type { ConsensusSummary, NormalizedLocalModelResult, NormalizedProviderResult, ProviderStatus, VerificationDecision } from "./types.js";
 
 interface ConsensusInput {
   localModel: NormalizedLocalModelResult | null;
   providers: NormalizedProviderResult[];
   allProvidersAttempted: boolean;
+  /** Category verification mode: how "issueDetected" votes are interpreted. */
+  verificationMode: CategoryVerificationMode;
 }
 
 export function calculateConsensus(input: ConsensusInput): ConsensusSummary {
@@ -16,8 +18,17 @@ export function calculateConsensus(input: ConsensusInput): ConsensusSummary {
     ...completed,
   ];
 
+  // Subject-visible categories: "relevant=true, issueDetected=false" usually means the
+  // provider saw the expected subject but noted the real-world situation (e.g. "actually
+  // lost") cannot be proven visually. That is semantic interpretation, not a negative
+  // visual vote, so it is treated as neutral instead of counting against the majority.
+  const subjectMode = input.verificationMode === "subject_visible";
   const relevantVotes = votes.filter((vote) => vote.relevant && vote.issueDetected && vote.imageQuality !== "poor");
-  const negativeVotes = votes.filter((vote) => vote.relevant === false || vote.issueDetected === false);
+  const negativeVotes = votes.filter((vote) =>
+    subjectMode
+      ? vote.relevant === false
+      : vote.relevant === false || vote.issueDetected === false,
+  );
   const successfulCloudGroups = new Set(completed.map((provider) => provider.providerGroup));
   const independentGroups = new Set([
     ...(input.localModel?.available ? ["local"] : []),
@@ -32,7 +43,12 @@ export function calculateConsensus(input: ConsensusInput): ConsensusSummary {
   const localRelevant = Boolean(input.localModel?.available && input.localModel.relevant && input.localModel.confidence >= verificationThresholds.localStrongConfidence);
   const localNegative = Boolean(input.localModel?.available && !input.localModel.relevant && input.localModel.confidence >= verificationThresholds.localStrongConfidence);
   const cloudPositive = completed.filter((provider) => provider.relevant && provider.issueDetected && (provider.confidence || 0) >= verificationThresholds.cloudStrongConfidence);
-  const cloudNegative = completed.filter((provider) => (provider.relevant === false || provider.issueDetected === false) && (provider.confidence || 0) >= verificationThresholds.cloudStrongConfidence);
+  const cloudNegative = completed.filter((provider) =>
+    (subjectMode
+      ? provider.relevant === false
+      : provider.relevant === false || provider.issueDetected === false) &&
+    (provider.confidence || 0) >= verificationThresholds.cloudStrongConfidence,
+  );
 
   const earlyPositive =
     localRelevant &&

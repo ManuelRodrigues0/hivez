@@ -238,6 +238,9 @@ function buildVerificationPrompt(request: VerificationRequest) {
     `Category description: ${context.description}.`,
     context.expectedObjects.length ? `Expected visible evidence: ${context.expectedObjects.join(", ")}.` : "",
     context.prompt,
+    context.verificationMode === "subject_visible"
+      ? "For this category, issueDetected means the expected subject is visibly present in the image. Set issueDetected=true when the expected subject is clearly visible and relevant. Do not require proof that the real-world situation described by the category is true; for example, for a Lost Pet report a clearly visible relevant dog or cat results in issueDetected=true even though the image cannot prove the animal is actually lost."
+      : "For this category, issueDetected means the actual issue, hazard, damage, or physical problem is visibly present in the image. Set issueDetected=true only when the relevant physical issue or hazard is visibly present.",
     "Determine visual evidence only. Do not claim the report is definitely true.",
     "Return only JSON with fields: relevant boolean, issueDetected boolean, confidence number from 0 to 100, imageQuality one of good/acceptable/poor, visibleEvidence string, reason string.",
   ].filter(Boolean).join(" ");
