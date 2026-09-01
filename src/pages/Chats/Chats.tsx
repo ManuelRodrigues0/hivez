@@ -32,6 +32,8 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import HivezLoader from "@/components/common/HivezLoader";
 import { db } from "@/firebase/firebase";
+import { ULTRA_BEE_ID, ULTRA_BEE_PROFILE, ULTRA_BEE_TAGLINE, ULTRA_BEE_WELCOME, ultraBeeChatIdFor } from "@/constants/ultraBee";
+import { requestUltraBeeReply } from "@/services/ultraBee";
 
 interface ChatUser {
   uid: string;
@@ -114,7 +116,11 @@ export default function Chats() {
   const [searching, setSearching] = useState(false);
   const [people, setPeople] = useState<ChatUser[]>([]);
   const [sending, setSending] = useState(false);
+  const [ultraBeeThinking, setUltraBeeThinking] = useState(false);
+  const [ultraBeeError, setUltraBeeError] = useState<string | null>(null);
+  const [ultraBeeRetryText, setUltraBeeRetryText] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const seededUltraChatsRef = useRef<Set<string>>(new Set());
 
   function localChatsKey(uid = user?.uid) {
     return uid ? `hivez-local-chats:${uid}` : "";
@@ -332,12 +338,44 @@ export default function Chats() {
     localChats.forEach((chat) => byId.set(chat.id, chat));
     chats.forEach((chat) => byId.set(chat.id, chat));
     if (draftChat) byId.set(draftChat.id, { ...(byId.get(draftChat.id) || {}), ...draftChat });
-    return Array.from(byId.values()).sort((a, b) => {
+
+    // Ultra Bee is a pinned system participant: always present, always on top,
+    // using the existing ChatDoc shape so the normal chat UI renders it.
+    let ultraEntry: ChatDoc | null = null;
+    if (user) {
+      const ultraChatId = ultraBeeChatIdFor(user.uid);
+      const existing = byId.get(ultraChatId);
+      const currentMe: ChatUser = me || {
+        uid: user.uid,
+        username: user.email?.split("@")[0] || "user",
+        displayName: user.displayName || "Hivez User",
+        photoURL: user.photoURL || "",
+      };
+      ultraEntry = {
+        ...(existing || {
+          id: ultraChatId,
+          participants: [user.uid, ULTRA_BEE_ID],
+          lastMessage: ULTRA_BEE_TAGLINE,
+          lastMessageAt: null,
+          lastMessageSenderId: "",
+          unreadCounts: {},
+        }),
+        participantProfiles: {
+          ...(existing?.participantProfiles || {}),
+          [user.uid]: existing?.participantProfiles?.[user.uid] || currentMe,
+          [ULTRA_BEE_ID]: ULTRA_BEE_PROFILE,
+        },
+      };
+      byId.delete(ultraChatId);
+    }
+
+    const sorted = Array.from(byId.values()).sort((a, b) => {
       const aTime = a.lastMessageAt?.toDate?.().getTime?.() || 0;
       const bTime = b.lastMessageAt?.toDate?.().getTime?.() || 0;
       return bTime - aTime;
     });
-  }, [chats, draftChat, localChats]);
+    return ultraEntry ? [ultraEntry, ...sorted] : sorted;
+  }, [chats, draftChat, localChats, me, user]);
 
   const selectedChat = displayChats.find((chat) => chat.id === selectedChatId) || null;
   const otherUser = useMemo(() => {
@@ -345,6 +383,8 @@ export default function Chats() {
     const otherId = selectedChat.participants.find((id) => id !== user.uid);
     return otherId ? selectedChat.participantProfiles?.[otherId] : null;
   }, [selectedChat, user]);
+
+  const isUltraBeeChat = Boolean(user && selectedChat && selectedChat.id === ultraBeeChatIdFor(user.uid));
 
   async function startChat(person: ChatUser) {
     if (!user) return;
@@ -469,10 +509,114 @@ export default function Chats() {
         ...current,
         [selectedChat.id]: (current[selectedChat.id] || []).filter((message) => message.clientId !== clientId),
       }));
+
+      if (selectedChat.participants.includes(ULTRA_BEE_ID)) {
+        await runUltraBeeTurn(selectedChat.id, text);
+      }
     } catch (error) {
       console.error("Failed to send message:", error);
     } finally {
       setSending(false);
+    }
+  }
+
+  async function runUltraBeeTurn(chatId: string, userText: string) {
+    if (!user) return;
+    const currentMe: ChatUser = me || {
+      uid: user.uid,
+      username: user.email?.split("@")[0] || "user",
+      displayName: user.displayName || "Hivez User",
+      photoURL: user.photoURL || "",
+    };
+
+    setUltraBeeThinking(true);
+    setUltraBeeError(null);
+    setUltraBeeRetryText(null);
+
+    try {
+      const history = messages
+        .filter((message) => !message.clientId && message.text.trim())
+        .slice(-20)
+        .map((message) => ({
+          role: message.senderId === user.uid ? ("user" as const) : ("assistant" as const),
+          content: message.text,
+        }));
+
+      const result = await requestUltraBeeReply({
+        context: {
+          uid: user.uid,
+          displayName: currentMe.displayName,
+          username: currentMe.username,
+        },
+        history: [...history, { role: "user", content: userText }],
+      });
+
+      if (!result.ok) throw new Error(result.error);
+
+      await addDoc(collection(db, "chats", chatId, "messages"), {
+        text: result.reply,
+        senderId: ULTRA_BEE_ID,
+        createdAt: serverTimestamp(),
+        readBy: [user.uid],
+      });
+
+      await updateDoc(doc(db, "chats", chatId), {
+        lastMessage: result.reply,
+        lastMessageAt: serverTimestamp(),
+        lastMessageSenderId: ULTRA_BEE_ID,
+      });
+    } catch (error) {
+      console.error("Ultra Bee request failed:", error);
+      setUltraBeeError("Sorry, Ultra Bee couldn't respond right now. Please try again.");
+      setUltraBeeRetryText(userText);
+    } finally {
+      setUltraBeeThinking(false);
+    }
+  }
+
+  async function retryUltraBeeTurn() {
+    if (!selectedChat || !ultraBeeRetryText || ultraBeeThinking) return;
+    await runUltraBeeTurn(selectedChat.id, ultraBeeRetryText);
+  }
+
+  /** Lazily creates the Ultra Bee chat doc + greeting on first open (per session). */
+  async function openUltraBeeChat(chatId: string) {
+    if (!user || seededUltraChatsRef.current.has(chatId)) return;
+    seededUltraChatsRef.current.add(chatId);
+
+    try {
+      const chatRef = doc(db, "chats", chatId);
+      const snap = await getDoc(chatRef);
+      if (snap.exists()) return;
+
+      const currentMe: ChatUser = me || {
+        uid: user.uid,
+        username: user.email?.split("@")[0] || "user",
+        displayName: user.displayName || "Hivez User",
+        photoURL: user.photoURL || "",
+      };
+
+      await setDoc(chatRef, {
+        participants: [user.uid, ULTRA_BEE_ID],
+        participantProfiles: {
+          [user.uid]: currentMe,
+          [ULTRA_BEE_ID]: ULTRA_BEE_PROFILE,
+        },
+        lastMessage: ULTRA_BEE_WELCOME,
+        lastMessageAt: serverTimestamp(),
+        lastMessageSenderId: ULTRA_BEE_ID,
+        unreadCounts: { [user.uid]: 0 },
+        createdAt: serverTimestamp(),
+      });
+
+      await addDoc(collection(db, "chats", chatId, "messages"), {
+        text: ULTRA_BEE_WELCOME,
+        senderId: ULTRA_BEE_ID,
+        createdAt: serverTimestamp(),
+        readBy: [user.uid],
+      });
+    } catch (error) {
+      console.error("Failed to prepare Ultra Bee chat:", error);
     }
   }
 
@@ -533,6 +677,9 @@ export default function Chats() {
                     onClick={() => {
                       setSelectedChatId(chat.id);
                       setMobileThreadOpen(true);
+                      setUltraBeeError(null);
+                      setUltraBeeRetryText(null);
+                      if (chat.participants.includes(ULTRA_BEE_ID)) void openUltraBeeChat(chat.id);
                     }}
                     className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-all ${
                       selectedChatId === chat.id
@@ -650,11 +797,29 @@ export default function Chats() {
                     </div>
                   );
                 })}
+                {isUltraBeeChat && ultraBeeThinking && (
+                  <div className="flex items-center gap-2 pl-1">
+                    <HivezLoader size="sm" progress={58} label="Ultra Bee is thinking" />
+                    <span className="text-[11px] font-bold text-[#1c1d1a]/50 dark:text-neutral-400">Ultra Bee is thinking…</span>
+                  </div>
+                )}
                 <div ref={bottomRef} />
               </div>
 
               {/* Chat Input Bar (Safely padded above mobile bottom navigation) */}
               <div className="absolute bottom-0 left-0 right-0 shrink-0 border-t border-[#1c1d1a]/10 bg-white p-3 dark:border-neutral-800 dark:bg-[#121212] pb-[76px] md:pb-3 z-20">
+                {isUltraBeeChat && ultraBeeError && (
+                  <div className="mb-2 flex items-center justify-between gap-3 rounded-xl border border-[#1c1d1a]/10 bg-[#f7f7f2] px-3 py-2 dark:border-neutral-800 dark:bg-[#181818]">
+                    <p className="text-[11px] font-bold text-[#1c1d1a]/70 dark:text-neutral-300">{ultraBeeError}</p>
+                    <button
+                      onClick={retryUltraBeeTurn}
+                      disabled={ultraBeeThinking}
+                      className="shrink-0 text-[10px] font-black uppercase tracking-wider text-[#3d654c] transition hover:opacity-80 disabled:opacity-40 dark:text-[#f2c14e]"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                )}
                 <div className="flex items-end gap-2 rounded-2xl border border-[#1c1d1a]/15 bg-[#f7f7f2] p-2 dark:border-neutral-800 dark:bg-[#181818]">
                   <textarea
                     value={messageText}

@@ -184,7 +184,7 @@ export default function MainLayout() {
         const lastTime = chat.lastMessageAt?.toDate?.().getTime?.() || 0;
         const previousTime = seenChatTimes.current[chat.id] || 0;
         seenChatTimes.current[chat.id] = lastTime;
-        if (!lastTime || lastTime <= previousTime || chat.lastMessageSenderId === user.uid) return;
+        if (!lastTime || lastTime <= previousTime || chat.lastMessageSenderId === user.uid || chat.lastMessageSenderId === "ultra-bee") return;
 
         const otherId = chat.participants.find((id: string) => id !== user.uid);
         const sender = otherId ? chat.participantProfiles?.[otherId] : null;

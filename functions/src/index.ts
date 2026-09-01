@@ -185,10 +185,13 @@ export const pushChatMessage = onDocumentCreated(
     const message = event.data?.data();
     if (!message) return;
 
+    // Ultra Bee (AI assistant) replies happen inside the open chat; no push.
+    if (message.senderId === "ultra-bee") return;
+
     const chatSnap = await db.collection("chats").doc(event.params.chatId).get();
     const chat = chatSnap.data();
     const recipientId = chat?.participants?.find((uid: string) => uid !== message.senderId);
-    if (!recipientId) return;
+    if (!recipientId || recipientId === "ultra-bee") return;
 
     const sender = chat?.participantProfiles?.[message.senderId];
     const senderName = sender?.displayName || sender?.username || "Someone";
