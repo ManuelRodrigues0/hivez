@@ -287,7 +287,11 @@ async function providerError(response: Response) {
 }
 
 function parseJson(text: string): unknown {
-  const trimmed = text.trim();
+  // Some models (e.g. Qwen 3 on Groq) emit <think>...</think> reasoning blocks
+  // before the JSON answer. Strip them before parsing.
+  const trimmed = text
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .trim();
   const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
   if (fenced) return JSON.parse(fenced[1]);
   const first = trimmed.indexOf("{");
