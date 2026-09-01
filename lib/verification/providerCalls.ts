@@ -1,35 +1,70 @@
 declare const process: { env: Record<string, string | undefined> };
 
 import { getCategoryContext, type ProviderConfig, verificationThresholds } from "./config.js";
-import type { NormalizedProviderResult, VerificationRequest } from "./types.js";
+import type { NormalizedProviderResult, ProviderErrorType, VerificationRequest } from "./types.js";
 
-type ChatEndpoint = "gemini" | "xai" | "nvidia" | "openrouter";
+type ChatEndpoint = "gemini" | "xai" | "nvidia" | "openrouter" | "groq";
 
 export async function callProvider(config: ProviderConfig, request: VerificationRequest): Promise<NormalizedProviderResult> {
+  const name = config.label || config.provider;
+  const startedAt = Date.now();
   const apiKey = readProviderApiKey(config);
-  if (!config.enabled) return skipped(config, "disabled", "Provider disabled by configuration.");
-  if (!config.supportsImage) return skipped(config, "unsupported", "Model is not configured as supporting image verification.");
-  if (!apiKey) return skipped(config, "missing_config", `Missing ${config.envKey}.`);
-  if (!request.mimeType.startsWith("image/")) return skipped(config, "unsupported", "Provider image verification supports images only.");
 
-  console.log(`[Verification] ${config.provider} started`);
+  // Stage 1/6 - was the provider configured correctly?
+  if (!config.enabled) {
+    console.log(`[Verification] PROVIDER: ${name} (${config.provider}) | STAGE 1/6 configured: NO -> disabled by configuration -> skipped`);
+    return { ...skipped(config, "disabled", "Provider disabled by configuration."), errorType: "disabled" };
+  }
+  if (!config.supportsImage) {
+    console.log(`[Verification] PROVIDER: ${name} (${config.provider}) | STAGE 1/6 configured: NO -> ${name} image input unsupported by configuration -> skipped`);
+    return { ...skipped(config, "unsupported", "Model is not configured as supporting image verification."), errorType: "image_unsupported" };
+  }
+  if (!apiKey) {
+    console.log(`[Verification] PROVIDER: ${name} (${config.provider}) | STAGE 1/6 configured: NO -> ${name} API key missing (env: ${describeEnvKeys(config)}; value never logged) -> skipped as missing_config`);
+    return { ...skipped(config, "missing_config", `Missing ${config.envKey}.`), errorType: "missing_api_key" };
+  }
+  if (!request.mimeType.startsWith("image/")) {
+    console.log(`[Verification] PROVIDER: ${name} (${config.provider}) | STAGE 1/6 configured: NO -> non-image content, provider image verification supports images only -> skipped`);
+    return { ...skipped(config, "unsupported", "Provider image verification supports images only."), errorType: "image_unsupported" };
+  }
+
+  console.log(`[Verification] ----------------------------------------`);
+  console.log(`[Verification] PROVIDER: ${name} (id: ${config.provider})`);
+  console.log(`[Verification] MODEL: ${config.model} | GROUP: ${config.providerGroup} | ENDPOINT: ${config.endpoint} | BATCH: ${config.batch}`);
+  console.log(`[Verification] STAGE 1/6 configured: YES | STATUS: pending | START TIME: ${new Date(startedAt).toISOString()}`);
+  console.log(`[Verification] STAGE 2/6 API request started | STATUS: running (timeout ${verificationThresholds.providerTimeoutMs}ms)`);
 
   try {
     const payload = await withTimeout(callEndpoint(config.endpoint, config, request, apiKey), verificationThresholds.providerTimeoutMs);
+    console.log(`[Verification] STAGE 3/6 API request succeeded | STATUS: HTTP 200 | elapsed: ${Date.now() - startedAt}ms`);
     const normalized = normalizeProviderText(config, payload.text, payload.raw);
-    console.log(`[Verification] ${config.provider} completed`);
-    return normalized;
+    console.log(`[Verification] STAGE 4/6 response parsing succeeded`);
+    const endedAt = Date.now();
+    const durationMs = endedAt - startedAt;
+    console.log(`[Verification] STAGE 5/6 verification completed | STATUS: completed | ISSUE DETECTED: ${normalized.issueDetected} | CONFIDENCE: ${formatConfidencePercent(normalized.confidence)} | QUALITY: ${normalized.imageQuality} | END TIME: ${new Date(endedAt).toISOString()} | DURATION: ${durationMs}ms`);
+    console.log(`[Verification] REASONING: ${normalized.reason}`);
+    return { ...normalized, label: config.label, startedAt, endedAt, durationMs };
   } catch (error) {
+    const endedAt = Date.now();
+    const durationMs = endedAt - startedAt;
     const reason = error instanceof Error ? error.message : "Provider request failed.";
-    console.error(`[Verification] ${config.provider} failed: ${safeReason(reason)}`);
+    const errorType = classifyProviderError(error);
     const status = reason.includes("unsupported_model") || reason.includes("No endpoints found") ? "unsupported" : "failed";
+    console.error(`[Verification] STAGE 6/6 provider failed | STATUS: ${status} | END TIME: ${new Date(endedAt).toISOString()} | DURATION: ${durationMs}ms`);
+    console.error(`[Verification] ERROR TYPE: ${errorType}${httpStatusSuffix(reason)}`);
+    console.error(`[Verification] ERROR MESSAGE: ${safeReason(reason)}`);
     return {
       provider: config.provider,
       providerGroup: config.providerGroup,
       model: config.model,
+      label: config.label,
       status,
       success: false,
       reason: safeReason(reason),
+      startedAt,
+      endedAt,
+      durationMs,
+      errorType,
     };
   }
 }
@@ -50,7 +85,9 @@ async function callOpenAiCompatibleEndpoint(
   const url =
     endpoint === "nvidia"
       ? "https://integrate.api.nvidia.com/v1/chat/completions"
-      : "https://openrouter.ai/api/v1/chat/completions";
+      : endpoint === "groq"
+        ? "https://api.groq.com/openai/v1/chat/completions"
+        : "https://openrouter.ai/api/v1/chat/completions";
 
   const response = await fetch(url, {
     method: "POST",
@@ -219,6 +256,7 @@ function normalizeProviderText(config: ProviderConfig, text: string, raw: unknow
   const visibleEvidence = typeof candidate.visibleEvidence === "string" ? candidate.visibleEvidence.slice(0, 500) : "";
 
   return {
+    label: config.label,
     provider: config.provider,
     providerGroup: config.providerGroup,
     model: raw && typeof raw === "object" && typeof (raw as { model?: unknown }).model === "string" ? (raw as { model: string }).model : config.model,
@@ -275,6 +313,7 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
 
 function skipped(config: ProviderConfig, status: NormalizedProviderResult["status"], reason: string): NormalizedProviderResult {
   return {
+    label: config.label,
     provider: config.provider,
     providerGroup: config.providerGroup,
     model: config.model,
@@ -282,6 +321,32 @@ function skipped(config: ProviderConfig, status: NormalizedProviderResult["statu
     success: false,
     reason,
   };
+}
+
+function describeEnvKeys(config: ProviderConfig): string {
+  const keys = config.envKeys || (config.envKey ? [config.envKey] : []);
+  return keys.length ? keys.join(" | ") : "none";
+}
+
+function formatConfidencePercent(value?: number): string {
+  return typeof value === "number" ? `${Math.round(value * 100)}%` : "n/a";
+}
+
+function httpStatusSuffix(reason: string): string {
+  const match = reason.match(/\((\d{3})\)/);
+  return match ? ` | HTTP STATUS: ${match[1]}` : "";
+}
+
+function classifyProviderError(error: unknown): ProviderErrorType {
+  if (error instanceof SyntaxError) return "json_parse_failure";
+  const reason = error instanceof Error ? error.message : "";
+  if (reason.includes("timeout")) return "timeout";
+  if (reason.includes("unsupported_model") || reason.includes("No endpoints found")) return "model_unsupported";
+  if (/\((401|403)\)/.test(reason)) return "authentication_failed";
+  if (reason.includes("(429)")) return "rate_limited";
+  if (reason.includes("Invalid JSON response.") || reason.includes("Invalid provider response.")) return "invalid_response_format";
+  if (reason.includes("Failed to fetch") || reason.includes("fetch failed") || reason.includes("NetworkError") || reason.includes("network")) return "network_failure";
+  return "api_request_failed";
 }
 
 function safeReason(reason: string) {

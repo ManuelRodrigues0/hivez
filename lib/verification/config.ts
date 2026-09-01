@@ -16,11 +16,13 @@ export interface ProviderConfig {
   provider: string;
   providerGroup: string;
   model: string;
+  /** Human-readable name used in verification logs (e.g. "Groq Qwen 3.6 27B"). */
+  label?: string;
   envKey?: string;
   envKeys?: string[];
   enabled: boolean;
   supportsImage: boolean;
-  endpoint: "gemini" | "xai" | "nvidia" | "openrouter";
+  endpoint: "gemini" | "xai" | "nvidia" | "openrouter" | "groq";
   batch: number;
 }
 
@@ -122,6 +124,7 @@ export const providerConfigs: ProviderConfig[] = [
     provider: "gemini",
     providerGroup: "gemini",
     model: process.env.GEMINI_MODEL || "gemini-3-flash-preview",
+    label: "Gemini",
     envKey: "GEMINI_API_KEY",
     enabled: process.env.GEMINI_VERIFICATION_ENABLED !== "false",
     supportsImage: true,
@@ -132,6 +135,7 @@ export const providerConfigs: ProviderConfig[] = [
     provider: "grok",
     providerGroup: "xai",
     model: process.env.XAI_MODEL || "grok-4.6",
+    label: "xAI Grok",
     envKey: "XAI_API_KEY",
     enabled: process.env.XAI_VERIFICATION_ENABLED !== "false",
     supportsImage: true,
@@ -142,6 +146,7 @@ export const providerConfigs: ProviderConfig[] = [
     provider: "nvidia-nemotron-ultra",
     providerGroup: "nvidia",
     model: process.env.NVIDIA_NEMOTRON_ULTRA_MODEL || "nvidia/nemotron-3-ultra",
+    label: "NVIDIA Nemotron Ultra",
     envKey: "NVIDIA_API_KEY",
     enabled: process.env.NVIDIA_NEMOTRON_ULTRA_ENABLED !== "false",
     supportsImage: process.env.NVIDIA_NEMOTRON_ULTRA_VISION_ENABLED === "true",
@@ -152,6 +157,7 @@ export const providerConfigs: ProviderConfig[] = [
     provider: "nvidia-nemotron-nano-omni",
     providerGroup: "nvidia",
     model: process.env.NVIDIA_NEMOTRON_NANO_OMNI_MODEL || "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+    label: "NVIDIA Nemotron 3 Nano Omni",
     envKey: "NVIDIA_API_KEY",
     envKeys: ["NVIDIA_API_KEY", "NVIDIA_API_KEY2"],
     enabled: process.env.NVIDIA_VERIFICATION_ENABLED !== "false",
@@ -160,47 +166,42 @@ export const providerConfigs: ProviderConfig[] = [
     batch: 2,
   },
   {
+    // OpenRouter Free verifier - uses the DEDICATED verification key ONLY
+    // (VERIFICATION_OPENROUTER_API_KEY). Never reads OPENROUTER_API_KEY /
+    // OPENROUTER_API_KEY2..4 (legacy keys used by other systems) or the
+    // Ultra Bee key (ULTRA_BEE_OPENROUTER_API_KEY).
     provider: "openrouter-free",
     providerGroup: "openrouter",
     model: "openrouter/free",
-    envKey: "OPENROUTER_API_KEY",
-    envKeys: ["OPENROUTER_API_KEY", "OPENROUTER_API_KEY2", "OPENROUTER_API_KEY3", "OPENROUTER_API_KEY4"],
+    label: "OpenRouter Free",
+    envKey: "VERIFICATION_OPENROUTER_API_KEY",
     enabled: process.env.OPENROUTER_VERIFICATION_ENABLED !== "false",
     supportsImage: true,
     endpoint: "openrouter",
     batch: 2,
   },
   {
-    provider: "openrouter-nemotron-nano-vl",
-    providerGroup: "openrouter",
-    model: "nvidia/nemotron-nano-12b-v2-vl:free",
-    envKey: "OPENROUTER_API_KEY",
-    envKeys: ["OPENROUTER_API_KEY", "OPENROUTER_API_KEY2", "OPENROUTER_API_KEY3", "OPENROUTER_API_KEY4"],
-    enabled: process.env.OPENROUTER_VERIFICATION_ENABLED !== "false",
+    // Groq Qwen 3.6 27B verifier - dedicated GROQ_QWEN_36_API_KEY only.
+    provider: "groq-qwen-36",
+    providerGroup: "groq",
+    model: "qwen/qwen3.6-27b",
+    label: "Groq Qwen 3.6 27B",
+    envKey: "GROQ_QWEN_36_API_KEY",
+    enabled: true,
     supportsImage: true,
-    endpoint: "openrouter",
-    batch: 3,
+    endpoint: "groq",
+    batch: 2,
   },
   {
-    provider: "openrouter-gemma-31b",
-    providerGroup: "openrouter",
-    model: "google/gemma-4-31b-it:free",
-    envKey: "OPENROUTER_API_KEY",
-    envKeys: ["OPENROUTER_API_KEY", "OPENROUTER_API_KEY2", "OPENROUTER_API_KEY3", "OPENROUTER_API_KEY4"],
-    enabled: process.env.OPENROUTER_VERIFICATION_ENABLED !== "false",
-    supportsImage: process.env.OPENROUTER_GEMMA_VISION_ENABLED === "true",
-    endpoint: "openrouter",
-    batch: 3,
-  },
-  {
-    provider: "openrouter-gemma-26b",
-    providerGroup: "openrouter",
-    model: "google/gemma-4-26b-a4b-it:free",
-    envKey: "OPENROUTER_API_KEY",
-    envKeys: ["OPENROUTER_API_KEY", "OPENROUTER_API_KEY2", "OPENROUTER_API_KEY3", "OPENROUTER_API_KEY4"],
-    enabled: process.env.OPENROUTER_VERIFICATION_ENABLED !== "false",
-    supportsImage: process.env.OPENROUTER_GEMMA_VISION_ENABLED === "true",
-    endpoint: "openrouter",
+    // Groq Qwen 3.8 27B verifier - dedicated GROQ_QWEN_38_API_KEY only.
+    provider: "groq-qwen-38",
+    providerGroup: "groq",
+    model: "qwen/qwen3.8-27b",
+    label: "Groq Qwen 3.8 27B",
+    envKey: "GROQ_QWEN_38_API_KEY",
+    enabled: true,
+    supportsImage: true,
+    endpoint: "groq",
     batch: 3,
   },
 ];
@@ -217,6 +218,7 @@ export function getCategoryContext(categoryId: string, title?: string, descripti
 
 export function skippedProvider(config: ProviderConfig, status: NormalizedProviderResult["status"], reason: string): NormalizedProviderResult {
   return {
+    label: config.label,
     provider: config.provider,
     providerGroup: config.providerGroup,
     model: config.model,

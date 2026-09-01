@@ -1,6 +1,6 @@
 declare const process: { env: Record<string, string | undefined> };
 
-import { getCategoryContext, MAX_BASE64_LENGTH, providerConfigs, skippedProvider } from "../lib/verification/config.js";
+import { getCategoryContext, MAX_BASE64_LENGTH, providerConfigs, skippedProvider, verificationThresholds } from "../lib/verification/config.js";
 import { applyEarlySkipped, calculateConsensus } from "../lib/verification/consensus.js";
 import { callProvider } from "../lib/verification/providerCalls.js";
 import type { NormalizedProviderResult, VerificationFailureResponse, VerificationRequest, VerificationResponse } from "../lib/verification/types.js";
@@ -24,10 +24,10 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return;
   }
 
-  console.log(`[Verification] Category selected: ${request.categoryTitle}`);
+  const verificationId = `vf-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  logVerificationStart(verificationId, request);
   if (request.localModelResult) {
-    console.log("[Verification] Local model completed");
-    console.log(`[Verification] Top prediction: ${request.localModelResult.topLabel || "Unavailable"}`);
+    console.log(`[Verification] Local model (device): top prediction ${request.localModelResult.topLabel || "Unavailable"} | confidence ${percentLabel(request.localModelResult.topConfidence ?? request.localModelResult.confidence)}`);
   }
 
   const providers: NormalizedProviderResult[] = [];
@@ -46,7 +46,11 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
     if (callable.length) {
       console.log(batch === 1 ? "[Verification] Initial cloud verification batch started" : "[Verification] Starting additional verification batch");
-      providers.push(...await Promise.all(callable.map((provider) => callProvider(provider, request))));
+      const batchResults = await Promise.all(callable.map((provider) => callProvider(provider, request)));
+      providers.push(...batchResults);
+      console.log(
+        `[Verification] Batch ${batch} finished: ${batchResults.filter((result) => result.status === "completed" && result.success).length} completed, ${batchResults.filter((result) => result.status === "failed").length} failed, ${batchResults.filter((result) => result.status !== "completed" && result.status !== "failed").length} unavailable`,
+      );
     }
 
     console.log("[Verification] Consensus calculation started");
@@ -64,6 +68,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         providers: completedProviders,
         allProvidersAttempted: true,
       });
+      logVerificationSummary(verificationId, request, completedProviders, finalConsensus);
       res.status(200).json(success(request, completedProviders, finalConsensus));
       return;
     }
@@ -76,7 +81,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     providers,
     allProvidersAttempted: true,
   });
-  console.log(`[Verification] Final result: ${consensus.finalDecision}`);
+  logVerificationSummary(verificationId, request, providers, consensus);
   res.status(200).json(success(request, providers, consensus));
 }
 
@@ -154,4 +159,127 @@ function providerHasConfig(provider: (typeof providerConfigs)[number]) {
     const value = process.env[key];
     return Boolean(value && value !== "[SENSITIVE]");
   });
+}
+
+function logVerificationStart(verificationId: string, request: VerificationRequest) {
+  console.log("========================================");
+  console.log("VERIFICATION START");
+  console.log("========================================");
+  console.log(`[Verification] Run/verification ID: ${verificationId}`);
+  console.log("[Verification] Report/post ID: not provided (verification runs before the report is created)");
+  console.log(`[Verification] Category: ${request.categoryTitle} (${request.categoryId})`);
+  console.log(`[Verification] Content being verified: image ${request.mimeType}, ~${Math.round((request.imageBase64.length * 3) / 4 / 1024)} KB`);
+  console.log(`[Verification] Local model result provided by device: ${request.localModelResult ? "yes" : "no"}`);
+  console.log(`[Verification] Configured providers: ${providerConfigs.length}`);
+  providerConfigs.forEach((provider, index) => {
+    console.log(`[Verification]   ${index + 1}. ${provider.label || provider.provider} (${provider.provider}) | model: ${provider.model} | batch: ${provider.batch}`);
+  });
+}
+
+function logVerificationSummary(
+  verificationId: string,
+  request: VerificationRequest,
+  providers: NormalizedProviderResult[],
+  consensus: VerificationResponse["consensus"],
+) {
+  const completed = providers.filter((provider) => provider.status === "completed" && provider.success);
+  const failed = providers.filter((provider) => provider.status === "failed");
+  const unavailable = providers.filter((provider) => provider.status !== "completed" && provider.status !== "failed");
+  const issueVotes = completed.filter((provider) => directionalVote(provider) === "issue");
+  const noIssueVotes = completed.filter((provider) => directionalVote(provider) === "no_issue");
+
+  console.log("========================================");
+  console.log("VERIFICATION PROVIDER SUMMARY");
+  console.log("========================================");
+  console.log(`[Verification] Run/verification ID: ${verificationId}`);
+  console.log(`[Verification] Category: ${request.categoryTitle} (${request.categoryId})`);
+
+  for (const provider of providers) {
+    const name = provider.label || provider.provider;
+    if (provider.status === "completed" && provider.success) {
+      console.log(
+        `[Verification] ${name} [${provider.provider}] — COMPLETED | model: ${provider.model} | ${voteText(directionalVote(provider))} | CONFIDENCE: ${percentLabel(provider.confidence)} | DURATION: ${provider.durationMs ?? "n/a"}ms`,
+      );
+      console.log(`[Verification]    reasoning: ${provider.reason}`);
+    } else if (provider.status === "failed") {
+      console.error(
+        `[Verification] ${name} [${provider.provider}] — FAILED | model: ${provider.model} | error: ${provider.errorType || "unknown"}${httpStatusSuffix(provider.reason)} | DURATION: ${provider.durationMs ?? "n/a"}ms | reason: ${provider.reason}`,
+      );
+    } else {
+      console.log(`[Verification] ${name} [${provider.provider}] — ${provider.status.toUpperCase()} | reason: ${provider.reason}`);
+    }
+  }
+
+  console.log("----------------------------------------");
+  console.log(`[Verification] Successful providers: ${completed.length}`);
+  console.log(`[Verification] Failed providers: ${failed.length}`);
+  console.log(`[Verification] Unavailable providers (skipped/disabled/missing config/unsupported): ${unavailable.length}`);
+  console.log(`[Verification] Provider votes detecting issue: ${issueVotes.length} (${providerNames(issueVotes)})`);
+  console.log(`[Verification] Provider votes not detecting issue: ${noIssueVotes.length} (${providerNames(noIssueVotes)})`);
+  console.log(`[Verification] Local model vote: ${localModelVoteText(request)}`);
+  console.log(`[Verification] Agreement percentage: ${percentLabel(consensus.agreement)} (consensus counts include the local model vote)`);
+  console.log(`[Verification] Strong contradiction: ${consensus.strongContradiction}`);
+  console.log("----------------------------------------");
+  console.log(`[Verification] FINAL DECISION: ${consensus.finalDecision}`);
+  console.log(`[Verification] Final reason: ${consensus.reason}`);
+  logAgreementLists(consensus.finalDecision, issueVotes, noIssueVotes);
+  console.log(
+    `[Verification] How consensus was calculated (existing logic): successfulChecks=${consensus.successfulChecks} | independentGroups=${consensus.independentGroups} | relevant=${consensus.relevantCount} | notRelevant=${consensus.notRelevantCount} | issueDetected=${consensus.issueDetectedCount} | agreement=${percentLabel(consensus.agreement)} (verify>=${percentLabel(verificationThresholds.finalVerifiedAgreement)}, reject>=${percentLabel(verificationThresholds.finalRejectedAgreement)}) | strongContradiction=${consensus.strongContradiction} | earlyConsensusReached=${consensus.earlyConsensusReached} | verificationScore=${percentLabel(consensus.verificationScore)}`,
+  );
+  console.log("========================================");
+}
+
+function directionalVote(provider: NormalizedProviderResult): "issue" | "no_issue" | null {
+  if (provider.status !== "completed" || !provider.success) return null;
+  if (provider.relevant && provider.issueDetected) return "issue";
+  if (provider.relevant === false || provider.issueDetected === false) return "no_issue";
+  return null;
+}
+
+function voteText(vote: "issue" | "no_issue" | null): string {
+  return vote === "issue" ? "ISSUE DETECTED" : vote === "no_issue" ? "NO ISSUE" : "NO DIRECTIONAL VOTE";
+}
+
+function providerNames(providers: NormalizedProviderResult[]): string {
+  return providers.map((provider) => provider.label || provider.provider).join(", ") || "none";
+}
+
+function localModelVoteText(request: VerificationRequest): string {
+  const local = request.localModelResult;
+  if (!local?.available || local.status !== "completed") return "not included (device model unavailable)";
+  return `included -> ${local.relevant && local.issueDetected ? "ISSUE DETECTED" : "NO ISSUE"} | confidence ${percentLabel(local.confidence)} | model: ${local.modelName || "teachable-machine"}`;
+}
+
+function logAgreementLists(
+  decision: VerificationResponse["finalDecision"],
+  issueVotes: NormalizedProviderResult[],
+  noIssueVotes: NormalizedProviderResult[],
+) {
+  if (decision === "VERIFIED" || decision === "REJECTED") {
+    const agreed = decision === "VERIFIED" ? issueVotes : noIssueVotes;
+    const disagreed = decision === "VERIFIED" ? noIssueVotes : issueVotes;
+    console.log(`[Verification] Providers agreeing with decision (${decision}):`);
+    if (!agreed.length) console.log("[Verification]   (none)");
+    agreed.forEach((provider) =>
+      console.log(`[Verification]   ${provider.label || provider.provider} -> ${decision === "VERIFIED" ? "ISSUE DETECTED" : "NO ISSUE"}`),
+    );
+    console.log("[Verification] Providers disagreeing with decision:");
+    if (!disagreed.length) console.log("[Verification]   (none)");
+    disagreed.forEach((provider) =>
+      console.log(`[Verification]   ${provider.label || provider.provider} -> ${decision === "VERIFIED" ? "NO ISSUE" : "ISSUE DETECTED"}`),
+    );
+    return;
+  }
+  console.log("[Verification] Decision is UNCERTAIN — provider vote split:");
+  issueVotes.forEach((provider) => console.log(`[Verification]   ${provider.label || provider.provider} -> ISSUE DETECTED`));
+  noIssueVotes.forEach((provider) => console.log(`[Verification]   ${provider.label || provider.provider} -> NO ISSUE`));
+}
+
+function percentLabel(value?: number): string {
+  return typeof value === "number" ? `${Math.round(value * 100)}%` : "n/a";
+}
+
+function httpStatusSuffix(reason: string): string {
+  const match = reason.match(/\((\d{3})\)/);
+  return match ? ` | HTTP status: ${match[1]}` : "";
 }

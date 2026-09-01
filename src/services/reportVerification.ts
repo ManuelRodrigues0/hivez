@@ -20,6 +20,7 @@ export interface ProviderVerificationResult {
   provider: string;
   providerGroup: string;
   model: string;
+  label?: string;
   status: ProviderStatus;
   success: boolean;
   relevant?: boolean;
@@ -138,9 +139,15 @@ export async function verifyReportEvidence(categoryId: string, file: File | null
   console.groupCollapsed("[Verification] ===== AI SCORE REPORT =====");
   console.info(`[Verification] Report category: ${category.title} (${categoryId})`);
 
+  const completedProviders = cloud.providers.filter((provider) => provider.status === "completed" && provider.success).length;
+  const failedProviders = cloud.providers.filter((provider) => provider.status === "failed").length;
+  console.info(
+    `[Verification] Providers configured: ${cloud.providers.length} | completed: ${completedProviders} | failed: ${failedProviders} | unavailable: ${cloud.providers.length - completedProviders - failedProviders}`,
+  );
   console.info("[Verification] — 1. Cloud AI providers (per-provider scores) —");
   console.table(
     cloud.providers.map((provider) => ({
+      name: provider.label || provider.provider,
       provider: provider.provider,
       group: provider.providerGroup,
       model: provider.model,

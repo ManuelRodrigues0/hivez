@@ -7,6 +7,19 @@ export type ProviderStatus =
   | "missing_config"
   | "unsupported";
 
+export type ProviderErrorType =
+  | "disabled"
+  | "image_unsupported"
+  | "missing_api_key"
+  | "authentication_failed"
+  | "rate_limited"
+  | "timeout"
+  | "model_unsupported"
+  | "invalid_response_format"
+  | "json_parse_failure"
+  | "network_failure"
+  | "api_request_failed";
+
 export interface LocalPrediction {
   label: string;
   confidence: number;
@@ -37,6 +50,8 @@ export interface NormalizedProviderResult {
   provider: string;
   providerGroup: string;
   model: string;
+  /** Human-readable provider name used in verification logs (e.g. "Groq Qwen 3.6 27B"). */
+  label?: string;
   status: ProviderStatus;
   success: boolean;
   relevant?: boolean;
@@ -46,6 +61,11 @@ export interface NormalizedProviderResult {
   visibleEvidence?: string;
   reason: string;
   rawResponse?: unknown;
+  /** Optional timing/error diagnostics used by verification logging. */
+  startedAt?: number;
+  endedAt?: number;
+  durationMs?: number;
+  errorType?: ProviderErrorType;
 }
 
 export interface VerificationRequest {
