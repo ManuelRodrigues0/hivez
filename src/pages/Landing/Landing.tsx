@@ -396,37 +396,75 @@ export default function Landing() {
 
           window.addEventListener("mousemove", onMouseMove);
         } else {
-          // --- MOBILE: STATIONARY BESIDE TITLE UNTIL TOUCHED, THEN TOUCH-DRIVEN ---
+          // --- MOBILE: STABLE FREE ROAM ON LOAD, TOUCH-FOLLOW AFTER INTERACTION ---
           let currentPos = (bee as any).__lockedPos || {
-            x: window.innerWidth * 0.68,
-            y: 135,
+            x: window.innerWidth * 0.5 - 60,
+            y: 130,
           };
+          let isUserGuiding = false;
+          let resumeTimer: ReturnType<typeof setTimeout> | null = null;
           let activeTween: gsap.core.Tween | null = null;
 
-          // Set initial position statically beside the headline
+          // Lock orientation permanently to 0 deg on mobile
           gsap.set(bee, { x: currentPos.x, y: currentPos.y, rotation: 0, scaleX: 1, scaleY: 1 });
 
-          // Ambient hovering breath (subtle vertical floating while stationary/following)
+          // Ambient hovering breath (vertical sine motion only)
           gsap.to(bee, {
-            y: "+=10",
+            y: "+=12",
             duration: 1.5,
             repeat: -1,
             yoyo: true,
             ease: "sine.inOut",
           });
 
-          // Smooth touch navigation engine (triggered only when user touches the screen)
-          const handleTouchGlide = (clientX: number, clientY: number) => {
+          // Constant multi-waypoint free roaming loop
+          const startAutonomousRoam = () => {
+            if (isUserGuiding) return;
+
+            const padding = 16;
+            const targetX = padding + Math.random() * (window.innerWidth - 145);
+            const targetY = 70 + Math.random() * (window.innerHeight - 170);
+
+            const dist = Math.hypot(targetX - currentPos.x, targetY - currentPos.y);
+            const duration = Math.max(2.8, dist / 90);
+
+            activeTween = gsap.to(bee, {
+              x: targetX,
+              y: targetY,
+              rotation: 0,
+              duration,
+              ease: "sine.inOut",
+              onUpdate: () => {
+                currentPos.x = Number(gsap.getProperty(bee, "x"));
+                currentPos.y = Number(gsap.getProperty(bee, "y"));
+                (bee as any).__lockedPos = currentPos;
+              },
+              onComplete: () => {
+                if (!isUserGuiding) {
+                  startAutonomousRoam();
+                }
+              },
+            });
+          };
+
+          startAutonomousRoam();
+
+          // Smooth touch guidance (Slowly navigates to touched spot without snapping/teleporting)
+          const handleTouchGlide = (e: TouchEvent) => {
+            if (e.touches.length === 0) return;
+            isUserGuiding = true;
+            if (resumeTimer) clearTimeout(resumeTimer);
             if (activeTween) activeTween.kill();
 
-            const destX = Math.max(10, Math.min(window.innerWidth - 130, clientX - 60));
-            const destY = Math.max(60, Math.min(380, clientY - 45));
+            const touch = e.touches[0];
+            const destX = Math.max(10, Math.min(window.innerWidth - 135, touch.clientX - 60));
+            const destY = Math.max(50, Math.min(window.innerHeight - 110, touch.clientY - 45));
 
             activeTween = gsap.to(bee, {
               x: destX,
               y: destY,
               rotation: 0,
-              duration: 1.2,
+              duration: 1.5,
               ease: "power1.out",
               overwrite: "auto",
               onUpdate: () => {
@@ -435,25 +473,21 @@ export default function Landing() {
                 (bee as any).__lockedPos = currentPos;
               },
             });
+
+            resumeTimer = setTimeout(() => {
+              isUserGuiding = false;
+              startAutonomousRoam();
+            }, 3000);
           };
 
-          const onTouchMove = (e: TouchEvent) => {
-            if (e.touches.length === 0) return;
-            handleTouchGlide(e.touches[0].clientX, e.touches[0].clientY);
-          };
-
-          const onTouchStart = (e: TouchEvent) => {
-            if (e.touches.length === 0) return;
-            handleTouchGlide(e.touches[0].clientX, e.touches[0].clientY);
-          };
-
-          window.addEventListener("touchstart", onTouchStart, { passive: true });
-          window.addEventListener("touchmove", onTouchMove, { passive: true });
+          window.addEventListener("touchstart", handleTouchGlide, { passive: true });
+          window.addEventListener("touchmove", handleTouchGlide, { passive: true });
 
           return () => {
+            if (resumeTimer) clearTimeout(resumeTimer);
             if (activeTween) activeTween.kill();
-            window.removeEventListener("touchstart", onTouchStart);
-            window.removeEventListener("touchmove", onTouchMove);
+            window.removeEventListener("touchstart", handleTouchGlide);
+            window.removeEventListener("touchmove", handleTouchGlide);
           };
         }
       }
