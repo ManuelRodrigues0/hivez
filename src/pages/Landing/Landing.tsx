@@ -677,7 +677,7 @@ export default function Landing() {
       <div
         ref={beeContainerRef}
         className="pointer-events-none fixed top-0 left-0 z-50 w-32 h-20 md:w-52 md:h-32 touch-none select-none"
-        style={{ willChange: "transform" }}
+        style={{ willChange: "transform", transform: "translate3d(0,0,0)" }}
       >
         <BeeChromaVideo />
       </div>
