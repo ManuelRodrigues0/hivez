@@ -397,7 +397,6 @@ export default function Landing() {
           window.addEventListener("mousemove", onMouseMove);
         } else {
           // --- MOBILE: SMOOTH 0° FIXED-UPRIGHT PROCEDURAL ROAM & GENTLE TOUCH FOLLOW ---
-          // Use a true singleton window-level cache or check if transform already exists to completely bypass re-init resets
           const winCache = (window as any).__hivezBeePos;
           const currentPos = winCache || {
             x: window.innerWidth * 0.5 - 60,
@@ -995,7 +994,7 @@ export default function Landing() {
                 to="/signup"
                 className="gsap-magnetic inline-flex items-center gap-2 rounded-full bg-[#3d654c] px-7 py-3.5 text-xs md:text-base font-bold text-white shadow-xl shadow-[#3d654c]/25 transition hover:bg-[#32533e] md:px-9 md:py-4"
               >
-                Create your account <ArrowUpRight size5 size={17} />
+                Create your account <ArrowUpRight size={17} />
               </Link>
             </div>
           </div>
