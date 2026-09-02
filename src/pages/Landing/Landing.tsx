@@ -398,12 +398,11 @@ export default function Landing() {
         } else {
           // --- MOBILE: STATIONARY AT SIDE OF TITLE UNTIL TOUCHED, THEN TOUCH-DRIVEN ---
           let currentPos = (bee as any).__lockedPos || {
-            x: window.innerWidth * 0.68, // Fixed right beside the headline text as requested in the mockup
+            x: window.innerWidth * 0.68,
             y: 195,
           };
-          let isUserGuiding = false;
-          let resumeTimer: ReturnType<typeof setTimeout>;
           let activeTween: gsap.core.Tween | null = null;
+          let resumeTimer: ReturnType<typeof setTimeout> | null = null;
 
           // Set initial position statically beside the headline
           gsap.set(bee, { x: currentPos.x, y: currentPos.y, rotation: 0, scaleX: 1, scaleY: 1 });
@@ -419,8 +418,7 @@ export default function Landing() {
 
           // Smooth touch navigation engine (triggered only when user touches the screen)
           const handleTouchGlide = (clientX: number, clientY: number) => {
-            isUserGuiding = true;
-            clearTimeout(resumeTimer);
+            if (resumeTimer) clearTimeout(resumeTimer);
             if (activeTween) activeTween.kill();
 
             const destX = Math.max(10, Math.min(window.innerWidth - 130, clientX - 60));
@@ -455,7 +453,7 @@ export default function Landing() {
           window.addEventListener("touchmove", onTouchMove, { passive: true });
 
           return () => {
-            clearTimeout(resumeTimer);
+            if (resumeTimer) clearTimeout(resumeTimer);
             if (activeTween) activeTween.kill();
             window.removeEventListener("touchstart", onTouchStart);
             window.removeEventListener("touchmove", onTouchMove);
