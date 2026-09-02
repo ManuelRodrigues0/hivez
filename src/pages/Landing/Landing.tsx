@@ -399,7 +399,7 @@ export default function Landing() {
           // --- MOBILE: STATIONARY BESIDE TITLE UNTIL TOUCHED, THEN TOUCH-DRIVEN ---
           let currentPos = (bee as any).__lockedPos || {
             x: window.innerWidth * 0.68,
-            y: 135, // Positioned slightly higher to align perfectly right beside the title text
+            y: 135,
           };
           let activeTween: gsap.core.Tween | null = null;
 
