@@ -399,14 +399,17 @@ export default function Landing() {
           // --- MOBILE: SMOOTH 0° FIXED-UPRIGHT PROCEDURAL ROAM & GENTLE TOUCH FOLLOW ---
           const currentPos = (bee as any).__cachedPos || {
             x: window.innerWidth * 0.5 - 60,
-            y: 130,
+            y: Math.min(window.innerHeight * 0.35, 220),
           };
           let isUserGuiding = false;
           let resumeTimer: ReturnType<typeof setTimeout>;
           let activeTween: gsap.core.Tween | null = null;
 
-          // Lock orientation permanently to 0 deg on mobile and maintain current coordinate
-          gsap.set(bee, { x: currentPos.x, y: currentPos.y, rotation: 0, scaleX: 1, scaleY: 1 });
+          // Only set initial position if not already roaming/cached
+          if (!(bee as any).__cachedPos) {
+            gsap.set(bee, { x: currentPos.x, y: currentPos.y, rotation: 0, scaleX: 1, scaleY: 1 });
+            (bee as any).__cachedPos = currentPos;
+          }
 
           // Ambient hovering breath (vertical sine motion only)
           gsap.to(bee, {
@@ -423,7 +426,7 @@ export default function Landing() {
 
             const padding = 16;
             const targetX = padding + Math.random() * (window.innerWidth - 145);
-            const targetY = 70 + Math.random() * (window.innerHeight - 170);
+            const targetY = 100 + Math.random() * (window.innerHeight - 220);
 
             const dist = Math.hypot(targetX - currentPos.x, targetY - currentPos.y);
             const duration = Math.max(2.8, dist / 90);
