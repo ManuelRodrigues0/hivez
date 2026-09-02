@@ -396,7 +396,7 @@ export default function Landing() {
 
           window.addEventListener("mousemove", onMouseMove);
         } else {
-          // --- MOBILE: STABLE PERSISTENT ROAM & TOUCH FOLLOW (NO TELEPORT RESETS) ---
+          // --- MOBILE: UNIFIED TOUCH-DRIVEN ENGINE FOR BOTH STARTUP & INTERACTION ---
           let currentPos = (bee as any).__lockedPos || {
             x: window.innerWidth * 0.5 - 60,
             y: 180,
@@ -405,7 +405,7 @@ export default function Landing() {
           let resumeTimer: ReturnType<typeof setTimeout>;
           let activeTween: gsap.core.Tween | null = null;
 
-          // Lock initial position once on element instance and disable resetting layout shifts
+          // Apply initial position safely from memory anchor
           gsap.set(bee, { x: currentPos.x, y: currentPos.y, rotation: 0, scaleX: 1, scaleY: 1 });
 
           // Ambient hovering breath (vertical sine motion only)
@@ -417,13 +417,13 @@ export default function Landing() {
             ease: "sine.inOut",
           });
 
-          // Constant multi-waypoint roaming loop restricted strictly to the hero section top area
+          // Autonomous routine using the exact smooth glide movement loop
           const startAutonomousRoam = () => {
             if (isUserGuiding) return;
 
             const padding = 20;
             const targetX = padding + Math.random() * (window.innerWidth - 140);
-            const targetY = 90 + Math.random() * 220; 
+            const targetY = 90 + Math.random() * 220;
 
             const dist = Math.hypot(targetX - currentPos.x, targetY - currentPos.y);
             const duration = Math.max(2.5, dist / 80);
@@ -449,16 +449,14 @@ export default function Landing() {
 
           startAutonomousRoam();
 
-          // Smooth touch guidance restricted to hero bounds
-          const handleTouchGlide = (e: TouchEvent) => {
-            if (e.touches.length === 0) return;
+          // Unified glide handler used for both touch interaction and smooth initialization
+          const handleTouchGlide = (clientX: number, clientY: number) => {
             isUserGuiding = true;
             clearTimeout(resumeTimer);
             if (activeTween) activeTween.kill();
 
-            const touch = e.touches[0];
-            const destX = Math.max(10, Math.min(window.innerWidth - 130, touch.clientX - 60));
-            const destY = Math.max(60, Math.min(350, touch.clientY - 45));
+            const destX = Math.max(10, Math.min(window.innerWidth - 130, clientX - 60));
+            const destY = Math.max(60, Math.min(350, clientY - 45));
 
             gsap.to(bee, {
               x: destX,
@@ -480,14 +478,24 @@ export default function Landing() {
             }, 3000);
           };
 
-          window.addEventListener("touchstart", handleTouchGlide, { passive: true });
-          window.addEventListener("touchmove", handleTouchGlide, { passive: true });
+          const onTouchMove = (e: TouchEvent) => {
+            if (e.touches.length === 0) return;
+            handleTouchGlide(e.touches[0].clientX, e.touches[0].clientY);
+          };
+
+          const onTouchStart = (e: TouchEvent) => {
+            if (e.touches.length === 0) return;
+            handleTouchGlide(e.touches[0].clientX, e.touches[0].clientY);
+          };
+
+          window.addEventListener("touchstart", onTouchStart, { passive: true });
+          window.addEventListener("touchmove", onTouchMove, { passive: true });
 
           return () => {
             clearTimeout(resumeTimer);
             if (activeTween) activeTween.kill();
-            window.removeEventListener("touchstart", handleTouchGlide);
-            window.removeEventListener("touchmove", handleTouchGlide);
+            window.removeEventListener("touchstart", onTouchStart);
+            window.removeEventListener("touchmove", onTouchMove);
           };
         }
       }
@@ -1001,7 +1009,7 @@ export default function Landing() {
       </main>
 
       {/* FOOTER */}
-      <footer className="flex flex-col items-center justify-between gap-4 border-t border-[#1c1d1a]/10 bg-[#f7f7f2] px-5 py-8 text-xs text-[#1c1d1a]/60 md:flex-row md:px-12 md:py-10">
+      <footer className="flex flex-col items-center justify-between gap-4 border-t border-[#1c1d1a]/10 bg-[#f7f7f2] px-5 py-8 text-xs text-[#1c1d1a]/60 md:flex-row md:px-12 md:px-12 md:py-10">
         <span className="font-extrabold tracking-wider text-[#1c1d1a] text-sm">HIVEZ CIVIC NETWORK</span>
         <div className="flex flex-wrap justify-center gap-4 md:gap-6 font-bold">
           <a href="#features" className="hover:text-[#1c1d1a]">Features</a>
