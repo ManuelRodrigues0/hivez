@@ -397,8 +397,7 @@ export default function Landing() {
           window.addEventListener("mousemove", onMouseMove);
         } else {
           // --- MOBILE: SMOOTH 0° FIXED-UPRIGHT PROCEDURAL ROAM & GENTLE TOUCH FOLLOW ---
-          const winCache = (window as any).__hivezBeePos;
-          const currentPos = winCache || {
+          const currentPos = (window as any).__hivezBeePos || {
             x: window.innerWidth * 0.5 - 60,
             y: Math.min(window.innerHeight * 0.35, 220),
           };
@@ -406,8 +405,14 @@ export default function Landing() {
           let resumeTimer: ReturnType<typeof setTimeout>;
           let activeTween: gsap.core.Tween | null = null;
 
-          // Always set position to current memory coordinate without hard resetting to top
-          gsap.set(bee, { x: currentPos.x, y: currentPos.y, rotation: 0, scaleX: 1, scaleY: 1 });
+          // Only set initial position if not already roaming/cached
+          if (!(window as any).__hivezBeeInitialized) {
+            gsap.set(bee, { x: currentPos.x, y: currentPos.y, rotation: 0, scaleX: 1, scaleY: 1 });
+            (window as any).__hivezBeeInitialized = true;
+            (window as any).__hivezBeePos = currentPos;
+          } else {
+            gsap.set(bee, { x: currentPos.x, y: currentPos.y, rotation: 0, scaleX: 1, scaleY: 1 });
+          }
 
           // Ambient hovering breath (vertical sine motion only)
           gsap.to(bee, {
