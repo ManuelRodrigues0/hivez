@@ -397,15 +397,15 @@ export default function Landing() {
           window.addEventListener("mousemove", onMouseMove);
         } else {
           // --- MOBILE: SMOOTH 0° FIXED-UPRIGHT PROCEDURAL ROAM & GENTLE TOUCH FOLLOW ---
-          const currentPos = (window as any).__hivezBeePos || {
+          const winCache = (window as any).__hivezBeePos;
+          const currentPos = winCache || {
             x: window.innerWidth * 0.5 - 60,
-            y: Math.min(window.innerHeight * 0.35, 220),
+            y: 180,
           };
           let isUserGuiding = false;
           let resumeTimer: ReturnType<typeof setTimeout>;
           let activeTween: gsap.core.Tween | null = null;
 
-          // Only set initial position if not already roaming/cached
           if (!(window as any).__hivezBeeInitialized) {
             gsap.set(bee, { x: currentPos.x, y: currentPos.y, rotation: 0, scaleX: 1, scaleY: 1 });
             (window as any).__hivezBeeInitialized = true;
@@ -414,25 +414,25 @@ export default function Landing() {
             gsap.set(bee, { x: currentPos.x, y: currentPos.y, rotation: 0, scaleX: 1, scaleY: 1 });
           }
 
-          // Ambient hovering breath (vertical sine motion only)
+          // Ambient hovering breath
           gsap.to(bee, {
-            y: "+=12",
+            y: "+=10",
             duration: 1.5,
             repeat: -1,
             yoyo: true,
             ease: "sine.inOut",
           });
 
-          // Constant multi-waypoint roaming loop
+          // Constant multi-waypoint roaming loop restricted strictly to the hero section top area
           const startAutonomousRoam = () => {
             if (isUserGuiding) return;
 
-            const padding = 16;
-            const targetX = padding + Math.random() * (window.innerWidth - 145);
-            const targetY = 100 + Math.random() * (window.innerHeight - 220);
+            const padding = 20;
+            const targetX = padding + Math.random() * (window.innerWidth - 140);
+            const targetY = 90 + Math.random() * 220; 
 
             const dist = Math.hypot(targetX - currentPos.x, targetY - currentPos.y);
-            const duration = Math.max(2.8, dist / 90);
+            const duration = Math.max(2.5, dist / 80);
 
             activeTween = gsap.to(bee, {
               x: targetX,
@@ -455,7 +455,7 @@ export default function Landing() {
 
           startAutonomousRoam();
 
-          // Smooth touch guidance (Slowly navigates to touched spot without snapping/teleporting)
+          // Smooth touch guidance restricted to hero bounds
           const handleTouchGlide = (e: TouchEvent) => {
             if (e.touches.length === 0) return;
             isUserGuiding = true;
@@ -463,14 +463,14 @@ export default function Landing() {
             if (activeTween) activeTween.kill();
 
             const touch = e.touches[0];
-            const destX = Math.max(10, Math.min(window.innerWidth - 135, touch.clientX - 60));
-            const destY = Math.max(50, Math.min(window.innerHeight - 110, touch.clientY - 45));
+            const destX = Math.max(10, Math.min(window.innerWidth - 130, touch.clientX - 60));
+            const destY = Math.max(60, Math.min(350, touch.clientY - 45));
 
             gsap.to(bee, {
               x: destX,
               y: destY,
               rotation: 0,
-              duration: 1.5,
+              duration: 1.2,
               ease: "power1.out",
               overwrite: "auto",
               onUpdate: () => {
@@ -1011,7 +1011,7 @@ export default function Landing() {
         <span className="font-extrabold tracking-wider text-[#1c1d1a] text-sm">HIVEZ CIVIC NETWORK</span>
         <div className="flex flex-wrap justify-center gap-4 md:gap-6 font-bold">
           <a href="#features" className="hover:text-[#1c1d1a]">Features</a>
-          <a href="#how" className="hover:text-[#1c1d1a]">Architecture</a>
+          <a href="#how" className="hover:text-[#1c1d1a]">Movement Architecture</a>
           <a href="#intelligence" className="hover:text-[#1c1d1a]">AI Intelligence</a>
         </div>
         <span>© 2026 Hivez. All rights reserved.</span>
