@@ -148,17 +148,8 @@ export default function Signup() {
             help important local problems get seen.
           </p>
 
-          {/* Added layout container to ensure smooth morphing and touch-interaction transitions */}
-          <div 
-            className="mt-8 flex min-h-[220px] w-full cursor-pointer items-center justify-center lg:justify-start select-none"
-            onClick={() => setJump((j) => j + 1)}
-          >
-            <motion.div
-              layout
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            >
-              <BeeMascot mood={mood} jump={jump} size={380} />
-            </motion.div>
+          <div className="mt-8 flex min-h-[220px] w-full items-center justify-center lg:justify-start">
+            <BeeMascot mood={mood} jump={jump} size={380} />
           </div>
         </section>
 
