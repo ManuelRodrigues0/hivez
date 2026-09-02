@@ -396,9 +396,8 @@ export default function Landing() {
 
           window.addEventListener("mousemove", onMouseMove);
         } else {
-          // --- MOBILE: SMOOTH 0° FIXED-UPRIGHT PROCEDURAL ROAM & GENTLE TOUCH FOLLOW ---
-          const winCache = (window as any).__hivezBeePos;
-          const currentPos = winCache || {
+          // --- MOBILE: STABLE PERSISTENT ROAM & TOUCH FOLLOW (NO TELEPORT RESETS) ---
+          let currentPos = (bee as any).__lockedPos || {
             x: window.innerWidth * 0.5 - 60,
             y: 180,
           };
@@ -406,15 +405,10 @@ export default function Landing() {
           let resumeTimer: ReturnType<typeof setTimeout>;
           let activeTween: gsap.core.Tween | null = null;
 
-          if (!(window as any).__hivezBeeInitialized) {
-            gsap.set(bee, { x: currentPos.x, y: currentPos.y, rotation: 0, scaleX: 1, scaleY: 1 });
-            (window as any).__hivezBeeInitialized = true;
-            (window as any).__hivezBeePos = currentPos;
-          } else {
-            gsap.set(bee, { x: currentPos.x, y: currentPos.y, rotation: 0, scaleX: 1, scaleY: 1 });
-          }
+          // Lock initial position once on element instance and disable resetting layout shifts
+          gsap.set(bee, { x: currentPos.x, y: currentPos.y, rotation: 0, scaleX: 1, scaleY: 1 });
 
-          // Ambient hovering breath
+          // Ambient hovering breath (vertical sine motion only)
           gsap.to(bee, {
             y: "+=10",
             duration: 1.5,
@@ -443,7 +437,7 @@ export default function Landing() {
               onUpdate: () => {
                 currentPos.x = Number(gsap.getProperty(bee, "x"));
                 currentPos.y = Number(gsap.getProperty(bee, "y"));
-                (window as any).__hivezBeePos = currentPos;
+                (bee as any).__lockedPos = currentPos;
               },
               onComplete: () => {
                 if (!isUserGuiding) {
@@ -476,7 +470,7 @@ export default function Landing() {
               onUpdate: () => {
                 currentPos.x = Number(gsap.getProperty(bee, "x"));
                 currentPos.y = Number(gsap.getProperty(bee, "y"));
-                (window as any).__hivezBeePos = currentPos;
+                (bee as any).__lockedPos = currentPos;
               },
             });
 
