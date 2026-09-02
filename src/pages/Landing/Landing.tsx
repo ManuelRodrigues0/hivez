@@ -397,7 +397,9 @@ export default function Landing() {
           window.addEventListener("mousemove", onMouseMove);
         } else {
           // --- MOBILE: SMOOTH 0° FIXED-UPRIGHT PROCEDURAL ROAM & GENTLE TOUCH FOLLOW ---
-          const currentPos = (bee as any).__cachedPos || {
+          // Use a true singleton window-level cache or check if transform already exists to completely bypass re-init resets
+          const winCache = (window as any).__hivezBeePos;
+          const currentPos = winCache || {
             x: window.innerWidth * 0.5 - 60,
             y: Math.min(window.innerHeight * 0.35, 220),
           };
@@ -405,11 +407,8 @@ export default function Landing() {
           let resumeTimer: ReturnType<typeof setTimeout>;
           let activeTween: gsap.core.Tween | null = null;
 
-          // Only set initial position if not already roaming/cached
-          if (!(bee as any).__cachedPos) {
-            gsap.set(bee, { x: currentPos.x, y: currentPos.y, rotation: 0, scaleX: 1, scaleY: 1 });
-            (bee as any).__cachedPos = currentPos;
-          }
+          // Always set position to current memory coordinate without hard resetting to top
+          gsap.set(bee, { x: currentPos.x, y: currentPos.y, rotation: 0, scaleX: 1, scaleY: 1 });
 
           // Ambient hovering breath (vertical sine motion only)
           gsap.to(bee, {
@@ -440,7 +439,7 @@ export default function Landing() {
               onUpdate: () => {
                 currentPos.x = Number(gsap.getProperty(bee, "x"));
                 currentPos.y = Number(gsap.getProperty(bee, "y"));
-                (bee as any).__cachedPos = currentPos;
+                (window as any).__hivezBeePos = currentPos;
               },
               onComplete: () => {
                 if (!isUserGuiding) {
@@ -473,7 +472,7 @@ export default function Landing() {
               onUpdate: () => {
                 currentPos.x = Number(gsap.getProperty(bee, "x"));
                 currentPos.y = Number(gsap.getProperty(bee, "y"));
-                (bee as any).__cachedPos = currentPos;
+                (window as any).__hivezBeePos = currentPos;
               },
             });
 
@@ -996,7 +995,7 @@ export default function Landing() {
                 to="/signup"
                 className="gsap-magnetic inline-flex items-center gap-2 rounded-full bg-[#3d654c] px-7 py-3.5 text-xs md:text-base font-bold text-white shadow-xl shadow-[#3d654c]/25 transition hover:bg-[#32533e] md:px-9 md:py-4"
               >
-                Create your account <ArrowUpRight size={17} />
+                Create your account <ArrowUpRight size5 size={17} />
               </Link>
             </div>
           </div>
