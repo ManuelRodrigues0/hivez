@@ -397,7 +397,7 @@ export default function Landing() {
           window.addEventListener("mousemove", onMouseMove);
         } else {
           // --- MOBILE: SMOOTH 0° FIXED-UPRIGHT PROCEDURAL ROAM & GENTLE TOUCH FOLLOW ---
-          let currentPos = {
+          const currentPos = (bee as any).__cachedPos || {
             x: window.innerWidth * 0.5 - 60,
             y: 130,
           };
@@ -405,7 +405,7 @@ export default function Landing() {
           let resumeTimer: ReturnType<typeof setTimeout>;
           let activeTween: gsap.core.Tween | null = null;
 
-          // Lock orientation permanently to 0 deg on mobile
+          // Lock orientation permanently to 0 deg on mobile and maintain current coordinate
           gsap.set(bee, { x: currentPos.x, y: currentPos.y, rotation: 0, scaleX: 1, scaleY: 1 });
 
           // Ambient hovering breath (vertical sine motion only)
@@ -437,6 +437,7 @@ export default function Landing() {
               onUpdate: () => {
                 currentPos.x = Number(gsap.getProperty(bee, "x"));
                 currentPos.y = Number(gsap.getProperty(bee, "y"));
+                (bee as any).__cachedPos = currentPos;
               },
               onComplete: () => {
                 if (!isUserGuiding) {
@@ -469,6 +470,7 @@ export default function Landing() {
               onUpdate: () => {
                 currentPos.x = Number(gsap.getProperty(bee, "x"));
                 currentPos.y = Number(gsap.getProperty(bee, "y"));
+                (bee as any).__cachedPos = currentPos;
               },
             });
 
