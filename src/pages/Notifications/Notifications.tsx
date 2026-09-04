@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Heart, MessageCircle, UserPlus, Check, X, Megaphone, Bell, Sparkles } from "lucide-react";
 import HivezLoader from "@/components/common/HivezLoader";
 import { useNavigate } from "react-router-dom";
@@ -6,6 +6,7 @@ import { deleteDoc, doc } from "firebase/firestore";
 import { db } from "@/firebase/firebase";
 
 import { useAuth } from "@/context/AuthContext";
+import { useLiveProfiles } from "@/hooks/useLiveProfile";
 import {
   listenToNotifications,
   markAllNotificationsRead,
@@ -35,8 +36,8 @@ function iconFor(type: NotificationDoc["type"]) {
   return <Heart size={14} className="fill-rose-500 text-rose-500" />;
 }
 
-function titleFor(notification: NotificationDoc) {
-  const name = notification.actorDisplayName || notification.actorUsername || "Someone";
+function titleFor(notification: NotificationDoc, actorName?: string) {
+  const name = actorName || notification.actorDisplayName || notification.actorUsername || "Someone";
   if (notification.type === "comment") return `${name} commented on your post`;
   if (notification.type === "follow") return `${name} sent you a follow request`;
   if (notification.type === "broadcast") return `${notification.actorDisplayName || "Hivez Official"}`;
@@ -55,6 +56,14 @@ export default function Notifications() {
     () => notifications.filter((notification) => !notification.read).length,
     [notifications]
   );
+
+  // Live actor profiles: notification docs store creation-time snapshots, this
+  // keeps names/avatars current when the actor updates their profile.
+  const actorIds = useMemo(
+    () => [...new Set(notifications.map((n) => n.actorId).filter(Boolean))].slice(0, 50),
+    [notifications]
+  );
+  const liveActors = useLiveProfiles(actorIds);
 
   useEffect(() => {
     if (!user) return;
@@ -165,6 +174,9 @@ export default function Notifications() {
           <div className="space-y-2">
             {notifications.map((notification) => {
               const isUnread = !notification.read;
+              const liveActor = liveActors[notification.actorId];
+              const actorName = liveActor?.displayName || notification.actorDisplayName || notification.actorUsername || "Someone";
+              const actorPhoto = liveActor?.photoURL || notification.actorPhotoURL;
               return (
                 <button
                   key={notification.id}
@@ -179,10 +191,10 @@ export default function Notifications() {
                   <div className="relative shrink-0">
                     <img
                       src={
-                        notification.actorPhotoURL ||
-                        `https://ui-avatars.com/api/?name=${encodeURIComponent(notification.actorDisplayName || "Hivez")}&background=3d654c&color=fff`
+                        actorPhoto ||
+                        `https://ui-avatars.com/api/?name=${encodeURIComponent(actorName || "Hivez")}&background=3d654c&color=fff`
                       }
-                      alt={notification.actorDisplayName || "Actor"}
+                      alt={actorName || "Actor"}
                       className="h-10 w-10 rounded-full object-cover border border-[#1c1d1a]/10 dark:border-neutral-700 shadow-2xs"
                     />
                     <div className="absolute -bottom-0.5 -right-0.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-white shadow-2xs dark:bg-[#181818] border border-[#1c1d1a]/10 dark:border-neutral-700">
@@ -195,7 +207,7 @@ export default function Notifications() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <p className="truncate text-xs font-bold text-[#1c1d1a] dark:text-white">
-                          {titleFor(notification)}
+                          {titleFor(notification, actorName)}
                         </p>
                         {notification.text && (
                           <p className="mt-0.5 line-clamp-2 text-xs font-medium text-[#1c1d1a]/70 dark:text-neutral-300">

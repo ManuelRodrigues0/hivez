@@ -1,9 +1,10 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, getDocs, limit, orderBy, query } from "firebase/firestore";
 import { BadgeCheck, Heart, MessageCircle, Search as SearchIcon, TrendingUp, User, X } from "lucide-react";
 import HivezLoader from "@/components/common/HivezLoader";
 import { db } from "../../firebase/firebase";
+import { useLiveProfiles } from "@/hooks/useLiveProfile";
 import type { PostMediaItem } from "@/components/feed/MediaGrid";
 
 interface SearchUser {
@@ -17,6 +18,7 @@ interface SearchUser {
 
 interface SearchPost {
   id: string;
+  uid?: string;
   caption: string;
   mediaUrl: string;
   mediaUrls?: string[];
@@ -47,6 +49,20 @@ export default function SearchPage() {
   const [activeTab, setActiveTab] = useState<"top" | "users" | "posts">("top");
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<number | null>(null);
+
+  // Live profile data for currently displayed results: name/avatar/bio stay
+  // consistent with profile edits without re-running the search.
+  const liveProfileIds = useMemo(
+    () =>
+      [
+        ...new Set([
+          ...users.map((user) => user.uid),
+          ...posts.map((post) => post.uid || "").filter(Boolean),
+        ]),
+      ].slice(0, 50),
+    [users, posts]
+  );
+  const liveProfiles = useLiveProfiles(liveProfileIds);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -90,6 +106,7 @@ export default function SearchPage() {
         if (caption.includes(trimmed) || hashtags.some((t: string) => t === trimmed || t === `#${trimmed}`)) {
           matchedPosts.push({
             id: doc.id,
+            uid: data.uid || "",
             caption: data.caption || "",
             mediaUrl: data.mediaUrl || "",
             mediaUrls: data.mediaUrls || [],
@@ -207,19 +224,27 @@ export default function SearchPage() {
               <section>
                 {activeTab === "top" && <h3 className="app-section-label px-4 py-3">People</h3>}
                 <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                  {users.map((user) => (
+                  {users.map((user) => {
+                    const live = liveProfiles[user.uid];
+                    const name = live?.displayName || user.displayName || user.username;
+                    const username = live?.username || user.username;
+                    const photo = live?.photoURL || user.photoURL;
+                    const bio = live?.bio ?? user.bio;
+                    const verified = live?.verified ?? user.verified;
+                    return (
                     <button key={user.uid} onClick={() => navigate(`/profile?uid=${user.uid}`)} className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-zinc-50 dark:hover:bg-zinc-900">
-                      <img src={user.photoURL || "https://ui-avatars.com/api/?name=Hivez&background=27272a&color=fff"} alt={user.username} className="h-11 w-11 flex-shrink-0 rounded-full object-cover" />
+                      <img src={photo || "https://ui-avatars.com/api/?name=Hivez&background=27272a&color=fff"} alt={username} className="h-11 w-11 flex-shrink-0 rounded-full object-cover" />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
-                          <span className="truncate text-sm font-semibold text-zinc-900 dark:text-white">{user.displayName || user.username}</span>
-                          {user.verified && <BadgeCheck size={14} className="flex-shrink-0 text-sky-500" />}
+                          <span className="truncate text-sm font-semibold text-zinc-900 dark:text-white">{name}</span>
+                          {verified && <BadgeCheck size={14} className="flex-shrink-0 text-sky-500" />}
                         </div>
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400">@{user.username}</p>
-                        {user.bio && <p className="mt-0.5 truncate text-xs text-zinc-600 dark:text-zinc-400">{user.bio}</p>}
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">@{username}</p>
+                        {bio && <p className="mt-0.5 truncate text-xs text-zinc-600 dark:text-zinc-400">{bio}</p>}
                       </div>
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             )}
@@ -228,7 +253,11 @@ export default function SearchPage() {
               <section className={activeTab === "top" && users.length > 0 ? "border-t border-zinc-200 dark:border-zinc-800" : ""}>
                 {activeTab === "top" && <h3 className="app-section-label px-4 py-3">Posts</h3>}
                 <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                  {posts.map((post) => (
+                  {posts.map((post) => {
+                    const live = post.uid ? liveProfiles[post.uid] : undefined;
+                    const authorName = live?.displayName || post.displayName || post.username;
+                    const authorPhoto = live?.photoURL || post.photoURL;
+                    return (
                     <button key={post.id} onClick={() => navigate(`/post/${post.id}`)} className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-zinc-50 dark:hover:bg-zinc-900">
                       {(post.mediaItems?.[0]?.url || post.mediaUrls?.[0] || post.mediaUrl) && (
                         <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-zinc-100 dark:bg-zinc-900">
@@ -241,8 +270,8 @@ export default function SearchPage() {
                       )}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <img src={post.photoURL || "https://ui-avatars.com/api/?name=Hivez&background=27272a&color=fff"} alt="" className="h-5 w-5 rounded-full object-cover" />
-                          <span className="truncate text-xs font-medium text-zinc-500 dark:text-zinc-400">{post.displayName || post.username}</span>
+                          <img src={authorPhoto || "https://ui-avatars.com/api/?name=Hivez&background=27272a&color=fff"} alt="" className="h-5 w-5 rounded-full object-cover" />
+                          <span className="truncate text-xs font-medium text-zinc-500 dark:text-zinc-400">{authorName}</span>
                         </div>
                         <p className="mt-1 line-clamp-2 text-sm text-zinc-900 dark:text-white">{post.caption}</p>
                         <div className="mt-1 flex items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400">
@@ -251,7 +280,8 @@ export default function SearchPage() {
                         </div>
                       </div>
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             )}

@@ -21,9 +21,10 @@ import { motion } from "framer-motion";
 
 import { useAuth } from "../../context/AuthContext";
 import { db } from "../../firebase/firebase";
-import { doc, updateDoc, deleteDoc, setDoc, increment, onSnapshot } from "firebase/firestore";
+import { doc, updateDoc, deleteDoc, increment, onSnapshot, runTransaction } from "firebase/firestore";
 import { toast } from "sonner";
 import type { FeedPost } from "./Feed";
+import { useLiveProfile } from "@/hooks/useLiveProfile";
 import { createNotification } from "@/services/notifications";
 import {
   createIssueCommunityForPost,
@@ -66,8 +67,11 @@ function timeAgo(timestamp: any) {
 }
 
 export default function FeedCard({ post, onCommentClick }: Props) {
-  const { user } = useAuth();
+  const { user, profile: myProfile } = useAuth();
   const navigate = useNavigate();
+  // Live author profile: name/username/avatar/verification stay current even
+  // though the post document stores a creation-time snapshot.
+  const author = useLiveProfile(post.uid, post) as FeedPost;
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likes);
   const [commentsOpen, setCommentsOpen] = useState(false);
@@ -106,21 +110,12 @@ export default function FeedCard({ post, onCommentClick }: Props) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Listen to post data changes in real-time (likes, comments, shares)
+  // Live post data (likes/comments/caption/media/counters) is patched by the
+  // Feed's single real-time listener, so no per-card post doc listener is
+  // needed here - the card simply reconciles from its props.
   useEffect(() => {
-    const postRef = doc(db, "posts", post.id);
-    const unsubscribe = onSnapshot(postRef, (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        setLikesCount(data.likes || 0);
-        // Update comments count if it changes
-        if (data.comments !== undefined && data.comments !== post.comments) {
-          // This will trigger a re-render with updated comment count
-        }
-      }
-    });
-    return () => unsubscribe();
-  }, [post.id]);
+    setLikesCount(post.likes || 0);
+  }, [post.likes]);
 
   useEffect(() => {
     return listenCommunityByPost(post.id, setCommunity);
@@ -149,32 +144,39 @@ export default function FeedCard({ post, onCommentClick }: Props) {
   }, [post.id, user]);
 
   async function handleLike() {
-    if (!user || liking) {
-      if (!user) return;
-    }
+    if (!user || liking) return;
 
     setLiking(true);
+    // Optimistic count bump - reconciled by the feed's real-time snapshot
+    // (final Firestore state is always the source of truth).
+    setLikesCount((count) => (liked ? Math.max(0, count - 1) : count + 1));
 
     const postRef = doc(db, "posts", post.id);
     const likeRef = doc(db, "posts", post.id, "likes", user.uid);
 
     try {
-      if (liked) {
-        // Unlike
-        await deleteDoc(likeRef);
-        await updateDoc(postRef, {
-          likes: increment(-1),
-        });
-        setLiked(false);
-      } else {
-        // Like
-        await setDoc(likeRef, {
-          userId: user.uid,
-          createdAt: new Date(),
-        });
-        await updateDoc(postRef, {
-          likes: increment(1),
-        });
+      // Atomic like/unlike: prevents double counting from double clicks or
+      // simultaneous sessions (read + write in one transaction).
+      let didLike = false;
+      await runTransaction(db, async (tx) => {
+        const likeSnap = await tx.get(likeRef);
+        if (likeSnap.exists()) {
+          tx.delete(likeRef);
+          tx.update(postRef, { likes: increment(-1) });
+          didLike = false;
+        } else {
+          tx.set(likeRef, {
+            userId: user.uid,
+            createdAt: new Date(),
+          });
+          tx.update(postRef, { likes: increment(1) });
+          didLike = true;
+        }
+      });
+
+      setLiked(didLike);
+
+      if (didLike) {
         await recordPostEngagement({
           postId: post.id,
           actorId: user.uid,
@@ -186,19 +188,21 @@ export default function FeedCard({ post, onCommentClick }: Props) {
           recipientId: post.uid,
           actor: {
             uid: user.uid,
-            username: user.email?.split("@")[0] || "",
-            displayName: user.displayName || user.email?.split("@")[0] || "Hivez User",
-            photoURL: user.photoURL || "",
+            username: myProfile?.username || "",
+            displayName: myProfile?.displayName || user.displayName || "Hivez User",
+            photoURL: myProfile?.photoURL || user.photoURL || "",
           },
           type: "like",
           text: post.caption || "your post",
           link: `/post/${post.id}`,
           postId: post.id,
         });
-        setLiked(true);
       }
     } catch (err) {
       console.error("Failed to update like:", err);
+      // Reconcile back to the authoritative state.
+      setLiked(liked);
+      setLikesCount(post.likes || 0);
     } finally {
       setLiking(false);
     }
@@ -347,22 +351,22 @@ export default function FeedCard({ post, onCommentClick }: Props) {
           <div className="flex min-w-0 items-center gap-3">
             <img
               src={
-                post.photoURL ||
+                author.photoURL ||
                 "https://ui-avatars.com/api/?name=Hivez&background=3d654c&color=fff"
               }
-              alt={post.username}
+              alt={author.username}
               className="h-11 w-11 flex-shrink-0 rounded-full object-cover"
             />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 min-w-0">
                 <span className="truncate text-[15px] font-bold text-zinc-900 hover:underline cursor-pointer dark:text-white">
-                  {post.displayName || post.username}
+                  {author.displayName || author.username}
                 </span>
-                {post.verified && (
+                {author.verified && (
                   <BadgeCheck size={14} className="flex-shrink-0 text-sky-500" />
                 )}
                 <span className="min-w-0 truncate text-[13px] text-zinc-500 dark:text-zinc-400">
-                  @{post.username}
+                  @{author.username}
                 </span>
                 <span className="text-[13px] text-zinc-400 dark:text-zinc-500">·</span>
                 <span className="flex-shrink-0 text-[13px] text-zinc-500 dark:text-zinc-400">

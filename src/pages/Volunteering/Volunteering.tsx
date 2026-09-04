@@ -4,9 +4,9 @@ import { Link } from "react-router-dom";
 import { CalendarDays, HandHeart, MapPin, Plus, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
+import { useLiveUserSummary } from "@/hooks/useLiveProfile";
 import {
   createVolunteerGroup,
-  getUserSummary,
   joinVolunteerGroup,
   listenAllVolunteerActivities,
   listenMyActivityParticipants,
@@ -20,7 +20,6 @@ import type {
   VolunteerActivity,
   VolunteerGroup,
   VolunteerGroupMember,
-  VolunteerUserSummary,
 } from "@/types/volunteering";
 
 function statusLabel(status: string) {
@@ -29,7 +28,8 @@ function statusLabel(status: string) {
 
 export default function Volunteering() {
   const { user } = useAuth();
-  const [summary, setSummary] = useState<VolunteerUserSummary | null>(null);
+  // Live user summary (replaces one-time getUserSummary read).
+  const summary = useLiveUserSummary(user?.uid);
   const [activities, setActivities] = useState<VolunteerActivity[]>([]);
   const [participants, setParticipants] = useState<ActivityParticipant[]>([]);
   const [communities, setCommunities] = useState<IssueCommunity[]>([]);
@@ -40,11 +40,6 @@ export default function Volunteering() {
   const [groupLocation, setGroupLocation] = useState("");
   const [groupDescription, setGroupDescription] = useState("");
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    if (!user) return;
-    getUserSummary(user.uid).then(setSummary);
-  }, [user]);
 
   useEffect(() => listenAllVolunteerActivities(setActivities), []);
   useEffect(() => listenOpenIssueCommunities(setCommunities), []);

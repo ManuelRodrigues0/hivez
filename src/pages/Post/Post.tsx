@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, BadgeCheck, Heart, MessageCircle, Repeat2, Send, Trash2, ShieldX, LogIn, UserPlus } from "lucide-react";
-import { doc, getDoc, deleteDoc, updateDoc, increment } from "firebase/firestore";
+import { doc, deleteDoc, updateDoc, onSnapshot, runTransaction, increment } from "firebase/firestore";
 import { toast } from "sonner";
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
@@ -9,6 +9,7 @@ import HivezLoader from "@/components/common/HivezLoader";
 import type { FeedPost } from "../../components/feed/Feed";
 import MediaGrid from "../../components/feed/MediaGrid";
 import type { PostMediaItem } from "../../components/feed/MediaGrid";
+import { useLiveProfile } from "@/hooks/useLiveProfile";
 
 function timeAgo(timestamp: any) {
   if (!timestamp?.toDate) return "Now";
@@ -33,34 +34,81 @@ export default function PostPage() {
   const [post, setPost] = useState<FeedPost | null>(null);
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState(false);
+  const [liking, setLiking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Live post: edits, status changes and deletions propagate without refresh.
   useEffect(() => {
-    async function loadPost() {
-      if (!id) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const snap = await getDoc(doc(db, "posts", id));
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+    const unsubscribe = onSnapshot(
+      doc(db, "posts", id),
+      (snap) => {
         if (snap.exists()) {
           setPost({ id: snap.id, ...snap.data() } as FeedPost);
+          setError(null);
         } else {
           setError("This post doesn't exist.");
         }
-      } catch (err: any) {
+        setLoading(false);
+      },
+      (err: any) => {
         console.error("Failed to load post:", err);
         if (err?.code === "permission-denied") {
           setError("Unable to load this post. It may not be publicly accessible. Check your Firestore security rules.");
         } else {
           setError("Failed to load this post. Please try again.");
         }
-      } finally {
         setLoading(false);
       }
-    }
-    loadPost();
+    );
+
+    return () => unsubscribe();
   }, [id]);
+
+  // Real-time liked state for the current user (shared with the feed).
+  useEffect(() => {
+    if (!user || !id) {
+      setLiked(false);
+      return;
+    }
+    const unsubscribe = onSnapshot(doc(db, "posts", id, "likes", user.uid), (snap) => {
+      setLiked(snap.exists());
+    });
+    return () => unsubscribe();
+  }, [id, user]);
+
+  // Atomic like/unlike shared with the feed implementation.
+  async function toggleLike() {
+    if (!user || !id || liking) {
+      if (!user) navigate("/login");
+      return;
+    }
+    setLiking(true);
+    const postRef = doc(db, "posts", id);
+    const likeRef = doc(db, "posts", id, "likes", user.uid);
+    try {
+      await runTransaction(db, async (tx) => {
+        const likeSnap = await tx.get(likeRef);
+        if (likeSnap.exists()) {
+          tx.delete(likeRef);
+          tx.update(postRef, { likes: increment(-1) });
+        } else {
+          tx.set(likeRef, { userId: user.uid, createdAt: new Date() });
+          tx.update(postRef, { likes: increment(1) });
+        }
+      });
+    } catch (err) {
+      console.error("Failed to update like:", err);
+      toast.error("Could not update like. Please try again.");
+    } finally {
+      setLiking(false);
+    }
+  }
+
+  const author = useLiveProfile(post?.uid, post) as FeedPost | null;
 
   if (loading || authLoading) {
     return <HivezLoader fullScreen size="lg" progress={authLoading ? 42 : 64} label="Loading post" />;
@@ -220,17 +268,17 @@ export default function PostPage() {
       <div className="px-4 py-4">
         <div className="flex gap-3">
           <img
-            src={post.photoURL || "https://ui-avatars.com/api/?name=Hivez&background=6366f1&color=fff"}
-            alt={post.username}
+            src={author?.photoURL || "https://ui-avatars.com/api/?name=Hivez&background=6366f1&color=fff"}
+            alt={author?.username || post.username}
             className="h-10 w-10 flex-shrink-0 rounded-full object-cover"
           />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
               <span className="text-sm font-semibold text-zinc-900 dark:text-white">
-                {post.displayName || post.username}
+                {author?.displayName || post.displayName || post.username}
               </span>
-              {post.verified && <BadgeCheck size={14} className="text-sky-500" />}
-              <span className="text-sm text-zinc-500 dark:text-zinc-400">@{post.username}</span>
+              {(author?.verified || post.verified) && <BadgeCheck size={14} className="text-sky-500" />}
+              <span className="text-sm text-zinc-500 dark:text-zinc-400">@{author?.username || post.username}</span>
               <span className="text-sm text-zinc-500 dark:text-zinc-400">· {timeAgo(post.createdAt)}</span>
             </div>
 
@@ -246,12 +294,13 @@ export default function PostPage() {
 
             <div className="mt-4 flex items-center gap-4 border-b border-zinc-200 pb-4 dark:border-zinc-800">
               <button
-                onClick={() => user ? setLiked(!liked) : navigate("/login")}
-                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-red-50 dark:hover:bg-red-950/30"
+                onClick={() => (user ? toggleLike() : navigate("/login"))}
+                disabled={liking}
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-red-50 disabled:opacity-60 dark:hover:bg-red-950/30"
               >
                 <Heart size={18} className={liked ? "fill-red-500 text-red-500" : "text-zinc-500 dark:text-zinc-400"} />
                 <span className={`text-xs ${liked ? "text-red-500" : "text-zinc-500 dark:text-zinc-400"}`}>
-                  {post.likes + (liked ? 1 : 0)}
+                  {post.likes || 0}
                 </span>
               </button>
               <button

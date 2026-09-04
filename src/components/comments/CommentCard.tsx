@@ -2,6 +2,8 @@ import { Heart, MessageCircle, MoreHorizontal } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { useLiveProfile } from "@/hooks/useLiveProfile";
+
 interface Comment {
   id: string;
   uid: string;
@@ -41,6 +43,8 @@ export default function CommentCard({ comment, depth = 0 }: Props) {
   const navigate = useNavigate();
   const [liked, setLiked] = useState(false);
   const [showActions, setShowActions] = useState(false);
+  // Live commenter profile falls back to the snapshot stored on the comment.
+  const author = useLiveProfile(comment.uid, comment) as Comment;
 
   const marginLeft = Math.min(depth * 16, 48);
 
@@ -49,10 +53,10 @@ export default function CommentCard({ comment, depth = 0 }: Props) {
       <article className="group flex gap-2.5 rounded-2xl px-4 py-3 transition hover:bg-zinc-100 dark:hover:bg-zinc-900/50">
         <img
           src={
-            comment.photoURL ||
+            author.photoURL ||
             "https://ui-avatars.com/api/?name=Hivez&background=27272a&color=fff"
           }
-          alt={comment.username}
+          alt={author.username}
           className="mt-1 h-8 w-8 flex-shrink-0 rounded-full object-cover"
           onClick={() => navigate(`/profile?uid=${comment.uid}`)}
         />
@@ -63,10 +67,10 @@ export default function CommentCard({ comment, depth = 0 }: Props) {
               className="text-sm font-semibold text-zinc-900 dark:text-white hover:underline cursor-pointer"
               onClick={() => navigate(`/profile?uid=${comment.uid}`)}
             >
-              {comment.displayName}
+              {author.displayName}
             </span>
             <span className="text-xs text-zinc-500 dark:text-zinc-400">
-              @{comment.username}
+              @{author.username}
             </span>
             <span className="text-xs text-zinc-400 dark:text-zinc-600">·</span>
             <span className="text-xs text-zinc-500 dark:text-zinc-400">

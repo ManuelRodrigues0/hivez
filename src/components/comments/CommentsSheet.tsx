@@ -47,7 +47,7 @@ export default function CommentsSheet({
   open,
   onClose,
 }: Props) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -89,16 +89,19 @@ export default function CommentsSheet({
     try {
       setSending(true);
 
-      const userSnap = await getDoc(doc(db, "users", user.uid));
-      const profile = userSnap.data();
+      // Live profile from AuthContext (fresh without extra reads), falling
+      // back to a direct read if it has not streamed in yet.
+      const profileData =
+        profile ||
+        (await getDoc(doc(db, "users", user.uid))).data();
 
       const commentRef = await addDoc(
         collection(db, "posts", post.id, "comments"),
         {
           uid: user.uid,
-          username: profile?.username || "",
-          displayName: profile?.displayName || user.displayName || "",
-          photoURL: profile?.photoURL || user.photoURL || "",
+          username: profileData?.username || "",
+          displayName: profileData?.displayName || user.displayName || "",
+          photoURL: profileData?.photoURL || user.photoURL || "",
           text: text.trim(),
           createdAt: serverTimestamp(),
         }
@@ -120,9 +123,9 @@ export default function CommentsSheet({
         recipientId: post.uid,
         actor: {
           uid: user.uid,
-          username: profile?.username || "",
-          displayName: profile?.displayName || user.displayName || "",
-          photoURL: profile?.photoURL || user.photoURL || "",
+          username: profileData?.username || "",
+          displayName: profileData?.displayName || user.displayName || "",
+          photoURL: profileData?.photoURL || user.photoURL || "",
         },
         type: "comment",
         text: text.trim(),

@@ -60,7 +60,7 @@ function Badge({ count }: { count: number }) {
 export default function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [isHoveringSidebar, setIsHoveringSidebar] = useState(false);
@@ -410,8 +410,8 @@ export default function MainLayout() {
             onClick={() => navigate("/profile")}
             className="rounded-full p-1 transition hover:bg-[#1c1d1a]/5 dark:hover:bg-white/10"
           >
-            {user?.photoURL ? (
-              <img src={user.photoURL} alt="" className="h-8 w-8 rounded-full object-cover" />
+            {user?.photoURL || profile?.photoURL ? (
+              <img src={profile?.photoURL || user?.photoURL || ""} alt="" className="h-8 w-8 rounded-full object-cover" />
             ) : (
               <User size={20} className="text-[#1c1d1a] dark:text-white" />
             )}

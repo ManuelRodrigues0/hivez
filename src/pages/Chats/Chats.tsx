@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
+import { useLiveProfiles } from "@/hooks/useLiveProfile";
 import HivezLoader from "@/components/common/HivezLoader";
 import { db } from "@/firebase/firebase";
 import { ULTRA_BEE_ID, ULTRA_BEE_PROFILE, ULTRA_BEE_TAGLINE, ULTRA_BEE_WELCOME, ultraBeeChatIdFor } from "@/constants/ultraBee";
@@ -207,9 +208,9 @@ export default function Chats() {
   }, [user]);
 
   useEffect(() => {
-    async function loadMe() {
-      if (!user) return;
-      const snap = await getDoc(doc(db, "users", user.uid));
+    if (!user) return;
+    // Live own profile: name/avatar/username changes propagate instantly.
+    const unsubscribe = onSnapshot(doc(db, "users", user.uid), (snap) => {
       const data = snap.data();
       setMe({
         uid: user.uid,
@@ -219,8 +220,8 @@ export default function Chats() {
         verified: data?.verified || false,
         bio: data?.bio || "",
       });
-    }
-    loadMe();
+    });
+    return unsubscribe;
   }, [user]);
 
   useEffect(() => {
@@ -378,11 +379,37 @@ export default function Chats() {
   }, [chats, draftChat, localChats, me, user]);
 
   const selectedChat = displayChats.find((chat) => chat.id === selectedChatId) || null;
+
+  // Live profiles for conversation partners: the chat doc stores creation-time
+  // participant snapshots, this keeps headers/lists current without refresh.
+  // (Ultra Bee has no users/{uid} doc, so it keeps its built-in profile.)
+  const liveParticipantIds = useMemo(() => {
+    const ids = new Set<string>();
+    displayChats.forEach((chat) => {
+      chat.participants?.forEach((id) => {
+        if (id && id !== user?.uid && id !== ULTRA_BEE_ID) ids.add(id);
+      });
+    });
+    return [...ids].slice(0, 50);
+  }, [displayChats, user?.uid]);
+  const liveProfiles = useLiveProfiles(liveParticipantIds);
+
   const otherUser = useMemo(() => {
     if (!selectedChat || !user) return null;
     const otherId = selectedChat.participants.find((id) => id !== user.uid);
-    return otherId ? selectedChat.participantProfiles?.[otherId] : null;
-  }, [selectedChat, user]);
+    if (!otherId) return null;
+    const stored = selectedChat.participantProfiles?.[otherId];
+    const live = liveProfiles[otherId];
+    return live ? { ...(stored || {}), ...live } : stored || null;
+  }, [selectedChat, user, liveProfiles]);
+
+  function resolveChatPerson(chat: ChatDoc): ChatUser | null {
+    const otherId = chat.participants.find((id) => id !== user?.uid);
+    if (!otherId) return null;
+    const stored = chat.participantProfiles?.[otherId];
+    const live = liveProfiles[otherId];
+    return live ? { ...(stored || {}), ...live } : stored || null;
+  }
 
   const isUltraBeeChat = Boolean(user && selectedChat && selectedChat.id === ultraBeeChatIdFor(user.uid));
 
@@ -487,6 +514,10 @@ export default function Chats() {
           lastMessageAt: serverTimestamp(),
           lastMessageSenderId: user.uid,
           [`unreadCounts.${recipientId}`]: increment(1),
+          // Keep the stored participant snapshot fresh so other sessions and
+          // new logins see current profile info without waiting for the
+          // live-profile resolution layer.
+          ...(me ? { [`participantProfiles.${user.uid}`]: me } : {}),
           createdAt: serverTimestamp(),
         },
         { merge: true }
@@ -668,8 +699,7 @@ export default function Chats() {
               </div>
             ) : (
               displayChats.map((chat) => {
-                const otherId = chat.participants.find((id) => id !== user?.uid);
-                const person = otherId ? chat.participantProfiles?.[otherId] : null;
+                const person = resolveChatPerson(chat);
                 const unread = user ? chat.unreadCounts?.[user.uid] || 0 : 0;
                 return (
                   <button

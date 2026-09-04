@@ -67,7 +67,7 @@ type ReportStep = "category" | "media" | "verify" | "location" | "details" | "pr
 export default function Create() {
   const { state } = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile: profileCtx } = useAuth();
   const userLocation = useUserLocation();
 
   const isReportMode = Boolean(state?.reportMode);
@@ -194,8 +194,8 @@ export default function Create() {
       logReport(isTextOnly ? "Text post submission started" : "Media post submission started");
 
       if (isTextOnly) {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        const profile = userDoc.data();
+        // Live profile from AuthContext, fresh without an extra read.
+        const profile = profileCtx || (await getDoc(doc(db, "users", user.uid))).data();
         const hashtags = extractHashtags(caption);
 
         const postRef = await addDoc(collection(db, "posts"), {
@@ -246,8 +246,8 @@ export default function Create() {
       }));
       const mediaUrls = mediaItems.map((item) => item.url);
 
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      const profile = userDoc.data();
+      // Live profile from AuthContext, fresh without an extra read.
+      const profile = profileCtx || (await getDoc(doc(db, "users", user.uid))).data();
       const hashtags = extractHashtags(caption);
 
       const postRef = await addDoc(collection(db, "posts"), {
@@ -380,8 +380,8 @@ export default function Create() {
       }));
       const mediaUrl = mediaItems[0]?.url || "";
 
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      const profile = userDoc.data();
+      // Live profile from AuthContext, fresh without an extra read.
+      const profile = profileCtx || (await getDoc(doc(db, "users", user.uid))).data();
       const captionText = reportDescription.trim();
       const localModel = verification?.localModel;
       const gemini = verification?.gemini;

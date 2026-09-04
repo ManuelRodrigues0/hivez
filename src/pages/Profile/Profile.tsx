@@ -58,23 +58,28 @@ export default function Profile() {
   const profileUid = isOwnProfile ? currentUser?.uid : uid;
 
   useEffect(() => {
-    async function loadProfile() {
-      if (!profileUid) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const snap = await getDoc(doc(db, "users", profileUid));
+    if (!profileUid) {
+      setLoading(false);
+      return;
+    }
+
+    // Live profile: edits by the profile owner (name, avatar, bio, banner)
+    // propagate to anyone viewing this profile without a refresh.
+    const unsubscribe = onSnapshot(
+      doc(db, "users", profileUid),
+      (snap) => {
         if (snap.exists()) {
           setProfile({ uid: snap.id, ...snap.data() } as UserProfile);
         }
-      } catch (err) {
+        setLoading(false);
+      },
+      (err) => {
         console.error("Failed to load profile:", err);
-      } finally {
         setLoading(false);
       }
-    }
-    loadProfile();
+    );
+
+    return () => unsubscribe();
   }, [profileUid]);
 
   useEffect(() => {

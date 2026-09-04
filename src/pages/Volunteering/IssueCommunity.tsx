@@ -5,12 +5,12 @@ import { CalendarDays, CheckCircle2, MapPin, Send, ShieldCheck, Trash2, Users } 
 import { toast } from "sonner";
 import HivezLoader from "@/components/common/HivezLoader";
 import { useAuth } from "@/context/AuthContext";
+import { useLiveUserSummary } from "@/hooks/useLiveProfile";
 import {
   closePoll,
   deletePoll,
   createPoll,
   createVolunteerActivity,
-  getUserSummary,
   joinActivity,
   leaveActivity,
   removeCommunityMember,
@@ -73,7 +73,8 @@ function timeText(value: any) {
 export default function IssueCommunityPage() {
   const { communityId } = useParams();
   const { user } = useAuth();
-  const [summary, setSummary] = useState<VolunteerUserSummary | null>(null);
+  // Live user summary (replaces one-time getUserSummary read).
+  const summary = useLiveUserSummary(user?.uid);
   const [community, setCommunity] = useState<IssueCommunity | null>(null);
   const [member, setMember] = useState<CommunityMember | null>(null);
   const [members, setMembers] = useState<CommunityMember[]>([]);
@@ -96,11 +97,6 @@ export default function IssueCommunityPage() {
   const [evidenceActivityId, setEvidenceActivityId] = useState("");
   const [evidenceDescription, setEvidenceDescription] = useState("");
   const [evidenceUrl, setEvidenceUrl] = useState("");
-
-  useEffect(() => {
-    if (!user) return;
-    getUserSummary(user.uid).then(setSummary);
-  }, [user]);
 
   useEffect(() => {
     if (!communityId) return;

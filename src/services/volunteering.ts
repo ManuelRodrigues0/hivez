@@ -7,6 +7,7 @@ import {
   increment,
   onSnapshot,
   query,
+  runTransaction,
   serverTimestamp,
   setDoc,
   updateDoc,
@@ -150,22 +151,30 @@ export function listenCommunityMembers(communityId: string, onNext: (members: Co
 export async function joinIssueCommunity(community: IssueCommunity, user: VolunteerUserSummary) {
   const id = memberId(community.id, user.uid);
   const ref = doc(db, "communityMembers", id);
-  const existing = await getDoc(ref);
-  if (existing.exists()) return;
+  const communityRef = doc(db, "issueCommunities", community.id);
 
-  const batch = writeBatch(db);
-  batch.set(ref, {
-    communityId: community.id,
-    uid: user.uid,
-    role: "member" satisfies CommunityRole,
-    user,
-    joinedAt: serverTimestamp(),
+  // Transaction keeps memberCount consistent even if several users join at
+  // exactly the same time (the member doc id is deterministic, so duplicate
+  // membership is impossible - only the counter needs protecting).
+  const joined = await runTransaction(db, async (tx) => {
+    const existing = await tx.get(ref);
+    if (existing.exists()) return false;
+
+    tx.set(ref, {
+      communityId: community.id,
+      uid: user.uid,
+      role: "member" satisfies CommunityRole,
+      user,
+      joinedAt: serverTimestamp(),
+    });
+    tx.update(communityRef, {
+      memberCount: increment(1),
+      updatedAt: serverTimestamp(),
+    });
+    return true;
   });
-  batch.update(doc(db, "issueCommunities", community.id), {
-    memberCount: increment(1),
-    updatedAt: serverTimestamp(),
-  });
-  await batch.commit();
+
+  if (!joined) return;
 
   await createNotification({
     recipientId: community.ownerId,
@@ -181,13 +190,17 @@ export async function leaveIssueCommunity(community: IssueCommunity, member: Com
     throw new Error("Owners must transfer ownership or archive the community before leaving.");
   }
 
-  const batch = writeBatch(db);
-  batch.delete(doc(db, "communityMembers", member.id));
-  batch.update(doc(db, "issueCommunities", community.id), {
-    memberCount: increment(-1),
-    updatedAt: serverTimestamp(),
+  await runTransaction(db, async (tx) => {
+    const ref = doc(db, "communityMembers", member.id);
+    const existing = await tx.get(ref);
+    if (!existing.exists()) return;
+
+    tx.delete(ref);
+    tx.update(doc(db, "issueCommunities", community.id), {
+      memberCount: increment(-1),
+      updatedAt: serverTimestamp(),
+    });
   });
-  await batch.commit();
 }
 
 export function listenCommunityMessages(
@@ -274,24 +287,32 @@ export async function createPoll(input: {
 export async function votePoll(poll: CommunityPoll, uid: string, optionIndex: number) {
   if (poll.status !== "OPEN") return;
   const voteRef = doc(db, "pollVotes", `${poll.id}_${uid}`);
-  const existing = await getDoc(voteRef);
-  if (existing.exists()) return;
+  const pollRef = doc(db, "communityPolls", poll.id);
 
-  const nextCounts = [...poll.counts];
-  nextCounts[optionIndex] = (nextCounts[optionIndex] || 0) + 1;
-  const batch = writeBatch(db);
-  batch.set(voteRef, {
-    pollId: poll.id,
-    communityId: poll.communityId,
-    uid,
-    optionIndex,
-    createdAt: serverTimestamp(),
+  // Transaction prevents concurrent first-time voters from double counting and
+  // stops the counts array from being recomputed from stale client data.
+  await runTransaction(db, async (tx) => {
+    const existing = await tx.get(voteRef);
+    if (existing.exists()) return;
+
+    const pollSnap = await tx.get(pollRef);
+    if (!pollSnap.exists() || pollSnap.data().status !== "OPEN") return;
+
+    const counts = [...(pollSnap.data().counts || [])];
+    counts[optionIndex] = (counts[optionIndex] || 0) + 1;
+
+    tx.set(voteRef, {
+      pollId: poll.id,
+      communityId: poll.communityId,
+      uid,
+      optionIndex,
+      createdAt: serverTimestamp(),
+    });
+    tx.update(pollRef, {
+      counts,
+      totalVotes: increment(1),
+    });
   });
-  batch.update(doc(db, "communityPolls", poll.id), {
-    counts: nextCounts,
-    totalVotes: increment(1),
-  });
-  await batch.commit();
 }
 
 export async function closePoll(pollId: string) {
@@ -362,45 +383,67 @@ export function listenActivityParticipant(activityId: string, uid: string, onNex
 }
 
 export async function joinActivity(activity: VolunteerActivity, user: VolunteerUserSummary, role: string) {
-  if (activity.status === "CANCELLED" || activity.status === "COMPLETED" || activity.status === "VERIFIED") {
-    throw new Error("This activity is closed.");
-  }
-  if (activity.volunteerLimit > 0 && activity.volunteerCount >= activity.volunteerLimit) {
-    throw new Error("This activity is full.");
-  }
-
   const id = participantId(activity.id, user.uid);
-  const existing = await getDoc(doc(db, "activityParticipants", id));
-  if (existing.exists()) return;
+  const participantRef = doc(db, "activityParticipants", id);
+  const activityRef = doc(db, "volunteerActivities", activity.id);
 
-  const batch = writeBatch(db);
-  batch.set(doc(db, "activityParticipants", id), {
-    activityId: activity.id,
-    communityId: activity.communityId,
-    uid: user.uid,
-    role: role || activity.roles[0] || "Volunteer",
-    user,
-    joinedAt: serverTimestamp(),
+  // Atomic join: re-checks status and capacity against the live document, so
+  // two volunteers racing for the last slot can never exceed the limit.
+  const joined = await runTransaction(db, async (tx) => {
+    const existing = await tx.get(participantRef);
+    if (existing.exists()) return false;
+
+    const activitySnap = await tx.get(activityRef);
+    if (!activitySnap.exists()) {
+      throw new Error("This activity no longer exists.");
+    }
+
+    const data = activitySnap.data();
+    const status = data.status;
+    if (["CANCELLED", "COMPLETED", "VERIFIED"].includes(status)) {
+      throw new Error("This activity is closed.");
+    }
+
+    const count = Number(data.volunteerCount || 0);
+    const limit = Number(data.volunteerLimit || 0);
+    if (limit > 0 && count >= limit) {
+      throw new Error("This activity is full.");
+    }
+
+    tx.set(participantRef, {
+      activityId: activity.id,
+      communityId: activity.communityId,
+      uid: user.uid,
+      role: role || data.roles?.[0] || "Volunteer",
+      user,
+      joinedAt: serverTimestamp(),
+    });
+    tx.update(activityRef, {
+      volunteerCount: increment(1),
+      updatedAt: serverTimestamp(),
+    });
+    return true;
   });
-  batch.update(doc(db, "volunteerActivities", activity.id), {
-    volunteerCount: increment(1),
-    updatedAt: serverTimestamp(),
-  });
-  await batch.commit();
+
+  if (!joined) return;
 }
 
 export async function leaveActivity(activity: VolunteerActivity, uid: string) {
   const id = participantId(activity.id, uid);
-  const existing = await getDoc(doc(db, "activityParticipants", id));
-  if (!existing.exists()) return;
 
-  const batch = writeBatch(db);
-  batch.delete(doc(db, "activityParticipants", id));
-  batch.update(doc(db, "volunteerActivities", activity.id), {
-    volunteerCount: increment(-1),
-    updatedAt: serverTimestamp(),
+  // Atomic leave: the counter is only decremented when the participant doc
+  // actually existed, preventing double decrements from rapid clicks.
+  await runTransaction(db, async (tx) => {
+    const participantRef = doc(db, "activityParticipants", id);
+    const existing = await tx.get(participantRef);
+    if (!existing.exists()) return;
+
+    tx.delete(participantRef);
+    tx.update(doc(db, "volunteerActivities", activity.id), {
+      volunteerCount: increment(-1),
+      updatedAt: serverTimestamp(),
+    });
   });
-  await batch.commit();
 }
 
 export async function updateActivityStatus(activityId: string, status: VolunteerActivity["status"]) {
@@ -482,18 +525,26 @@ export function listenMyGroupMemberships(uid: string, onNext: (memberships: Volu
 
 export async function joinVolunteerGroup(group: VolunteerGroup, user: VolunteerUserSummary) {
   const id = groupMemberId(group.id, user.uid);
-  const existing = await getDoc(doc(db, "volunteerGroupMembers", id));
-  if (existing.exists()) return;
-  const batch = writeBatch(db);
-  batch.set(doc(db, "volunteerGroupMembers", id), {
-    groupId: group.id,
-    uid: user.uid,
-    role: "member",
-    user,
-    joinedAt: serverTimestamp(),
+  const ref = doc(db, "volunteerGroupMembers", id);
+  const groupRef = doc(db, "volunteerGroups", group.id);
+
+  // Transaction keeps memberCount consistent under concurrent joins.
+  const joined = await runTransaction(db, async (tx) => {
+    const existing = await tx.get(ref);
+    if (existing.exists()) return false;
+
+    tx.set(ref, {
+      groupId: group.id,
+      uid: user.uid,
+      role: "member",
+      user,
+      joinedAt: serverTimestamp(),
+    });
+    tx.update(groupRef, { memberCount: increment(1), updatedAt: serverTimestamp() });
+    return true;
   });
-  batch.update(doc(db, "volunteerGroups", group.id), { memberCount: increment(1), updatedAt: serverTimestamp() });
-  await batch.commit();
+
+  if (!joined) return;
 }
 
 export async function updateCommunityStatus(communityId: string, status: IssueCommunityStatus) {

@@ -73,7 +73,35 @@ interface EngagementEvent {
   createdAt?: { toDate?: () => Date };
 }
 
-export async function loadRankedFeed(context: UserFeedContext): Promise<RankedPost[]> {
+export interface FeedContextBundle {
+  uid?: string;
+  location?: LocationSnapshot | null;
+  category?: string;
+  hashtag?: string;
+  followingIds: Set<string>;
+  interactions: {
+    ownEvents: EngagementEvent[];
+    ownEventsByPost: Map<string, EngagementEvent[]>;
+    networkEventsByPost: Map<string, EngagementEvent[]>;
+  };
+  userInterests: Map<string, number>;
+  activities: Map<string, number>;
+  communities: Map<string, DocumentData>;
+}
+
+/** Firestore query used for feed candidates. Shared by the initial load and the live listener. */
+export function recentPostsQuery(category?: string) {
+  return category
+    ? query(collection(db, "posts"), where("category", "==", category), orderBy("createdAt", "desc"), limit(160))
+    : query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(220));
+}
+
+/**
+ * Loads everything the ranking pipeline needs (one batch of reads). The result
+ * is reused by the Feed's real-time layer to rank newly arriving posts without
+ * re-fetching the whole ranking context.
+ */
+export async function loadFeedBundle(context: UserFeedContext): Promise<{ bundle: FeedContextBundle; recent: FeedPost[] }> {
   const [recent, followingIds, interactions, activities, communities] = await Promise.all([
     loadRecentPosts(context.category),
     loadFollowingIds(context.uid),
@@ -82,27 +110,53 @@ export async function loadRankedFeed(context: UserFeedContext): Promise<RankedPo
     loadIssueCommunityByPost(),
   ]);
 
-  const candidates = dedupePosts(recent);
-  const filtered = context.hashtag
-    ? candidates.filter((post) => post.hashtags?.some((tag) => tag.toLowerCase() === context.hashtag?.toLowerCase()))
-    : candidates;
-  const userInterests = deriveInterestScores(interactions.ownEvents);
+  const bundle: FeedContextBundle = {
+    uid: context.uid,
+    location: context.location,
+    category: context.category,
+    hashtag: context.hashtag,
+    followingIds,
+    interactions,
+    userInterests: deriveInterestScores(interactions.ownEvents),
+    activities,
+    communities,
+  };
 
-  const ranked = filtered
-    .map((post) =>
-      rankPost(post, {
-        ...context,
-        followingIds,
-        networkEvents: interactions.networkEventsByPost.get(post.id) || [],
-        ownEvents: interactions.ownEventsByPost.get(post.id) || [],
-        userInterests,
-        volunteerCount: activities.get(post.issueCommunityId || "") || 0,
-        community: communities.get(post.id),
-      }),
-    )
-    .sort((a, b) => (b.ranking?.score || 0) - (a.ranking?.score || 0));
+  return { bundle, recent };
+}
 
+export function rankPostWithBundle(post: FeedPost, bundle: FeedContextBundle): RankedPost {
+  return rankPost(post, {
+    uid: bundle.uid,
+    location: bundle.location,
+    category: bundle.category,
+    hashtag: bundle.hashtag,
+    followingIds: bundle.followingIds,
+    networkEvents: bundle.interactions.networkEventsByPost.get(post.id) || [],
+    ownEvents: bundle.interactions.ownEventsByPost.get(post.id) || [],
+    userInterests: bundle.userInterests,
+    volunteerCount: bundle.activities.get(post.issueCommunityId || "") || 0,
+    community: bundle.communities.get(post.id),
+  });
+}
+
+export function filterPostsForFeed(posts: FeedPost[], bundle: FeedContextBundle): FeedPost[] {
+  if (!bundle.hashtag) return posts;
+  return posts.filter((post) =>
+    post.hashtags?.some((tag) => tag.toLowerCase() === bundle.hashtag?.toLowerCase())
+  );
+}
+
+export function rankFeedPosts(recent: FeedPost[], bundle: FeedContextBundle): RankedPost[] {
+  const filtered = filterPostsForFeed(dedupePosts(recent), bundle);
+  const ranked = filtered.map((post) => rankPostWithBundle(post, bundle));
+  ranked.sort((a, b) => (b.ranking?.score || 0) - (a.ranking?.score || 0));
   return applyDiversity(ranked);
+}
+
+export async function loadRankedFeed(context: UserFeedContext): Promise<RankedPost[]> {
+  const { bundle, recent } = await loadFeedBundle(context);
+  return rankFeedPosts(recent, bundle);
 }
 
 function rankPost(

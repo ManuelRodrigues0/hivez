@@ -3,6 +3,7 @@ import { BadgeCheck } from "lucide-react";
 import type { FeedPost } from "../feed/Feed";
 import MediaGrid from "../feed/MediaGrid";
 import type { PostMediaItem } from "../feed/MediaGrid";
+import { useLiveProfile } from "@/hooks/useLiveProfile";
 
 interface Props {
   post: FeedPost;
@@ -25,6 +26,7 @@ function timeAgo(timestamp: any) {
 }
 
 export default function OriginalPost({ post }: Props) {
+  const author = useLiveProfile(post.uid, post) as FeedPost;
   const mediaItems: PostMediaItem[] =
     post.mediaItems?.length
       ? post.mediaItems
@@ -38,8 +40,8 @@ export default function OriginalPost({ post }: Props) {
     <section className="sticky top-[76px] z-20 border-b border-zinc-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-black">
       <div className="flex gap-3">
         <img
-          src={post.photoURL || "https://ui-avatars.com/api/?name=Hivez"}
-          alt={post.username}
+          src={author.photoURL || "https://ui-avatars.com/api/?name=Hivez"}
+          alt={author.username}
           className="h-11 w-11 rounded-full object-cover"
         />
 
@@ -52,10 +54,10 @@ export default function OriginalPost({ post }: Props) {
 
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold text-zinc-900 dark:text-white">
-              {post.displayName || post.username}
+              {author.displayName || author.username}
             </span>
-            {post.verified && <BadgeCheck size={15} className="text-sky-500" />}
-            <span className="text-sm text-zinc-500 dark:text-zinc-400">@{post.username}</span>
+            {author.verified && <BadgeCheck size={15} className="text-sky-500" />}
+            <span className="text-sm text-zinc-500 dark:text-zinc-400">@{author.username}</span>
             <span className="text-sm text-zinc-500 dark:text-zinc-400">· {timeAgo(post.createdAt)}</span>
           </div>
 

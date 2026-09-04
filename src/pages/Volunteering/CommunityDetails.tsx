@@ -4,8 +4,9 @@ import { ArrowLeft, Users, Shield, Crown, UserCheck, HandHeart } from "lucide-re
 import { toast } from "sonner";
 import HivezLoader from "@/components/common/HivezLoader";
 import { useAuth } from "@/context/AuthContext";
-import { getUserSummary, joinIssueCommunity, leaveIssueCommunity, listenCommunityMember, listenCommunityMembers, listenIssueCommunity } from "@/services/volunteering";
-import type { CommunityMember, IssueCommunity, VolunteerUserSummary } from "@/types/volunteering";
+import { useLiveProfile, useLiveUserSummary } from "@/hooks/useLiveProfile";
+import { joinIssueCommunity, leaveIssueCommunity, listenCommunityMember, listenCommunityMembers, listenIssueCommunity } from "@/services/volunteering";
+import type { CommunityMember, IssueCommunity } from "@/types/volunteering";
 
 const roleIcons: Record<string, typeof Crown> = {
   owner: Crown,
@@ -28,13 +29,9 @@ export default function CommunityDetails() {
   const [community, setCommunity] = useState<IssueCommunity | null>(null);
   const [member, setMember] = useState<CommunityMember | null>(null);
   const [members, setMembers] = useState<CommunityMember[]>([]);
-  const [summary, setSummary] = useState<VolunteerUserSummary | null>(null);
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    if (!user) return;
-    getUserSummary(user.uid).then(setSummary);
-  }, [user]);
+  // Live user summary so joins/leaves write current profile data.
+  const summary = useLiveUserSummary(user?.uid);
 
   useEffect(() => {
     if (!communityId) return;
@@ -200,35 +197,39 @@ export default function CommunityDetails() {
       <div className="px-4 py-5">
         <h3 className="mb-4 text-lg font-black text-zinc-950 dark:text-white">All Members</h3>
         <div className="space-y-2">
-          {members.map((member: CommunityMember) => {
-            const Icon = roleIcons[member.role] || Users;
-            return (
-              <div
-                key={member.id}
-                className="flex items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-3 transition hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700"
-              >
-                <img
-                  src={member.user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.user.displayName)}&background=111&color=fff`}
-                  alt=""
-                  className="h-10 w-10 rounded-full object-cover"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold text-zinc-950 dark:text-white">
-                    {member.user.displayName}
-                  </p>
-                  <p className="truncate text-xs text-zinc-500">
-                    @{member.user.username || "hivez"}
-                  </p>
-                </div>
-                <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold capitalize ${roleColors[member.role] || roleColors.member}`}>
-                  <Icon size={12} />
-                  {member.role}
-                </span>
-              </div>
-            );
-          })}
+          {members.map((member: CommunityMember) => (
+            <MemberRow key={member.id} member={member} />
+          ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+function MemberRow({ member }: { member: CommunityMember }) {
+  const Icon = roleIcons[member.role] || Users;
+  // Live profile: member rows always show current name/avatar even though the
+  // membership doc stores a join-time snapshot.
+  const liveUser = useLiveProfile(member.uid, member.user) || member.user;
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-3 transition hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700">
+      <img
+        src={liveUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.user.displayName)}&background=111&color=fff`}
+        alt=""
+        className="h-10 w-10 rounded-full object-cover"
+      />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-bold text-zinc-950 dark:text-white">
+          {liveUser.displayName || member.user.displayName}
+        </p>
+        <p className="truncate text-xs text-zinc-500">
+          @{liveUser.username || member.user.username || "hivez"}
+        </p>
+      </div>
+      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold capitalize ${roleColors[member.role] || roleColors.member}`}>
+        <Icon size={12} />
+        {member.role}
+      </span>
     </div>
   );
 }

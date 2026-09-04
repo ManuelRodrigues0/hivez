@@ -13,6 +13,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
+import { useLiveProfile } from "@/hooks/useLiveProfile";
 import Feed from "@/components/feed/Feed";
 import CreateModal from "@/components/feed/CreateModal";
 import type { FeedPost } from "@/components/feed/Feed";
@@ -53,10 +54,12 @@ export default function Home() {
 }
 
 function CommentsView({ post, onClose }: { post: FeedPost; onClose: () => void }) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [comments, setComments] = useState<any[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  // Live author info for the original post header.
+  const author = useLiveProfile(post.uid, post) as FeedPost;
   const mediaItems: PostMediaItem[] =
     post.mediaItems?.length
       ? post.mediaItems
@@ -85,13 +88,16 @@ function CommentsView({ post, onClose }: { post: FeedPost; onClose: () => void }
     if (!user || !text.trim()) return;
     setSending(true);
     try {
-      const userSnap = await getDoc(doc(db, "users", user.uid));
-      const profile = userSnap.data();
+      // Use the live profile from AuthContext (fresh without extra reads);
+      // fall back to a direct read if the profile has not streamed in yet.
+      const profileData =
+        profile ||
+        (await getDoc(doc(db, "users", user.uid))).data();
       await addDoc(collection(db, "posts", post.id, "comments"), {
         uid: user.uid,
-        username: profile?.username || "",
-        displayName: profile?.displayName || user.displayName || "",
-        photoURL: profile?.photoURL || user.photoURL || "",
+        username: profileData?.username || "",
+        displayName: profileData?.displayName || user.displayName || "",
+        photoURL: profileData?.photoURL || user.photoURL || "",
         text: text.trim(),
         createdAt: serverTimestamp(),
       });
@@ -132,19 +138,19 @@ function CommentsView({ post, onClose }: { post: FeedPost; onClose: () => void }
         <div className="flex items-center gap-2.5">
           <img
             src={
-              post.photoURL ||
+              author.photoURL ||
               "https://ui-avatars.com/api/?name=Hivez&background=6366f1&color=fff"
             }
-            alt={post.username}
+            alt={author.username}
             className="h-9 w-9 rounded-full object-cover"
           />
           <div className="flex-1">
             <div className="flex items-center gap-1.5">
               <span className="text-sm font-semibold text-zinc-900 dark:text-white">
-                {post.displayName || post.username}
+                {author.displayName || author.username}
               </span>
               <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                @{post.username}
+                @{author.username}
               </span>
             </div>
           </div>
