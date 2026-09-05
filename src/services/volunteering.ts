@@ -21,6 +21,7 @@ import type {
   ActivityEvidence,
   ActivityMessage,
   ActivityParticipant,
+  CommunityConfirmation,
   CommunityMember,
   CommunityMessage,
   CommunityPoll,
@@ -28,14 +29,28 @@ import type {
   IssueCommunity,
   IssueCommunityStatus,
   PollVote,
+  ReviewerDecision,
+  VerificationCase,
+  VerificationCaseEvent,
+  VerificationCaseStatus,
+  VerificationDecision,
   VerificationHistoryEntry,
   VolunteerActivity,
   VolunteerGroup,
   VolunteerGroupMember,
   VolunteerGroupMessage,
   VolunteerUserSummary,
+  WitnessConfirmation,
 } from "@/types/volunteering";
+import { OWNER_RESPONSE_DEADLINE_DAYS } from "@/types/volunteering";
 import { createNotification } from "@/services/notifications";
+import {
+  getVerificationRequirements,
+  isCaseReviewable,
+  ownerResponseDeadlineMs,
+  resolveEligibleReviewers,
+  verificationCaseId,
+} from "@/utils/verification";
 import type { LocationSnapshot } from "@/services/location";
 
 export function issueCommunityId(postId: string) {
@@ -535,7 +550,7 @@ export async function cancelActivity(activity: VolunteerActivity, actor?: Volunt
 }
 
 export async function submitActivityEvidence(input: Omit<ActivityEvidence, "id" | "status" | "createdAt">) {
-  const ref = await addDoc(collection(db, "activityEvidence"), {
+  const evidenceRef = await addDoc(collection(db, "activityEvidence"), {
     ...input,
     status: "SUBMITTED",
     createdAt: serverTimestamp(),
@@ -552,7 +567,17 @@ export async function submitActivityEvidence(input: Omit<ActivityEvidence, "id" 
     createdAt: serverTimestamp(),
   } satisfies Omit<VerificationHistoryEntry, "id">);
 
-  return ref.id;
+  // Every real evidence submission drives a verification case. The case for a
+  // community is created lazily on the first submission and reused after,
+  // so all volunteers' proof for one issue resolves through a single audit.
+  await ensureVerificationCaseForEvidence({
+    communityId: input.communityId,
+    activityId: input.activityId,
+    evidenceId: evidenceRef.id,
+    submitter: input.user,
+  });
+
+  return evidenceRef.id;
 }
 
 export function listenActivityEvidence(communityId: string, onNext: (evidence: ActivityEvidence[]) => void) {
@@ -846,6 +871,587 @@ export function listenGroupActivities(groupId: string, onNext: (activities: Volu
     onNext(data);
   });
 }
+
+// =====================================================================
+// COMMUNITY VERIFICATION CASES
+// =====================================================================
+
+/**
+ * Create (or update) the single verification case for a community when real
+ * evidence arrives. The case id is deterministic per community, so multiple
+ * activities submitting evidence all resolve through one audit trail.
+ */
+export async function ensureVerificationCaseForEvidence(input: {
+  communityId: string;
+  activityId?: string;
+  evidenceId: string;
+  submitter: VolunteerUserSummary;
+}): Promise<string> {
+  const caseId = verificationCaseId(input.communityId);
+  const caseRef = doc(db, "verificationCases", caseId);
+  const communityId = input.communityId;
+
+  // Resolve review context from live data so eligible reviewers reflect the
+  // current organizer structure, never a client-provided list.
+  const [communitySnap, membersSnap, activitySnap] = await Promise.all([
+    getDoc(doc(db, "issueCommunities", communityId)),
+    getDocs(query(collection(db, "communityMembers"), where("communityId", "==", communityId))),
+    input.activityId
+      ? getDoc(doc(db, "volunteerActivities", input.activityId))
+      : Promise.resolve(null),
+  ]);
+
+  const community = communitySnap.exists() ? ({ id: communitySnap.id, ...communitySnap.data() } as IssueCommunity) : null;
+  const members = membersSnap.docs.map((item) => ({ id: item.id, ...item.data() } as CommunityMember));
+  const activity = activitySnap?.exists()
+    ? ({ id: activitySnap.id, ...activitySnap.data() } as VolunteerActivity)
+    : null;
+
+  const requirements = getVerificationRequirements(community?.category);
+  const eligible = resolveEligibleReviewers({
+    community,
+    activity,
+    members,
+  });
+  const primaryReviewerId = community?.ownerId && eligible.ids.includes(community.ownerId)
+    ? community.ownerId
+    : eligible.ids[0] || null;
+  const primaryReviewerRole = primaryReviewerId
+    ? primaryReviewerId === community?.ownerId
+      ? "community_owner"
+      : "authorized_reviewer"
+    : null;
+
+  await runTransaction(db, async (tx) => {
+    const existing = await tx.get(caseRef);
+
+    if (existing.exists()) {
+      const current = existing.data() as VerificationCase;
+      tx.update(caseRef, {
+        evidenceIds: arrayUnion(input.evidenceId),
+        status: current.status === "DRAFT"
+          ? "SUBMITTED"
+          : current.status === "NEEDS_MORE_EVIDENCE"
+            ? "UNDER_REVIEW"
+            : current.status,
+        updatedAt: serverTimestamp(),
+      });
+      tx.set(doc(collection(db, "verificationCases", caseId, "events")), {
+        caseId,
+        communityId,
+        eventType: "EVIDENCE_SUBMITTED",
+        text: `${input.submitter.displayName} submitted new evidence.`,
+        userId: input.submitter.uid,
+        createdAt: serverTimestamp(),
+      } satisfies Omit<VerificationCaseEvent, "id">);
+      return;
+    }
+
+    tx.set(caseRef, {
+      issueId: community?.issueId || "",
+      postId: community?.postId || "",
+      communityId,
+      activityId: activity?.id || null,
+      groupId: activity?.groupId || null,
+      status: "SUBMITTED",
+      verificationTemplate: requirements.template,
+      requiredApprovals: requirements.requiredApprovals,
+      requiredRejections: requirements.requiredRejections,
+      reviewerQuorum: eligible.ids.length,
+      primaryReviewerId,
+      primaryReviewerRole,
+      eligibleReviewerIds: eligible.ids,
+      eligibleReviewerRoles: eligible.roles,
+      evidenceIds: [input.evidenceId],
+      approvalCount: 0,
+      rejectionCount: 0,
+      moreEvidenceCount: 0,
+      ownerResponseDeadline: ownerResponseDeadlineMs(OWNER_RESPONSE_DEADLINE_DAYS),
+      fallbackActivated: false,
+      disputeNote: null,
+      communityConfirmations: 0,
+      witnessConfirmations: 0,
+      createdAt: serverTimestamp(),
+      submittedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    tx.set(doc(collection(db, "verificationCases", caseId, "events")), {
+      caseId,
+      communityId,
+      eventType: "CASE_CREATED",
+      text: `Verification case opened for ${community?.title || "this community issue"}.`,
+      userId: input.submitter.uid,
+      createdAt: serverTimestamp(),
+    } satisfies Omit<VerificationCaseEvent, "id">);
+  });
+
+  // Let the primary reviewer know real evidence is waiting.
+  if (primaryReviewerId && primaryReviewerId !== input.submitter.uid) {
+    await createNotification({
+      recipientId: primaryReviewerId,
+      actor: input.submitter,
+      type: "broadcast",
+      text: `${input.submitter.displayName} submitted new evidence for verification.`,
+      link: `/issue-community/${communityId}?tab=Verification`,
+      postId: community?.postId || undefined,
+    });
+  }
+
+  return caseId;
+}
+
+export async function getVerificationCase(caseId: string): Promise<VerificationCase | null> {
+  const snap = await getDoc(doc(db, "verificationCases", caseId));
+  return snap.exists() ? ({ id: snap.id, ...snap.data() } as VerificationCase) : null;
+}
+
+export function listenVerificationCase(caseId: string, onNext: (caseData: VerificationCase | null) => void) {
+  return onSnapshot(doc(db, "verificationCases", caseId), (snap) => {
+    onNext(snap.exists() ? ({ id: snap.id, ...snap.data() } as VerificationCase) : null);
+  });
+}
+
+export function listenVerificationCases(communityId: string, onNext: (cases: VerificationCase[]) => void) {
+  const q = query(collection(db, "verificationCases"), where("communityId", "==", communityId));
+  return onSnapshot(q, (snapshot) => {
+    const data = snapshot.docs.map((item) => ({ id: item.id, ...item.data() } as VerificationCase));
+    data.sort((a, b) => (b.updatedAt?.toDate?.().getTime?.() || 0) - (a.updatedAt?.toDate?.().getTime?.() || 0));
+    onNext(data);
+  });
+}
+
+/**
+ * Open cases where the user is the primary reviewer or an eligible secondary
+ * reviewer. Two separate queries (primary id vs array-contains) avoid needing
+ * a composite index and merge into one result list.
+ */
+export function listenMyReviewCases(uid: string, onNext: (cases: VerificationCase[]) => void) {
+  const openStatuses = ["SUBMITTED", "UNDER_REVIEW", "PARTIALLY_CONFIRMED", "NEEDS_MORE_EVIDENCE", "DISPUTED"];
+  const seen = new Map<string, VerificationCase>();
+
+  function emit() {
+    const merged = [...seen.values()].sort(
+      (a, b) => (b.updatedAt?.toDate?.().getTime?.() || 0) - (a.updatedAt?.toDate?.().getTime?.() || 0)
+    );
+    onNext(merged);
+  }
+
+  const unsubPrimary = onSnapshot(
+    query(collection(db, "verificationCases"), where("primaryReviewerId", "==", uid), where("status", "in", openStatuses)),
+    (snapshot) => {
+      snapshot.docs.forEach((item) => seen.set(item.id, { id: item.id, ...item.data() } as VerificationCase));
+      emit();
+    }
+  );
+
+  const unsubEligible = onSnapshot(
+    query(collection(db, "verificationCases"), where("eligibleReviewerIds", "array-contains", uid), where("status", "in", openStatuses)),
+    (snapshot) => {
+      snapshot.docs.forEach((item) => seen.set(item.id, { id: item.id, ...item.data() } as VerificationCase));
+      emit();
+    }
+  );
+
+  return () => {
+    unsubPrimary();
+    unsubEligible();
+  };
+}
+
+export function listenVerificationDecisions(caseId: string, onNext: (decisions: VerificationDecision[]) => void) {
+  return onSnapshot(collection(db, "verificationCases", caseId, "decisions"), (snapshot) => {
+    const data = snapshot.docs.map((item) => ({ id: item.id, ...item.data() } as VerificationDecision));
+    data.sort((a, b) => (b.createdAt?.toDate?.().getTime?.() || 0) - (a.createdAt?.toDate?.().getTime?.() || 0));
+    onNext(data);
+  });
+}
+
+export function listenVerificationEvents(caseId: string, onNext: (events: VerificationCaseEvent[]) => void) {
+  return onSnapshot(collection(db, "verificationCases", caseId, "events"), (snapshot) => {
+    const data = snapshot.docs.map((item) => ({ id: item.id, ...item.data() } as VerificationCaseEvent));
+    data.sort((a, b) => (a.createdAt?.toDate?.().getTime?.() || 0) - (b.createdAt?.toDate?.().getTime?.() || 0));
+    onNext(data);
+  });
+}
+
+export function listenWitnessConfirmations(caseId: string, onNext: (confirmations: WitnessConfirmation[]) => void) {
+  return onSnapshot(collection(db, "witnessConfirmations"), (snapshot) => {
+    const data = snapshot.docs
+      .map((item) => ({ id: item.id, ...item.data() } as WitnessConfirmation))
+      .filter((item) => item.caseId === caseId);
+    data.sort((a, b) => (a.createdAt?.toDate?.().getTime?.() || 0) - (b.createdAt?.toDate?.().getTime?.() || 0));
+    onNext(data);
+  });
+}
+
+export async function submitReviewerDecision(input: {
+  caseData: VerificationCase;
+  reviewer: VolunteerUserSummary;
+  decision: ReviewerDecision;
+  reason?: string | null;
+  comments?: string | null;
+}): Promise<VerificationCaseStatus> {
+  const { caseData, reviewer, decision } = input;
+
+  if (decision !== "APPROVE" && !input.reason) {
+    throw new Error("Please provide a reason for a negative decision.");
+  }
+
+  const reviewerRole = caseData.primaryReviewerId === reviewer.uid
+    ? "primary"
+    : "authorized_secondary";
+
+  const caseRef = doc(db, "verificationCases", caseData.id);
+  const decisionRef = doc(db, "verificationCases", caseData.id, "decisions", `${caseData.id}_${reviewer.uid}`);
+  const now = serverTimestamp();
+
+  let completedStatus: VerificationCaseStatus = caseData.status;
+
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(caseRef);
+    if (!snap.exists()) throw new Error("Verification case no longer exists.");
+    const current = snap.data() as VerificationCase;
+
+    if (!isCaseReviewable(current.status)) {
+      throw new Error("This verification case is already closed.");
+    }
+    if (current.primaryReviewerId !== reviewer.uid && !current.eligibleReviewerIds.includes(reviewer.uid)) {
+      throw new Error("You are not authorized to review this verification case.");
+    }
+
+    const existingDecision = await tx.get(decisionRef);
+    if (existingDecision.exists()) {
+      throw new Error("You have already submitted a decision for this case.");
+    }
+
+    // ---- Owner inactivity fallback ----
+    // If the primary reviewer/owner has NOT started and their window expired,
+    // the case is settled by the eligible reviewer quorum instead of requiring
+    // the owner's approval. Only activated when there is a real deadline and
+    // the owner genuinely has not participated.
+    let fallbackActivated = current.fallbackActivated || false;
+    let requiredApprovals = current.requiredApprovals;
+    const ownerStarted = current.primaryReviewerId
+      ? (await tx.get(doc(db, "verificationCases", caseData.id, "decisions", `${caseData.id}_${current.primaryReviewerId}`))).exists()
+      : true;
+    if (
+      !fallbackActivated &&
+      current.primaryReviewerId &&
+      !ownerStarted &&
+      current.ownerResponseDeadline &&
+      Date.now() > current.ownerResponseDeadline
+    ) {
+      fallbackActivated = true;
+      requiredApprovals = Math.min(2, Math.max(2, requiredApprovals));
+    }
+
+    // Counts are recomputed inside the transaction so the resulting status can
+    // never be based on stale client state (transactions retry on conflict).
+    const approvals = current.approvalCount + (decision === "APPROVE" ? 1 : 0);
+    const rejections = current.rejectionCount + (decision === "REJECT" ? 1 : 0);
+    const moreEvidence = current.moreEvidenceCount + (decision === "MORE_EVIDENCE" ? 1 : 0);
+
+    // ---- Threshold resolution ----
+    // A dispute is recorded when both approval and rejection paths are met, or
+    // when rejections block verification after a prior approval.
+    if (approvals >= requiredApprovals && rejections >= current.requiredRejections) {
+      completedStatus = "DISPUTED";
+    } else if (approvals >= requiredApprovals) {
+      completedStatus = "VERIFIED";
+    } else if (rejections >= current.requiredRejections && approvals > 0) {
+      completedStatus = "DISPUTED";
+    } else if (rejections >= current.requiredRejections) {
+      completedStatus = "REJECTED";
+    } else if (decision === "MORE_EVIDENCE") {
+      completedStatus = "NEEDS_MORE_EVIDENCE";
+    } else if (approvals >= 1) {
+      completedStatus = "PARTIALLY_CONFIRMED";
+    } else {
+      completedStatus = "UNDER_REVIEW";
+    }
+
+    const closed = completedStatus === "VERIFIED" || completedStatus === "REJECTED";
+
+    tx.update(caseRef, {
+      approvalCount: approvals,
+      rejectionCount: rejections,
+      moreEvidenceCount: moreEvidence,
+      fallbackActivated,
+      status: completedStatus,
+      disputeNote: completedStatus === "DISPUTED"
+        ? "Conflicting approvals and rejections were recorded."
+        : current.disputeNote || null,
+      resolvedAt: closed ? now : current.resolvedAt || null,
+      updatedAt: now,
+    });
+
+    tx.set(decisionRef, {
+      caseId: caseData.id,
+      communityId: caseData.communityId,
+      reviewerId: reviewer.uid,
+      reviewerRole,
+      reviewer,
+      decision,
+      reason: input.reason || null,
+      comments: input.comments || null,
+      createdAt: now,
+    } satisfies Omit<VerificationDecision, "id">);
+tx.set(doc(collection(db, "verificationCases", caseData.id, "events")), {
+      caseId: caseData.id,
+      communityId: caseData.communityId,
+      eventType:
+        decision === "APPROVE" ? "REVIEWER_APPROVED"
+          : decision === "REJECT" ? "REVIEWER_REJECTED"
+            : "MORE_EVIDENCE_REQUESTED",
+      text:
+        decision === "APPROVE"
+          ? `${reviewer.displayName} confirmed the issue looks fixed.`
+          : decision === "REJECT"
+            ? `${reviewer.displayName} rejected the verification${input.reason ? `: ${input.reason}` : ""}.`
+            : `${reviewer.displayName} requested more evidence${input.reason ? `: ${input.reason}` : ""}.`,
+      userId: reviewer.uid,
+      createdAt: now,
+    } satisfies Omit<VerificationCaseEvent, "id">);
+
+    if (fallbackActivated && !current.fallbackActivated && !closed) {
+      tx.set(doc(collection(db, "verificationCases", caseData.id, "events")), {
+        caseId: caseData.id,
+        communityId: caseData.communityId,
+        eventType: "FALLBACK_ACTIVATED",
+        text: "The owner response window expired - the eligible reviewer quorum is now deciding this case.",
+        userId: reviewer.uid,
+        createdAt: now,
+      } satisfies Omit<VerificationCaseEvent, "id">);
+    }
+
+    // Audit record + issue/activity status linkage.
+    tx.set(doc(collection(db, "verificationRecords")), {
+      communityId: caseData.communityId,
+      activityId: caseData.activityId || null,
+      submittedBy: reviewer.uid,
+      status: completedStatus === "VERIFIED" ? "APPROVED" : completedStatus === "REJECTED" ? "REJECTED" : "PENDING",
+      reviewedBy: reviewer.uid,
+      notes: `Reviewer ${decision.toLowerCase().replace("_", " ")} - case now ${completedStatus.toLowerCase().replace("_", " ")}${input.reason ? ` (${input.reason})` : ""}.`,
+      createdAt: now,
+      reviewedAt: now,
+    } satisfies Omit<VerificationHistoryEntry, "id">);
+
+    if (closed) {
+      tx.update(doc(db, "issueCommunities", caseData.communityId), {
+        status: completedStatus === "VERIFIED" ? "VERIFIED" : "IN_PROGRESS",
+        updatedAt: now,
+      });
+    }
+  });
+
+  void reviewerRole;
+
+  // Notifications after a successful, committed decision.
+  const notifyTargets = new Set<string>();
+  if (caseData.primaryReviewerId) notifyTargets.add(caseData.primaryReviewerId);
+  caseData.eligibleReviewerIds.forEach((id) => notifyTargets.add(id));
+
+  await Promise.all(
+    [...notifyTargets]
+      .filter((id) => id !== reviewer.uid)
+      .map((id) =>
+        createNotification({
+          recipientId: id,
+          actor: reviewer,
+          type: "broadcast",
+          text:
+            completedStatus === "VERIFIED"
+              ? "A verification case was verified."
+              : completedStatus === "REJECTED"
+                ? "A verification case was rejected."
+                : completedStatus === "DISPUTED"
+                  ? "A verification case is disputed and needs attention."
+                  : `${reviewer.displayName} submitted a verification decision.`,
+          link: `/issue-community/${caseData.communityId}?tab=Verification`,
+          postId: caseData.postId || undefined,
+        }),
+      )
+  );
+
+  return completedStatus;
+}
+
+/**
+ * Explicitly activate the owner-inactivity fallback (managers / community
+ * moderators when the owner has genuinely not responded). Real deadline only.
+ */
+export async function activateFallbackVerification(
+  caseData: VerificationCase,
+  actor: VolunteerUserSummary,
+  reason?: string
+) {
+  const now = serverTimestamp();
+  const caseRef = doc(db, "verificationCases", caseData.id);
+
+  await updateDoc(caseRef, {
+    fallbackActivated: true,
+    ownerResponseDeadline: null,
+    updatedAt: now,
+  });
+  await addDoc(collection(db, "verificationCases", caseData.id, "events"), {
+    caseId: caseData.id,
+    communityId: caseData.communityId,
+    eventType: "OWNER_DEADLINE_EXPIRED",
+    text: `Owner response window closed${reason ? ` - ${reason}` : ""}. Verification is now decided by the eligible reviewer quorum.`,
+    userId: actor.uid,
+    createdAt: now,
+  } satisfies Omit<VerificationCaseEvent, "id">);
+}
+
+/**
+ * A participant who actually performed the work provides witness evidence.
+ * Supporting signal only - one witness confirmation per participant.
+ */
+export async function submitWitnessConfirmation(input: {
+  caseData: VerificationCase;
+  user: VolunteerUserSummary;
+  text: string;
+  mediaUrl?: string;
+  mediaType?: "image" | "video" | "text";
+}) {
+  const { caseData, user } = input;
+  const confirmationId = `${caseData.id}_${user.uid}`;
+  const confirmationRef = doc(db, "witnessConfirmations", confirmationId);
+  const caseRef = doc(db, "verificationCases", caseData.id);
+  const now = serverTimestamp();
+
+  await runTransaction(db, async (tx) => {
+    const existing = await tx.get(confirmationRef);
+    if (existing.exists()) {
+      throw new Error("You have already submitted a witness confirmation for this case.");
+    }
+
+    const isCommunityMember = (
+      await tx.get(doc(db, "communityMembers", memberId(caseData.communityId, user.uid)))
+    ).exists();
+    const isActivityParticipant = caseData.activityId
+      ? (await tx.get(doc(db, "activityParticipants", participantId(caseData.activityId, user.uid)))).exists()
+      : false;
+    if (!isCommunityMember && !isActivityParticipant) {
+      throw new Error("Only community members or activity participants can give witness confirmations.");
+    }
+
+    tx.set(confirmationRef, {
+      caseId: caseData.id,
+      communityId: caseData.communityId,
+      activityId: caseData.activityId || null,
+      uid: user.uid,
+      user,
+      text: input.text.trim(),
+      mediaUrl: input.mediaUrl || "",
+      mediaType: input.mediaType || "text",
+      createdAt: now,
+    } satisfies Omit<WitnessConfirmation, "id">);
+    tx.update(caseRef, {
+      witnessConfirmations: increment(1),
+      updatedAt: now,
+    });
+    tx.set(doc(collection(db, "verificationCases", caseData.id, "events")), {
+      caseId: caseData.id,
+      communityId: caseData.communityId,
+      eventType: "WITNESS_CONFIRMATION",
+      text: `${user.displayName} provided a witness confirmation.`,
+      userId: user.uid,
+      createdAt: now,
+    } satisfies Omit<VerificationCaseEvent, "id">);
+  });
+}
+
+/**
+ * Community members who visit the location confirm whether the issue looks
+ * resolved. Supporting signal only; one confirmation per member (updatable).
+ */
+export async function submitCommunityConfirmation(input: {
+  caseData: VerificationCase;
+  user: VolunteerUserSummary;
+  resolved: boolean;
+  note?: string;
+}) {
+  const { caseData, user } = input;
+  const confirmationId = `${caseData.id}_${user.uid}`;
+  const confirmationRef = doc(db, "communityConfirmations", confirmationId);
+  const caseRef = doc(db, "verificationCases", caseData.id);
+  const now = serverTimestamp();
+
+  await runTransaction(db, async (tx) => {
+    const membership = await tx.get(doc(db, "communityMembers", memberId(caseData.communityId, user.uid)));
+    if (!membership.exists()) {
+      throw new Error("Only community members can confirm from the community.");
+    }
+
+    const existing = await tx.get(confirmationRef);
+    if (existing.exists()) {
+      tx.update(confirmationRef, {
+        resolved: input.resolved,
+        note: input.note || null,
+        updatedAt: now,
+      });
+      tx.update(caseRef, { updatedAt: now });
+      return;
+    }
+
+    tx.set(confirmationRef, {
+      caseId: caseData.id,
+      communityId: caseData.communityId,
+      uid: user.uid,
+      user,
+      resolved: input.resolved,
+      note: input.note || null,
+      createdAt: now,
+    } satisfies Omit<CommunityConfirmation, "id">);
+    tx.update(caseRef, {
+      communityConfirmations: increment(1),
+      updatedAt: now,
+    });
+    tx.set(doc(collection(db, "verificationCases", caseData.id, "events")), {
+      caseId: caseData.id,
+      communityId: caseData.communityId,
+      eventType: "COMMUNITY_CONFIRMATION",
+      text: `${user.displayName} shared a community confirmation.`,
+      userId: user.uid,
+      createdAt: now,
+    } satisfies Omit<VerificationCaseEvent, "id">);
+  });
+}
+
+/** Reopen a closed or disputed case with a real reason. */
+export async function reopenVerificationCase(
+  caseData: VerificationCase,
+  actor: VolunteerUserSummary,
+  reason: string
+) {
+  const now = serverTimestamp();
+  await updateDoc(doc(db, "verificationCases", caseData.id), {
+    status: "UNDER_REVIEW",
+    disputeNote: null,
+    resolvedAt: null,
+    updatedAt: now,
+  });
+  await addDoc(collection(db, "verificationCases", caseData.id, "events"), {
+    caseId: caseData.id,
+    communityId: caseData.communityId,
+    eventType: "VERIFICATION_REOPENED",
+    text: `Verification reopened by ${actor.displayName}${reason ? `: ${reason}` : ""}.`,
+    userId: actor.uid,
+    createdAt: now,
+  } satisfies Omit<VerificationCaseEvent, "id">);
+}
+
+export function listenCommunityConfirmations(caseId: string, onNext: (confirmations: CommunityConfirmation[]) => void) {
+  return onSnapshot(collection(db, "communityConfirmations"), (snapshot) => {
+    const data = snapshot.docs
+      .map((item) => ({ id: item.id, ...item.data() } as CommunityConfirmation))
+      .filter((item) => item.caseId === caseId);
+    data.sort((a, b) => (a.createdAt?.toDate?.().getTime?.() || 0) - (b.createdAt?.toDate?.().getTime?.() || 0));
+    onNext(data);
+  });
+}
+
 
 export async function sendGroupMessage(input: {
   groupId: string;

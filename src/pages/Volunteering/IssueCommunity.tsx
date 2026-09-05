@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { CalendarDays, CheckCircle2, MapPin, Send, ShieldCheck, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import HivezLoader from "@/components/common/HivezLoader";
@@ -32,6 +32,7 @@ import {
   updateCommunityStatus,
   votePoll,
 } from "@/services/volunteering";
+import VerificationPanel from "./VerificationPanel";
 import type {
   ActivityEvidence,
   ActivityParticipant,
@@ -45,7 +46,7 @@ import type {
   VolunteerUserSummary,
 } from "@/types/volunteering";
 
-const tabs = ["Discussion", "Chat", "Polls", "Actions", "Progress", "Members", "Evidence"] as const;
+const tabs = ["Discussion", "Chat", "Polls", "Actions", "Progress", "Members", "Evidence", "Verification"] as const;
 type Tab = (typeof tabs)[number];
 
 const issueStatuses: IssueCommunityStatus[] = [
@@ -73,6 +74,7 @@ function timeText(value: any) {
 export default function IssueCommunityPage() {
   const { communityId } = useParams();
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   // Live user summary (replaces one-time getUserSummary read).
   const summary = useLiveUserSummary(user?.uid);
   const [community, setCommunity] = useState<IssueCommunity | null>(null);
@@ -83,7 +85,9 @@ export default function IssueCommunityPage() {
   const [polls, setPolls] = useState<Array<CommunityPoll & { myVote?: any }>>([]);
   const [activities, setActivities] = useState<VolunteerActivity[]>([]);
   const [evidence, setEvidence] = useState<ActivityEvidence[]>([]);
-  const [activeTab, setActiveTab] = useState<Tab>("Discussion");
+  const [activeTab, setActiveTab] = useState<Tab>(() =>
+    searchParams.get("tab") === "Verification" ? "Verification" : "Discussion"
+  );
   const [messageText, setMessageText] = useState("");
   const [pollQuestion, setPollQuestion] = useState("");
   const [pollOptions, setPollOptions] = useState("Yes\nNo");
@@ -97,6 +101,8 @@ export default function IssueCommunityPage() {
   const [evidenceActivityId, setEvidenceActivityId] = useState("");
   const [evidenceDescription, setEvidenceDescription] = useState("");
   const [evidenceUrl, setEvidenceUrl] = useState("");
+  const [evidenceKind, setEvidenceKind] = useState<"BEFORE" | "AFTER" | "REPORT">("AFTER");
+  const [beforeEvidenceUrl, setBeforeEvidenceUrl] = useState("");
 
   useEffect(() => {
     if (!communityId) return;
@@ -189,17 +195,22 @@ export default function IssueCommunityPage() {
   async function handleSubmitEvidence(event: FormEvent) {
     event.preventDefault();
     if (!community || !summary || !evidenceActivityId || !evidenceDescription.trim()) return;
+    const mediaUrl = evidenceUrl || undefined;
     await submitActivityEvidence({
       activityId: evidenceActivityId,
       communityId: community.id,
       uid: summary.uid,
       user: summary,
       description: evidenceDescription,
-      mediaUrl: evidenceUrl,
-      mediaType: evidenceUrl ? "image" : "text",
+      kind: evidenceKind,
+      mediaUrl: evidenceKind === "BEFORE" ? beforeEvidenceUrl || mediaUrl : mediaUrl,
+      beforeMediaUrl: evidenceKind === "BEFORE" ? beforeEvidenceUrl || mediaUrl || null : null,
+      afterMediaUrl: evidenceKind === "AFTER" ? mediaUrl || null : null,
+      mediaType: (mediaUrl || beforeEvidenceUrl) ? "image" : "text",
     });
     setEvidenceDescription("");
     setEvidenceUrl("");
+    setBeforeEvidenceUrl("");
     toast.success("Evidence submitted");
   }
 
@@ -386,8 +397,18 @@ export default function IssueCommunityPage() {
                 <select value={evidenceActivityId} onChange={(e) => setEvidenceActivityId(e.target.value)} className="h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-white">
                   {activities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title}</option>)}
                 </select>
+                <div className="flex flex-wrap gap-2">
+                  {(["AFTER", "BEFORE", "REPORT"] as const).map((kind) => (
+                    <button key={kind} type="button" onClick={() => setEvidenceKind(kind)} className={`h-9 rounded-full px-3 text-xs font-bold transition ${evidenceKind === kind ? "bg-zinc-950 text-white dark:bg-white dark:text-black" : "border border-zinc-200 text-zinc-500 dark:border-zinc-800"}`}>
+                      {kind === "AFTER" ? "After (result)" : kind === "BEFORE" ? "Before (original)" : "General report"}
+                    </button>
+                  ))}
+                </div>
                 <textarea value={evidenceDescription} onChange={(e) => setEvidenceDescription(e.target.value)} placeholder="Describe what was completed or verified" className="min-h-24 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
-                <input value={evidenceUrl} onChange={(e) => setEvidenceUrl(e.target.value)} placeholder="Optional image/video URL" className="h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                {evidenceKind === "BEFORE" && (
+                  <input value={beforeEvidenceUrl} onChange={(e) => setBeforeEvidenceUrl(e.target.value)} placeholder="Optional before photo/video URL" className="h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                )}
+                <input value={evidenceUrl} onChange={(e) => setEvidenceUrl(e.target.value)} placeholder={evidenceKind === "BEFORE" ? "Optional after photo/video URL" : "Optional image/video URL"} className="h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
                 <button className="h-10 rounded-full bg-zinc-950 px-5 text-sm font-bold text-white dark:bg-white dark:text-black">Submit evidence</button>
               </form>
             )}
@@ -415,6 +436,16 @@ export default function IssueCommunityPage() {
             ))}
             {!evidence.length && <EmptyBlock text="No evidence submitted yet." />}
           </section>
+        )}
+
+        {activeTab === "Verification" && (
+          <VerificationPanel
+            communityId={communityId}
+            evidence={evidence}
+            member={member}
+            summary={summary}
+            activities={activities}
+          />
         )}
       </main>
     </div>

@@ -204,6 +204,99 @@ service cloud.firestore {
       allow update, delete: if isCommunityManager(resource.data.communityId);
     }
 
+    // ---- Community verification cases ----
+    // Rigid permission boundaries for the multi-reviewer verification flow:
+    // - Reads are open to signed-in users (a community verification is a public good).
+    // - Only community members can open cases and only through the case owner fields.
+    // - Case updates are split into two safe paths:
+    //     (a) decision-driven progress (status/counts) by eligible reviewers,
+    //         the primary reviewer, or community managers; and
+    //     (b) evidence attachment + supporting-signal counts by members.
+    // - Decisions are immutable append-only docs (one per reviewer).
+    // - Case identity/eligibility/quorum config can never be rewritten by clients.
+    match /verificationCases/{caseId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && isCommunityMember(request.resource.data.communityId);
+      allow update: if signedIn()
+        && (
+          (
+            // Decision-driven progress stays bounded to fairness/count fields so
+            // reviewers can never silently change quorum, eligibility or identity.
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              "status",
+              "approvalCount",
+              "rejectionCount",
+              "moreEvidenceCount",
+              "fallbackActivated",
+              "disputeNote",
+              "resolvedAt",
+              "ownerResponseDeadline",
+              "updatedAt"
+            ])
+            && (
+              resource.data.primaryReviewerId == request.auth.uid
+              || request.auth.uid in resource.data.eligibleReviewerIds
+              || isCommunityManager(resource.data.communityId)
+            )
+          )
+          || (
+            // Attaching new evidence and ticking the supporting-signal counters.
+            // These signals never gate verification alone (only decisions do).
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              "evidenceIds",
+              "communityConfirmations",
+              "witnessConfirmations",
+              "updatedAt"
+            ])
+            && isCommunityMember(resource.data.communityId)
+          )
+        );
+      allow delete: if false;
+
+      // Decisions are permanently immutable so the audit trail can't be edited.
+      match /decisions/{decisionId} {
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && request.auth.uid == request.resource.data.reviewerId
+          && (
+            get(/databases/$(database)/documents/verificationCases/$(request.resource.data.caseId)).data.primaryReviewerId == request.auth.uid
+            || request.auth.uid in get(/databases/$(database)/documents/verificationCases/$(request.resource.data.caseId)).data.eligibleReviewerIds
+          );
+        allow update, delete: if false;
+      }
+
+      // Append-only timeline.
+      match /events/{eventId} {
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && isCommunityMember(get(/databases/$(database)/documents/verificationCases/$(request.resource.data.caseId)).data.communityId);
+        allow update, delete: if false;
+      }
+    }
+
+    // Supporting confirmations - one doc per member/participant, immutable
+    // (community confirmations may switch their resolved opinion in place).
+    match /witnessConfirmations/{confirmationId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && isCommunityMember(get(/databases/$(database)/documents/verificationCases/$(request.resource.data.caseId)).data.communityId);
+      allow update: if signedIn()
+        && request.resource.data.uid == request.auth.uid;
+      allow delete: if false;
+    }
+
+    match /communityConfirmations/{confirmationId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && isCommunityMember(get(/databases/$(database)/documents/verificationCases/$(request.resource.data.caseId)).data.communityId);
+      allow update: if signedIn()
+        && request.resource.data.uid == request.auth.uid;
+      allow delete: if false;
+    }
+
     match /volunteerGroups/{groupId} {
       allow read: if signedIn();
       allow create: if signedIn()

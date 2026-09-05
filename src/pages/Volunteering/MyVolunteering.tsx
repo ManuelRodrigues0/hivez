@@ -4,11 +4,14 @@ import { Link } from "react-router-dom";
 import {
   ArrowLeft,
   CheckCircle2,
+  ClipboardCheck,
   Clock,
   HandHeart,
   MapPin,
+  MessageSquare,
   ShieldCheck,
   Users,
+  XCircle,
 } from "lucide-react";
 import HivezLoader from "@/components/common/HivezLoader";
 import { useAuth } from "@/context/AuthContext";
@@ -18,6 +21,7 @@ import {
   listenMyActivityParticipants,
   listenMyEvidence,
   listenMyGroupMemberships,
+  listenMyReviewCases,
   listenVolunteerGroups,
 } from "@/services/volunteering";
 import {
@@ -25,10 +29,12 @@ import {
   formatScheduleText,
   scheduleFromActivity,
 } from "@/utils/volunteering";
+import { verificationCaseStatusLabel } from "@/utils/verification";
 import type {
   ActivityEvidence,
   ActivityParticipant,
   CommunityMember,
+  VerificationCase,
   VolunteerActivity,
   VolunteerGroup,
   VolunteerGroupMember,
@@ -50,6 +56,7 @@ export default function MyVolunteering() {
   const [memberships, setMemberships] = useState<VolunteerGroupMember[]>([]);
   const [communityMemberships, setCommunityMemberships] = useState<CommunityMember[]>([]);
   const [evidence, setEvidence] = useState<ActivityEvidence[]>([]);
+  const [reviewCases, setReviewCases] = useState<VerificationCase[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -58,6 +65,7 @@ export default function MyVolunteering() {
       listenMyGroupMemberships(user.uid, setMemberships),
       listenCommunityMemberships(user.uid, setCommunityMemberships),
       listenMyEvidence(user.uid, setEvidence),
+      listenMyReviewCases(user.uid, setReviewCases),
     ];
     return () => unsubs.forEach((unsubscribe) => unsubscribe());
   }, [user]);
@@ -152,6 +160,29 @@ return (
             <p className="mt-2 text-xs font-semibold text-zinc-400">Volunteer hours are calculated only from actions with a complete start and end schedule.</p>
           )}
         </section>
+
+        {/* Review queue */}
+        {reviewCases.length > 0 && (
+          <section>
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <h2 className="text-lg font-black tracking-tight text-zinc-950 dark:text-white">Awaiting your review</h2>
+              <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700 dark:bg-violet-950 dark:text-violet-300">{reviewCases.length} open</span>
+            </div>
+            <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
+              Cases where you are the post owner or an authorized reviewer. Verdicts are permanent and audited.
+            </p>
+            <div className="space-y-3">
+              {reviewCases.map((caseData) => (
+                <ReviewCaseRow
+                  key={caseData.id}
+                  caseData={caseData}
+                  isPrimary={caseData.primaryReviewerId === user.uid}
+                  title={activities.find((a) => a.id === caseData.activityId)?.title}
+                />
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Groups */}
         <section>
@@ -283,5 +314,88 @@ function EvidenceRow({ item, activities }: { item: ActivityEvidence; activities:
         <img src={item.mediaUrl} alt="" className="mt-3 max-h-48 w-full rounded-2xl object-cover" loading="lazy" />
       )}
     </div>
+  );
+}
+
+const caseStatusStyles: Record<string, string> = {
+  VERIFIED: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+  REJECTED: "bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400",
+  DISPUTED: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+  NEEDS_MORE_EVIDENCE: "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300",
+};
+
+function ReviewCaseRow({
+  caseData,
+  isPrimary,
+  title,
+}: {
+  caseData: VerificationCase;
+  isPrimary: boolean;
+  title?: string;
+}) {
+  const deadlineText = caseData.ownerResponseDeadline
+    ? new Date(caseData.ownerResponseDeadline).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+    : null;
+  return (
+    <Link
+      to={`/issue-community/${caseData.communityId}?tab=Verification`}
+      className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950"
+    >
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <ClipboardCheck size={15} className="shrink-0 text-zinc-500" />
+          <p className="truncate text-sm font-black text-zinc-950 dark:text-white">
+            {title || "Community verification case"}
+          </p>
+        </div>
+        <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold text-zinc-500">
+          <span className="inline-flex items-center gap-1">
+            <CheckCircle2 size={12} />
+            {caseData.approvalCount}/{caseData.requiredApprovals} approvals
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <XCircle size={12} />
+            {caseData.rejectionCount}/{caseData.requiredRejections} rejections
+          </span>
+          {caseData.moreEvidenceCount > 0 && (
+            <span className="inline-flex items-center gap-1">
+              <MessageSquare size={12} />
+              {caseData.moreEvidenceCount} more-evidence request{caseData.moreEvidenceCount === 1 ? "" : "s"}
+            </span>
+          )}
+          {isPrimary ? (
+            <span className="rounded-full bg-violet-100 px-2 py-0.5 font-bold text-violet-600 dark:bg-violet-950 dark:text-violet-300">
+              You're the post owner
+            </span>
+          ) : (
+            <span className="rounded-full bg-sky-100 px-2 py-0.5 font-bold text-sky-600 dark:bg-sky-950 dark:text-sky-300">
+              Authorized reviewer
+            </span>
+          )}
+        </div>
+        {caseData.fallbackActivated && (
+          <p className="mt-2 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+            Owner didn't respond in time - community fallback review is active.
+          </p>
+        )}
+        {!caseData.fallbackActivated && deadlineText && (
+          <p className="mt-2 text-[11px] font-semibold text-zinc-500">
+            Owner response window ends {deadlineText}.
+          </p>
+        )}
+        {caseData.disputeNote && (
+          <p className="mt-2 line-clamp-2 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+            {caseData.disputeNote}
+          </p>
+        )}
+      </div>
+      <span
+        className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-bold uppercase ${
+          caseStatusStyles[caseData.status] || "bg-zinc-100 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300"
+        }`}
+      >
+        {verificationCaseStatusLabel(caseData.status)}
+      </span>
+    </Link>
   );
 }
