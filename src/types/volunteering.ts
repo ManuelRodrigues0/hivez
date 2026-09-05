@@ -103,6 +103,7 @@ export interface VolunteerActivity {
   organizerId: string;
   organizer: VolunteerUserSummary;
   location: string;
+  locationSnapshot?: LocationSnapshot | null;
   meetingPoint: string;
   startDate: string;
   startTime: string;
@@ -143,6 +144,8 @@ export interface ActivityEvidence {
   mediaUrl?: string;
   mediaType?: "image" | "video" | "document" | "text";
   status: "SUBMITTED" | "REVIEWED" | "ACCEPTED" | "REJECTED";
+  reviewedBy?: string;
+  reviewedAt?: any;
   createdAt: any;
 }
 
@@ -187,6 +190,54 @@ export interface VerificationRecord {
   aiConfidence?: number | null;
   aiResult?: string | null;
   aiProcessedAt?: any;
+  createdAt: any;
+  reviewedAt?: any;
+}
+
+/**
+ * Real-time chat scoped to a single volunteer activity. Only participants
+ * (and the activity community's managers) can read or post.
+ */
+export interface ActivityMessage {
+  id: string;
+  activityId: string;
+  communityId: string;
+  uid: string;
+  user: VolunteerUserSummary;
+  text: string;
+  kind: "chat" | "system";
+  createdAt: any;
+}
+
+/**
+ * Group workspace messaging. `kind` mirrors community messages so discussion,
+ * chat and announcements share the same collection without a third chat
+ * architecture.
+ */
+export interface VolunteerGroupMessage {
+  id: string;
+  groupId: string;
+  uid: string;
+  user: VolunteerUserSummary;
+  text: string;
+  kind: "discussion" | "chat" | "announcement";
+  createdAt: any;
+  deleted?: boolean;
+}
+
+/**
+ * Human/system verification trail. Every evidence submission and review step
+ * appends a record so the community keeps a verifiable history without ever
+ * auto-verifying an issue from a single submission.
+ */
+export interface VerificationHistoryEntry {
+  id: string;
+  communityId: string;
+  activityId?: string | null;
+  submittedBy: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  reviewedBy?: string | null;
+  notes: string;
   createdAt: any;
   reviewedAt?: any;
 }

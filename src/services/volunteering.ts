@@ -1,5 +1,7 @@
 import {
   addDoc,
+  arrayRemove,
+  arrayUnion,
   collection,
   doc,
   getDoc,
@@ -17,6 +19,7 @@ import {
 import { db } from "@/firebase/firebase";
 import type {
   ActivityEvidence,
+  ActivityMessage,
   ActivityParticipant,
   CommunityMember,
   CommunityMessage,
@@ -25,9 +28,11 @@ import type {
   IssueCommunity,
   IssueCommunityStatus,
   PollVote,
+  VerificationHistoryEntry,
   VolunteerActivity,
   VolunteerGroup,
   VolunteerGroupMember,
+  VolunteerGroupMessage,
   VolunteerUserSummary,
 } from "@/types/volunteering";
 import { createNotification } from "@/services/notifications";
@@ -425,14 +430,27 @@ export async function joinActivity(activity: VolunteerActivity, user: VolunteerU
     return true;
   });
 
-  if (!joined) return;
+  if (!joined) return false;
+
+  // Let the organizer know they gained a volunteer.
+  if (activity.organizerId !== user.uid) {
+    await createNotification({
+      recipientId: activity.organizerId,
+      actor: user,
+      type: "broadcast",
+      text: `${user.displayName} joined your action “${activity.title}”.`,
+      link: `/issue-community/${activity.communityId}`,
+    });
+  }
+  return true;
 }
 
-export async function leaveActivity(activity: VolunteerActivity, uid: string) {
+export async function leaveActivity(activity: VolunteerActivity, uid: string, actor?: VolunteerUserSummary) {
   const id = participantId(activity.id, uid);
 
   // Atomic leave: the counter is only decremented when the participant doc
   // actually existed, preventing double decrements from rapid clicks.
+  let left = false;
   await runTransaction(db, async (tx) => {
     const participantRef = doc(db, "activityParticipants", id);
     const existing = await tx.get(participantRef);
@@ -443,7 +461,19 @@ export async function leaveActivity(activity: VolunteerActivity, uid: string) {
       volunteerCount: increment(-1),
       updatedAt: serverTimestamp(),
     });
+    left = true;
   });
+
+  if (left && actor && activity.organizerId !== actor.uid) {
+    await createNotification({
+      recipientId: activity.organizerId,
+      actor,
+      type: "broadcast",
+      text: `${actor.displayName} left your action “${activity.title}”.`,
+      link: `/issue-community/${activity.communityId}`,
+    });
+  }
+  return left;
 }
 
 export async function updateActivityStatus(activityId: string, status: VolunteerActivity["status"]) {
@@ -452,7 +482,29 @@ export async function updateActivityStatus(activityId: string, status: Volunteer
 
 export async function updateActivityDetails(
   activityId: string,
-  input: Pick<VolunteerActivity, "title" | "description" | "location" | "meetingPoint" | "startDate" | "startTime" | "volunteerLimit" | "roles">
+  input: Partial<
+    Pick<
+      VolunteerActivity,
+      | "title"
+      | "description"
+      | "category"
+      | "location"
+      | "locationSnapshot"
+      | "meetingPoint"
+      | "startDate"
+      | "startTime"
+      | "endDate"
+      | "endTime"
+      | "volunteerLimit"
+      | "roles"
+      | "requirements"
+      | "instructions"
+      | "urgent"
+      | "verificationMethod"
+      | "evidenceRequirements"
+      | "groupId"
+    >
+  >
 ) {
   await updateDoc(doc(db, "volunteerActivities", activityId), {
     ...input,
@@ -460,16 +512,47 @@ export async function updateActivityDetails(
   });
 }
 
-export async function cancelActivity(activityId: string) {
-  await updateActivityStatus(activityId, "CANCELLED");
+export async function cancelActivity(activity: VolunteerActivity, actor?: VolunteerUserSummary) {
+  await updateActivityStatus(activity.id, "CANCELLED");
+
+  if (!actor) return;
+  const participants = await getDocs(
+    query(collection(db, "activityParticipants"), where("activityId", "==", activity.id))
+  );
+  await Promise.all(
+    participants.docs.map(async (snap) => {
+      const participant = snap.data() as ActivityParticipant;
+      if (participant.uid === actor.uid) return;
+      await createNotification({
+        recipientId: participant.uid,
+        actor,
+        type: "broadcast",
+        text: `The action “${activity.title}” was cancelled.`,
+        link: `/issue-community/${activity.communityId}`,
+      });
+    })
+  );
 }
 
 export async function submitActivityEvidence(input: Omit<ActivityEvidence, "id" | "status" | "createdAt">) {
-  await addDoc(collection(db, "activityEvidence"), {
+  const ref = await addDoc(collection(db, "activityEvidence"), {
     ...input,
     status: "SUBMITTED",
     createdAt: serverTimestamp(),
   });
+
+  // Verification history: a submission always enters as PENDING.
+  await addDoc(collection(db, "verificationRecords"), {
+    communityId: input.communityId,
+    activityId: input.activityId,
+    submittedBy: input.uid,
+    status: "PENDING",
+    reviewedBy: null,
+    notes: "Evidence submitted - awaiting review.",
+    createdAt: serverTimestamp(),
+  } satisfies Omit<VerificationHistoryEntry, "id">);
+
+  return ref.id;
 }
 
 export function listenActivityEvidence(communityId: string, onNext: (evidence: ActivityEvidence[]) => void) {
@@ -544,7 +627,18 @@ export async function joinVolunteerGroup(group: VolunteerGroup, user: VolunteerU
     return true;
   });
 
-  if (!joined) return;
+  if (!joined) return false;
+
+  if (group.ownerId !== user.uid) {
+    await createNotification({
+      recipientId: group.ownerId,
+      actor: user,
+      type: "broadcast",
+      text: `${user.displayName} joined your group “${group.name}”.`,
+      link: `/volunteering/groups/${group.id}`,
+    });
+  }
+  return true;
 }
 
 export async function updateCommunityStatus(communityId: string, status: IssueCommunityStatus) {
@@ -571,11 +665,283 @@ export async function removeCommunityMember(community: IssueCommunity, member: C
   await batch.commit();
 }
 
-export async function reviewActivityEvidence(evidenceId: string, status: ActivityEvidence["status"]) {
-  await updateDoc(doc(db, "activityEvidence", evidenceId), { status });
+export async function reviewActivityEvidence(
+  evidence: ActivityEvidence,
+  status: ActivityEvidence["status"],
+  reviewer?: VolunteerUserSummary | null
+) {
+  const batch = writeBatch(db);
+  batch.update(doc(db, "activityEvidence", evidence.id), {
+    status,
+    ...(reviewer ? { reviewedBy: reviewer.uid, reviewedAt: serverTimestamp() } : {}),
+  });
+  batch.set(doc(collection(db, "verificationRecords")), {
+    communityId: evidence.communityId,
+    activityId: evidence.activityId,
+    submittedBy: evidence.uid,
+    status: status === "ACCEPTED" ? "APPROVED" : status === "REJECTED" ? "REJECTED" : "PENDING",
+    reviewedBy: reviewer?.uid || null,
+    notes: `Evidence ${status.toLowerCase().replace("_", " ")} by reviewer.`,
+    createdAt: serverTimestamp(),
+    reviewedAt: serverTimestamp(),
+  } satisfies Omit<VerificationHistoryEntry, "id">);
+  await batch.commit();
+
+  // Tell the submitter when an authorized user reviews their proof.
+  if (reviewer && evidence.uid !== reviewer.uid) {
+    await createNotification({
+      recipientId: evidence.uid,
+      actor: reviewer,
+      type: "broadcast",
+      text: `Your evidence was marked ${status.toLowerCase().replace("_", " ")}.`,
+      link: `/issue-community/${evidence.communityId}`,
+    });
+  }
 }
 
 export async function listMyActivityParticipants(uid: string) {
   const snap = await getDocs(query(collection(db, "activityParticipants"), where("uid", "==", uid)));
   return snap.docs.map((item) => ({ id: item.id, ...item.data() } as ActivityParticipant));
+}
+// =====================================================================
+// MY VOLUNTEERING
+// =====================================================================
+
+export function listenCommunityMemberships(uid: string, onNext: (memberships: CommunityMember[]) => void) {
+  const q = query(collection(db, "communityMembers"), where("uid", "==", uid));
+  return onSnapshot(q, (snapshot) => {
+    onNext(snapshot.docs.map((item) => ({ id: item.id, ...item.data() } as CommunityMember)));
+  });
+}
+
+/** The signed-in user's own evidence submissions, newest first. */
+export function listenMyEvidence(uid: string, onNext: (evidence: ActivityEvidence[]) => void) {
+  const q = query(collection(db, "activityEvidence"), where("uid", "==", uid));
+  return onSnapshot(q, (snapshot) => {
+    const data = snapshot.docs.map((item) => ({ id: item.id, ...item.data() } as ActivityEvidence));
+    data.sort((a, b) => (b.createdAt?.toDate?.().getTime?.() || 0) - (a.createdAt?.toDate?.().getTime?.() || 0));
+    onNext(data);
+  });
+}
+
+// =====================================================================
+// OWNERSHIP TRANSFER
+// =====================================================================
+
+/** Safely transfer an issue community to another member. The former owner
+ *  becomes an organizer and the new owner takes the owner role. */
+export async function transferCommunityOwnership(community: IssueCommunity, newOwner: CommunityMember) {
+  if (newOwner.uid === community.ownerId) return;
+  const batch = writeBatch(db);
+  batch.update(doc(db, "communityMembers", memberId(community.id, community.ownerId)), { role: "organizer" });
+  batch.update(doc(db, "communityMembers", memberId(community.id, newOwner.uid)), { role: "owner" });
+  batch.update(doc(db, "issueCommunities", community.id), {
+    ownerId: newOwner.uid,
+    owner: newOwner.user,
+    updatedAt: serverTimestamp(),
+  });
+  await batch.commit();
+}
+
+/** Safely transfer a volunteer group to another member. */
+export async function transferGroupOwnership(group: VolunteerGroup, newOwner: VolunteerGroupMember) {
+  if (newOwner.uid === group.ownerId) return;
+  const batch = writeBatch(db);
+  batch.update(doc(db, "volunteerGroupMembers", groupMemberId(group.id, group.ownerId)), { role: "organizer" });
+  batch.update(doc(db, "volunteerGroupMembers", groupMemberId(group.id, newOwner.uid)), { role: "owner" });
+  batch.update(doc(db, "volunteerGroups", group.id), {
+    ownerId: newOwner.uid,
+    owner: newOwner.user,
+    organizers: group.organizers.includes(newOwner.uid)
+      ? group.organizers
+      : [...group.organizers, newOwner.uid],
+    updatedAt: serverTimestamp(),
+  });
+  await batch.commit();
+}
+// =====================================================================
+// VOLUNTEER GROUP WORKSPACE
+// =====================================================================
+
+export function listenGroup(groupId: string, onNext: (group: VolunteerGroup | null) => void) {
+  return onSnapshot(doc(db, "volunteerGroups", groupId), (snap) => {
+    onNext(snap.exists() ? ({ id: snap.id, ...snap.data() } as VolunteerGroup) : null);
+  });
+}
+
+export function listenGroupMember(groupId: string, uid: string, onNext: (member: VolunteerGroupMember | null) => void) {
+  return onSnapshot(doc(db, "volunteerGroupMembers", groupMemberId(groupId, uid)), (snap) => {
+    onNext(snap.exists() ? ({ id: snap.id, ...snap.data() } as VolunteerGroupMember) : null);
+  });
+}
+
+export function listenGroupMembers(groupId: string, onNext: (members: VolunteerGroupMember[]) => void) {
+  const q = query(collection(db, "volunteerGroupMembers"), where("groupId", "==", groupId));
+  return onSnapshot(q, (snapshot) => {
+    onNext(snapshot.docs.map((item) => ({ id: item.id, ...item.data() } as VolunteerGroupMember)));
+  });
+}
+
+export async function leaveVolunteerGroup(group: VolunteerGroup, member: VolunteerGroupMember) {
+  if (member.role === "owner") {
+    throw new Error("Owners must transfer ownership before leaving the group.");
+  }
+  await runTransaction(db, async (tx) => {
+    const ref = doc(db, "volunteerGroupMembers", member.id);
+    const existing = await tx.get(ref);
+    if (!existing.exists()) return;
+    tx.delete(ref);
+    tx.update(doc(db, "volunteerGroups", group.id), {
+      memberCount: increment(-1),
+      updatedAt: serverTimestamp(),
+    });
+  });
+}
+
+export async function updateGroupDetails(
+  groupId: string,
+  input: Partial<Pick<VolunteerGroup, "name" | "description" | "location">>
+) {
+  await updateDoc(doc(db, "volunteerGroups", groupId), {
+    ...input,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function updateGroupMemberRole(group: VolunteerGroup, member: VolunteerGroupMember, role: CommunityRole) {
+  if (member.role === "owner") throw new Error("Owner role cannot be changed here.");
+  const batch = writeBatch(db);
+  batch.update(doc(db, "volunteerGroupMembers", member.id), { role });
+  if (role === "organizer" && !group.organizers.includes(member.uid)) {
+    batch.update(doc(db, "volunteerGroups", group.id), {
+      organizers: arrayUnion(member.uid),
+      updatedAt: serverTimestamp(),
+    });
+  } else if (member.role === "organizer" && role !== "organizer") {
+    batch.update(doc(db, "volunteerGroups", group.id), {
+      organizers: arrayRemove(member.uid),
+      updatedAt: serverTimestamp(),
+    });
+  }
+  await batch.commit();
+}
+
+export async function removeGroupMember(group: VolunteerGroup, member: VolunteerGroupMember) {
+  if (member.role === "owner") throw new Error("Owner cannot be removed.");
+  const batch = writeBatch(db);
+  batch.delete(doc(db, "volunteerGroupMembers", member.id));
+  batch.update(doc(db, "volunteerGroups", group.id), {
+    memberCount: increment(-1),
+    organizers: arrayRemove(member.uid),
+    updatedAt: serverTimestamp(),
+  });
+  await batch.commit();
+}
+
+export function listenGroupActivities(groupId: string, onNext: (activities: VolunteerActivity[]) => void) {
+  const q = query(collection(db, "volunteerActivities"), where("groupId", "==", groupId));
+  return onSnapshot(q, (snapshot) => {
+    const data = snapshot.docs.map((item) => ({ id: item.id, ...item.data() } as VolunteerActivity));
+    data.sort((a, b) => `${a.startDate} ${a.startTime}`.localeCompare(`${b.startDate} ${b.startTime}`));
+    onNext(data);
+  });
+}
+
+export async function sendGroupMessage(input: {
+  groupId: string;
+  user: VolunteerUserSummary;
+  text: string;
+  kind: VolunteerGroupMessage["kind"];
+}) {
+  await addDoc(collection(db, "volunteerGroupMessages"), {
+    groupId: input.groupId,
+    uid: input.user.uid,
+    user: input.user,
+    text: input.text.trim(),
+    kind: input.kind,
+    createdAt: serverTimestamp(),
+  });
+}
+
+export function listenGroupMessages(
+  groupId: string,
+  kind: VolunteerGroupMessage["kind"],
+  onNext: (messages: VolunteerGroupMessage[]) => void
+) {
+  const q = query(
+    collection(db, "volunteerGroupMessages"),
+    where("groupId", "==", groupId),
+    where("kind", "==", kind)
+  );
+  return onSnapshot(q, (snapshot) => {
+    const data = snapshot.docs.map((item) => ({ id: item.id, ...item.data() } as VolunteerGroupMessage));
+    data.sort((a, b) => (a.createdAt?.toDate?.().getTime?.() || 0) - (b.createdAt?.toDate?.().getTime?.() || 0));
+    onNext(data);
+  });
+}
+
+export async function linkGroupIssue(group: VolunteerGroup, communityId: string) {
+  if (group.issueIds.includes(communityId)) return;
+  await updateDoc(doc(db, "volunteerGroups", group.id), {
+    issueIds: arrayUnion(communityId),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function unlinkGroupIssue(group: VolunteerGroup, communityId: string) {
+  await updateDoc(doc(db, "volunteerGroups", group.id), {
+    issueIds: arrayRemove(communityId),
+    updatedAt: serverTimestamp(),
+  });
+}
+// =====================================================================
+// ACTIVITY PARTICIPANTS + ACTIVITY CHAT
+// =====================================================================
+
+export function listenActivityParticipants(activityId: string, onNext: (participants: ActivityParticipant[]) => void) {
+  const q = query(collection(db, "activityParticipants"), where("activityId", "==", activityId));
+  return onSnapshot(q, (snapshot) => {
+    onNext(snapshot.docs.map((item) => ({ id: item.id, ...item.data() } as ActivityParticipant)));
+  });
+}
+
+export function listenActivityMessages(activityId: string, onNext: (messages: ActivityMessage[]) => void) {
+  const q = query(collection(db, "activityMessages"), where("activityId", "==", activityId));
+  return onSnapshot(q, (snapshot) => {
+    const data = snapshot.docs.map((item) => ({ id: item.id, ...item.data() } as ActivityMessage));
+    data.sort((a, b) => (a.createdAt?.toDate?.().getTime?.() || 0) - (b.createdAt?.toDate?.().getTime?.() || 0));
+    onNext(data);
+  });
+}
+
+export async function sendActivityMessage(input: {
+  activityId: string;
+  communityId: string;
+  user: VolunteerUserSummary;
+  text: string;
+}) {
+  await addDoc(collection(db, "activityMessages"), {
+    activityId: input.activityId,
+    communityId: input.communityId,
+    uid: input.user.uid,
+    user: input.user,
+    text: input.text.trim(),
+    kind: "chat",
+    createdAt: serverTimestamp(),
+  });
+}
+
+// =====================================================================
+// VERIFICATION HISTORY
+// =====================================================================
+
+export function listenVerificationHistory(communityId: string, onNext: (records: VerificationHistoryEntry[]) => void) {
+  const q = query(collection(db, "verificationRecords"), where("communityId", "==", communityId));
+  return onSnapshot(q, (snapshot) => {
+    const data = snapshot.docs.map(
+      (item) => ({ id: item.id, ...item.data() } as VerificationHistoryEntry)
+    );
+    data.sort((a, b) => (b.createdAt?.toDate?.().getTime?.() || 0) - (a.createdAt?.toDate?.().getTime?.() || 0));
+    onNext(data);
+  });
 }

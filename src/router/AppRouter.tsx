@@ -14,6 +14,8 @@ import Settings from "@/pages/Settings/Settings";
 import Volunteering from "@/pages/Volunteering/Volunteering";
 import IssueCommunityPage from "@/pages/Volunteering/IssueCommunity";
 import CommunityDetails from "@/pages/Volunteering/CommunityDetails";
+import MyVolunteering from "@/pages/Volunteering/MyVolunteering";
+import VolunteerGroupPage from "@/pages/Volunteering/VolunteerGroup";
 import Chats from "@/pages/Chats/Chats";
 
 import Camera from "@/pages/Camera/Camera";
@@ -87,6 +89,8 @@ export default function AppRouter() {
         <Route path="/activity" element={<Activity />} />
         <Route path="/search" element={<Search />} />
         <Route path="/volunteering" element={<Volunteering />} />
+        <Route path="/my-volunteering" element={<MyVolunteering />} />
+        <Route path="/volunteer-group/:groupId" element={<VolunteerGroupPage />} />
         <Route path="/issue-community/:communityId" element={<IssueCommunityPage />} />
         <Route path="/issue-community/:communityId/details" element={<CommunityDetails />} />
         <Route path="/chats" element={<Chats />} />

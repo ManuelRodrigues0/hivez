@@ -405,7 +405,7 @@ export default function IssueCommunityPage() {
                 {canManage && (
                   <div className="mt-4 flex flex-wrap gap-2">
                     {(["REVIEWED", "ACCEPTED", "REJECTED"] as ActivityEvidence["status"][]).map((status) => (
-                      <button key={status} onClick={() => reviewActivityEvidence(item.id, status).then(() => toast.success("Evidence updated"))} className="h-9 rounded-full border border-zinc-200 px-3 text-xs font-bold text-zinc-700 hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-900">
+                      <button key={status} onClick={() => reviewActivityEvidence(item, status).then(() => toast.success("Evidence updated"))} className="h-9 rounded-full border border-zinc-200 px-3 text-xs font-bold text-zinc-700 hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-900">
                         {pretty(status)}
                       </button>
                     ))}

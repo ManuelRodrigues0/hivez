@@ -11,10 +11,43 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/communityMembers/$(communityId + "_" + request.auth.uid));
     }
 
+    function isCommunityOwner(communityId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/communityMembers/$(communityId + "_" + request.auth.uid))
+        && get(/databases/$(database)/documents/communityMembers/$(communityId + "_" + request.auth.uid)).data.role == "owner";
+    }
+
     function isCommunityManager(communityId) {
       return signedIn()
         && exists(/databases/$(database)/documents/communityMembers/$(communityId + "_" + request.auth.uid))
         && get(/databases/$(database)/documents/communityMembers/$(communityId + "_" + request.auth.uid)).data.role in ["owner", "organizer", "moderator"];
+    }
+
+    function isGroupMember(groupId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/volunteerGroupMembers/$(groupId + "_" + request.auth.uid));
+    }
+
+    function isGroupManager(groupId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/volunteerGroupMembers/$(groupId + "_" + request.auth.uid))
+        && get(/databases/$(database)/documents/volunteerGroupMembers/$(groupId + "_" + request.auth.uid)).data.role in ["owner", "organizer"];
+    }
+
+    function isGroupOwner(groupId) {
+      return signedIn()
+        && get(/databases/$(database)/documents/volunteerGroups/$(groupId)).data.ownerId == request.auth.uid;
+    }
+
+    function isActivityParticipant(activityId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/activityParticipants/$(activityId + "_" + request.auth.uid));
+    }
+
+    function isActivityManager(activityId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/volunteerActivities/$(activityId))
+        && isCommunityManager(get(/databases/$(database)/documents/volunteerActivities/$(activityId)).data.communityId);
     }
 
     // Username uniqueness enforcement
@@ -72,7 +105,9 @@ service cloud.firestore {
         && request.resource.data.ownerId is string
         && request.resource.data.postId is string
         && request.resource.data.memberCount == 1;
-      allow update: if isCommunityManager(communityId)
+      allow update: if (isCommunityManager(communityId)
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(["ownerId", "owner"]))
+        || isCommunityOwner(communityId)
         || request.resource.data.diff(resource.data).affectedKeys().hasOnly(["memberCount", "activityCount", "status", "updatedAt", "archived"]);
       allow delete: if isCommunityManager(communityId);
     }
@@ -83,7 +118,13 @@ service cloud.firestore {
         && request.resource.data.communityId is string
         && request.resource.data.uid is string
         && (request.resource.data.uid == request.auth.uid || request.resource.data.role == "owner");
-      allow update: if isCommunityManager(resource.data.communityId);
+      // Managers can only change role; owner can only set self to owner (transfer).
+      // Restricted to role field to prevent uid/communityId manipulation.
+      allow update: if (isCommunityManager(resource.data.communityId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["role"]))
+        || (isCommunityOwner(resource.data.communityId)
+          && request.resource.data.role == "owner"
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["role"]));
       allow delete: if signedIn()
         && (resource.data.uid == request.auth.uid || isCommunityManager(resource.data.communityId))
         && resource.data.role != "owner";
@@ -99,7 +140,12 @@ service cloud.firestore {
     match /communityPolls/{pollId} {
       allow read: if signedIn();
       allow create: if isCommunityManager(request.resource.data.communityId);
-      allow update: if isCommunityManager(resource.data.communityId) || isCommunityMember(resource.data.communityId);
+      // Managers can fully update. Members can only update counts/totalVotes
+      // as part of the atomic votePoll transaction (which also writes pollVotes).
+      // The transaction prevents double-voting via the pollVotes subcollection.
+      allow update: if isCommunityManager(resource.data.communityId)
+        || (isCommunityMember(resource.data.communityId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["counts", "totalVotes"]));
       allow delete: if isCommunityManager(resource.data.communityId);
     }
 
@@ -112,18 +158,35 @@ service cloud.firestore {
 
     match /volunteerActivities/{activityId} {
       allow read: if signedIn();
-      allow create: if isCommunityManager(request.resource.data.communityId);
+      allow create: if isCommunityManager(request.resource.data.communityId)
+        || (request.resource.data.groupId is string && isGroupManager(request.resource.data.groupId));
       allow update: if isCommunityManager(resource.data.communityId)
+        || (resource.data.groupId is string && isGroupManager(resource.data.groupId))
         || request.resource.data.diff(resource.data).affectedKeys().hasOnly(["volunteerCount", "updatedAt"]);
-      allow delete: if isCommunityManager(resource.data.communityId);
+      allow delete: if isCommunityManager(resource.data.communityId)
+        || (resource.data.groupId is string && isGroupManager(resource.data.groupId));
     }
 
     match /activityParticipants/{participantId} {
       allow read: if signedIn();
       allow create: if isCommunityMember(request.resource.data.communityId)
         && request.resource.data.uid == request.auth.uid;
-      allow update: if resource.data.uid == request.auth.uid || isCommunityManager(resource.data.communityId);
+      // Participants can only update their own role; managers can only change role.
+      // This prevents uid/communityId/activityId manipulation.
+      allow update: if (resource.data.uid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["role"]))
+        || (isCommunityManager(resource.data.communityId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["role"]));
       allow delete: if resource.data.uid == request.auth.uid || isCommunityManager(resource.data.communityId);
+    }
+
+    match /activityMessages/{messageId} {
+      allow read: if signedIn()
+        && (isActivityParticipant(resource.data.activityId) || isActivityManager(resource.data.activityId));
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && (isActivityParticipant(request.resource.data.activityId) || isActivityManager(request.resource.data.activityId));
+      allow update, delete: if resource.data.uid == request.auth.uid || isActivityManager(resource.data.activityId);
     }
 
     match /activityEvidence/{evidenceId} {
@@ -133,20 +196,50 @@ service cloud.firestore {
       allow update, delete: if isCommunityManager(resource.data.communityId);
     }
 
+    match /verificationRecords/{recordId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && (isCommunityManager(request.resource.data.communityId)
+          || request.resource.data.submittedBy == request.auth.uid);
+      allow update, delete: if isCommunityManager(resource.data.communityId);
+    }
+
     match /volunteerGroups/{groupId} {
       allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.memberCount == 1;
       allow update: if signedIn()
-        && exists(/databases/$(database)/documents/volunteerGroupMembers/$(groupId + "_" + request.auth.uid));
-      allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
+        && (isGroupManager(groupId)
+          || request.resource.data.diff(resource.data).affectedKeys().hasOnly(["memberCount", "updatedAt"]));
+      allow delete: if signedIn() && isGroupOwner(groupId);
     }
 
     match /volunteerGroupMembers/{membershipId} {
       allow read: if signedIn();
       allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && (request.resource.data.role == "member"
+          || (request.resource.data.role == "owner"
+            && get(/databases/$(database)/documents/volunteerGroups/$(request.resource.data.groupId)).data.ownerId == request.auth.uid));
+      // Owner can only change role of non-owners; owner can only downgrade self to organizer.
+      // Restricted to role field only to prevent uid/groupId manipulation.
+      allow update: if signedIn()
+        && ((isGroupOwner(resource.data.groupId) && resource.data.role != "owner"
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["role"]))
+          || (resource.data.uid == request.auth.uid && resource.data.role == "owner"
+            && request.resource.data.role == "organizer"));
+      allow delete: if signedIn()
+        && (resource.data.uid == request.auth.uid || isGroupOwner(resource.data.groupId))
+        && resource.data.role != "owner";
+    }
+
+    match /volunteerGroupMessages/{messageId} {
+      allow read: if signedIn() && isGroupMember(resource.data.groupId);
+      allow create: if signedIn()
+        && isGroupMember(request.resource.data.groupId)
         && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if signedIn()
-        && resource.data.uid == request.auth.uid;
+      allow update, delete: if resource.data.uid == request.auth.uid || isGroupManager(resource.data.groupId);
     }
   }
 }
