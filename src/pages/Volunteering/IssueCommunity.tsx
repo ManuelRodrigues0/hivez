@@ -1,21 +1,26 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { CalendarDays, CheckCircle2, MapPin, Send, ShieldCheck, Trash2, Users } from "lucide-react";
+import {
+  CalendarDays,
+  CheckCircle2,
+  MapPin,
+  Send,
+  ShieldCheck,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import HivezLoader from "@/components/common/HivezLoader";
 import { useAuth } from "@/context/AuthContext";
 import { useLiveUserSummary } from "@/hooks/useLiveProfile";
 import {
   closePoll,
-  deletePoll,
   createPoll,
   createVolunteerActivity,
+  deletePoll,
   joinActivity,
   leaveActivity,
-  removeCommunityMember,
-  reopenPoll,
-  reviewActivityEvidence,
   listenActivityEvidence,
   listenActivityParticipant,
   listenCommunityMember,
@@ -24,23 +29,44 @@ import {
   listenCommunityPolls,
   listenIssueCommunity,
   listenVolunteerActivities,
+  removeCommunityMember,
+  reopenPoll,
+  reviewActivityEvidence,
   sendCommunityMessage,
   submitActivityEvidence,
   updateActivityDetails,
   updateActivityStatus,
   updateCommunityMemberRole,
   updateCommunityStatus,
+  addActivityTask,
+  assignParticipantRole,
+  listenActivityParticipants,
+  logContactUpdate,
+  removeActivityTask,
+  setParticipantStatus,
+  toggleActivityTask,
+  updateActionProgress,
   votePoll,
 } from "@/services/volunteering";
 import VerificationPanel from "./VerificationPanel";
+import {
+  ACTION_TYPES,
+  getActionType,
+  progressStateLabel,
+  suggestedActionTypes,
+} from "@/utils/actionTypes";
 import type {
+  ActionProgressState,
+  ActionTypeKey,
   ActivityEvidence,
   ActivityParticipant,
   CommunityMember,
   CommunityMessage,
   CommunityPoll,
+  EvidenceTypeKey,
   IssueCommunity,
   IssueCommunityStatus,
+  ParticipantStatus,
   VolunteerActivity,
   VolunteerActivityStatus,
   VolunteerUserSummary,
@@ -98,11 +124,22 @@ export default function IssueCommunityPage() {
   const [activityLocation, setActivityLocation] = useState("");
   const [activityLimit, setActivityLimit] = useState("10");
   const [activityRoles, setActivityRoles] = useState("Volunteer, Organizer");
+  const [actionType, setActionType] = useState<ActionTypeKey | null>(null);
+  const suggestedTypes = useMemo(() => suggestedActionTypes(community?.category), [community?.category]);
   const [evidenceActivityId, setEvidenceActivityId] = useState("");
   const [evidenceDescription, setEvidenceDescription] = useState("");
   const [evidenceUrl, setEvidenceUrl] = useState("");
-  const [evidenceKind, setEvidenceKind] = useState<"BEFORE" | "AFTER" | "REPORT">("AFTER");
+  const [evidenceKind, setEvidenceKind] = useState<EvidenceTypeKey>("AFTER");
   const [beforeEvidenceUrl, setBeforeEvidenceUrl] = useState("");
+  const [participants, setParticipants] = useState<ActivityParticipant[]>([]);
+  const [selectedParticipantId, setSelectedParticipantId] = useState<string | null>(null);
+  const [newTaskLabel, setNewTaskLabel] = useState("");
+  const [contactOrg, setContactOrg] = useState("");
+  const [contactMethod, setContactMethod] = useState("");
+  const [contactResult, setContactResult] = useState("");
+  const [contactNextFollowup, setContactNextFollowup] = useState("");
+  const [contactNotes, setContactNotes] = useState("");
+  const [expandedActionId, setExpandedActionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!communityId) return;
@@ -134,6 +171,12 @@ export default function IssueCommunityPage() {
   useEffect(() => {
     if (!evidenceActivityId && activities[0]) setEvidenceActivityId(activities[0].id);
   }, [activities, evidenceActivityId]);
+
+  // Live participant list for the currently-expanded action.
+  useEffect(() => {
+    if (!expandedActionId) return undefined;
+    return listenActivityParticipants(expandedActionId, setParticipants);
+  }, [expandedActionId]);
 
   async function handleSendMessage(event: FormEvent) {
     event.preventDefault();
@@ -178,6 +221,7 @@ export default function IssueCommunityPage() {
       volunteerLimit: Number(activityLimit) || 0,
       status: "OPEN",
       urgent: false,
+      actionType: actionType || undefined,
       roles: activityRoles.split(",").map((item) => item.trim()).filter(Boolean),
       requirements: "Bring what you need for the activity.",
       instructions: "Coordinate in the community chat before arriving.",
@@ -189,6 +233,7 @@ export default function IssueCommunityPage() {
     setActivityDate("");
     setActivityTime("");
     setActivityLocation("");
+    setActionType(null);
     toast.success("Volunteer action created");
   }
 
@@ -202,7 +247,7 @@ export default function IssueCommunityPage() {
       uid: summary.uid,
       user: summary,
       description: evidenceDescription,
-      kind: evidenceKind,
+      kind: toVerificationKind(evidenceKind),
       mediaUrl: evidenceKind === "BEFORE" ? beforeEvidenceUrl || mediaUrl : mediaUrl,
       beforeMediaUrl: evidenceKind === "BEFORE" ? beforeEvidenceUrl || mediaUrl || null : null,
       afterMediaUrl: evidenceKind === "AFTER" ? mediaUrl || null : null,
@@ -321,12 +366,158 @@ export default function IssueCommunityPage() {
                   <input value={activityLocation} onChange={(e) => setActivityLocation(e.target.value)} placeholder="Meeting point" className="h-12 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
                   <input value={activityLimit} onChange={(e) => setActivityLimit(e.target.value)} placeholder="Volunteer limit" className="h-12 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
                 </div>
-                <input value={activityRoles} onChange={(e) => setActivityRoles(e.target.value)} placeholder="Roles" className="h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                <input value={activityRoles} onChange={(e) => setActivityRoles(e.target.value)} placeholder="Roles (comma separated)" className="h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                <div>
+                  <p className="mb-2 text-[11px] font-black uppercase tracking-wide text-zinc-500">Action type</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {ACTION_TYPES.map((type) => (
+                      <button
+                        key={type.key}
+                        type="button"
+                        onClick={() => setActionType(actionType === type.key ? null : type.key)}
+                        title={type.description}
+                        className={`inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-bold transition ${actionType === type.key ? "border-zinc-950 bg-zinc-950 text-white dark:border-white dark:bg-white dark:text-black" : "border-zinc-200 bg-zinc-50 text-zinc-600 hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"}`}
+                      >
+                        <span>{type.emoji}</span>
+                        {type.label}
+                      </button>
+                    ))}
+                  </div>
+                  {suggestedTypes.length > 0 && (
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                      <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">Suggested:</span>
+                      {suggestedTypes.map((meta) => (
+                        <button
+                          key={meta.key}
+                          type="button"
+                          onClick={() => setActionType(meta.key)}
+                          className="inline-flex h-8 items-center gap-1 rounded-full bg-emerald-100 px-2.5 text-[11px] font-bold text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:hover:bg-emerald-900"
+                        >
+                          <span>{meta.emoji}</span>
+                          {meta.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <button className="h-10 rounded-full bg-zinc-950 px-5 text-sm font-bold text-white dark:bg-white dark:text-black">Create action</button>
               </form>
             )}
             {activities.map((activity) => (
-              <ActivityCard key={activity.id} activity={activity} summary={summary} canManage={canManage} isOwner={isOwner} isCommunityMember={isMember} />
+              <div key={activity.id} className="space-y-2">
+                <ActivityCard
+                  activity={activity}
+                  summary={summary}
+                  canManage={canManage}
+                  isOwner={isOwner}
+                  isCommunityMember={isMember}
+                  expanded={expandedActionId === activity.id}
+                  onToggleExpand={() => { setParticipants([]); setExpandedActionId(expandedActionId === activity.id ? null : activity.id); }}
+                />
+                {expandedActionId === activity.id && canManage && (
+                  <section className="rounded-3xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+                    <p className="text-sm font-black text-zinc-950 dark:text-white">Manage {activity.title}</p>
+
+                    <p className="mt-3 text-xs font-black uppercase tracking-wide text-zinc-500">
+                      Participants · {activity.volunteerCount}{activity.volunteerLimit ? `/${activity.volunteerLimit}` : ""}
+                    </p>
+                    <div className="mt-2 space-y-2">
+                      {participants.map((p) => (
+                        <div
+                          key={p.id}
+                          onClick={() => setSelectedParticipantId(selectedParticipantId === p.id ? null : p.id)}
+                          className={`flex flex-wrap items-center gap-2 rounded-2xl border p-2 ${selectedParticipantId === p.id ? "border-emerald-400 ring-2 ring-emerald-400/30" : "border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900"}`}
+                        >
+                          <img src={p.user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.user.displayName)}&background=111&color=fff`} alt="" className="h-8 w-8 rounded-full object-cover" />
+                          <span className="min-w-0 flex-1 truncate text-sm font-bold text-zinc-900 dark:text-white">{p.user.displayName}</span>
+                          <select
+                            value={p.role}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => assignParticipantRole({ participant: p, activity, role: e.target.value, manager: summary! })
+                              .then(() => toast.success("Role updated"))
+                              .catch((err) => toast.error(err.message))}
+                            className="h-9 rounded-full border border-zinc-200 bg-white px-3 text-xs font-bold dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                          >
+                            {(activity.roles.length ? activity.roles : ["Volunteer"]).map((role) => <option key={role} value={role}>{role}</option>)}
+                          </select>
+                          <select
+                            value={p.participantStatus || "JOINED"}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => setParticipantStatus({ participant: p, activity, status: e.target.value as ParticipantStatus, manager: summary! })
+                              .then(() => toast.success("Status updated"))
+                              .catch((err) => toast.error(err.message))}
+                            className="h-9 rounded-full border border-zinc-200 bg-white px-3 text-xs font-bold capitalize dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                          >
+                            {(["JOINED", "CONFIRMED", "COMPLETED", "WITHDREW"] as const).map((s) => <option key={s} value={s}>{s.toLowerCase()}</option>)}
+                          </select>
+                        </div>
+                      ))}
+                      {!participants.length && <p className="text-xs font-semibold text-zinc-500">No one has joined this action yet.</p>}
+                    </div>
+
+                    <p className="mt-4 text-xs font-black uppercase tracking-wide text-zinc-500">Checklist</p>
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        if (!newTaskLabel.trim()) return;
+                        addActivityTask({ activity, label: newTaskLabel })
+                          .then(() => { setNewTaskLabel(""); toast.success("Task added"); })
+                          .catch((err) => toast.error(err.message));
+                      }}
+                      className="mt-2 flex gap-2"
+                    >
+                      <input value={newTaskLabel} onChange={(e) => setNewTaskLabel(e.target.value)} placeholder="Add a task…" className="h-10 min-w-0 flex-1 rounded-full border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                      <button className="h-10 shrink-0 rounded-full bg-zinc-950 px-4 text-xs font-bold text-white dark:bg-white dark:text-black">Add</button>
+                    </form>
+                    {activity.tasks?.map((task, index) => (
+                      <button
+                        key={task.id}
+                        onClick={() => toggleActivityTask({ activity, index }).catch((err) => toast.error(err.message))}
+                        className={`mt-2 flex w-full items-center gap-2 rounded-2xl border px-3 py-2 text-left text-sm font-semibold ${task.done ? "border-emerald-300 text-zinc-400 line-through dark:border-emerald-800" : "border-zinc-200 text-zinc-800 dark:border-zinc-800 dark:text-white"}`}
+                      >
+                        <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border ${task.done ? "border-emerald-400 bg-emerald-400 text-white" : "border-zinc-300 dark:border-zinc-700"}`}>{task.done && <CheckCircle2 size={13} />}</span>
+                        <span className="min-w-0 flex-1">{task.label}</span>
+                        <span onClick={(e) => { e.stopPropagation(); removeActivityTask({ activity, index }).catch((err) => toast.error(err.message)); }} className="text-red-500"><Trash2 size={14} /></span>
+                      </button>
+                    ))}
+                    {!activity.tasks?.length && <p className="mt-2 text-xs font-semibold text-zinc-500">No tasks yet.</p>}
+
+                    <p className="mt-4 text-xs font-black uppercase tracking-wide text-zinc-500">Contact & follow-up log</p>
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        if (!summary) return;
+                        logContactUpdate({
+                          activity,
+                          user: summary,
+                          contactedOrg: contactOrg,
+                          method: contactMethod,
+                          result: contactResult,
+                          nextFollowUp: contactNextFollowup,
+                          notes: contactNotes,
+                        })
+                          .then(() => {
+                            setContactOrg("");
+                            setContactMethod("");
+                            setContactResult("");
+                            setContactNextFollowup("");
+                            setContactNotes("");
+                            toast.success("Contact update logged");
+                          })
+                          .catch((err) => toast.error(err.message));
+                      }}
+                      className="mt-2 grid gap-2 sm:grid-cols-2"
+                    >
+                      <input value={contactOrg} onChange={(e) => setContactOrg(e.target.value)} placeholder="Organization / person" className="h-10 rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                      <input value={contactMethod} onChange={(e) => setContactMethod(e.target.value)} placeholder="Method (call, email…)" className="h-10 rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                      <input value={contactResult} onChange={(e) => setContactResult(e.target.value)} placeholder="Result / status" className="h-10 rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                      <input value={contactNextFollowup} onChange={(e) => setContactNextFollowup(e.target.value)} placeholder="Next follow-up date" className="h-10 rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                      <input value={contactNotes} onChange={(e) => setContactNotes(e.target.value)} placeholder="Notes" className="h-10 rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white sm:col-span-2" />
+                      <button className="h-10 rounded-full bg-zinc-950 px-5 text-sm font-bold text-white dark:bg-white dark:text-black sm:col-span-2">Log contact update</button>
+                    </form>
+                  </section>
+                )}
+              </div>
             ))}
             {!activities.length && <EmptyBlock text="No volunteer actions yet." />}
           </section>
@@ -479,7 +670,21 @@ function MessagePanel({ messages, canPost, value, onChange, onSubmit, mode }: { 
   );
 }
 
-function ActivityCard({ activity, summary, canManage, isOwner, isCommunityMember }: { activity: VolunteerActivity; summary: VolunteerUserSummary | null; canManage: boolean; isOwner: boolean; isCommunityMember: boolean }) {
+function toVerificationKind(kind: EvidenceTypeKey): "BEFORE" | "AFTER" | "REPORT" | "WITNESS" | "SUPPORTING" {
+  switch (kind) {
+    case "BEFORE":
+    case "AFTER":
+      return kind;
+    case "WITNESS_CONFIRMATION":
+      return "WITNESS";
+    case "REPORT":
+      return "REPORT";
+    default:
+      return "SUPPORTING";
+  }
+}
+
+function ActivityCard({ activity, summary, canManage, isOwner, isCommunityMember, expanded, onToggleExpand }: { activity: VolunteerActivity; summary: VolunteerUserSummary | null; canManage: boolean; isOwner: boolean; isCommunityMember: boolean; expanded: boolean; onToggleExpand: () => void }) {
   const [participant, setParticipant] = useState<ActivityParticipant | null>(null);
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -558,6 +763,11 @@ function ActivityCard({ activity, summary, canManage, isOwner, isCommunityMember
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="font-black text-zinc-950 dark:text-white">{activity.title}</h3>
+          {getActionType(activity.actionType) && (
+            <p className="mt-0.5 text-xs font-bold text-zinc-500">
+              <span>{getActionType(activity.actionType)!.emoji}</span> {getActionType(activity.actionType)!.label}
+            </p>
+          )}
           <p className="mt-1 text-sm leading-6 text-zinc-600 dark:text-zinc-400">{activity.description}</p>
         </div>
         <span className="rounded-full bg-zinc-100 px-3 py-1 text-[11px] font-bold uppercase text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">{pretty(activity.status)}</span>
@@ -571,11 +781,31 @@ function ActivityCard({ activity, summary, canManage, isOwner, isCommunityMember
         <button disabled={!isCommunityMember || busy} onClick={toggleJoin} className="h-10 rounded-full bg-zinc-950 px-5 text-sm font-bold text-white disabled:opacity-50 dark:bg-white dark:text-black">
           {joined ? "Leave action" : "Join action"}
         </button>
-        {canManage && (
-          <select value={activity.status} onChange={(e) => updateActivityStatus(activity.id, e.target.value as VolunteerActivityStatus)} className="h-10 rounded-full border border-zinc-200 bg-white px-4 text-sm font-bold dark:border-zinc-800 dark:bg-zinc-950 dark:text-white">
-            {activityStatuses.map((status) => <option key={status} value={status}>{pretty(status)}</option>)}
-          </select>
+        {canManage ? (
+          <>
+            <select value={activity.status} onChange={(e) => updateActivityStatus(activity.id, e.target.value as VolunteerActivityStatus)} className="h-10 rounded-full border border-zinc-200 bg-white px-4 text-sm font-bold dark:border-zinc-800 dark:bg-zinc-950 dark:text-white">
+              {activityStatuses.map((status) => <option key={status} value={status}>{pretty(status)}</option>)}
+            </select>
+            <select
+              value={activity.progressState || "NOT_STARTED"}
+              onChange={(e) => updateActionProgress({ activity, progressState: e.target.value as ActionProgressState, actor: summary! })}
+              className="h-10 rounded-full border border-zinc-200 bg-white px-4 text-sm font-bold dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+            >
+              {(["NOT_STARTED", "IN_PROGRESS", "WAITING_EXTERNAL", "WAITING_PROFESSIONAL", "AWAITING_EVIDENCE", "AWAITING_VERIFICATION", "COMPLETED"] as const).map((state) => (
+                <option key={state} value={state}>{progressStateLabel(state)}</option>
+              ))}
+            </select>
+          </>
+        ) : (
+          activity.progressState && (
+            <span className="inline-flex h-10 items-center rounded-full bg-emerald-50 px-4 text-xs font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+              {progressStateLabel(activity.progressState)}
+            </span>
+          )
         )}
+        <button onClick={onToggleExpand} className="h-10 rounded-full border border-zinc-200 px-4 text-sm font-bold dark:border-zinc-800">
+          {expanded ? "Hide details" : "Manage"}
+        </button>
         {canManage && <button onClick={() => setEditing(true)} className="h-10 rounded-full border border-zinc-200 px-4 text-sm font-bold dark:border-zinc-800">Edit</button>}
         {isOwner && activity.status !== "CANCELLED" && <button onClick={() => updateActivityStatus(activity.id, "CANCELLED").then(() => toast.success("Action cancelled"))} className="h-10 rounded-full border border-red-200 px-4 text-sm font-bold text-red-500 dark:border-red-950">Cancel action</button>}
       </div>

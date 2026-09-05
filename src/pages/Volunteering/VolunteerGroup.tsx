@@ -40,7 +40,9 @@ import {
   updateGroupMemberRole,
 } from "@/services/volunteering";
 import { formatScheduleText } from "@/utils/volunteering";
+import { ACTION_TYPES } from "@/utils/actionTypes";
 import type {
+  ActionTypeKey,
   IssueCommunity,
   VolunteerActivity,
   VolunteerGroup,
@@ -100,6 +102,7 @@ export default function VolunteerGroupPage() {
   const [activityEndTime, setActivityEndTime] = useState("");
   const [activityLocation, setActivityLocation] = useState("");
   const [activityLimit, setActivityLimit] = useState("");
+  const [actionType, setActionType] = useState<ActionTypeKey | null>(null);
 
   useEffect(() => {
     if (!groupId) return;
@@ -277,6 +280,7 @@ const isMember = Boolean(member);
       volunteerLimit: Number(activityLimit) || 0,
       status: "OPEN",
       urgent: false,
+      actionType: actionType || undefined,
       roles: ["Volunteer"],
       requirements: "Bring what you need for the activity.",
       instructions: "Coordinate in the activity chat before arriving.",
@@ -292,6 +296,7 @@ const isMember = Boolean(member);
     setActivityEndTime("");
     setActivityLocation("");
     setActivityLimit("");
+    setActionType(null);
     toast.success("Volunteer action created");
   }
 
@@ -478,6 +483,23 @@ return (
                 <div className="grid gap-2 sm:grid-cols-2">
                   <input value={activityLocation} onChange={(e) => setActivityLocation(e.target.value)} placeholder="Location" className="h-12 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
                   <input value={activityLimit} onChange={(e) => setActivityLimit(e.target.value)} placeholder="Volunteer limit" className="h-12 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                </div>
+                <div>
+                  <p className="mb-2 text-[11px] font-black uppercase tracking-wide text-zinc-500">Action type</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {ACTION_TYPES.map((type) => (
+                      <button
+                        key={type.key}
+                        type="button"
+                        onClick={() => setActionType(actionType === type.key ? null : type.key)}
+                        title={type.description}
+                        className={`inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-bold transition ${actionType === type.key ? "border-zinc-950 bg-zinc-950 text-white dark:border-white dark:bg-white dark:text-black" : "border-zinc-200 bg-zinc-50 text-zinc-600 hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"}`}
+                      >
+                        <span>{type.emoji}</span>
+                        {type.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <button className="h-10 rounded-full bg-zinc-950 px-5 text-sm font-bold text-white dark:bg-white dark:text-black">Create action</button>
               </form>

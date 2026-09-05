@@ -92,6 +92,84 @@ export interface PollVote {
   createdAt: any;
 }
 
+// =====================================================================
+// ACTION TYPE SYSTEM (additive, deterministic - no AI)
+// =====================================================================
+
+/** Every action belongs to one type. "custom" is the escape hatch. */
+export type ActionTypeKey =
+  | "search"
+  | "meet_coordinate"
+  | "call_contact"
+  | "contact_authority"
+  | "complaint_report"
+  | "collect_evidence"
+  | "spread_awareness"
+  | "on_ground"
+  | "cleanup"
+  | "professional_assistance"
+  | "rescue_recovery"
+  | "location_verification"
+  | "community_coordination"
+  | "online_action"
+  | "resource_collection"
+  | "emergency_support"
+  | "custom";
+
+/**
+ * Distinguishes work volunteers do themselves from work that must be done
+ * by an authority or licensed professional. Never implies volunteers are
+ * performing licensed/dangerous work.
+ */
+export type ActionKind = "volunteer" | "external";
+
+/** Meaningful progress states - orthogonal to the action lifecycle status. */
+export type ActionProgressState =
+  | "NOT_STARTED"
+  | "IN_PROGRESS"
+  | "WAITING_EXTERNAL"
+  | "WAITING_PROFESSIONAL"
+  | "AWAITING_EVIDENCE"
+  | "AWAITING_VERIFICATION"
+  | "COMPLETED";
+
+/** Lightweight per-participant participation status (separate from action status). */
+export type ParticipantStatus = "JOINED" | "CONFIRMED" | "COMPLETED" | "WITHDREW";
+
+/** Granular, human evidence types. `kind` (verification evidence) stays separate. */
+export type EvidenceTypeKey =
+  | "BEFORE"
+  | "DURING"
+  | "AFTER"
+  | "PHOTO"
+  | "VIDEO"
+  | "DOCUMENT"
+  | "SCREENSHOT"
+  | "REPORT"
+  | "LOCATION_CONFIRMATION"
+  | "CONTACT_PROOF"
+  | "AUTHORITY_RESPONSE"
+  | "PROFESSIONAL_CONFIRMATION"
+  | "WITNESS_CONFIRMATION"
+  | "OTHER";
+
+/** Checklist item on an action. Optional and deliberately tiny. */
+export interface ActivityTask {
+  id: string;
+  label: string;
+  done: boolean;
+}
+
+/** Structured contact/follow-up log attached to evidence of type CONTACT_PROOF. */
+export interface ActivityContactUpdate {
+  contactedOrg: string;
+  method: string;
+  result: string;
+  referenceNumber?: string | null;
+  nextFollowUp?: string | null;
+  notes?: string | null;
+}
+
 export interface VolunteerActivity {
   id: string;
   communityId: string;
@@ -120,6 +198,13 @@ export interface VolunteerActivity {
   evidenceRequirements: string;
   createdAt: any;
   updatedAt: any;
+  // ---- Action type system (optional, backwards-compatible) ----
+  actionType?: ActionTypeKey | null;
+  actionKind?: ActionKind | null;
+  progressState?: ActionProgressState | null;
+  /** Free-form per-action-type fields (searchArea, authorityName, referenceNumber...). */
+  typeDetails?: Record<string, string> | null;
+  tasks?: ActivityTask[] | null;
 }
 
 export interface ActivityParticipant {
@@ -132,6 +217,13 @@ export interface ActivityParticipant {
   checkedInAt?: any;
   checkedOutAt?: any;
   joinedAt: any;
+  // ---- Participant management (optional, backwards-compatible) ----
+  participantStatus?: ParticipantStatus | null;
+  /** Responsibility assigned by an authorized manager (e.g. "Documentation"). */
+  responsibility?: string | null;
+  assignedBy?: string | null;
+  assignedAt?: any;
+  updatedAt?: any;
 }
 
 export interface ActivityEvidence {
@@ -154,6 +246,10 @@ export interface ActivityEvidence {
   afterMediaUrl?: string | null;
   completedAt?: string | null;
   locationLabel?: string | null;
+  // ---- Granular evidence type + structured contact updates (optional) ----
+  evidenceType?: EvidenceTypeKey | null;
+  /** Present when evidenceType is CONTACT_PROOF / AUTHORITY_RESPONSE / PROFESSIONAL_CONFIRMATION. */
+  contactUpdate?: ActivityContactUpdate | null;
 }
 
 export interface VolunteerGroup {
@@ -269,11 +365,21 @@ export type VerificationConfidenceLevel = "LOW" | "MODERATE" | "HIGH";
 
 export type VerificationEvidenceKind =
   | "BEFORE"
+  | "DURING"
   | "AFTER"
+  | "PHOTO"
+  | "VIDEO"
+  | "DOCUMENT"
+  | "SCREENSHOT"
   | "REPORT"
+  | "LOCATION_CONFIRMATION"
+  | "CONTACT_PROOF"
+  | "AUTHORITY_RESPONSE"
+  | "PROFESSIONAL_CONFIRMATION"
   | "WITNESS"
   | "COMMUNITY"
-  | "SUPPORTING";
+  | "SUPPORTING"
+  | "OTHER";
 
 /**
  * A verification case ties an issue community (and optionally a specific

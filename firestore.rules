@@ -171,12 +171,15 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create: if isCommunityMember(request.resource.data.communityId)
         && request.resource.data.uid == request.auth.uid;
-      // Participants can only update their own role; managers can only change role.
-      // This prevents uid/communityId/activityId manipulation.
+      // Participants can only update their own role or participation status;
+      // managers can change role, participation status and assigned
+      // responsibility. This prevents uid/communityId/activityId manipulation
+      // and stops anyone from altering someone else's participation state.
       allow update: if (resource.data.uid == request.auth.uid
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["role"]))
+          && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(["role"])
+            || request.resource.data.diff(resource.data).affectedKeys().hasOnly(["participantStatus", "updatedAt"])))
         || (isCommunityManager(resource.data.communityId)
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["role"]));
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["role", "participantStatus", "responsibility", "assignedBy", "assignedAt", "updatedAt"]));
       allow delete: if resource.data.uid == request.auth.uid || isCommunityManager(resource.data.communityId);
     }
 

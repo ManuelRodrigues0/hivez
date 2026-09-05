@@ -18,16 +18,20 @@ import {
 } from "firebase/firestore";
 import { db } from "@/firebase/firebase";
 import type {
+  ActivityContactUpdate,
   ActivityEvidence,
   ActivityMessage,
   ActivityParticipant,
+  ActionProgressState,
   CommunityConfirmation,
   CommunityMember,
   CommunityMessage,
   CommunityPoll,
   CommunityRole,
+  EvidenceTypeKey,
   IssueCommunity,
   IssueCommunityStatus,
+  ParticipantStatus,
   PollVote,
   ReviewerDecision,
   VerificationCase,
@@ -1511,6 +1515,18 @@ export function listenActivityParticipants(activityId: string, onNext: (particip
   });
 }
 
+/**
+ * One listener for every participant across all of a community's actions.
+ * Pages pass slices down per activity card instead of opening one query
+ * listener per card.
+ */
+export function listenCommunityParticipants(communityId: string, onNext: (participants: ActivityParticipant[]) => void) {
+  const q = query(collection(db, "activityParticipants"), where("communityId", "==", communityId));
+  return onSnapshot(q, (snapshot) => {
+    onNext(snapshot.docs.map((item) => ({ id: item.id, ...item.data() } as ActivityParticipant)));
+  });
+}
+
 export function listenActivityMessages(activityId: string, onNext: (messages: ActivityMessage[]) => void) {
   const q = query(collection(db, "activityMessages"), where("activityId", "==", activityId));
   return onSnapshot(q, (snapshot) => {
@@ -1547,6 +1563,227 @@ export function listenVerificationHistory(communityId: string, onNext: (records:
     const data = snapshot.docs.map(
       (item) => ({ id: item.id, ...item.data() } as VerificationHistoryEntry)
     );
+    data.sort((a, b) => (b.createdAt?.toDate?.().getTime?.() || 0) - (a.createdAt?.toDate?.().getTime?.() || 0));
+    onNext(data);
+  });
+}
+
+// =====================================================================
+// ACTION PARTICIPANT MANAGEMENT
+// Authorized managers assign roles / participation states; live profile
+// data is resolved in the UI via useLiveProfiles (never stale snapshots).
+// =====================================================================
+
+/** Manager assigns/updates a participant's working role. */
+export async function assignParticipantRole(input: {
+  participant: ActivityParticipant;
+  activity: VolunteerActivity;
+  role: string;
+  manager: VolunteerUserSummary;
+}) {
+  const { participant, activity, role, manager } = input;
+  const trimmed = role.trim();
+  if (!trimmed) throw new Error("Role cannot be empty.");
+  if (participant.role === trimmed) return;
+
+  await updateDoc(doc(db, "activityParticipants", participantId(activity.id, participant.uid)), {
+    role: trimmed,
+    responsibility: trimmed,
+    assignedBy: manager.uid,
+    assignedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+
+  if (participant.uid !== manager.uid) {
+    await createNotification({
+      recipientId: participant.uid,
+      actor: manager,
+      type: "broadcast",
+      text: `${manager.displayName} assigned you the role “${trimmed}” on “${activity.title}”.`,
+      link: `/issue-community/${activity.communityId}?tab=Actions`,
+    });
+  }
+}
+
+/** Manager sets participation state (joined/confirmed/completed/no-longer). */
+export async function setParticipantStatus(input: {
+  participant: ActivityParticipant;
+  activity: VolunteerActivity;
+  status: ParticipantStatus;
+  manager: VolunteerUserSummary;
+}) {
+  const { participant, activity, status, manager } = input;
+  if (participant.participantStatus === status) return;
+
+  await updateDoc(doc(db, "activityParticipants", participantId(activity.id, participant.uid)), {
+    participantStatus: status,
+    assignedBy: manager.uid,
+    assignedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+
+  if (status === "CONFIRMED" && participant.uid !== manager.uid) {
+    await createNotification({
+      recipientId: participant.uid,
+      actor: manager,
+      type: "broadcast",
+      text: `Your spot on “${activity.title}” was confirmed.`,
+      link: `/issue-community/${activity.communityId}?tab=Actions`,
+    });
+  }
+}
+
+// =====================================================================
+// ACTION PROGRESS
+// Progress states stay separate from the action lifecycle status.
+// =====================================================================
+
+export async function updateActionProgress(input: {
+  activity: VolunteerActivity;
+  progressState: ActionProgressState;
+  progressNote?: string;
+  actor: VolunteerUserSummary;
+}) {
+  const { activity, progressState, progressNote, actor } = input;
+
+  await updateDoc(doc(db, "volunteerActivities", activity.id), {
+    progressState,
+    progressNote: progressNote?.trim() || null,
+    progressUpdatedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+
+  if (activity.organizerId && activity.organizerId !== actor.uid) {
+    await createNotification({
+      recipientId: activity.organizerId,
+      actor,
+      type: "broadcast",
+      text: `"${activity.title}" progress: ${progressState.replaceAll("_", " ").toLowerCase()}.`,
+      link: `/issue-community/${activity.communityId}?tab=Actions`,
+    });
+  }
+}
+
+// =====================================================================
+// ACTION CHECKLIST (lightweight, optional)
+// Tasks live on the activity document. Manager-only writes: a member
+// toggling one task would otherwise rewrite the whole array, so only
+// authorized managers edit the checklist. Transactional so two managers
+// toggling different tasks never lose an update.
+// =====================================================================
+
+export async function addActivityTask(input: {
+  activity: VolunteerActivity;
+  label: string;
+}) {
+  const label = input.label.trim();
+  if (!label) throw new Error("Task cannot be empty.");
+  const tasks = [
+    ...(input.activity.tasks || []),
+    { id: `t${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, label, done: false },
+  ];
+  await updateDoc(doc(db, "volunteerActivities", input.activity.id), {
+    tasks,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function toggleActivityTask(input: {
+  activity: VolunteerActivity;
+  index: number;
+}) {
+  const { activity, index } = input;
+  const activityRef = doc(db, "volunteerActivities", activity.id);
+
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(activityRef);
+    if (!snap.exists()) throw new Error("This action no longer exists.");
+    const tasks = [...(((snap.data() as VolunteerActivity).tasks) || [])];
+    if (index < 0 || index >= tasks.length) return;
+    tasks[index] = { ...tasks[index], done: !tasks[index].done };
+    tx.update(activityRef, { tasks, updatedAt: serverTimestamp() });
+  });
+}
+
+export async function removeActivityTask(input: {
+  activity: VolunteerActivity;
+  index: number;
+}) {
+  const { activity, index } = input;
+  const activityRef = doc(db, "volunteerActivities", activity.id);
+
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(activityRef);
+    if (!snap.exists()) return;
+    const tasks = [...(((snap.data() as VolunteerActivity).tasks) || [])];
+    if (index < 0 || index >= tasks.length) return;
+    tasks.splice(index, 1);
+    tx.update(activityRef, { tasks, updatedAt: serverTimestamp() });
+  });
+}
+
+// =====================================================================
+// EXTERNAL CONTACT / FOLLOW-UP TRACKING
+// Reuses the activityEvidence collection (kind CONTACT_PROOF) with a
+// structured `contactUpdate` object - no duplicate collection. These are
+// coordination records, not completion proof, so they intentionally do
+// NOT create or advance verification cases.
+// =====================================================================
+
+export async function logContactUpdate(input: {
+  activity: VolunteerActivity;
+  user: VolunteerUserSummary;
+  contactedOrg: string;
+  method: string;
+  result: string;
+  referenceNumber?: string;
+  nextFollowUp?: string;
+  notes?: string;
+}) {
+  const { activity, user } = input;
+  const org = input.contactedOrg.trim();
+  if (!org) throw new Error("Who was contacted?");
+  if (!input.result.trim()) throw new Error("What was the result?");
+
+  await addDoc(collection(db, "activityEvidence"), {
+    activityId: activity.id,
+    communityId: activity.communityId,
+    uid: user.uid,
+    user,
+    description:
+      `${input.method.toUpperCase()} to ${org} - ${input.result.trim()}` +
+      (input.referenceNumber ? ` (Ref: ${input.referenceNumber.trim()})` : ""),
+    mediaType: "text",
+    status: "SUBMITTED",
+    evidenceType: "CONTACT_PROOF" satisfies EvidenceTypeKey,
+    contactUpdate: {
+      contactedOrg: org,
+      method: input.method,
+      result: input.result.trim(),
+      referenceNumber: input.referenceNumber?.trim() || null,
+      nextFollowUp: input.nextFollowUp?.trim() || null,
+      notes: input.notes?.trim() || null,
+    } satisfies ActivityContactUpdate,
+    createdAt: serverTimestamp(),
+  });
+
+  // Follow-ups due on a specific date ping the organizer once, when logged.
+  if (input.nextFollowUp?.trim() && activity.organizerId !== user.uid) {
+    await createNotification({
+      recipientId: activity.organizerId,
+      actor: user,
+      type: "broadcast",
+      text: `${user.displayName} logged a contact update on “${activity.title}” - follow up ${input.nextFollowUp.trim()}.`,
+      link: `/issue-community/${activity.communityId}?tab=Actions`,
+    });
+  }
+}
+
+/** Evidence for one action, newest first (drives the action timeline). */
+export function listenActionEvidence(activityId: string, onNext: (evidence: ActivityEvidence[]) => void) {
+  const q = query(collection(db, "activityEvidence"), where("activityId", "==", activityId));
+  return onSnapshot(q, (snapshot) => {
+    const data = snapshot.docs.map((item) => ({ id: item.id, ...item.data() } as ActivityEvidence));
     data.sort((a, b) => (b.createdAt?.toDate?.().getTime?.() || 0) - (a.createdAt?.toDate?.().getTime?.() || 0));
     onNext(data);
   });
