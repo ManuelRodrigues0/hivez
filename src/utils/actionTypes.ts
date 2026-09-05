@@ -25,6 +25,41 @@ export interface ActionTypeMeta {
   evidenceTypes: EvidenceTypeKey[];
 }
 
+/**
+ * Per-action-type form field. Stored on the created activity under
+ * `typeDetails[key]` - no new collections, fully backward compatible.
+ */
+export interface ActionFieldDef {
+  /** Storage key under activity.typeDetails. */
+  key: string;
+  /** Human label shown in the form. */
+  label: string;
+  placeholder?: string;
+  kind: "text" | "textarea" | "date" | "time" | "number" | "select";
+  /** Options for kind === "select". */
+  options?: readonly string[];
+}
+
+/**
+ * Which shared launch fields and which type-specific fields an action type
+ * uses. Keeps remote/coordination actions from forcing physical-event fields
+ * (meeting point, capacity, schedule) that do not apply to them.
+ */
+export interface ActionFormConfig {
+  /** Show date/time scheduling fields. */
+  schedule: boolean;
+  /** Show location + meeting point (physical presence is relevant). */
+  meeting: boolean;
+  /** Show a volunteer capacity limit. */
+  capacity: boolean;
+  /** Show the free-text roles field (false = use defaultRoles). */
+  roles: boolean;
+  /** Join-button label tailored to this action type. */
+  joinLabel: string;
+  /** Type-specific fields collected into activity.typeDetails. */
+  fields: readonly ActionFieldDef[];
+}
+
 export const ACTION_TYPES: ActionTypeMeta[] = [
   {
     key: "search",
@@ -237,5 +272,253 @@ export function progressStateLabel(state: string | null | undefined): string {
     case "COMPLETED": return "Completed";
     default: return "In progress";
   }
+}
+
+// =====================================================================
+// ACTION FORM CONFIG
+// Shared flags + type-specific fields shown only when relevant.
+// =====================================================================
+
+export const ACTION_FORM_DEFS: Record<ActionTypeKey, ActionFormConfig> = {
+  search: {
+    schedule: true,
+    meeting: true,
+    capacity: true,
+    roles: true,
+    joinLabel: "Join search",
+    fields: [
+      { key: "searchArea", label: "Search area / zones", placeholder: "e.g. MG Road, market area, nearby streets", kind: "textarea" },
+      { key: "safetyNotes", label: "Safety notes", placeholder: "e.g. avoid isolated areas after dark", kind: "textarea" },
+    ],
+  },
+  meet_coordinate: {
+    schedule: true,
+    meeting: true,
+    capacity: true,
+    roles: true,
+    joinLabel: "Join meeting",
+    fields: [
+      { key: "agenda", label: "Agenda", placeholder: "What will be discussed / coordinated", kind: "textarea" },
+      { key: "bringItems", label: "Things to bring", placeholder: "e.g. contact lists, printouts", kind: "text" },
+    ],
+  },
+  call_contact: {
+    schedule: false,
+    meeting: false,
+    capacity: false,
+    roles: true,
+    joinLabel: "Help contact",
+    fields: [
+      { key: "contactTarget", label: "Who should be contacted", placeholder: "e.g. animal shelters in the area", kind: "text" },
+      { key: "contactDetails", label: "Contact info", placeholder: "Phone / email / website if available", kind: "textarea" },
+      { key: "contactGoal", label: "What to communicate", placeholder: "What each person should pass on", kind: "textarea" },
+      { key: "followUpDate", label: "Follow-up date", kind: "date" },
+    ],
+  },
+  contact_authority: {
+    schedule: false,
+    meeting: false,
+    capacity: false,
+    roles: true,
+    joinLabel: "Help contact",
+    fields: [
+      { key: "authorityName", label: "Authority / department", placeholder: "e.g. Municipal Corporation, ward office", kind: "text" },
+      { key: "authorityContact", label: "Contact details", placeholder: "Phone / email / grievance portal", kind: "textarea" },
+      { key: "complaintReference", label: "Complaint / reference number", placeholder: "e.g. MC-10234 (if already filed)", kind: "text" },
+      { key: "followUpDate", label: "Follow-up date", kind: "date" },
+    ],
+  },
+  complaint_report: {
+    schedule: false,
+    meeting: false,
+    capacity: false,
+    roles: true,
+    joinLabel: "Submit / join",
+    fields: [
+      { key: "filedWith", label: "Where to submit", placeholder: "e.g. online portal, ward office", kind: "text" },
+      { key: "supportingEvidence", label: "Required supporting evidence", placeholder: "What documents / photos each filing should include", kind: "textarea" },
+      { key: "deadline", label: "Submission deadline", kind: "date" },
+    ],
+  },
+  collect_evidence: {
+    schedule: false,
+    meeting: false,
+    capacity: false,
+    roles: true,
+    joinLabel: "Contribute evidence",
+    fields: [
+      { key: "evidenceGoal", label: "What evidence is needed", placeholder: "e.g. before photos, current condition, witness statements", kind: "textarea" },
+      { key: "evidenceInstructions", label: "Instructions", placeholder: "How to capture and label submissions", kind: "textarea" },
+      { key: "deadline", label: "Deadline", kind: "date" },
+    ],
+  },
+  spread_awareness: {
+    schedule: false,
+    meeting: false,
+    capacity: false,
+    roles: true,
+    joinLabel: "Help spread the word",
+    fields: [
+      { key: "awarenessMessage", label: "Information to share", placeholder: "The message / ask to amplify", kind: "textarea" },
+      { key: "targetAudience", label: "Target audience", placeholder: "e.g. residents near MG Road", kind: "text" },
+      { key: "channels", label: "Channels / areas", placeholder: "e.g. WhatsApp groups, posters in the market area", kind: "text" },
+      { key: "endDate", label: "End date", kind: "date" },
+    ],
+  },
+  on_ground: {
+    schedule: true,
+    meeting: true,
+    capacity: true,
+    roles: true,
+    joinLabel: "Join on-ground team",
+    fields: [
+      { key: "onGroundScope", label: "What to do on the ground", placeholder: "What volunteers will do at the location", kind: "textarea" },
+      { key: "safetyNotes", label: "Safety instructions", kind: "textarea" },
+    ],
+  },
+  cleanup: {
+    schedule: true,
+    meeting: true,
+    capacity: true,
+    roles: true,
+    joinLabel: "Join cleanup",
+    fields: [
+      { key: "supplies", label: "Materials / supplies", placeholder: "e.g. gloves, garbage bags, rakes", kind: "textarea" },
+      { key: "safetyNotes", label: "Safety instructions", kind: "textarea" },
+    ],
+  },
+  professional_assistance: {
+    schedule: false,
+    meeting: false,
+    capacity: false,
+    roles: true,
+    joinLabel: "Assist coordination",
+    fields: [
+      { key: "professionalType", label: "Professional needed", placeholder: "e.g. licensed electrician, structural engineer", kind: "text" },
+      { key: "professionalOrg", label: "Organization / professional contacted", placeholder: "Optional - if already identified", kind: "text" },
+      {
+        key: "contactStatus",
+        label: "Contact status",
+        kind: "select",
+        options: [
+          "Looking for professional",
+          "Professional contacted",
+          "Awaiting response",
+          "Professional assigned",
+          "Work scheduled",
+          "Work in progress",
+          "Work completed",
+        ],
+      },
+      { key: "workDate", label: "Estimated work date", kind: "date" },
+      { key: "notes", label: "Notes", kind: "textarea" },
+    ],
+  },
+  rescue_recovery: {
+    schedule: false,
+    meeting: false,
+    capacity: false,
+    roles: true,
+    joinLabel: "Volunteer assist",
+    fields: [
+      { key: "rescuerContact", label: "Rescuer / organization", placeholder: "e.g. city animal rescue helpline", kind: "text" },
+      { key: "lastKnownLocation", label: "Last known location", kind: "text" },
+      { key: "lastSeenTime", label: "Last seen", placeholder: "e.g. today 6 PM", kind: "text" },
+      { key: "safetyInstructions", label: "Safety instructions", placeholder: "Do not approach - let trained responders handle rescue", kind: "textarea" },
+    ],
+  },
+  location_verification: {
+    schedule: false,
+    meeting: false,
+    capacity: false,
+    roles: true,
+    joinLabel: "Join verification",
+    fields: [
+      { key: "whatToCheck", label: "What should be checked", placeholder: "e.g. does the pothole still exist? Is repair work done?", kind: "textarea" },
+      { key: "verificationInstructions", label: "Instructions", kind: "textarea" },
+      { key: "deadline", label: "Optional deadline", kind: "date" },
+    ],
+  },
+  community_coordination: {
+    schedule: false,
+    meeting: false,
+    capacity: false,
+    roles: true,
+    joinLabel: "Join coordination",
+    fields: [
+      { key: "coordinationGoal", label: "What to coordinate", placeholder: "e.g. rostering volunteers across search and awareness", kind: "textarea" },
+    ],
+  },
+  online_action: {
+    schedule: false,
+    meeting: false,
+    capacity: false,
+    roles: true,
+    joinLabel: "Join online",
+    fields: [
+      { key: "objective", label: "Objective", kind: "textarea" },
+      { key: "onlineTasks", label: "Tasks", placeholder: "e.g. compile shelter list, fill online forms", kind: "textarea" },
+      { key: "contributorsNeeded", label: "Contributors needed", kind: "number" },
+      { key: "deadline", label: "Deadline", kind: "date" },
+    ],
+  },
+  resource_collection: {
+    schedule: false,
+    meeting: false,
+    capacity: false,
+    roles: true,
+    joinLabel: "Donate / contribute",
+    fields: [
+      { key: "resourcesNeeded", label: "Resources needed", placeholder: "e.g. blankets (20), water bottles (30) - one per line with target", kind: "textarea" },
+      { key: "collectionPoint", label: "Collection point", placeholder: "Optional - where to drop supplies", kind: "text" },
+      { key: "deadline", label: "Deadline", kind: "date" },
+    ],
+  },
+  emergency_support: {
+    schedule: false,
+    meeting: false,
+    capacity: false,
+    roles: true,
+    joinLabel: "Assist coordination",
+    fields: [
+      { key: "urgency", label: "Urgency", kind: "select", options: ["High", "Medium", "Low"] },
+      { key: "supportNeeded", label: "Type of support needed", kind: "textarea" },
+      { key: "safetyInstructions", label: "Safety messaging", placeholder: "Community coordinates support - emergency services remain the first responder", kind: "textarea" },
+      { key: "coordinationNotes", label: "Coordination notes", kind: "textarea" },
+    ],
+  },
+  custom: {
+    schedule: false,
+    meeting: false,
+    capacity: false,
+    roles: true,
+    joinLabel: "Join action",
+    fields: [
+      { key: "customDetails", label: "Additional details", placeholder: "Anything participants should know", kind: "textarea" },
+    ],
+  },
+};
+
+/** Form config for any action type, with a safe fallback to custom. */
+export function getActionFormConfig(key: ActionTypeKey | null | undefined): ActionFormConfig {
+  return ACTION_FORM_DEFS[key || "custom"] || ACTION_FORM_DEFS.custom;
+}
+
+/**
+ * Type-specific summary rows for a created action, derived from the live
+ * activity's `typeDetails`. Used by action cards so each type displays its
+ * own relevant configuration (no generic all-purpose card).
+ */
+export function actionTypeSummary(
+  activity: {
+    actionType?: ActionTypeKey | null;
+    typeDetails?: Record<string, string> | null;
+  }
+): { key: string; label: string; value: string }[] {
+  const config = getActionFormConfig(activity.actionType);
+  const details = activity.typeDetails || {};
+  return config.fields
+    .filter((field) => Boolean(details[field.key]))
+    .map((field) => ({ key: field.key, label: field.label, value: details[field.key]! }));
 }
 

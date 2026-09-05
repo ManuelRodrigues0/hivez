@@ -51,6 +51,8 @@ import {
 import VerificationPanel from "./VerificationPanel";
 import {
   ACTION_TYPES,
+  actionTypeSummary,
+  getActionFormConfig,
   getActionType,
   progressStateLabel,
   suggestedActionTypes,
@@ -125,7 +127,10 @@ export default function IssueCommunityPage() {
   const [activityLimit, setActivityLimit] = useState("10");
   const [activityRoles, setActivityRoles] = useState("Volunteer, Organizer");
   const [actionType, setActionType] = useState<ActionTypeKey | null>(null);
+  const [typeFieldValues, setTypeFieldValues] = useState<Record<string, string>>({});
   const suggestedTypes = useMemo(() => suggestedActionTypes(community?.category), [community?.category]);
+  const selectedTypeMeta = actionType ? getActionType(actionType) : null;
+  const formConfig = getActionFormConfig(actionType);
   const [evidenceActivityId, setEvidenceActivityId] = useState("");
   const [evidenceDescription, setEvidenceDescription] = useState("");
   const [evidenceUrl, setEvidenceUrl] = useState("");
@@ -201,9 +206,23 @@ export default function IssueCommunityPage() {
     toast.success("Poll created");
   }
 
+  function chooseActionType(key: ActionTypeKey) {
+    const meta = getActionType(key);
+    setTypeFieldValues({});
+    setActivityRoles(meta?.defaultRoles?.join(", ") || "Volunteer");
+    setActionType(key);
+  }
+
   async function handleCreateActivity(event: FormEvent) {
     event.preventDefault();
-    if (!community || !summary || !canManage || !activityTitle.trim()) return;
+    if (!community || !summary || !canManage || !actionType || !activityTitle.trim()) return;
+    const meta = getActionType(actionType);
+    const config = getActionFormConfig(actionType);
+    const typeDetails: Record<string, string> = {};
+    config.fields.forEach((field) => {
+      const value = typeFieldValues[field.key]?.trim();
+      if (value) typeDetails[field.key] = value;
+    });
     await createVolunteerActivity({
       communityId: community.id,
       issueId: community.issueId,
@@ -212,19 +231,28 @@ export default function IssueCommunityPage() {
       category: community.category,
       organizerId: summary.uid,
       organizer: summary,
-      location: activityLocation || community.location || "",
-      meetingPoint: activityLocation || community.location || "",
-      startDate: activityDate,
-      startTime: activityTime,
-      endDate: activityDate,
+      location: config.meeting ? activityLocation || community.location || "" : "",
+      meetingPoint: config.meeting ? activityLocation || community.location || "" : "",
+      startDate: config.schedule ? activityDate : "",
+      startTime: config.schedule ? activityTime : "",
+      endDate: config.schedule ? activityDate : "",
       endTime: "",
-      volunteerLimit: Number(activityLimit) || 0,
+      volunteerLimit: config.capacity ? Number(activityLimit) || 0 : 0,
       status: "OPEN",
       urgent: false,
-      actionType: actionType || undefined,
-      roles: activityRoles.split(",").map((item) => item.trim()).filter(Boolean),
-      requirements: "Bring what you need for the activity.",
-      instructions: "Coordinate in the community chat before arriving.",
+      actionType,
+      actionKind: meta?.kind || null,
+      typeDetails: Object.keys(typeDetails).length > 0 ? typeDetails : null,
+      roles: config.roles
+        ? activityRoles.split(",").map((item) => item.trim()).filter(Boolean)
+        : meta?.defaultRoles?.length
+          ? meta.defaultRoles
+          : ["Volunteer"],
+      requirements: config.meeting ? "Bring what you need for the activity." : "",
+      instructions:
+        meta?.kind === "external"
+          ? "An external party performs this work - volunteers coordinate and track progress safely."
+          : "Coordinate in the community chat before arriving.",
       verificationMethod: "Organizer review",
       evidenceRequirements: "Upload a photo, video, or short note after the work is done.",
     });
@@ -233,6 +261,8 @@ export default function IssueCommunityPage() {
     setActivityDate("");
     setActivityTime("");
     setActivityLocation("");
+    setActivityLimit("10");
+    setTypeFieldValues({});
     setActionType(null);
     toast.success("Volunteer action created");
   }
@@ -357,51 +387,115 @@ export default function IssueCommunityPage() {
         {activeTab === "Actions" && (
           <section className="space-y-4">
             {canManage && (
-              <form onSubmit={handleCreateActivity} className="space-y-3 rounded-3xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-                <input value={activityTitle} onChange={(e) => setActivityTitle(e.target.value)} placeholder="Action title" className="h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
-                <textarea value={activityDescription} onChange={(e) => setActivityDescription(e.target.value)} placeholder="What needs to happen?" className="min-h-24 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <input type="date" value={activityDate} onChange={(e) => setActivityDate(e.target.value)} className="h-12 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
-                  <input type="time" value={activityTime} onChange={(e) => setActivityTime(e.target.value)} className="h-12 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
-                  <input value={activityLocation} onChange={(e) => setActivityLocation(e.target.value)} placeholder="Meeting point" className="h-12 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
-                  <input value={activityLimit} onChange={(e) => setActivityLimit(e.target.value)} placeholder="Volunteer limit" className="h-12 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
-                </div>
-                <input value={activityRoles} onChange={(e) => setActivityRoles(e.target.value)} placeholder="Roles (comma separated)" className="h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
-                <div>
-                  <p className="mb-2 text-[11px] font-black uppercase tracking-wide text-zinc-500">Action type</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {ACTION_TYPES.map((type) => (
-                      <button
-                        key={type.key}
-                        type="button"
-                        onClick={() => setActionType(actionType === type.key ? null : type.key)}
-                        title={type.description}
-                        className={`inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-bold transition ${actionType === type.key ? "border-zinc-950 bg-zinc-950 text-white dark:border-white dark:bg-white dark:text-black" : "border-zinc-200 bg-zinc-50 text-zinc-600 hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"}`}
-                      >
-                        <span>{type.emoji}</span>
-                        {type.label}
-                      </button>
-                    ))}
-                  </div>
-                  {suggestedTypes.length > 0 && (
-                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                      <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">Suggested:</span>
-                      {suggestedTypes.map((meta) => (
-                        <button
-                          key={meta.key}
-                          type="button"
-                          onClick={() => setActionType(meta.key)}
-                          className="inline-flex h-8 items-center gap-1 rounded-full bg-emerald-100 px-2.5 text-[11px] font-bold text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:hover:bg-emerald-900"
-                        >
-                          <span>{meta.emoji}</span>
-                          {meta.label}
-                        </button>
-                      ))}
+              <>
+                {!actionType ? (
+                  <div className="space-y-4 rounded-3xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+                    <div>
+                      <p className="text-base font-black text-zinc-950 dark:text-white">What should we do?</p>
+                      <p className="text-xs font-semibold text-zinc-500">Choose an action for this issue. Each action has its own focused workflow.</p>
                     </div>
-                  )}
-                </div>
-                <button className="h-10 rounded-full bg-zinc-950 px-5 text-sm font-bold text-white dark:bg-white dark:text-black">Create action</button>
-              </form>
+                    {suggestedTypes.length > 0 && (
+                      <div>
+                        <p className="mb-2 text-[11px] font-black uppercase tracking-wide text-emerald-600 dark:text-emerald-400">Suggested for this issue</p>
+                        <div className="grid gap-1.5 sm:grid-cols-2">
+                          {suggestedTypes.map((meta) => (
+                            <button
+                              key={meta.key}
+                              type="button"
+                              onClick={() => chooseActionType(meta.key)}
+                              title={meta.description}
+                              className="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-left text-sm font-bold text-emerald-800 transition hover:border-emerald-400 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-200"
+                            >
+                              <span className="text-lg">{meta.emoji}</span>
+                              <span className="min-w-0 flex-1 truncate">{meta.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <div>
+                      <p className="mb-2 text-[11px] font-black uppercase tracking-wide text-zinc-500">All action types</p>
+                      <div className="grid gap-1.5 sm:grid-cols-2">
+                        {ACTION_TYPES.map((meta) => (
+                          <button
+                            key={meta.key}
+                            type="button"
+                            onClick={() => chooseActionType(meta.key)}
+                            title={meta.description}
+                            className="flex items-center gap-2 rounded-2xl border border-zinc-200 px-3 py-2.5 text-left text-sm font-bold text-zinc-700 transition hover:border-zinc-400 dark:border-zinc-800 dark:text-zinc-300"
+                          >
+                            <span className="text-lg">{meta.emoji}</span>
+                            <span className="min-w-0 flex-1 truncate">{meta.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <form onSubmit={handleCreateActivity} className="space-y-3 rounded-3xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 items-start gap-2">
+                        <span className="text-xl">{selectedTypeMeta?.emoji}</span>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-black text-zinc-950 dark:text-white">{selectedTypeMeta?.label}</p>
+                          <p className="line-clamp-2 text-[11px] font-semibold leading-4 text-zinc-500">{selectedTypeMeta?.description}</p>
+                        </div>
+                      </div>
+                      <button type="button" onClick={() => setActionType(null)} className="shrink-0 rounded-full border border-zinc-200 px-3 py-1.5 text-[11px] font-bold text-zinc-600 hover:border-zinc-400 dark:border-zinc-800 dark:text-zinc-300">← Change</button>
+                    </div>
+                    <input value={activityTitle} onChange={(e) => setActivityTitle(e.target.value)} placeholder="Action title" className="h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                    <textarea value={activityDescription} onChange={(e) => setActivityDescription(e.target.value)} placeholder="What needs to happen?" className="min-h-20 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                {formConfig.schedule && (
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <input type="date" value={activityDate} onChange={(e) => setActivityDate(e.target.value)} className="h-12 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                        <input type="time" value={activityTime} onChange={(e) => setActivityTime(e.target.value)} className="h-12 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                      </div>
+                    )}
+                    {formConfig.meeting && (
+                      <input value={activityLocation} onChange={(e) => setActivityLocation(e.target.value)} placeholder="Location / meeting point" className="h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                    )}
+                    {formConfig.capacity && (
+                      <input value={activityLimit} onChange={(e) => setActivityLimit(e.target.value)} placeholder="Volunteer limit" className="h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                    )}
+                    {formConfig.roles && (
+                      <input value={activityRoles} onChange={(e) => setActivityRoles(e.target.value)} placeholder="Roles (comma separated)" className="h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                    )}
+
+                    {formConfig.fields.map((field) => {
+                      const value = typeFieldValues[field.key] || "";
+                      const setValue = (next: string) => setTypeFieldValues((prev) => ({ ...prev, [field.key]: next }));
+                      const fieldClass = "h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white";
+                      if (field.kind === "textarea") {
+                        return (
+                          <textarea key={field.key} value={value} onChange={(e) => setValue(e.target.value)} placeholder={field.label} className="min-h-20 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                        );
+                      }
+                      if (field.kind === "select") {
+                        return (
+                          <select key={field.key} value={value} onChange={(e) => setValue(e.target.value)} className={fieldClass}>
+                            <option value="">{field.label}…</option>
+                            {field.options?.map((option) => (
+                              <option key={option} value={option}>{option}</option>
+                            ))}
+                          </select>
+                        );
+                      }
+                      return (
+                        <input
+                          key={field.key}
+                          type={field.kind === "number" ? "number" : field.kind === "date" ? "date" : field.kind === "time" ? "time" : "text"}
+                          value={value}
+                          onChange={(e) => setValue(e.target.value)}
+                          placeholder={field.label}
+                          className={fieldClass}
+                        />
+                      );
+                    })}
+
+                    <button disabled={!activityTitle.trim()} className="h-11 w-full rounded-full bg-zinc-950 text-sm font-bold text-white disabled:opacity-50 dark:bg-white dark:text-black">Create action</button>
+                  </form>
+                )}
+              </>
             )}
             {activities.map((activity) => (
               <div key={activity.id} className="space-y-2">
@@ -696,6 +790,9 @@ function ActivityCard({ activity, summary, canManage, isOwner, isCommunityMember
   const [limit, setLimit] = useState(String(activity.volunteerLimit || ""));
   const [roles, setRoles] = useState(activity.roles.join(", "));
   const joined = Boolean(participant);
+  const cardFormConfig = getActionFormConfig(activity.actionType);
+  const cardSummary = actionTypeSummary(activity);
+  const showLimit = cardFormConfig.capacity && activity.volunteerLimit > 0;
 
   useEffect(() => {
     if (!summary) return;
@@ -769,17 +866,30 @@ function ActivityCard({ activity, summary, canManage, isOwner, isCommunityMember
             </p>
           )}
           <p className="mt-1 text-sm leading-6 text-zinc-600 dark:text-zinc-400">{activity.description}</p>
+          {cardSummary.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {cardSummary.map((row) => (
+                <span key={row.key} className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-0.5 text-[11px] font-semibold text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
+                  {row.label}: {row.value}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
         <span className="rounded-full bg-zinc-100 px-3 py-1 text-[11px] font-bold uppercase text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">{pretty(activity.status)}</span>
       </div>
       <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-zinc-500">
-        <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 dark:bg-zinc-900"><CalendarDays size={14} />{activity.startDate || "Flexible"}</span>
-        <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 dark:bg-zinc-900"><MapPin size={14} />{activity.location || "Nearby"}</span>
-        <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 dark:bg-zinc-900"><Users size={14} />{activity.volunteerCount}{activity.volunteerLimit ? `/${activity.volunteerLimit}` : ""}</span>
+        {activity.startDate && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 dark:bg-zinc-900"><CalendarDays size={14} />{activity.startDate}</span>
+        )}
+        {activity.location && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 dark:bg-zinc-900"><MapPin size={14} />{activity.location}</span>
+        )}
+        <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 dark:bg-zinc-900"><Users size={14} />{activity.volunteerCount}{showLimit ? `/${activity.volunteerLimit}` : ""}</span>
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
         <button disabled={!isCommunityMember || busy} onClick={toggleJoin} className="h-10 rounded-full bg-zinc-950 px-5 text-sm font-bold text-white disabled:opacity-50 dark:bg-white dark:text-black">
-          {joined ? "Leave action" : "Join action"}
+          {joined ? "Leave action" : cardFormConfig.joinLabel}
         </button>
         {canManage ? (
           <>
