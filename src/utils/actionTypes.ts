@@ -504,6 +504,38 @@ export function getActionFormConfig(key: ActionTypeKey | null | undefined): Acti
   return ACTION_FORM_DEFS[key || "custom"] || ACTION_FORM_DEFS.custom;
 }
 
+/** Groups of action types for a discoverable chooser (pure presentation). */
+export const ACTION_TYPE_GROUPS: { label: string; keys: ActionTypeKey[] }[] = [
+  { label: "Community / On-ground", keys: ["cleanup", "on_ground", "meet_coordinate", "search"] },
+  { label: "External / coordination", keys: ["call_contact", "contact_authority", "complaint_report", "professional_assistance"] },
+  { label: "Evidence / information", keys: ["collect_evidence", "location_verification", "online_action", "spread_awareness"] },
+  { label: "Recovery & safety", keys: ["rescue_recovery", "emergency_support"] },
+  { label: "Other", keys: ["resource_collection", "community_coordination", "custom"] },
+];
+
+/** Action-specific create-button label. */
+export function createActionLabel(key: ActionTypeKey | null | undefined): string {
+  switch (key) {
+    case "search": return "Create search";
+    case "meet_coordinate": return "Create meeting";
+    case "call_contact": return "Create contact action";
+    case "contact_authority": return "Create authority contact";
+    case "complaint_report": return "Create complaint campaign";
+    case "collect_evidence": return "Create evidence task";
+    case "spread_awareness": return "Create awareness campaign";
+    case "on_ground": return "Create on-ground action";
+    case "cleanup": return "Create cleanup";
+    case "professional_assistance": return "Create professional task";
+    case "rescue_recovery": return "Create rescue action";
+    case "location_verification": return "Create location check";
+    case "community_coordination": return "Create coordination";
+    case "online_action": return "Create online action";
+    case "resource_collection": return "Create collection drive";
+    case "emergency_support": return "Create support action";
+    default: return "Create action";
+  }
+}
+
 /**
  * Type-specific summary rows for a created action, derived from the live
  * activity's `typeDetails`. Used by action cards so each type displays its

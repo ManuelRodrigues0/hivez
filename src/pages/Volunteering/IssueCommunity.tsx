@@ -4,16 +4,22 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import {
   CalendarDays,
   CheckCircle2,
+  Loader2,
   MapPin,
   Send,
   ShieldCheck,
   Trash2,
+  Upload,
   Users,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import HivezLoader from "@/components/common/HivezLoader";
+import EvidenceGallery from "@/components/volunteering/EvidenceGallery";
+import MediaViewer, { detectMediaType } from "@/components/volunteering/MediaViewer";
 import { useAuth } from "@/context/AuthContext";
 import { useLiveUserSummary } from "@/hooks/useLiveProfile";
+import { uploadToCloudinary } from "@/services/mediaUpload";
 import {
   closePoll,
   createPoll,
@@ -50,13 +56,16 @@ import {
 } from "@/services/volunteering";
 import VerificationPanel from "./VerificationPanel";
 import {
+  ACTION_TYPE_GROUPS,
   ACTION_TYPES,
   actionTypeSummary,
+  createActionLabel,
   getActionFormConfig,
   getActionType,
   progressStateLabel,
   suggestedActionTypes,
 } from "@/utils/actionTypes";
+
 import type {
   ActionProgressState,
   ActionTypeKey,
@@ -69,6 +78,7 @@ import type {
   IssueCommunity,
   IssueCommunityStatus,
   ParticipantStatus,
+  PollVote,
   VolunteerActivity,
   VolunteerActivityStatus,
   VolunteerUserSummary,
@@ -94,7 +104,7 @@ function pretty(value: string) {
   return value.replaceAll("_", " ").toLowerCase();
 }
 
-function timeText(value: any) {
+function timeText(value: { toDate?: () => Date } | null | undefined) {
   if (!value?.toDate) return "";
   return value.toDate().toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
@@ -110,7 +120,7 @@ export default function IssueCommunityPage() {
   const [members, setMembers] = useState<CommunityMember[]>([]);
   const [discussion, setDiscussion] = useState<CommunityMessage[]>([]);
   const [chat, setChat] = useState<CommunityMessage[]>([]);
-  const [polls, setPolls] = useState<Array<CommunityPoll & { myVote?: any }>>([]);
+  const [polls, setPolls] = useState<Array<CommunityPoll & { myVote?: PollVote }>>([]);
   const [activities, setActivities] = useState<VolunteerActivity[]>([]);
   const [evidence, setEvidence] = useState<ActivityEvidence[]>([]);
   const [activeTab, setActiveTab] = useState<Tab>(() =>
@@ -131,11 +141,15 @@ export default function IssueCommunityPage() {
   const suggestedTypes = useMemo(() => suggestedActionTypes(community?.category), [community?.category]);
   const selectedTypeMeta = actionType ? getActionType(actionType) : null;
   const formConfig = getActionFormConfig(actionType);
-  const [evidenceActivityId, setEvidenceActivityId] = useState("");
+  const [creatingAction, setCreatingAction] = useState(false);
+  const [pickedEvidenceActivityId, setPickedEvidenceActivityId] = useState<string | null>(null);
   const [evidenceDescription, setEvidenceDescription] = useState("");
   const [evidenceUrl, setEvidenceUrl] = useState("");
   const [evidenceKind, setEvidenceKind] = useState<EvidenceTypeKey>("AFTER");
   const [beforeEvidenceUrl, setBeforeEvidenceUrl] = useState("");
+  const [evidenceUploading, setEvidenceUploading] = useState(false);
+  const [evidenceSubmitting, setEvidenceSubmitting] = useState(false);
+  const [headerViewerOpen, setHeaderViewerOpen] = useState(false);
   const [participants, setParticipants] = useState<ActivityParticipant[]>([]);
   const [selectedParticipantId, setSelectedParticipantId] = useState<string | null>(null);
   const [newTaskLabel, setNewTaskLabel] = useState("");
@@ -173,9 +187,9 @@ export default function IssueCommunityPage() {
   const isOwner = member?.role === "owner";
   const isMember = Boolean(member);
 
-  useEffect(() => {
-    if (!evidenceActivityId && activities[0]) setEvidenceActivityId(activities[0].id);
-  }, [activities, evidenceActivityId]);
+  // Derived: the first live action preselects the evidence target until the
+  // user explicitly picks one — no sync-in-effect state copy needed.
+  const evidenceActivityId = pickedEvidenceActivityId ?? activities[0]?.id ?? "";
 
   // Live participant list for the currently-expanded action.
   useEffect(() => {
@@ -215,6 +229,7 @@ export default function IssueCommunityPage() {
 
   async function handleCreateActivity(event: FormEvent) {
     event.preventDefault();
+    if (creatingAction) return;
     if (!community || !summary || !canManage || !actionType || !activityTitle.trim()) return;
     const meta = getActionType(actionType);
     const config = getActionFormConfig(actionType);
@@ -223,70 +238,129 @@ export default function IssueCommunityPage() {
       const value = typeFieldValues[field.key]?.trim();
       if (value) typeDetails[field.key] = value;
     });
-    await createVolunteerActivity({
-      communityId: community.id,
-      issueId: community.issueId,
-      title: activityTitle,
-      description: activityDescription,
-      category: community.category,
-      organizerId: summary.uid,
-      organizer: summary,
-      location: config.meeting ? activityLocation || community.location || "" : "",
-      meetingPoint: config.meeting ? activityLocation || community.location || "" : "",
-      startDate: config.schedule ? activityDate : "",
-      startTime: config.schedule ? activityTime : "",
-      endDate: config.schedule ? activityDate : "",
-      endTime: "",
-      volunteerLimit: config.capacity ? Number(activityLimit) || 0 : 0,
-      status: "OPEN",
-      urgent: false,
-      actionType,
-      actionKind: meta?.kind || null,
-      typeDetails: Object.keys(typeDetails).length > 0 ? typeDetails : null,
-      roles: config.roles
-        ? activityRoles.split(",").map((item) => item.trim()).filter(Boolean)
-        : meta?.defaultRoles?.length
-          ? meta.defaultRoles
-          : ["Volunteer"],
-      requirements: config.meeting ? "Bring what you need for the activity." : "",
-      instructions:
-        meta?.kind === "external"
-          ? "An external party performs this work - volunteers coordinate and track progress safely."
-          : "Coordinate in the community chat before arriving.",
-      verificationMethod: "Organizer review",
-      evidenceRequirements: "Upload a photo, video, or short note after the work is done.",
-    });
-    setActivityTitle("");
-    setActivityDescription("");
-    setActivityDate("");
-    setActivityTime("");
-    setActivityLocation("");
-    setActivityLimit("10");
-    setTypeFieldValues({});
-    setActionType(null);
-    toast.success("Volunteer action created");
+    setCreatingAction(true);
+    try {
+      await createVolunteerActivity({
+        communityId: community.id,
+        issueId: community.issueId,
+        title: activityTitle,
+        description: activityDescription,
+        category: community.category,
+        organizerId: summary.uid,
+        organizer: summary,
+        location: config.meeting ? activityLocation || community.location || "" : "",
+        meetingPoint: config.meeting ? activityLocation || community.location || "" : "",
+        startDate: config.schedule ? activityDate : "",
+        startTime: config.schedule ? activityTime : "",
+        endDate: config.schedule ? activityDate : "",
+        endTime: "",
+        volunteerLimit: config.capacity ? Number(activityLimit) || 0 : 0,
+        status: "OPEN",
+        urgent: false,
+        actionType,
+        actionKind: meta?.kind || null,
+        typeDetails: Object.keys(typeDetails).length > 0 ? typeDetails : null,
+        roles: config.roles
+          ? activityRoles.split(",").map((item) => item.trim()).filter(Boolean)
+          : meta?.defaultRoles?.length
+            ? meta.defaultRoles
+            : ["Volunteer"],
+        requirements: config.meeting ? "Bring what you need for the activity." : "",
+        instructions:
+          meta?.kind === "external"
+            ? "An external party performs this work - volunteers coordinate and track progress safely."
+            : "Coordinate in the community chat before arriving.",
+        verificationMethod: "Organizer review",
+        evidenceRequirements: "Upload a photo, video, or short note after the work is done.",
+      });
+      setActivityTitle("");
+      setActivityDescription("");
+      setActivityDate("");
+      setActivityTime("");
+      setActivityLocation("");
+      setActivityLimit("10");
+      setTypeFieldValues({});
+      setActionType(null);
+      toast.success("Volunteer action created");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not create the action. Please try again.");
+    } finally {
+      setCreatingAction(false);
+    }
+  }
+
+  async function uploadEvidenceFile(file: File) {
+    if (evidenceUploading) return null;
+    const isVideo = file.type.startsWith("video");
+    const isImage = file.type.startsWith("image");
+    if (!isVideo && !isImage) {
+      toast.error("Please choose an image or video file.");
+      return null;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error("That file is larger than 15 MB. Please choose a smaller file.");
+      return null;
+    }
+    setEvidenceUploading(true);
+    try {
+      const result = await uploadToCloudinary(file);
+      return { url: result.secure_url, mediaType: (result.resource_type === "video" ? "video" : "image") as "image" | "video" };
+    } catch {
+      toast.error("Upload failed. Check your connection and try again.");
+      return null;
+    } finally {
+      setEvidenceUploading(false);
+    }
+  }
+
+  async function handleEvidenceFile(event: React.ChangeEvent<HTMLInputElement>, target: "main" | "before") {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    const uploaded = await uploadEvidenceFile(file);
+    if (!uploaded) return;
+    const url = uploaded.url;
+    if (target === "before") setBeforeEvidenceUrl(url);
+    else setEvidenceUrl(url);
+    toast.success("Upload complete");
   }
 
   async function handleSubmitEvidence(event: FormEvent) {
     event.preventDefault();
-    if (!community || !summary || !evidenceActivityId || !evidenceDescription.trim()) return;
+    if (!community || !summary || !evidenceActivityId || evidenceSubmitting || evidenceUploading) return;
+    const description = evidenceDescription.trim();
+    if (!description && !evidenceUrl && !beforeEvidenceUrl) {
+      toast.error("Add a short description or media before submitting.");
+      return;
+    }
+    setEvidenceSubmitting(true);
     const mediaUrl = evidenceUrl || undefined;
-    await submitActivityEvidence({
-      activityId: evidenceActivityId,
-      communityId: community.id,
-      uid: summary.uid,
-      user: summary,
-      description: evidenceDescription,
-      kind: toVerificationKind(evidenceKind),
-      mediaUrl: evidenceKind === "BEFORE" ? beforeEvidenceUrl || mediaUrl : mediaUrl,
-      beforeMediaUrl: evidenceKind === "BEFORE" ? beforeEvidenceUrl || mediaUrl || null : null,
-      afterMediaUrl: evidenceKind === "AFTER" ? mediaUrl || null : null,
-      mediaType: (mediaUrl || beforeEvidenceUrl) ? "image" : "text",
-    });
-    setEvidenceDescription("");
-    setEvidenceUrl("");
-    setBeforeEvidenceUrl("");
-    toast.success("Evidence submitted");
+    const beforeUrl = beforeEvidenceUrl || undefined;
+    const mediaType = detectMediaType(mediaUrl || beforeUrl, undefined);
+    try {
+      await submitActivityEvidence({
+        activityId: evidenceActivityId,
+        communityId: community.id,
+        uid: summary.uid,
+        user: summary,
+        description,
+        kind: toVerificationKind(evidenceKind),
+        evidenceType: evidenceKind === "BEFORE" ? "BEFORE" : evidenceKind === "AFTER" ? "AFTER" : "REPORT",
+        mediaUrl,
+        beforeMediaUrl: evidenceKind === "BEFORE" ? beforeUrl || mediaUrl || null : null,
+        afterMediaUrl: evidenceKind === "AFTER" ? mediaUrl || null : null,
+        mediaType,
+      });
+      setEvidenceDescription("");
+      setEvidenceUrl("");
+      setBeforeEvidenceUrl("");
+      toast.success("Evidence submitted for review");
+    } catch (error) {
+      console.error(error);
+      toast.error("Could not submit evidence");
+    } finally {
+      setEvidenceSubmitting(false);
+    }
   }
 
   if (!communityId || !community) {
@@ -310,13 +384,17 @@ export default function IssueCommunityPage() {
           </div>
           <div className="flex items-start gap-2.5 sm:gap-3">
             {community.mediaUrl && (
-              <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-900 sm:h-10 sm:w-10">
+              <button
+                onClick={() => setHeaderViewerOpen(true)}
+                className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-zinc-100 ring-2 ring-transparent transition hover:ring-zinc-300 dark:bg-zinc-900 dark:hover:ring-zinc-700 sm:h-14 sm:w-14"
+                aria-label="Open issue media"
+              >
                 {community.mediaType === "video" ? (
-                  <video src={community.mediaUrl} className="h-full w-full object-cover" playsInline disablePictureInPicture />
+                  <video src={community.mediaUrl} className="h-full w-full object-cover" muted playsInline disablePictureInPicture />
                 ) : (
-                  <img src={community.mediaUrl} alt="" className="h-full w-full object-cover" />
+                  <img src={community.mediaUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
                 )}
-              </div>
+              </button>
             )}
             <Link to={`/issue-community/${community.id}/details`} className="group block flex-1">
               <h1 className="text-lg font-black tracking-tight text-zinc-950 transition group-hover:underline dark:text-white sm:text-xl sm:font-black md:text-2xl">{community.title}</h1>
@@ -326,6 +404,15 @@ export default function IssueCommunityPage() {
           <p className="mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400 sm:mt-1 sm:text-xs">@{community.owner.username}</p>
         </div>
       </header>
+
+      {headerViewerOpen && community.mediaUrl && (
+        <MediaViewer
+          items={[{ src: community.mediaUrl, mediaType: community.mediaType === "video" ? "video" : "image", alt: community.title, caption: community.title }]}
+          index={0}
+          onClose={() => setHeaderViewerOpen(false)}
+          title={community.title}
+        />
+      )}
 
       <nav className="sticky top-0 z-10 flex gap-2 overflow-x-auto border-b border-zinc-200 bg-white/95 px-4 py-3 backdrop-blur-xl dark:border-zinc-800 dark:bg-black/95">
         {tabs.map((tab) => (
@@ -413,22 +500,31 @@ export default function IssueCommunityPage() {
                         </div>
                       </div>
                     )}
-                    <div>
-                      <p className="mb-2 text-[11px] font-black uppercase tracking-wide text-zinc-500">All action types</p>
-                      <div className="grid gap-1.5 sm:grid-cols-2">
-                        {ACTION_TYPES.map((meta) => (
-                          <button
-                            key={meta.key}
-                            type="button"
-                            onClick={() => chooseActionType(meta.key)}
-                            title={meta.description}
-                            className="flex items-center gap-2 rounded-2xl border border-zinc-200 px-3 py-2.5 text-left text-sm font-bold text-zinc-700 transition hover:border-zinc-400 dark:border-zinc-800 dark:text-zinc-300"
-                          >
-                            <span className="text-lg">{meta.emoji}</span>
-                            <span className="min-w-0 flex-1 truncate">{meta.label}</span>
-                          </button>
-                        ))}
-                      </div>
+                    <div className="space-y-3">
+                      <p className="text-[11px] font-black uppercase tracking-wide text-zinc-500">All action types</p>
+                      {ACTION_TYPE_GROUPS.map((group) => {
+                        const options = ACTION_TYPES.filter((meta) => group.keys.includes(meta.key) && !suggestedTypes.some((s) => s.key === meta.key));
+                        if (!options.length) return null;
+                        return (
+                          <div key={group.label}>
+                            <p className="mb-1.5 text-[11px] font-bold text-zinc-400">{group.label}</p>
+                            <div className="grid gap-1.5 sm:grid-cols-2">
+                              {options.map((meta) => (
+                                <button
+                                  key={meta.key}
+                                  type="button"
+                                  onClick={() => chooseActionType(meta.key)}
+                                  title={meta.description}
+                                  className="flex items-center gap-2 rounded-2xl border border-zinc-200 px-3 py-2.5 text-left text-sm font-bold text-zinc-700 transition hover:border-zinc-400 dark:border-zinc-800 dark:text-zinc-300"
+                                >
+                                  <span className="text-lg">{meta.emoji}</span>
+                                  <span className="min-w-0 flex-1 truncate">{meta.label}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 ) : (
@@ -492,7 +588,9 @@ export default function IssueCommunityPage() {
                       );
                     })}
 
-                    <button disabled={!activityTitle.trim()} className="h-11 w-full rounded-full bg-zinc-950 text-sm font-bold text-white disabled:opacity-50 dark:bg-white dark:text-black">Create action</button>
+                    <button disabled={!activityTitle.trim() || creatingAction} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-zinc-950 text-sm font-bold text-white disabled:opacity-50 dark:bg-white dark:text-black">
+                      {creatingAction ? (<><Loader2 size={15} className="animate-spin" /> Creating…</>) : createActionLabel(actionType)}
+                    </button>
                   </form>
                 )}
               </>
@@ -679,7 +777,7 @@ export default function IssueCommunityPage() {
             )}
             {isMember && activities.length > 0 && (
               <form onSubmit={handleSubmitEvidence} className="space-y-3 rounded-3xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-                <select value={evidenceActivityId} onChange={(e) => setEvidenceActivityId(e.target.value)} className="h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-white">
+                <select value={evidenceActivityId} onChange={(e) => setPickedEvidenceActivityId(e.target.value || null)} className="h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-white">
                   {activities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title}</option>)}
                 </select>
                 <div className="flex flex-wrap gap-2">
@@ -690,36 +788,45 @@ export default function IssueCommunityPage() {
                   ))}
                 </div>
                 <textarea value={evidenceDescription} onChange={(e) => setEvidenceDescription(e.target.value)} placeholder="Describe what was completed or verified" className="min-h-24 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
-                {evidenceKind === "BEFORE" && (
-                  <input value={beforeEvidenceUrl} onChange={(e) => setBeforeEvidenceUrl(e.target.value)} placeholder="Optional before photo/video URL" className="h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
+                {evidenceKind === "BEFORE" ? (
+                  <>
+                    <EvidenceMediaField
+                      label="Before photo / video"
+                      value={beforeEvidenceUrl}
+                      onChange={setBeforeEvidenceUrl}
+                      onUpload={(e) => handleEvidenceFile(e, "before")}
+                      uploading={evidenceUploading}
+                      hint="Original condition before any work started."
+                    />
+                    <EvidenceMediaField
+                      label="After photo / video (optional)"
+                      value={evidenceUrl}
+                      onChange={setEvidenceUrl}
+                      onUpload={(e) => handleEvidenceFile(e, "main")}
+                      uploading={evidenceUploading}
+                    />
+                  </>
+                ) : (
+                  <EvidenceMediaField
+                    label={evidenceKind === "AFTER" ? "Result photo / video" : "Optional photo / video"}
+                    value={evidenceUrl}
+                    onChange={setEvidenceUrl}
+                    onUpload={(e) => handleEvidenceFile(e, "main")}
+                    uploading={evidenceUploading}
+                  />
                 )}
-                <input value={evidenceUrl} onChange={(e) => setEvidenceUrl(e.target.value)} placeholder={evidenceKind === "BEFORE" ? "Optional after photo/video URL" : "Optional image/video URL"} className="h-12 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" />
-                <button className="h-10 rounded-full bg-zinc-950 px-5 text-sm font-bold text-white dark:bg-white dark:text-black">Submit evidence</button>
+                <button disabled={evidenceSubmitting || evidenceUploading} className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-zinc-950 px-5 text-sm font-bold text-white disabled:opacity-50 dark:bg-white dark:text-black">
+                  {evidenceSubmitting && <Loader2 size={15} className="animate-spin" />}
+                  {evidenceSubmitting ? "Submitting…" : "Submit evidence"}
+                </button>
               </form>
             )}
-            {evidence.map((item) => (
-              <div key={item.id} className="rounded-3xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-                <div className="flex items-center gap-3">
-                  <img src={item.user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.user.displayName)}&background=111&color=fff`} alt="" className="h-10 w-10 rounded-full object-cover" />
-                  <div>
-                    <p className="text-sm font-black text-zinc-950 dark:text-white">{item.user.displayName}</p>
-                    <p className="text-xs font-semibold text-zinc-500">{pretty(item.status)} • {timeText(item.createdAt)}</p>
-                  </div>
-                </div>
-                <p className="mt-3 text-sm leading-6 text-zinc-700 dark:text-zinc-300">{item.description}</p>
-                {item.mediaUrl && <img src={item.mediaUrl} alt="" className="mt-3 max-h-80 w-full rounded-2xl object-cover" />}
-                {canManage && (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {(["REVIEWED", "ACCEPTED", "REJECTED"] as ActivityEvidence["status"][]).map((status) => (
-                      <button key={status} onClick={() => reviewActivityEvidence(item, status).then(() => toast.success("Evidence updated"))} className="h-9 rounded-full border border-zinc-200 px-3 text-xs font-bold text-zinc-700 hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-900">
-                        {pretty(status)}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-            {!evidence.length && <EmptyBlock text="No evidence submitted yet." />}
+            <EvidenceGallery
+              items={evidence}
+              activities={activities}
+              canManage={canManage}
+              onReview={(item, status) => reviewActivityEvidence(item, status).then(() => toast.success("Evidence updated")).catch((err) => toast.error(err.message))}
+            />
           </section>
         )}
 
@@ -805,8 +912,8 @@ function ActivityCard({ activity, summary, canManage, isOwner, isCommunityMember
     try {
       if (joined) await leaveActivity(activity, summary.uid);
       else await joinActivity(activity, summary, activity.roles[0] || "Volunteer");
-    } catch (error: any) {
-      toast.error(error?.message || "Could not update activity");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update activity");
     } finally {
       setBusy(false);
     }
@@ -939,6 +1046,60 @@ function Metric({ icon, label, value }: { icon: ReactNode; label: string; value:
       <div className="text-zinc-500">{icon}</div>
       <p className="mt-3 text-2xl font-black text-zinc-950 dark:text-white">{value}</p>
       <p className="text-xs font-bold uppercase tracking-wide text-zinc-500">{label}</p>
+    </div>
+  );
+}
+function EvidenceMediaField({
+  label,
+  value,
+  onChange,
+  onUpload,
+  uploading,
+  hint,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  onUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  uploading: boolean;
+  hint?: string;
+}) {
+  const type = detectMediaType(value, undefined);
+  return (
+    <div className="space-y-1.5">
+      <p className="text-[11px] font-black uppercase tracking-wide text-zinc-500">{label}</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border border-dashed border-zinc-300 px-4 text-xs font-bold text-zinc-600 transition hover:border-zinc-400 dark:border-zinc-700 dark:text-zinc-300">
+          {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+          {uploading ? "Uploading…" : "Upload image / video"}
+          <input type="file" accept="image/*,video/*" className="hidden" onChange={onUpload} disabled={uploading} />
+        </label>
+        <span className="text-[11px] font-semibold text-zinc-400">or</span>
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Paste a media URL"
+          className="h-10 min-w-0 flex-1 rounded-full border border-zinc-200 bg-zinc-50 px-4 text-xs outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white"
+        />
+      </div>
+      {hint && <p className="text-[10px] font-semibold text-zinc-400">{hint}</p>}
+      {value && (
+        <div className="relative w-full overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+          {type === "video" ? (
+            <video src={value} muted playsInline preload="metadata" className="max-h-48 w-full object-cover" />
+          ) : (
+            <img src={value} alt="" className="max-h-48 w-full object-cover" />
+          )}
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            aria-label={`Remove ${label}`}
+            className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-black/60 text-white backdrop-blur transition hover:bg-black/80"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -118,3 +118,72 @@ export function scheduleStateLabel(state: ScheduleState): string {
     case "OVER": return "Finished";
   }
 }
+
+/**
+ * Consistent human-readable timestamp for use across volunteering surfaces.
+ * "Just now" → "5 min ago" → "Today · 4:30 PM" → "Sep 12 · 4:30 PM" → "Sep 12, 2026 · 4:30 PM"
+ */
+export function relativeTimeText(value: { toDate?: () => Date } | Date | number | null | undefined): string {
+  if (!value) return "";
+  let date: Date;
+  if (value instanceof Date) {
+    date = value;
+  } else if (typeof value === "number") {
+    date = new Date(value);
+  } else if (typeof value.toDate === "function") {
+    date = value.toDate();
+  } else {
+    date = new Date(NaN);
+  }
+  if (Number.isNaN(date.getTime())) return "";
+
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const minute = 60_000;
+  if (diffMs < minute) return "Just now";
+  if (diffMs < 60 * minute) {
+    const mins = Math.max(1, Math.floor(diffMs / minute));
+    return `${mins} min ago`;
+  }
+  if (diffMs < 24 * 60 * minute && now.toDateString() === date.toDateString()) {
+    return `Today · ${date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+  }
+  const sameYear = now.getFullYear() === date.getFullYear();
+  const day = date.toLocaleDateString([], { month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) });
+  const time = date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return `${day} · ${time}`;
+}
+
+/** Human label for granular evidence types (EvidenceTypeKey). */
+export function evidenceTypeLabel(type?: string | null, fallbackToKind = true): string {
+  switch (type) {
+    case "BEFORE": return "Before photo";
+    case "AFTER": return "After photo";
+    case "DURING": return "Progress photo";
+    case "PHOTO": return "Photo";
+    case "VIDEO": return "Video";
+    case "DOCUMENT": return "Document";
+    case "SCREENSHOT": return "Screenshot";
+    case "REPORT": return "Report";
+    case "LOCATION_CONFIRMATION": return "Location confirmation";
+    case "CONTACT_PROOF": return "Contact proof";
+    case "AUTHORITY_RESPONSE": return "Authority response";
+    case "PROFESSIONAL_CONFIRMATION": return "Professional confirmation";
+    case "WITNESS_CONFIRMATION": return "Witness confirmation";
+    case "OTHER": return "Supporting evidence";
+    default: return fallbackToKind ? evidenceKindLabel(type) : "Supporting evidence";
+  }
+}
+
+/** Human label for verification evidence kinds (VerificationEvidenceKind). */
+export function evidenceKindLabel(kind?: string | null): string {
+  switch (kind) {
+    case "BEFORE": return "Before";
+    case "AFTER": return "After";
+    case "REPORT": return "Report";
+    case "WITNESS": return "Witness confirmation";
+    case "COMMUNITY": return "Community confirmation";
+    case "SUPPORTING": return "Supporting evidence";
+    default: return "Supporting evidence";
+  }
+}

@@ -65,7 +65,7 @@ function pretty(value: string) {
   return value.replaceAll("_", " ").toLowerCase();
 }
 
-function timeText(value: any) {
+function timeText(value: { toDate?: () => Date } | null | undefined) {
   if (!value?.toDate) return "";
   return value.toDate().toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
@@ -143,13 +143,13 @@ export default function VolunteerGroupPage() {
 
   useEffect(() => listenOpenIssueCommunities(setAllCommunities), []);
 
-  // Live issue communities linked to this group (one listener per link).
+  // Live issue communities linked to this group. Keyed on the id list (not
+  // the group object) so frequent group-doc updates don't resubscribe; the
+  // teardown reset keeps a group switch from showing another group's issues.
+  const issueIdsKey = (group?.issueIds ?? []).join(",");
   useEffect(() => {
-    if (!group) {
-      setIssues([]);
-      return;
-    }
-    const unsubs = group.issueIds.map((id) =>
+    if (!issueIdsKey) return undefined;
+    const unsubs = issueIdsKey.split(",").map((id) =>
       onSnapshot(doc(db, "issueCommunities", id), (snap) => {
         setIssues((current) => {
           const rest = current.filter((c) => c.id !== id);
@@ -158,8 +158,11 @@ export default function VolunteerGroupPage() {
         });
       })
     );
-    return () => unsubs.forEach((unsubscribe) => unsubscribe());
-  }, [group]);
+    return () => {
+      unsubs.forEach((unsubscribe) => unsubscribe());
+      setIssues([]);
+    };
+  }, [issueIdsKey]);
 const isMember = Boolean(member);
   const isOwner = member?.role === "owner";
   const isManager = Boolean(member && ["owner", "organizer"].includes(member.role));
@@ -176,8 +179,8 @@ const isMember = Boolean(member);
     try {
       await joinVolunteerGroup(group, summary);
       toast.success(`Joined ${group.name}`);
-    } catch (error: any) {
-      toast.error(error?.message || "Could not join group");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not join group");
     } finally {
       setBusy(false);
     }
@@ -189,8 +192,8 @@ const isMember = Boolean(member);
     try {
       await leaveVolunteerGroup(group, member);
       toast.success("Left group");
-    } catch (error: any) {
-      toast.error(error?.message || "Could not leave group");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not leave group");
     } finally {
       setBusy(false);
     }
@@ -796,8 +799,8 @@ function GroupActivityCard({ activity, summary }: { activity: VolunteerActivity;
     try {
       if (joined) await leaveActivity(activity, summary.uid, summary);
       else await joinActivity(activity, summary, activity.roles[0] || "Volunteer");
-    } catch (error: any) {
-      toast.error(error?.message || "Could not update activity");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update activity");
     } finally {
       setBusy(false);
     }
