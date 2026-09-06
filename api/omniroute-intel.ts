@@ -18,7 +18,7 @@
  * The OmniRoute API key stays server-side. Responses never contain it.
  */
 
-import { INTELLIGENCE_OPS, IntelligenceOp, isIntelligenceOp, logIntel, REQUEST_SETTINGS } from "../lib/omniroute/config.js";
+import { INTELLIGENCE_OPS, IntelligenceOp, isIntelligenceOp, logIntel } from "../lib/omniroute/config.js";
 import type { IntelligenceResponse } from "../lib/omniroute/types.js";
 import { searchHives } from "../lib/omniroute/intelligence/hiveSearch.js";
 import { analyzeIssue, assistDescription } from "../lib/omniroute/intelligence/issueAnalysis.js";
@@ -99,7 +99,13 @@ function _exhaustive(value: never): never {
   return value;
 }
 
-export const config = { maxDuration: REQUEST_SETTINGS.gatewayMaxDuration };
+/**
+ * Vercel requires exported function config values to be statically analyzable
+ * literals: its oxc/ts-morph config extractor throws `Unhandled type` on any
+ * expression (e.g. `REQUEST_SETTINGS.gatewayMaxDuration`). Keep this literal
+ * in sync with the canonical value in lib/omniroute/config.ts.
+ */
+export const config = { maxDuration: 60 };
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   const parsed = parseRequest(req);
