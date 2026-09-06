@@ -95,7 +95,8 @@ service cloud.firestore {
           "broadcasts",
           "settings",
           "admin_logs",
-          "postEngagements"
+          "postEngagements",
+          "hives"
         ];
     }
 

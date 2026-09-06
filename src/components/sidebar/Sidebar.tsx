@@ -2,6 +2,7 @@ import { X, Home, Settings, LogOut } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import SidebarItem from "./SidebarItem";
+import HiveSearch from "../hiveSearch/HiveSearch";
 import { COMMUNITIES } from "../../constants/communities";
 
 interface SidebarProps {
@@ -87,6 +88,14 @@ export default function Sidebar({
 
         <div className="px-5 pt-6 pb-3 text-xs uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
           Hives
+        </div>
+
+        <div className="px-5 pb-2">
+          <HiveSearch
+            placeholder="Search Hives..."
+            maxResults={6}
+            onSelect={(hiveId) => go(`/hive/${hiveId}`)}
+          />
         </div>
 
         <div className="flex-1 overflow-y-auto">

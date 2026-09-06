@@ -29,6 +29,7 @@ import {
   LocateFixed,
   MapPin,
   RefreshCw,
+  Sparkles,
   Trash2,
   TreePine,
   UserRoundSearch,
@@ -44,6 +45,9 @@ import { createLocationSnapshot, locationLabel, type LocationSnapshot } from "@/
 import { REPORT_CATEGORIES, getReportCategory, type ReportCategoryConfig, type ReportUrgency } from "@/config/reportCategories";
 import { validateReportMedia, type MediaValidationResult } from "@/services/mediaValidation";
 import { verifyReportEvidence, type ReportVerificationResult } from "@/services/reportVerification";
+import HiveSearch from "@/components/hiveSearch/HiveSearch";
+import { buildHiveRegistry, intelAnalyzeIssue, intelAssistDescription, type HiveRegistryEntry } from "@/services/omnirouteIntel";
+import { categoryFromHive, createProvisionalHive, isNewIssueCategory } from "@/services/hives";
 
 const iconMap: Record<string, LucideIcon> = {
   Car,
@@ -63,6 +67,16 @@ const iconMap: Record<string, LucideIcon> = {
 };
 
 type ReportStep = "category" | "media" | "verify" | "location" | "details" | "preview";
+
+/** Clean new-issue analysis result surfaced from the OmniRoute intelligence gateway. */
+interface IssueAnalysis {
+  meaningfulness: string;
+  descriptionImageMatch: boolean | null;
+  consistencyNote: string | null;
+  existingHiveId: string | null;
+  existingHiveConfidence: number | null;
+  proposal: { name: string; description: string; aliases: string[]; keywords: string[] } | null;
+}
 
 export default function Create() {
   const { state } = useLocation();
@@ -93,6 +107,14 @@ export default function Create() {
   const [reportFields, setReportFields] = useState<Record<string, string>>({});
   const [reportError, setReportError] = useState("");
   const [locationBusy, setLocationBusy] = useState(false);
+
+  // OmniRoute intelligence: description assistance + new-issue analysis.
+  const [assistBusy, setAssistBusy] = useState(false);
+  const [assistSuggestion, setAssistSuggestion] = useState<{ suggestion: string | null; hints: string[] } | null>(null);
+  const [issueAnalysis, setIssueAnalysis] = useState<IssueAnalysis | null>(null);
+  const [issueAnalysisBusy, setIssueAnalysisBusy] = useState(false);
+  const [analysisRegistry, setAnalysisRegistry] = useState<HiveRegistryEntry[]>([]);
+  const [createdHive, setCreatedHive] = useState<{ id: string; name: string } | null>(null);
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -128,7 +150,11 @@ export default function Create() {
   function toggleMute(index: number) {
     setMutedVideos((current) => {
       const next = new Set(current);
-      next.has(index) ? next.delete(index) : next.add(index);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
       return next;
     });
   }
@@ -349,6 +375,105 @@ export default function Create() {
 
   function updateReportField(id: string, value: string) {
     setReportFields((current) => ({ ...current, [id]: value }));
+  }
+
+  function handleDiscoverySelect(_hiveId: string, hive: HiveRegistryEntry) {
+    logReport(`Hive discovered: ${hive.name}`);
+    selectReportCategory(categoryFromHive(hive));
+  }
+
+  async function runDescriptionAssist() {
+    if (assistBusy) return;
+    if (!reportDescription.trim()) {
+      setReportError("Add a short description first, then we can help you improve it.");
+      return;
+    }
+    setAssistBusy(true);
+    try {
+      const result = await intelAssistDescription(reportDescription);
+      if (result) {
+        setAssistSuggestion({ suggestion: result.suggestion, hints: result.completenessHints });
+      } else {
+        setAssistSuggestion(null);
+        setReportError("Description assistance is unavailable right now. Your text was not changed.");
+      }
+    } finally {
+      setAssistBusy(false);
+    }
+  }
+
+  function acceptAssistSuggestion() {
+    const suggestion = assistSuggestion?.suggestion;
+    if (!suggestion) return;
+    setReportDescription(suggestion);
+    setAssistSuggestion(null);
+    logReport("Description assistance suggestion accepted");
+  }
+
+  function editAssistSuggestion() {
+    // Load the suggestion into the textarea so the user can edit it freely.
+    const suggestion = assistSuggestion?.suggestion;
+    if (!suggestion) return;
+    setReportDescription(suggestion);
+    setAssistSuggestion(null);
+  }
+
+  function discardAssistSuggestion() {
+    setAssistSuggestion(null);
+    logReport("Description assistance suggestion discarded");
+  }
+
+  async function runIssueAnalysis() {
+    if (issueAnalysisBusy) return;
+    if (!reportDescription.trim()) {
+      setReportError("Describe the issue first so we can check whether an existing Hive already covers it.");
+      return;
+    }
+    setIssueAnalysisBusy(true);
+    setIssueAnalysis(null);
+    try {
+      const registry = await buildHiveRegistry();
+      setAnalysisRegistry(registry);
+      const imageDataUrl = await compressImageForIntel(reportFile);
+      const result = await intelAnalyzeIssue({ description: reportDescription, imageDataUrl, registry });
+      setIssueAnalysis(result);
+      if (!result) {
+        setReportError("Issue analysis is unavailable right now. You can continue manually.");
+      }
+    } finally {
+      setIssueAnalysisBusy(false);
+    }
+  }
+
+  function applyExistingHive() {
+    const hiveId = issueAnalysis?.existingHiveId;
+    if (!hiveId) return;
+    const hive = analysisRegistry.find((entry) => entry.id === hiveId);
+    if (!hive) {
+      setReportError("That Hive is no longer available.");
+      return;
+    }
+    logReport(`Existing Hive applied: ${hive.name}`);
+    setIssueAnalysis(null);
+    selectReportCategory(categoryFromHive(hive));
+  }
+
+  async function proposeHive() {
+    const proposal = issueAnalysis?.proposal;
+    if (!proposal || !user) return;
+    try {
+      const created = await createProvisionalHive(
+        { name: proposal.name, description: proposal.description, aliases: proposal.aliases, keywords: proposal.keywords },
+        user.uid,
+      );
+      setCreatedHive({ id: created.id, name: proposal.name });
+      logReport(`Provisional Hive created: ${proposal.name}`);
+      const registry = await buildHiveRegistry();
+      const hive = registry.find((entry) => entry.id === created.id);
+      if (hive) selectReportCategory(categoryFromHive(hive));
+    } catch (error) {
+      setReportError(error instanceof Error ? error.message : "Could not create the Hive.");
+    }
   }
 
   function canContinueDetails() {
@@ -615,7 +740,20 @@ export default function Create() {
           {reportStep === "category" && (
             <section>
               <h1 className="text-2xl font-bold tracking-tight">What are you reporting?</h1>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+
+              <div className="mt-4">
+                <HiveSearch
+                  placeholder="Search or describe the issue..."
+                  maxResults={5}
+                  onSelect={handleDiscoverySelect}
+                />
+              </div>
+
+              <p className="mt-4 text-xs text-muted-foreground">
+                Or browse a category below:
+              </p>
+
+              <div className="mt-2 grid gap-3 sm:grid-cols-2">
                 {REPORT_CATEGORIES.map((item) => {
                   const Icon = iconMap[item.icon] || CircleHelp;
                   return (
@@ -630,6 +768,18 @@ export default function Create() {
                   );
                 })}
               </div>
+
+              <p className="mt-5 text-xs text-muted-foreground">
+                Can't find your issue?{" "}
+                <button
+                  type="button"
+                  onClick={() => selectReportCategory(getReportCategory("other") ?? REPORT_CATEGORIES[REPORT_CATEGORIES.length - 1])}
+                  className="font-semibold text-primary hover:underline"
+                >
+                  Create a new issue
+                </button>{" "}
+                and we'll check for an existing Hive first.
+              </p>
             </section>
           )}
 
@@ -760,6 +910,45 @@ export default function Create() {
                 <div>
                   <label className="mb-2 block text-sm font-semibold">What happened?</label>
                   <textarea value={reportDescription} onChange={(event) => setReportDescription(event.target.value)} rows={5} placeholder="Describe the issue clearly..." className="w-full resize-none rounded-2xl border border-border bg-card p-4 text-sm text-foreground outline-none transition focus:border-primary/50" />
+                  <div className="mt-2 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={runDescriptionAssist}
+                      disabled={assistBusy}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold transition hover:border-primary/50 hover:bg-muted disabled:opacity-50"
+                    >
+                      {assistBusy ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+                      Improve wording
+                    </button>
+                    <span className="text-xs text-muted-foreground">Optional. Your text is only changed when you accept a suggestion.</span>
+                  </div>
+
+                  {assistSuggestion && (
+                    <div className="mt-3 rounded-2xl border border-border bg-card p-4">
+                      <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        <Sparkles size={13} /> Suggested wording
+                      </p>
+                      <p className="mt-2 whitespace-pre-wrap rounded-xl bg-muted p-3 text-sm leading-6 text-foreground">{assistSuggestion.suggestion || "Your description is already clear."}</p>
+                      {assistSuggestion.hints.length > 0 && (
+                        <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                          {assistSuggestion.hints.map((hint) => (
+                            <li key={hint} className="flex gap-1.5"><span>•</span><span>{hint}</span></li>
+                          ))}
+                        </ul>
+                      )}
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button type="button" onClick={acceptAssistSuggestion} disabled={!assistSuggestion.suggestion} className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-50">
+                          <Check size={13} /> Accept
+                        </button>
+                        <button type="button" onClick={editAssistSuggestion} disabled={!assistSuggestion.suggestion} className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold disabled:opacity-50">
+                          Edit
+                        </button>
+                        <button type="button" onClick={discardAssistSuggestion} className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold">
+                          Discard
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 {currentCategory.fields.map((field) => (
                   <div key={field.id}>
@@ -777,6 +966,70 @@ export default function Create() {
                     ))}
                   </div>
                 </div>
+
+                {selectedReportCategory && isNewIssueCategory(selectedReportCategory.id) && (
+                  <div className="rounded-2xl border border-border bg-card p-4">
+                    <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      <Sparkles size={13} /> New issue check
+                    </p>
+                    <p className="mt-2 text-sm leading-5 text-muted-foreground">
+                      We'll first check whether an existing Hive already covers this. If not, we may propose a new one — you stay in control.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={runIssueAnalysis}
+                      disabled={issueAnalysisBusy || !reportDescription.trim()}
+                      className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+                    >
+                      {issueAnalysisBusy && <Loader2 size={14} className="animate-spin" />}
+                      {issueAnalysisBusy ? "Checking..." : "Check for an existing Hive"}
+                    </button>
+
+                    {createdHive && (
+                      <p className="mt-3 rounded-xl bg-muted p-3 text-sm text-foreground">
+                        <span className="font-semibold">New Hive created:</span> {createdHive.name}. Your report will be filed under it.
+                      </p>
+                    )}
+
+                    {issueAnalysis && (
+                      <div className="mt-3 space-y-3 text-sm">
+                        {issueAnalysis.meaningfulness === "NOT_A_MEANINGFUL_REPORTABLE_ISSUE" && (
+                          <p className="rounded-xl bg-muted p-3 text-muted-foreground">
+                            This doesn't look like a community issue we can build a Hive around, but you can still file it under a general category.
+                          </p>
+                        )}
+                        {issueAnalysis.descriptionImageMatch === false && issueAnalysis.consistencyNote && (
+                          <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
+                            {issueAnalysis.consistencyNote}
+                          </p>
+                        )}
+                        {issueAnalysis.existingHiveId && (
+                          <div className="rounded-xl bg-muted p-3">
+                            <p className="font-semibold">An existing Hive may already cover this.</p>
+                            <button type="button" onClick={applyExistingHive} className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">
+                              <Check size={13} /> Use this Hive
+                            </button>
+                          </div>
+                        )}
+                        {issueAnalysis.proposal && (
+                          <div className="rounded-xl bg-muted p-3">
+                            <p className="font-semibold">Proposed new Hive</p>
+                            <p className="mt-1 font-medium">{issueAnalysis.proposal.name}</p>
+                            <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{issueAnalysis.proposal.description}</p>
+                            <button type="button" onClick={proposeHive} className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">
+                              <Check size={13} /> Create this Hive
+                            </button>
+                          </div>
+                        )}
+                        {(issueAnalysis.meaningfulness === "UNCERTAIN" || issueAnalysis.meaningfulness === "NOT_ENOUGH_EVIDENCE") && (
+                          <p className="text-xs text-muted-foreground">
+                            We weren't certain. You can still continue with your report.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               {reportError && <p className="mt-4 text-sm font-medium text-red-500">{reportError}</p>}
               <div className="mt-6 flex justify-end">
@@ -899,4 +1152,30 @@ function cleanUndefined<T>(value: T): T {
   }
 
   return value;
+}
+
+/** Compresses an optional report image for the OmniRoute new-issue analysis. */
+async function compressImageForIntel(file: File | null): Promise<string | null> {
+  if (!file || !file.type.startsWith("image/")) return null;
+  try {
+    const url = URL.createObjectURL(file);
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("image load failed"));
+      img.src = url;
+    });
+    const maxEdge = 768;
+    const scale = Math.min(1, maxEdge / Math.max(image.naturalWidth, image.naturalHeight));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+    const ctx = canvas.getContext("2d");
+    URL.revokeObjectURL(url);
+    if (!ctx) return null;
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", 0.8);
+  } catch {
+    return null;
+  }
 }
