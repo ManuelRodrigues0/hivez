@@ -21,6 +21,7 @@ import { useAuth } from "../../context/AuthContext";
 import { COMMUNITIES } from "../../constants/communities";
 import { logout } from "../../services/auth";
 import CreateModal from "../../components/feed/CreateModal";
+import HiveSearch from "../../components/hiveSearch/HiveSearch";
 import { db } from "@/firebase/firebase";
 import { listenToNotifications, listenToUnreadNotificationsCount } from "@/services/notifications";
 import { listenForForegroundPushNotifications } from "@/services/pushNotifications";
@@ -279,6 +280,18 @@ export default function MainLayout() {
             <span className="rounded-full bg-[#1c1d1a]/5 px-2.5 py-0.5 text-[10px] font-bold text-[#3d654c] dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
               {COMMUNITIES.length} Wards
             </span>
+          </div>
+
+          <div className="mb-2 px-1">
+            <HiveSearch
+              placeholder="Search Hives..."
+              maxResults={6}
+              onSelect={(hiveId) => go(`/hive/${hiveId}`)}
+              onCreateNewIssue={() => {
+                setSidebarOpen(false);
+                navigate("/create", { state: { reportMode: true } });
+              }}
+            />
           </div>
 
           <div className="space-y-1">

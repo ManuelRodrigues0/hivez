@@ -13,6 +13,7 @@ import { hiveStatusLabel } from "@/services/hives";
 
 interface HiveSearchProps {
   onSelect: (hiveId: string, hive: HiveRegistryEntry) => void;
+  onCreateNewIssue?: () => void;
   placeholder?: string;
   maxResults?: number;
   autoFocus?: boolean;
@@ -63,7 +64,7 @@ function deterministicResults(query: string, registry: HiveRegistryEntry[], maxR
     .sort((a, b) => b.score - a.score)
     .slice(0, maxResults);
 }
-export default function HiveSearch({ onSelect, placeholder = "Search Hives...", maxResults = 6, autoFocus = false }: HiveSearchProps) {
+export default function HiveSearch({ onSelect, onCreateNewIssue, placeholder = "Search Hives...", maxResults = 6, autoFocus = false }: HiveSearchProps) {
   const [query, setQuery] = useState("");
   const [registry, setRegistry] = useState<HiveRegistryEntry[]>([]);
   const [registryLoading, setRegistryLoading] = useState(true);
@@ -217,7 +218,14 @@ export default function HiveSearch({ onSelect, placeholder = "Search Hives...", 
           {showSemanticNote ? <p className="px-2 pt-1 text-[11px] text-muted-foreground">Suggested by understanding your description.</p> : null}
 
           {!searching && trimmed.length >= MIN_QUERY_LENGTH && results.length === 0 ? (
-            <p className="px-2 py-2 text-xs text-muted-foreground">{semanticError ? "Hive search is temporarily unavailable. Try again." : <>No Hives found. {trimmed.length < 4 ? "Try a longer description of the issue." : "You can still create a new issue below."}</>}</p>
+            <div className="px-2 py-2">
+              <p className="text-xs text-muted-foreground">{semanticError ? "Hive search is temporarily unavailable." : "No suitable Hive found."}</p>
+              {onCreateNewIssue ? (
+                <button type="button" onClick={onCreateNewIssue} className="mt-2 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition hover:opacity-90">
+                  Create New Issue
+                </button>
+              ) : null}
+            </div>
           ) : null}
         </div>
       )}

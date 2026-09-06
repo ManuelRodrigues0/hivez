@@ -12,31 +12,16 @@ import {
   ArrowLeft,
   BadgeCheck,
   Camera,
-  Car,
   Check,
-  ChevronRight,
-  CircleHelp,
-  Construction,
-  Dog,
-  Droplets,
   FileVideo,
-  HeartHandshake,
-  HeartPulse,
-  HousePlus,
   ImagePlus,
-  Lightbulb,
   Loader2,
   LocateFixed,
   MapPin,
   RefreshCw,
   Sparkles,
-  Trash2,
-  TreePine,
-  UserRoundSearch,
   Volume2,
   VolumeX,
-  Waves,
-  Zap,
   type LucideIcon,
 } from "lucide-react";
 import { createIssueCommunityForPost, getUserSummary } from "@/services/volunteering";
@@ -48,23 +33,6 @@ import { verifyReportEvidence, type ReportVerificationResult } from "@/services/
 import HiveSearch from "@/components/hiveSearch/HiveSearch";
 import { buildHiveRegistry, intelAnalyzeIssue, intelAssistDescription, type HiveRegistryEntry } from "@/services/omnirouteIntel";
 import { categoryFromHive, createProvisionalHive, isNewIssueCategory } from "@/services/hives";
-
-const iconMap: Record<string, LucideIcon> = {
-  Car,
-  CircleHelp,
-  Construction,
-  Dog,
-  Droplets,
-  HeartHandshake,
-  HeartPulse,
-  HousePlus,
-  Lightbulb,
-  Trash2,
-  TreePine,
-  UserRoundSearch,
-  Waves,
-  Zap,
-};
 
 type ReportStep = "category" | "media" | "verify" | "location" | "details" | "preview";
 
@@ -746,40 +714,9 @@ export default function Create() {
                   placeholder="Search or describe the issue..."
                   maxResults={5}
                   onSelect={handleDiscoverySelect}
+                  onCreateNewIssue={() => selectReportCategory(getReportCategory("other") ?? REPORT_CATEGORIES[REPORT_CATEGORIES.length - 1])}
                 />
               </div>
-
-              <p className="mt-4 text-xs text-muted-foreground">
-                Or browse a category below:
-              </p>
-
-              <div className="mt-2 grid gap-3 sm:grid-cols-2">
-                {REPORT_CATEGORIES.map((item) => {
-                  const Icon = iconMap[item.icon] || CircleHelp;
-                  return (
-                    <button key={item.id} type="button" onClick={() => selectReportCategory(item)} className="flex min-h-24 items-center gap-4 rounded-2xl border border-border bg-card p-4 text-left transition hover:border-primary/50 hover:bg-muted">
-                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground"><Icon size={22} /></span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block font-semibold">{item.title}</span>
-                        <span className="mt-1 block text-sm leading-5 text-muted-foreground">{item.description}</span>
-                      </span>
-                      <ChevronRight size={18} className="text-muted-foreground" />
-                    </button>
-                  );
-                })}
-              </div>
-
-              <p className="mt-5 text-xs text-muted-foreground">
-                Can't find your issue?{" "}
-                <button
-                  type="button"
-                  onClick={() => selectReportCategory(getReportCategory("other") ?? REPORT_CATEGORIES[REPORT_CATEGORIES.length - 1])}
-                  className="font-semibold text-primary hover:underline"
-                >
-                  Create a new issue
-                </button>{" "}
-                and we'll check for an existing Hive first.
-              </p>
             </section>
           )}
 
