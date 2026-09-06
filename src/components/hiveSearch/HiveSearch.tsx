@@ -66,16 +66,21 @@ function deterministicResults(query: string, registry: HiveRegistryEntry[], maxR
 export default function HiveSearch({ onSelect, placeholder = "Search Hives...", maxResults = 6, autoFocus = false }: HiveSearchProps) {
   const [query, setQuery] = useState("");
   const [registry, setRegistry] = useState<HiveRegistryEntry[]>([]);
+  const [registryLoading, setRegistryLoading] = useState(true);
   const [semanticMatches, setSemanticMatches] = useState<RankedResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [semanticUsed, setSemanticUsed] = useState(false);
+  const [semanticError, setSemanticError] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const timerRef = useRef<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     buildHiveRegistry().then((entries) => {
-      if (!cancelled) setRegistry(entries);
+      if (!cancelled) {
+        setRegistry(entries);
+        setRegistryLoading(false);
+      }
     });
     return () => {
       cancelled = true;
@@ -105,16 +110,22 @@ export default function HiveSearch({ onSelect, placeholder = "Search Hives...", 
         setSemanticMatches([]);
         setSearching(false);
         setSemanticUsed(false);
+        setSemanticError(false);
         return;
       }
       setSearching(true);
       setSemanticUsed(false);
+      setSemanticError(false);
       const controller = new AbortController();
       abortRef.current = controller;
       intelSearchHives(queryAtDispatch, registry, controller.signal).then((result) => {
+        if (controller.signal.aborted || abortRef.current !== controller) return;
         abortRef.current = null;
         setSearching(false);
-        if (!result) return;
+        if (!result) {
+          setSemanticError(true);
+          return;
+        }
         const byId = new Map(registry.map((hive) => [hive.id, hive]));
         const ranked: RankedResult[] = [];
         result.matches.forEach((match) => {
@@ -150,7 +161,31 @@ export default function HiveSearch({ onSelect, placeholder = "Search Hives...", 
         ) : null}
       </div>
 
-      {trimmed.length >= MIN_QUERY_LENGTH ? (
+      {trimmed.length < MIN_QUERY_LENGTH ? (
+        <div className="mt-2">
+          {registryLoading ? (
+            <div className="flex items-center gap-2 px-2 py-2 text-xs text-muted-foreground">
+              <Loader2 size={13} className="animate-spin" />
+              Loading Hives...
+            </div>
+          ) : (
+            <>
+              <p className="px-2 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Suggested Hives</p>
+              {registry.slice(0, 4).map((hive) => (
+                <button
+                  key={hive.id}
+                  type="button"
+                  onClick={() => onSelect(hive.id, hive)}
+                  className="flex w-full items-center rounded-lg px-2 py-2 text-left text-sm font-medium transition hover:bg-muted"
+                >
+                  {hive.name}
+                  {hiveStatusLabel(hive.status) ? <span className="ml-auto text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{hiveStatusLabel(hive.status)}</span> : null}
+                </button>
+              ))}
+            </>
+          )}
+        </div>
+      ) : (
         <div className="mt-2">
           {searching && results.length === 0 ? (
             <div className="flex items-center gap-2 px-2 py-2 text-xs text-muted-foreground">
@@ -182,10 +217,10 @@ export default function HiveSearch({ onSelect, placeholder = "Search Hives...", 
           {showSemanticNote ? <p className="px-2 pt-1 text-[11px] text-muted-foreground">Suggested by understanding your description.</p> : null}
 
           {!searching && trimmed.length >= MIN_QUERY_LENGTH && results.length === 0 ? (
-            <p className="px-2 py-2 text-xs text-muted-foreground">No Hives found. {trimmed.length < 4 ? "Try a longer description of the issue." : "You can still create a new issue below."}</p>
+            <p className="px-2 py-2 text-xs text-muted-foreground">{semanticError ? "Hive search is temporarily unavailable. Try again." : <>No Hives found. {trimmed.length < 4 ? "Try a longer description of the issue." : "You can still create a new issue below."}</>}</p>
           ) : null}
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

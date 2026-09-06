@@ -95,9 +95,40 @@ service cloud.firestore {
           "broadcasts",
           "settings",
           "admin_logs",
-          "postEngagements",
-          "hives"
+          "postEngagements"
         ];
+    }
+
+    // Dynamic Hives are part of the single searchable registry. Clients may
+    // create only validated provisional entries owned by the signed-in user.
+    match /hives/{hiveId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly([
+          "name", "description", "aliases", "keywords", "status",
+          "reportCount", "createdBy", "createdAt", "updatedAt"
+        ])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 3
+        && request.resource.data.name.size() <= 60
+        && request.resource.data.description is string
+        && request.resource.data.description.size() >= 10
+        && request.resource.data.description.size() <= 300
+        && request.resource.data.aliases is list
+        && request.resource.data.keywords is list
+        && request.resource.data.status == "provisional"
+        && request.resource.data.reportCount == 0
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp;
+      allow update: if signedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "status", "reportCount", "updatedAt"
+        ])
+        && request.resource.data.status in ["provisional", "emerging", "established"]
+        && request.resource.data.reportCount is number
+        && request.resource.data.updatedAt is timestamp;
+      allow delete: if false;
     }
 
     match /issueCommunities/{communityId} {
