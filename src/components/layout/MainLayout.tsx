@@ -13,7 +13,6 @@ import {
   HandHeart,
   MessageCircle,
   Map,
-  ChevronRight,
 } from "lucide-react";
 import { collection, onSnapshot } from "firebase/firestore";
 import gsap from "gsap";
@@ -293,44 +292,6 @@ export default function MainLayout() {
               }}
             />
           </div>
-
-          <div className="space-y-1">
-            {COMMUNITIES.map((community) => {
-              const active = isActive(`/hive/${community.id}`);
-              return (
-                <button
-                  key={community.id}
-                  onClick={() => go(`/hive/${community.id}`)}
-                  className={`gsap-minimal-item group flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200 ${
-                    active
-                      ? "bg-[#3d654c] text-white shadow-sm shadow-[#3d654c]/20 dark:bg-[#f2c14e] dark:text-[#121212] dark:shadow-[#f2c14e]/20"
-                      : "text-[#1c1d1a]/75 hover:bg-[#1c1d1a]/5 hover:text-[#1c1d1a] dark:text-neutral-300 dark:hover:bg-white/5 dark:hover:text-white"
-                  }`}
-                >
-                  <div className="flex items-center gap-3 truncate">
-                    <span
-                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-base transition-transform duration-200 group-hover:scale-110 ${
-                        active
-                          ? "bg-white/20 text-white dark:bg-black/15 dark:text-[#121212]"
-                          : "bg-white border border-[#1c1d1a]/8 shadow-2xs dark:bg-neutral-900 dark:border-neutral-800"
-                      }`}
-                    >
-                      {community.icon}
-                    </span>
-                    <span className="truncate text-sm font-semibold">{community.name}</span>
-                  </div>
-                  <ChevronRight
-                    size={15}
-                    className={`transition-all duration-200 ${
-                      active
-                        ? "opacity-90 text-white dark:text-[#121212] translate-x-0.5"
-                        : "opacity-0 text-[#1c1d1a]/30 group-hover:opacity-100 group-hover:translate-x-0.5 dark:text-neutral-500"
-                    }`}
-                  />
-                </button>
-              );
-            })}
-          </div>
         </div>
       </div>
 
@@ -478,27 +439,6 @@ export default function MainLayout() {
 
               {/* Minimal Divider */}
               <div className="h-[1px] w-6 bg-[#1c1d1a]/10 dark:bg-neutral-800 my-1 shrink-0" />
-
-              {/* Communities Icon Stream */}
-              <div className="flex flex-col items-center w-full space-y-1.5 overflow-y-auto max-h-[46vh] scrollbar-none py-0.5">
-                {COMMUNITIES.map((community) => {
-                  const active = isActive(`/hive/${community.id}`);
-                  return (
-                    <button
-                      key={community.id}
-                      onClick={() => go(`/hive/${community.id}`)}
-                      title={community.name}
-                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg transition-all duration-200 ${
-                        active
-                          ? "bg-[#3d654c] text-white shadow-sm dark:bg-[#f2c14e] dark:text-[#121212] scale-105"
-                          : "text-[#1c1d1a]/80 hover:bg-[#1c1d1a]/5 dark:text-neutral-300 dark:hover:bg-white/10"
-                      }`}
-                    >
-                      <span className="text-base leading-none">{community.icon}</span>
-                    </button>
-                  );
-                })}
-              </div>
             </div>
 
             {/* Bottom Controls */}
