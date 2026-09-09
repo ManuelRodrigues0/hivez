@@ -11,8 +11,10 @@
  * announcements can flow through the existing broadcast mechanism.
  *
  * UPDATE MODEL (stable, admin-friendly contract):
- *   { id, type, title, description, timestamp, eventDate, priority, targetUrl }
- * `id` is a stable dedupe key also used for per-user dismissal.
+ *   { id, type, title, description, timestamp, eventDate, priority, targetUrl, meta }
+ * `id` is a stable dedupe key also used for per-user dismissal. `meta` holds
+ * real per-type display data (action-type identity, counts, media) — the panel
+ * hides anything absent, so nothing is ever fabricated.
  */
 import {
   arrayUnion,
@@ -28,6 +30,7 @@ import {
 import { db } from "@/firebase/firebase";
 import type { IssueCommunity, VolunteerActivity } from "@/types/volunteering";
 import { activityScheduleState } from "@/utils/volunteering";
+import { actionTypeSummary, getActionType } from "@/utils/actionTypes";
 import { listenAllVolunteerActivities, listenOpenIssueCommunities } from "@/services/volunteering";
 export type CommunityUpdateType =
   | "volunteering" // open volunteer session (no fixed schedule yet)
@@ -38,12 +41,37 @@ export type CommunityUpdateType =
 
 export type UpdatePriority = "high" | "medium" | "low";
 
+/**
+ * Optional, additive per-update display metadata for the feed-style panel.
+ * Every value comes from a real existing record — the UI hides anything that
+ * is not present, so nothing is ever fabricated in the sidebar.
+ */
+export interface CommunityUpdateMeta {
+  /** Recognizable source identity (action-type label, "Announcement", "Issue resolved"). */
+  source: string;
+  /** Real organizer / admin / owner display name, when known. */
+  organizer?: string | null;
+  /** Primary place/context: real location or an action-type field value. */
+  context?: string | null;
+  /** Real supporting counts ("8 / 15 volunteers", "4 actions"). */
+  stat?: string | null;
+  /** One real type-specific detail ("Authority: Municipal Corp"). */
+  detail?: string | null;
+  /** Restrained status ("Urgent" | "Upcoming" | "Active" | "Resolved" | "Verified" | "Announcement"). */
+  status?: string | null;
+  /** Action-type emoji from the existing catalog (volunteering source identity). */
+  emoji?: string | null;
+  /** Real media thumbnail (issue media only — never a placeholder). */
+  mediaUrl?: string | null;
+  mediaType?: "image" | "video" | null;
+}
+
 export interface CommunityUpdate {
   /** Stable dedupe + dismissal key: "activity:<id>", "issue:<id>", "broadcast:<id>". */
   id: string;
   type: CommunityUpdateType;
   title: string;
-  /** One-line summary (or pre-formatted event time for scheduled events). */
+  /** One-line summary of the underlying record (never fabricated). */
   description: string;
   /** When the update happened (Firestore-style timestamp). */
   timestamp: { toDate?: () => Date } | Date | null;
@@ -51,6 +79,8 @@ export interface CommunityUpdate {
   eventDate: { startMs: number; label: string } | null;
   priority: UpdatePriority;
   targetUrl: string | null;
+  /** Type-specific real metadata (source identity, counts, status, media). */
+  meta?: CommunityUpdateMeta | null;
 }
 
 interface BroadcastDoc {
@@ -75,6 +105,11 @@ function toMillis(value: { toDate?: () => Date } | Date | number | null | undefi
   if (typeof value === "number") return value;
   if (typeof value.toDate === "function") return value.toDate().getTime();
   return 0;
+}
+
+/** Safely trim optional real values; missing info stays missing (never fabricated). */
+function cleanText(value: string | null | undefined): string {
+  return (value || "").trim();
 }
 
 function startOfDayMs(date: Date): number {
@@ -188,41 +223,124 @@ function fromBroadcast(broadcast: BroadcastDoc): CommunityUpdate {
     eventDate: null,
     priority: announcementPriority(title, body),
     targetUrl: "/notifications",
+    meta: {
+      source: "Announcement",
+      organizer: cleanText(broadcast.adminName) || null,
+      status: "Announcement",
+    },
   };
 }
 
+/**
+ * Real media thumbnail: only issue media that actually exists. Community
+ * updates today only expose `mediaUrl` on the issue record, so we never
+ * attach participant photos or fabricated placeholders here.
+ */
+function issueMedia(community: IssueCommunity): Pick<CommunityUpdateMeta, "mediaUrl" | "mediaType"> {
+  const url = cleanText(community.mediaUrl);
+  if (!url) return { mediaUrl: null, mediaType: null };
+  const kind = cleanText(community.mediaType).toLowerCase();
+  if (kind.includes("video")) return { mediaUrl: url, mediaType: "video" as const };
+  return { mediaUrl: url, mediaType: "image" as const };
+}
+
 function fromResolvedIssue(community: IssueCommunity): CommunityUpdate {
-  const location = community.location?.trim();
+  const location = cleanText(community.location);
+  const actionCount =
+    typeof community.activityCount === "number" && community.activityCount > 0
+      ? `${community.activityCount} action${community.activityCount === 1 ? "" : "s"}`
+      : null;
   return {
     id: `issue:${community.id}`,
     type: "issue_resolved",
     title: community.title || "Community issue",
-    description: location ? `Resolved · ${location}` : "Resolved issue",
+    description: location || cleanText(community.category) || "The issue has been resolved",
     timestamp: community.updatedAt || community.createdAt || null,
     eventDate: null,
     priority: issuePriority(community),
     targetUrl: `/issue-community/${community.id}`,
+    meta: {
+      source: "Issue resolved",
+      context: location || cleanText(community.category) || null,
+      stat: actionCount,
+      status: community.status === "VERIFIED" ? "Verified" : "Resolved",
+      ...issueMedia(community),
+    },
+  };
+}
+
+/**
+ * Volunteering/action-type metadata: the panel reuses the existing
+ * `actionTypes.ts` catalog (`getActionType`) plus the card-level
+ * `actionTypeSummary` rows, so each type displays its own relevant detail
+ * (authority name, reference number, search area, evidence requested...).
+ * Missing values are hidden, never guessed.
+ */
+function activityMeta(
+  activity: VolunteerActivity,
+  scheduled: boolean
+): CommunityUpdateMeta {
+  const catalog = getActionType(activity.actionType);
+  const location = cleanText(activity.location);
+  const summary = actionTypeSummary({
+    actionType: activity.actionType ?? null,
+    typeDetails: activity.typeDetails ?? null,
+  });
+  const firstRow = summary.length > 0 ? summary[0] : null;
+
+  const count = Number(activity.volunteerCount) || 0;
+  const limit = Number(activity.volunteerLimit) || 0;
+  const stat =
+    count > 0 && limit > 0
+      ? `${count} / ${limit} volunteers`
+      : count > 0
+        ? `${count} volunteer${count === 1 ? "" : "s"}`
+        : limit > 0
+          ? `${limit} volunteers needed`
+          : null;
+
+  const organizer =
+    cleanText(activity.organizer?.displayName) ||
+    cleanText(activity.organizer?.username) ||
+    null;
+
+  const status = activity.urgent
+    ? "Urgent"
+    : scheduled
+      ? "Upcoming"
+      : activity.status === "OPEN" || activity.status === "ACTIVE"
+        ? "Active"
+        : null;
+
+  return {
+    source: catalog?.label || "Volunteer action",
+    organizer,
+    context: location || null,
+    stat,
+    detail: firstRow ? `${firstRow.label}: ${firstRow.value}` : null,
+    status,
+    emoji: catalog?.emoji || null,
   };
 }
 
 function fromActivity(activity: VolunteerActivity): CommunityUpdate {
   const startMs = activity.startDate ? parseSchedule(activity.startDate, activity.startTime) : 0;
-  const locationText = activity.location?.trim();
-  const description =
-    startMs > 0
-      ? formatEventDate(activity.startDate, activity.startTime)
-      : locationText
-        ? `Volunteer session · ${locationText}`
-        : "Volunteer session";
+  const scheduled = startMs > 0;
+  const locationText = cleanText(activity.location);
+  const title = activity.title?.trim() || "Volunteer session";
+  const description = locationText || "Volunteer session";
   return {
     id: `activity:${activity.id}`,
-    type: startMs > 0 ? "event" : "volunteering",
-    title: activity.title || "Volunteer session",
+    type: scheduled ? "event" : "volunteering",
+    title,
     description,
     timestamp: activity.createdAt || activity.updatedAt || null,
-    eventDate: startMs > 0 ? { startMs, label: description } : null,
+    eventDate: scheduled
+      ? { startMs, label: formatEventDate(activity.startDate, activity.startTime) }
+      : null,
     priority: activityPriority(activity, Date.now()),
     targetUrl: `/issue-community/${activity.communityId}`,
+    meta: activityMeta(activity, scheduled),
   };
 }
 // =====================================================================
