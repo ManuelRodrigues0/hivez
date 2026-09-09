@@ -99,9 +99,7 @@ export default function MainLayout() {
     "--layout-left": isSidebarExpanded ? "280px" : "72px",
     "--layout-right": "384px",
     "--layout-gap": "16px",
-    "--feed-max": isSidebarExpanded
-      ? "min(760px, calc(100vw - var(--layout-left) - var(--layout-right) - var(--layout-gap)))"
-      : "calc(100vw - var(--layout-left) - var(--layout-right) - var(--layout-gap))",
+    "--feed-max": "min(760px, calc(100vw - var(--layout-left) - var(--layout-right) - var(--layout-gap)))",
     "--media-card-width": isSidebarExpanded ? "204px" : "236px",
   } as CSSProperties;
 
@@ -525,7 +523,7 @@ export default function MainLayout() {
 
           {/* Page Content */}
           <main className="app-main flex-1 overflow-y-auto pb-20 lg:pb-0 lg:pt-16">
-            <div className="app-feed-shell mr-auto w-full max-w-[var(--feed-max)] px-0 transition-[max-width] duration-300 lg:px-0">
+            <div className="app-feed-shell ml-auto mr-0 w-full max-w-[var(--feed-max)] min-w-0 px-0 transition-[max-width] duration-300 lg:px-0">
               <Outlet />
             </div>
           </main>
