@@ -100,7 +100,7 @@ export default function MainLayout() {
     "--layout-right": "384px",
     "--layout-gap": "16px",
     "--feed-max": "min(760px, calc(100vw - var(--layout-right) - var(--layout-gap)))",
-    "--media-card-width": isSidebarExpanded ? "204px" : "236px",
+    "--media-card-width": "236px",
   } as CSSProperties;
 
   const isActive = (path: string) => location.pathname === path;
