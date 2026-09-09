@@ -24,6 +24,7 @@ import HiveSearch from "../../components/hiveSearch/HiveSearch";
 import { db } from "@/firebase/firebase";
 import { listenToNotifications, listenToUnreadNotificationsCount } from "@/services/notifications";
 import { listenForForegroundPushNotifications } from "@/services/pushNotifications";
+import UpdatesPanel from "./UpdatesPanel";
 
 const ultraBeeSrc = "/assets/hivez-ultra-bee.webm";
 
@@ -466,40 +467,7 @@ export default function MainLayout() {
       <div className="flex w-full flex-col transition-[margin] duration-300 lg:ml-[var(--layout-left)]">
         {/* Updates Sidebar (Desktop) */}
         <aside className="app-updates fixed right-0 top-16 hidden h-[calc(100vh-64px)] w-[var(--layout-right)] overflow-y-auto px-4 py-6 lg:block">
-          <div className="app-updates-card rounded-2xl border border-[#1c1d1a]/10 bg-white p-4 dark:border-neutral-800 dark:bg-[#121212]">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-[#1c1d1a]/60 dark:text-neutral-400">Updates</h2>
-              <button className="text-xs font-bold text-[#3d654c] dark:text-[#f2c14e] transition hover:opacity-80">
-                Clear
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-emerald-500 dark:bg-[#f2c14e]"></div>
-                  <p className="text-sm font-semibold text-[#1c1d1a] dark:text-white">System Update</p>
-                </div>
-                <p className="mt-1 text-sm leading-5 text-[#1c1d1a]/70 dark:text-neutral-400">New features have been deployed</p>
-                <p className="mt-1 text-xs text-[#1c1d1a]/50 dark:text-neutral-500">2 hours ago</p>
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-emerald-500 dark:bg-[#f2c14e]"></div>
-                  <p className="text-sm font-semibold text-[#1c1d1a] dark:text-white">Community Growth</p>
-                </div>
-                <p className="mt-1 text-sm leading-5 text-[#1c1d1a]/70 dark:text-neutral-400">100 new members joined this week</p>
-                <p className="mt-1 text-xs text-[#1c1d1a]/50 dark:text-neutral-500">5 hours ago</p>
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-amber-500"></div>
-                  <p className="text-sm font-semibold text-[#1c1d1a] dark:text-white">Maintenance</p>
-                </div>
-                <p className="mt-1 text-sm leading-5 text-[#1c1d1a]/70 dark:text-neutral-400">Scheduled maintenance tonight</p>
-                <p className="mt-1 text-xs text-[#1c1d1a]/50 dark:text-neutral-500">1 day ago</p>
-              </div>
-            </div>
-          </div>
+          <UpdatesPanel />
         </aside>
 
         {/* Content wrapper */}
