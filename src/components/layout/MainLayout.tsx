@@ -99,7 +99,7 @@ export default function MainLayout() {
     "--layout-left": isSidebarExpanded ? "280px" : "72px",
     "--layout-right": "384px",
     "--layout-gap": "16px",
-    "--feed-max": "min(760px, calc(100vw - var(--layout-left) - var(--layout-right) - var(--layout-gap)))",
+    "--feed-max": "min(760px, calc(100vw - var(--layout-right) - var(--layout-gap)))",
     "--media-card-width": isSidebarExpanded ? "204px" : "236px",
   } as CSSProperties;
 
