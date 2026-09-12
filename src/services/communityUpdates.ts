@@ -412,11 +412,19 @@ export async function dismissUpdates(uid: string, keys: string[]): Promise<void>
   await setDoc(dismissalDocRef(uid), { dismissedKeys: arrayUnion(...keys) }, { merge: true });
 }
 
-function listenDismissedUpdateKeys(uid: string, onNext: (keys: Set<string>) => void) {
-  return onSnapshot(dismissalDocRef(uid), (snapshot) => {
-    const data = snapshot.data() as { dismissedKeys?: string[] } | undefined;
-    onNext(new Set(data?.dismissedKeys || []));
-  });
+function listenDismissedUpdateKeys(
+  uid: string,
+  onNext: (keys: Set<string>) => void,
+  onError?: (error: Error) => void
+) {
+  return onSnapshot(
+    dismissalDocRef(uid),
+    (snapshot) => {
+      const data = snapshot.data() as { dismissedKeys?: string[] } | undefined;
+      onNext(new Set(data?.dismissedKeys || []));
+    },
+    onError
+  );
 }
 // =====================================================================
 // Orchestrator: real-time, reuses existing Hivez listeners.
@@ -450,6 +458,14 @@ export function listenCommunityUpdates(
 
   const unsubs: Array<() => void> = [];
 
+  // A failing source must never strand the whole panel in loading forever:
+  // it marks its slot ready (empty) and logs, so valid sources still render.
+  const failSource = (source: string, onReady: () => void) => (error: Error) => {
+    console.error(`[Updates] ${source} unavailable — continuing without it:`, error);
+    onReady();
+    emit();
+  };
+
   unsubs.push(
     onSnapshot(
       query(collection(db, "broadcasts"), orderBy("createdAt", "desc"), limit(10)),
@@ -460,34 +476,53 @@ export function listenCommunityUpdates(
         }));
         broadcastsReady = true;
         emit();
-      }
+      },
+      failSource("announcements", () => {
+        broadcastsReady = true;
+      })
     )
   );
 
   if (uid) {
     unsubs.push(
-      listenDismissedUpdateKeys(uid, (keys) => {
-        dismissed = keys;
-        dismissedReady = true;
-        emit();
-      })
+      listenDismissedUpdateKeys(
+        uid,
+        (keys) => {
+          dismissed = keys;
+          dismissedReady = true;
+          emit();
+        },
+        failSource("dismissals", () => {
+          dismissedReady = true;
+        })
+      )
     );
   }
 
   unsubs.push(
-    listenOpenIssueCommunities((list) => {
-      communities = list;
-      communitiesReady = true;
-      emit();
-    })
+    listenOpenIssueCommunities(
+      (list) => {
+        communities = list;
+        communitiesReady = true;
+        emit();
+      },
+      failSource("issues", () => {
+        communitiesReady = true;
+      })
+    )
   );
 
   unsubs.push(
-    listenAllVolunteerActivities((list) => {
-      activities = list;
-      activitiesReady = true;
-      emit();
-    })
+    listenAllVolunteerActivities(
+      (list) => {
+        activities = list;
+        activitiesReady = true;
+        emit();
+      },
+      failSource("volunteering", () => {
+        activitiesReady = true;
+      })
+    )
   );
 
   return () => unsubs.forEach((unsubscribe) => unsubscribe());

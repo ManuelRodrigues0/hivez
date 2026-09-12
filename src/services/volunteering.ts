@@ -360,12 +360,19 @@ export function listenVolunteerActivities(communityId: string, onNext: (activiti
   });
 }
 
-export function listenAllVolunteerActivities(onNext: (activities: VolunteerActivity[]) => void) {
-  return onSnapshot(collection(db, "volunteerActivities"), (snapshot) => {
-    const data = snapshot.docs.map((item) => ({ id: item.id, ...item.data() } as VolunteerActivity));
-    data.sort((a, b) => `${a.startDate} ${a.startTime}`.localeCompare(`${b.startDate} ${b.startTime}`));
-    onNext(data);
-  });
+export function listenAllVolunteerActivities(
+  onNext: (activities: VolunteerActivity[]) => void,
+  onError?: (error: Error) => void
+) {
+  return onSnapshot(
+    collection(db, "volunteerActivities"),
+    (snapshot) => {
+      const data = snapshot.docs.map((item) => ({ id: item.id, ...item.data() } as VolunteerActivity));
+      data.sort((a, b) => `${a.startDate} ${a.startTime}`.localeCompare(`${b.startDate} ${b.startTime}`));
+      onNext(data);
+    },
+    onError
+  );
 }
 
 export function listenMyActivityParticipants(uid: string, onNext: (participants: ActivityParticipant[]) => void) {
@@ -375,14 +382,21 @@ export function listenMyActivityParticipants(uid: string, onNext: (participants:
   });
 }
 
-export function listenOpenIssueCommunities(onNext: (communities: IssueCommunity[]) => void) {
-  return onSnapshot(collection(db, "issueCommunities"), (snapshot) => {
-    const data = snapshot.docs
-      .map((item) => ({ id: item.id, ...item.data() } as IssueCommunity))
-      .filter((community) => !community.archived);
-    data.sort((a, b) => (b.updatedAt?.toDate?.().getTime?.() || 0) - (a.updatedAt?.toDate?.().getTime?.() || 0));
-    onNext(data);
-  });
+export function listenOpenIssueCommunities(
+  onNext: (communities: IssueCommunity[]) => void,
+  onError?: (error: Error) => void
+) {
+  return onSnapshot(
+    collection(db, "issueCommunities"),
+    (snapshot) => {
+      const data = snapshot.docs
+        .map((item) => ({ id: item.id, ...item.data() } as IssueCommunity))
+        .filter((community) => !community.archived);
+      data.sort((a, b) => (b.updatedAt?.toDate?.().getTime?.() || 0) - (a.updatedAt?.toDate?.().getTime?.() || 0));
+      onNext(data);
+    },
+    onError
+  );
 }
 
 export async function createVolunteerActivity(input: Omit<VolunteerActivity, "id" | "createdAt" | "updatedAt" | "volunteerCount">) {

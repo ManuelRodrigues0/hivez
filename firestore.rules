@@ -144,6 +144,15 @@ service cloud.firestore {
         allow delete: if signedIn() && (request.auth.uid == userId || request.auth.uid == followingId);
         allow update: if false;
       }
+
+      match /updateDismissals/{dismissalId} {
+        // Per-user update dismissal list. Only the owner may read or write it.
+        // Ownership is proven from the path alone, so reads of a not-yet-created
+        // doc succeed instead of denying (which previously stranded Updates in
+        // an infinite loading state).
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId);
+      }
     }
 
     match /posts/{postId} {

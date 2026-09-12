@@ -11,6 +11,17 @@ import Search from "@/pages/Search/Search";
 import Notifications from "@/pages/Notifications/Notifications";
 import MapPage from "@/pages/Map/Map";
 import Settings from "@/pages/Settings/Settings";
+import SettingsLayout from "@/pages/Settings/SettingsLayout";
+import AccountSettings from "@/pages/Settings/AccountSettings";
+import PrivacySettings from "@/pages/Settings/PrivacySettings";
+import SecuritySettings from "@/pages/Settings/SecuritySettings";
+import NotificationsSettings from "@/pages/Settings/NotificationsSettings";
+import ContentPreferencesSettings from "@/pages/Settings/ContentPreferencesSettings";
+import AppearanceSettings from "@/pages/Settings/AppearanceSettings";
+import AccessibilitySettings from "@/pages/Settings/AccessibilitySettings";
+import LanguageSettings from "@/pages/Settings/LanguageSettings";
+import DataSettings from "@/pages/Settings/DataSettings";
+import DeleteAccountSettings from "@/pages/Settings/DeleteAccountSettings";
 import Volunteering from "@/pages/Volunteering/Volunteering";
 import IssueCommunityPage from "@/pages/Volunteering/IssueCommunity";
 import CommunityDetails from "@/pages/Volunteering/CommunityDetails";
@@ -98,7 +109,19 @@ export default function AppRouter() {
         <Route path="/saved" element={<SavedPosts />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/map" element={<MapPage />} />
-        <Route path="/settings" element={<Settings />} />
+        <Route path="/settings" element={<SettingsLayout />}>
+            <Route index element={<Settings />} />
+            <Route path="account" element={<AccountSettings />} />
+            <Route path="privacy" element={<PrivacySettings />} />
+            <Route path="security" element={<SecuritySettings />} />
+            <Route path="notifications" element={<NotificationsSettings />} />
+            <Route path="content" element={<ContentPreferencesSettings />} />
+            <Route path="appearance" element={<AppearanceSettings />} />
+            <Route path="accessibility" element={<AccessibilitySettings />} />
+            <Route path="language" element={<LanguageSettings />} />
+            <Route path="data" element={<DataSettings />} />
+            <Route path="delete" element={<DeleteAccountSettings />} />
+          </Route>
         <Route path="/profile/edit" element={<EditProfile />} />
       </Route>
 

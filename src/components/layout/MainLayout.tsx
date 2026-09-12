@@ -523,7 +523,7 @@ export default function MainLayout() {
 
           {/* Page Content */}
           <main className="app-main flex-1 overflow-y-auto pb-20 lg:pb-0 lg:pt-16">
-            <div className="app-feed-shell ml-auto mr-0 w-full max-w-[var(--feed-max)] min-w-0 px-0 transition-[max-width] duration-300 lg:px-0">
+            <div className="app-feed-shell w-full min-w-0 px-0 lg:ml-[var(--layout-gap)] lg:mr-[var(--layout-gap)]">
               <Outlet />
             </div>
           </main>

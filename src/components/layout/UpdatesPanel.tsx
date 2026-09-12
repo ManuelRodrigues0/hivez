@@ -201,9 +201,25 @@ export default function UpdatesPanel() {
 
   useEffect(() => {
     if (!user) return;
-    return listenCommunityUpdates(user.uid, (next) => {
+
+    // Definitive end to the skeleton: if no source has emitted within a few
+    // seconds (e.g. a listener is denied or a source stalls), resolve with an
+    // empty list. Live sources still replace it the moment they emit.
+    const fallbackTimer = window.setTimeout(() => {
+      setLoaded((current) =>
+        current && current.uid === user.uid ? current : { uid: user.uid, list: [] }
+      );
+    }, 6000);
+
+    const unsubscribe = listenCommunityUpdates(user.uid, (next) => {
+      window.clearTimeout(fallbackTimer);
       setLoaded({ uid: user.uid, list: next });
     });
+
+    return () => {
+      window.clearTimeout(fallbackTimer);
+      unsubscribe();
+    };
   }, [user]);
 
   const ready = loaded !== null && loaded.uid === user?.uid;
