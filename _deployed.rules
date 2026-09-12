@@ -1,0 +1,624 @@
+﻿rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function userDoc(userId) {
+      return get(/databases/$(database)/documents/users/$(userId));
+    }
+
+    function isPrivateAccount(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId))
+        && (
+          userDoc(userId).data.isPrivate == true
+          || userDoc(userId).data.accountPrivacy == "private"
+          || userDoc(userId).data.privacy.account == "private"
+        );
+    }
+
+    function isFollower(followerId, targetId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/follows/$(followerId + "_" + targetId));
+    }
+
+    function canReadProtectedUserContent(userId) {
+      return isOwner(userId)
+        || !isPrivateAccount(userId)
+        || isFollower(request.auth.uid, userId);
+    }
+
+    function canReadPostData(postData) {
+      return signedIn()
+        && postData.uid is string
+        && (
+          postData.uid == request.auth.uid
+          || (
+            !(postData.visibility in ["followers", "private"])
+            && !isPrivateAccount(postData.uid)
+          )
+          || isFollower(request.auth.uid, postData.uid)
+        );
+    }
+
+    function isCommunityMember(communityId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/communityMembers/$(communityId + "_" + request.auth.uid));
+    }
+
+    function isCommunityOwner(communityId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/communityMembers/$(communityId + "_" + request.auth.uid))
+        && get(/databases/$(database)/documents/communityMembers/$(communityId + "_" + request.auth.uid)).data.role == "owner";
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && userDoc(request.auth.uid).data.role == "admin";
+    }
+
+    // Blocks are directional documents with a deterministic pair id. Both
+    // orderings are checked so enforcement holds regardless of who blocked whom.
+    function noBlockBetween(userA, userB) {
+      return userA == userB
+        || (
+          !exists(/databases/$(database)/documents/blocks/$(userA + "_" + userB))
+          && !exists(/databases/$(database)/documents/blocks/$(userB + "_" + userA))
+        );
+    }
+
+    function isCommunityManager(communityId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/communityMembers/$(communityId + "_" + request.auth.uid))
+        && get(/databases/$(database)/documents/communityMembers/$(communityId + "_" + request.auth.uid)).data.role in ["owner", "organizer", "moderator"];
+    }
+
+    function isGroupMember(groupId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/volunteerGroupMembers/$(groupId + "_" + request.auth.uid));
+    }
+
+    function isGroupManager(groupId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/volunteerGroupMembers/$(groupId + "_" + request.auth.uid))
+        && get(/databases/$(database)/documents/volunteerGroupMembers/$(groupId + "_" + request.auth.uid)).data.role in ["owner", "organizer"];
+    }
+
+    function isGroupOwner(groupId) {
+      return signedIn()
+        && get(/databases/$(database)/documents/volunteerGroups/$(groupId)).data.ownerId == request.auth.uid;
+    }
+
+    function isActivityParticipant(activityId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/activityParticipants/$(activityId + "_" + request.auth.uid));
+    }
+
+    function isActivityManager(activityId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/volunteerActivities/$(activityId))
+        && isCommunityManager(get(/databases/$(database)/documents/volunteerActivities/$(activityId)).data.communityId);
+    }
+
+    // Username uniqueness enforcement
+    // Only allow creating a username if it doesn't already exist
+    match /usernames/{username} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null 
+        && request.resource.data.uid == request.auth.uid
+        && resource == null;
+      allow delete: if request.auth != null 
+        && resource.data.uid == request.auth.uid;
+      allow update: if false; // Prevent updates to username entries
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if false;
+
+      match /followers/{followerId} {
+        allow read: if signedIn() && canReadProtectedUserContent(userId);
+        allow create: if signedIn()
+          && request.resource.data.followerId == followerId
+          && request.resource.data.followingId == userId
+          && (request.auth.uid == followerId || request.auth.uid == userId);
+        allow delete: if signedIn() && (request.auth.uid == followerId || request.auth.uid == userId);
+        allow update: if false;
+      }
+
+      match /following/{followingId} {
+        allow read: if signedIn() && (request.auth.uid == userId || canReadProtectedUserContent(userId));
+        allow create: if signedIn()
+          && request.resource.data.followerId == userId
+          && request.resource.data.followingId == followingId
+          && (request.auth.uid == userId || request.auth.uid == followingId);
+        allow delete: if signedIn() && (request.auth.uid == userId || request.auth.uid == followingId);
+        allow update: if false;
+      }
+
+      match /updateDismissals/{dismissalId} {
+        // Per-user update dismissal list. Only the owner may read or write it.
+        // Ownership is proven from the path alone, so reads of a not-yet-created
+        // doc succeed instead of denying (which previously stranded Updates in
+        // an infinite loading state).
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId);
+      }
+    }
+
+    match /posts/{postId} {
+      allow get: if canReadPostData(resource.data);
+      // Broad list queries remain authenticated for backward compatibility with
+      // existing feed/search listeners; client code filters private content.
+      allow list: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid;
+      allow update: if signedIn()
+        && (
+          resource.data.uid == request.auth.uid
+          || request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            "likes", "comments", "shares", "reHives", "saves", "views", "impressions", "confirmations"
+          ])
+        );
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+
+      match /likes/{userId} {
+        allow read: if signedIn();
+        allow create: if isOwner(userId)
+          && request.resource.data.userId == request.auth.uid
+          && canReadPostData(get(/databases/$(database)/documents/posts/$(postId)).data)
+          && noBlockBetween(request.auth.uid, get(/databases/$(database)/documents/posts/$(postId)).data.uid);
+        allow delete: if isOwner(userId);
+        allow update: if false;
+      }
+
+      match /comments/{commentId} {
+        allow read: if canReadPostData(get(/databases/$(database)/documents/posts/$(postId)).data);
+        allow create: if signedIn()
+          && request.resource.data.uid == request.auth.uid
+          && canReadPostData(get(/databases/$(database)/documents/posts/$(postId)).data)
+          && noBlockBetween(request.auth.uid, get(/databases/$(database)/documents/posts/$(postId)).data.uid);
+        allow update, delete: if signedIn() && resource.data.uid == request.auth.uid;
+
+        match /likes/{userId} {
+          allow read: if signedIn();
+          allow create: if isOwner(userId) && request.resource.data.userId == request.auth.uid;
+          allow delete: if isOwner(userId);
+          allow update: if false;
+        }
+      }
+    }
+
+    match /chats/{chatId} {
+      // ID-split fallback: DM/Ultra-Bee chat ids are "{uidA}_{uidB}" (sorted),
+      // so a get() is provable from the id alone. This is required because
+      // getDoc/onSnapshot on a NOT-YET-CREATED chat evaluates missing docs
+      // without resource.data, and a resource.data-only condition would deny
+      // the read and break first-time "start chat" and Ultra Bee seeding.
+      // Listing still requires the participants array-contains query.
+      allow read: if signedIn()
+        && (
+          request.auth.uid in resource.data.participants
+          || request.auth.uid in chatId.split("_")
+        );
+      allow create: if signedIn()
+        && request.auth.uid in request.resource.data.participants
+        && noBlockBetween(request.auth.uid, request.resource.data.participants[0])
+        && (request.resource.data.participants.size() < 2
+          || noBlockBetween(request.auth.uid, request.resource.data.participants[1]));
+      allow update: if signedIn()
+        && request.auth.uid in resource.data.participants
+        && request.auth.uid in request.resource.data.participants;
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        allow read: if signedIn()
+          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+        allow create: if signedIn()
+          && request.resource.data.senderId == request.auth.uid
+          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants
+          && noBlockBetween(request.auth.uid, get(/databases/$(database)/documents/chats/$(chatId)).data.participants[0])
+          && (get(/databases/$(database)/documents/chats/$(chatId)).data.participants.size() < 2
+            || noBlockBetween(request.auth.uid, get(/databases/$(database)/documents/chats/$(chatId)).data.participants[1]))
+          // Ultra Bee (AI assistant) is not a Firebase Auth user; its replies
+          // are generated client-side, but ONLY inside the requester's own
+          // single Ultra Bee conversation (chatId == "{uid}_ultra-bee" sorted).
+          || (signedIn()
+            && request.resource.data.senderId == "ultra-bee"
+            && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants
+            && request.auth.uid in chatId.split("_"));
+        allow update: if signedIn()
+          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["readBy", "reactions"]);
+        allow delete: if signedIn() && resource.data.senderId == request.auth.uid;
+      }
+    }
+
+    match /reHives/{reHiveId} {
+      allow read: if signedIn()
+        && (
+          resource.data.userId == request.auth.uid
+          // ID-split fallback: reHive ids are "{userId}_{postId}" (enforced on
+          // create), so the owner is provable from the id alone. Required for
+          // onSnapshot on state docs that do not exist yet — missing docs
+          // evaluate without resource.data, so resource.data-based reads of
+          // e.g. /posts/undefined would be denied.
+          || reHiveId.split("_")[0] == request.auth.uid
+          || canReadPostData(get(/databases/$(database)/documents/posts/$(resource.data.postId)).data)
+        );
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && reHiveId == request.auth.uid + "_" + request.resource.data.postId
+        && canReadPostData(get(/databases/$(database)/documents/posts/$(request.resource.data.postId)).data)
+        && noBlockBetween(request.auth.uid, get(/databases/$(database)/documents/posts/$(request.resource.data.postId)).data.uid);
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+      allow update: if false;
+    }
+
+    match /follows/{followId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.followerId == request.auth.uid
+        && followId == request.resource.data.followerId + "_" + request.resource.data.followingId
+        && noBlockBetween(request.resource.data.followerId, request.resource.data.followingId);
+      allow delete: if signedIn()
+        && (resource.data.followerId == request.auth.uid || resource.data.followingId == request.auth.uid);
+      allow update: if false;
+    }
+
+    match /followRequests/{requestId} {
+      allow read: if signedIn()
+        && (resource.data.requesterId == request.auth.uid || resource.data.targetId == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.requesterId == request.auth.uid
+        && requestId == request.auth.uid + "_" + request.resource.data.targetId;
+      allow update: if false;
+      allow delete: if signedIn()
+        && (resource.data.requesterId == request.auth.uid || resource.data.targetId == request.auth.uid);
+    }
+    match /blocks/{blockId} {
+      // ID-split read: the document id is the deterministic "blockerId_blockedId"
+      // pair (sorted), so authorization is provable from the id alone. This is
+      // required for get()/onSnapshot on pair documents that do not exist yet
+      // (Firestore evaluates missing docs without resource.data, so any
+      // resource.data-based condition would deny the read and break first-time
+      // block checks like "is this author blocked?").
+      allow get, list: if signedIn()
+        && (
+          resource.data.blockerId == request.auth.uid
+          || resource.data.blockedId == request.auth.uid
+          || blockId.split("_")[0] == request.auth.uid
+          || blockId.split("_")[1] == request.auth.uid
+        );
+      allow create: if signedIn()
+        && request.resource.data.blockerId == request.auth.uid
+        && blockId == request.resource.data.blockerId + "_" + request.resource.data.blockedId
+        && request.resource.data.blockerId != request.resource.data.blockedId;
+      allow delete: if signedIn() && resource.data.blockerId == request.auth.uid;
+      allow update: if false;
+    }
+
+    match /savedPosts/{savedPostId} {
+      // ID-split read: savedPosts ids are always "{userId}_{postId}" (enforced
+      // on create), so the owner is provable from the id even when the document
+      // does not exist yet (missing docs fail resource.data-based rules).
+      allow get, list: if signedIn()
+        && (resource.data.userId == request.auth.uid
+          || savedPostId.split("_")[0] == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && savedPostId == request.auth.uid + "_" + request.resource.data.postId;
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+      allow update: if false;
+    }
+
+    match /reports/{reportId} {
+      allow create: if signedIn() && request.resource.data.reporterId == request.auth.uid;
+      allow read: if signedIn()
+        && (resource.data.reporterId == request.auth.uid || isAdmin());
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if signedIn() && resource.data.recipientId == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.actorId == request.auth.uid;
+      allow update: if signedIn()
+        && resource.data.recipientId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["read"]);
+      allow delete: if signedIn() && resource.data.recipientId == request.auth.uid;
+    }
+
+    match /{collectionId}/{documentId} {
+      allow read, write: if signedIn()
+        && collectionId in [
+          "reports",
+          "broadcasts",
+          "settings",
+          "admin_logs",
+          "postEngagements"
+        ];
+    }
+
+    // Dynamic Hives are part of the single searchable registry. Clients may
+    // create only validated provisional entries owned by the signed-in user.
+    match /hives/{hiveId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly([
+          "name", "description", "aliases", "keywords", "status",
+          "reportCount", "createdBy", "createdAt", "updatedAt"
+        ])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 3
+        && request.resource.data.name.size() <= 60
+        && request.resource.data.description is string
+        && request.resource.data.description.size() >= 10
+        && request.resource.data.description.size() <= 300
+        && request.resource.data.aliases is list
+        && request.resource.data.keywords is list
+        && request.resource.data.status == "provisional"
+        && request.resource.data.reportCount == 0
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp;
+      allow update: if signedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "status", "reportCount", "updatedAt"
+        ])
+        && request.resource.data.status in ["provisional", "emerging", "established"]
+        && request.resource.data.reportCount is number
+        && request.resource.data.updatedAt is timestamp;
+      allow delete: if false;
+    }
+
+    match /issueCommunities/{communityId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.ownerId is string
+        && request.resource.data.postId is string
+        && request.resource.data.memberCount == 1;
+      allow update: if (isCommunityManager(communityId)
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(["ownerId", "owner"]))
+        || isCommunityOwner(communityId)
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(["memberCount", "activityCount", "status", "updatedAt", "archived"]);
+      allow delete: if isCommunityManager(communityId);
+    }
+
+    match /communityMembers/{membershipId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.communityId is string
+        && request.resource.data.uid is string
+        && (request.resource.data.uid == request.auth.uid || request.resource.data.role == "owner");
+      // Managers can only change role; owner can only set self to owner (transfer).
+      // Restricted to role field to prevent uid/communityId manipulation.
+      allow update: if (isCommunityManager(resource.data.communityId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["role"]))
+        || (isCommunityOwner(resource.data.communityId)
+          && request.resource.data.role == "owner"
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["role"]));
+      allow delete: if signedIn()
+        && (resource.data.uid == request.auth.uid || isCommunityManager(resource.data.communityId))
+        && resource.data.role != "owner";
+    }
+
+    match /communityMessages/{messageId} {
+      allow read: if signedIn();
+      allow create: if isCommunityMember(request.resource.data.communityId)
+        && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if resource.data.uid == request.auth.uid || isCommunityManager(resource.data.communityId);
+    }
+
+    match /communityPolls/{pollId} {
+      allow read: if signedIn();
+      allow create: if isCommunityManager(request.resource.data.communityId);
+      // Managers can fully update. Members can only update counts/totalVotes
+      // as part of the atomic votePoll transaction (which also writes pollVotes).
+      // The transaction prevents double-voting via the pollVotes subcollection.
+      allow update: if isCommunityManager(resource.data.communityId)
+        || (isCommunityMember(resource.data.communityId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["counts", "totalVotes"]));
+      allow delete: if isCommunityManager(resource.data.communityId);
+    }
+
+    match /pollVotes/{voteId} {
+      allow read: if signedIn();
+      allow create: if isCommunityMember(request.resource.data.communityId)
+        && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /volunteerActivities/{activityId} {
+      allow read: if signedIn();
+      allow create: if isCommunityManager(request.resource.data.communityId)
+        || (request.resource.data.groupId is string && isGroupManager(request.resource.data.groupId));
+      allow update: if isCommunityManager(resource.data.communityId)
+        || (resource.data.groupId is string && isGroupManager(resource.data.groupId))
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(["volunteerCount", "updatedAt"]);
+      allow delete: if isCommunityManager(resource.data.communityId)
+        || (resource.data.groupId is string && isGroupManager(resource.data.groupId));
+    }
+
+    match /activityParticipants/{participantId} {
+      allow read: if signedIn();
+      allow create: if isCommunityMember(request.resource.data.communityId)
+        && request.resource.data.uid == request.auth.uid;
+      // Participants can only update their own role or participation status;
+      // managers can change role, participation status and assigned
+      // responsibility. This prevents uid/communityId/activityId manipulation
+      // and stops anyone from altering someone else's participation state.
+      allow update: if (resource.data.uid == request.auth.uid
+          && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(["role"])
+            || request.resource.data.diff(resource.data).affectedKeys().hasOnly(["participantStatus", "updatedAt"])))
+        || (isCommunityManager(resource.data.communityId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["role", "participantStatus", "responsibility", "assignedBy", "assignedAt", "updatedAt"]));
+      allow delete: if resource.data.uid == request.auth.uid || isCommunityManager(resource.data.communityId);
+    }
+
+    match /activityMessages/{messageId} {
+      allow read: if signedIn()
+        && (isActivityParticipant(resource.data.activityId) || isActivityManager(resource.data.activityId));
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && (isActivityParticipant(request.resource.data.activityId) || isActivityManager(request.resource.data.activityId));
+      allow update, delete: if resource.data.uid == request.auth.uid || isActivityManager(resource.data.activityId);
+    }
+
+    match /activityEvidence/{evidenceId} {
+      allow read: if signedIn();
+      allow create: if isCommunityMember(request.resource.data.communityId)
+        && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isCommunityManager(resource.data.communityId);
+    }
+
+    match /verificationRecords/{recordId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && (isCommunityManager(request.resource.data.communityId)
+          || request.resource.data.submittedBy == request.auth.uid);
+      allow update, delete: if isCommunityManager(resource.data.communityId);
+    }
+
+    // ---- Community verification cases ----
+    // Rigid permission boundaries for the multi-reviewer verification flow:
+    // - Reads are open to signed-in users (a community verification is a public good).
+    // - Only community members can open cases and only through the case owner fields.
+    // - Case updates are split into two safe paths:
+    //     (a) decision-driven progress (status/counts) by eligible reviewers,
+    //         the primary reviewer, or community managers; and
+    //     (b) evidence attachment + supporting-signal counts by members.
+    // - Decisions are immutable append-only docs (one per reviewer).
+    // - Case identity/eligibility/quorum config can never be rewritten by clients.
+    match /verificationCases/{caseId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && isCommunityMember(request.resource.data.communityId);
+      allow update: if signedIn()
+        && (
+          (
+            // Decision-driven progress stays bounded to fairness/count fields so
+            // reviewers can never silently change quorum, eligibility or identity.
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              "status",
+              "approvalCount",
+              "rejectionCount",
+              "moreEvidenceCount",
+              "fallbackActivated",
+              "disputeNote",
+              "resolvedAt",
+              "ownerResponseDeadline",
+              "updatedAt"
+            ])
+            && (
+              resource.data.primaryReviewerId == request.auth.uid
+              || request.auth.uid in resource.data.eligibleReviewerIds
+              || isCommunityManager(resource.data.communityId)
+            )
+          )
+          || (
+            // Attaching new evidence and ticking the supporting-signal counters.
+            // These signals never gate verification alone (only decisions do).
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              "evidenceIds",
+              "communityConfirmations",
+              "witnessConfirmations",
+              "updatedAt"
+            ])
+            && isCommunityMember(resource.data.communityId)
+          )
+        );
+      allow delete: if false;
+
+      // Decisions are permanently immutable so the audit trail can't be edited.
+      match /decisions/{decisionId} {
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && request.auth.uid == request.resource.data.reviewerId
+          && (
+            get(/databases/$(database)/documents/verificationCases/$(request.resource.data.caseId)).data.primaryReviewerId == request.auth.uid
+            || request.auth.uid in get(/databases/$(database)/documents/verificationCases/$(request.resource.data.caseId)).data.eligibleReviewerIds
+          );
+        allow update, delete: if false;
+      }
+
+      // Append-only timeline.
+      match /events/{eventId} {
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && isCommunityMember(get(/databases/$(database)/documents/verificationCases/$(request.resource.data.caseId)).data.communityId);
+        allow update, delete: if false;
+      }
+    }
+
+    // Supporting confirmations - one doc per member/participant, immutable
+    // (community confirmations may switch their resolved opinion in place).
+    match /witnessConfirmations/{confirmationId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && isCommunityMember(get(/databases/$(database)/documents/verificationCases/$(request.resource.data.caseId)).data.communityId);
+      allow update: if signedIn()
+        && request.resource.data.uid == request.auth.uid;
+      allow delete: if false;
+    }
+
+    match /communityConfirmations/{confirmationId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && isCommunityMember(get(/databases/$(database)/documents/verificationCases/$(request.resource.data.caseId)).data.communityId);
+      allow update: if signedIn()
+        && request.resource.data.uid == request.auth.uid;
+      allow delete: if false;
+    }
+
+    match /volunteerGroups/{groupId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.memberCount == 1;
+      allow update: if signedIn()
+        && (isGroupManager(groupId)
+          || request.resource.data.diff(resource.data).affectedKeys().hasOnly(["memberCount", "updatedAt"]));
+      allow delete: if signedIn() && isGroupOwner(groupId);
+    }
+
+    match /volunteerGroupMembers/{membershipId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && (request.resource.data.role == "member"
+          || (request.resource.data.role == "owner"
+            && get(/databases/$(database)/documents/volunteerGroups/$(request.resource.data.groupId)).data.ownerId == request.auth.uid));
+      // Owner can only change role of non-owners; owner can only downgrade self to organizer.
+      // Restricted to role field only to prevent uid/groupId manipulation.
+      allow update: if signedIn()
+        && ((isGroupOwner(resource.data.groupId) && resource.data.role != "owner"
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["role"]))
+          || (resource.data.uid == request.auth.uid && resource.data.role == "owner"
+            && request.resource.data.role == "organizer"));
+      allow delete: if signedIn()
+        && (resource.data.uid == request.auth.uid || isGroupOwner(resource.data.groupId))
+        && resource.data.role != "owner";
+    }
+
+    match /volunteerGroupMessages/{messageId} {
+      allow read: if signedIn() && isGroupMember(resource.data.groupId);
+      allow create: if signedIn()
+        && isGroupMember(request.resource.data.groupId)
+        && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if resource.data.uid == request.auth.uid || isGroupManager(resource.data.groupId);
+    }
+  }
+}
+
