@@ -28,6 +28,62 @@
         }
       ]
     },
+{
+      "collectionGroup": "followRequests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "targetId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "followRequests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "requesterId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "verificationCases",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "primaryReviewerId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "verificationCases",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "eligibleReviewerIds",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        }
+      ]
+    },
     {
       "collectionGroup": "users",
       "queryScope": "COLLECTION",
