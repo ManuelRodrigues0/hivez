@@ -87,7 +87,7 @@ function MediaItem({
       >
         <AlertTriangle size={20} className="text-zinc-500 dark:text-zinc-400" />
         <p className="text-xs font-bold text-zinc-600 dark:text-zinc-300">Sensitive content hidden</p>
-        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">Change this in Settings → Privacy</p>
+        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">Change this in Settings - Privacy</p>
       </div>
     );
   }

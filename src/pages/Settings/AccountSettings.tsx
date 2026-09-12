@@ -38,7 +38,7 @@ export default function AccountSettings() {
         month: "long",
         day: "numeric",
       })
-    : "â€”";
+    : "-";
 
   return (
     <>
@@ -67,7 +67,7 @@ export default function AccountSettings() {
           <div className="min-w-0 flex-1">
             <p className="text-xs font-bold text-[#1c1d1a] dark:text-white">Email</p>
             <p className="mt-0.5 truncate text-[11px] font-medium leading-4 text-[#1c1d1a]/55 dark:text-neutral-400">
-              {user?.email || "â€”"} Â· managed by your sign-in provider
+              {user?.email || "-"} - managed by your sign-in provider
             </p>
           </div>
         </div>

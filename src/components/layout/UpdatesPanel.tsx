@@ -304,7 +304,7 @@ export default function UpdatesPanel() {
         </ul>
       )}
 
-      {/* Simple textual control: "View all updates →" ↔ "Show less". */}
+      {/* Simple textual control: "View all updates" or "Show less". */}
       {ready && hasMore && (
         <button
           type="button"
@@ -312,7 +312,7 @@ export default function UpdatesPanel() {
           aria-expanded={expanded}
           className="mt-1 w-full rounded px-1.5 py-1.5 text-center text-[12px] font-semibold text-[#1c1d1a]/60 transition hover:text-[#1c1d1a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400/50 dark:text-neutral-400 dark:hover:text-white dark:focus-visible:ring-white/30"
         >
-          {expanded ? "Show less" : "View all updates →"}
+          {expanded ? "Show less" : "View all updates"}
         </button>
       )}
     </section>

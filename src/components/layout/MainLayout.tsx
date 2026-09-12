@@ -193,7 +193,7 @@ export default function MainLayout() {
         seenChatTimes.current[chat.id] = lastTime;
         if (!lastTime || lastTime <= previousTime || chat.lastMessageSenderId === user.uid || chat.lastMessageSenderId === "ultra-bee") return;
 
-        const otherId = chat.participants.find((id: string) => id !== user.uid);
+        const otherId = chat.participants?.find((id) => id !== user.uid);
         const sender = otherId ? chat.participantProfiles?.[otherId] : null;
         console.log(`${sender?.displayName || sender?.username || "Someone"} sent you a message`);
       });
@@ -506,7 +506,7 @@ export default function MainLayout() {
                 onClick={() => setSidebarOpen(false)}
               />
               <div
-              className="app-mobile-drawer fixed left-0 top-0 z-50 flex h-screen w-72 max-w-[80vw] flex-col border-r border-[#1c1d1a]/10 bg-[#f7f7f2] shadow-2xl dark:border-neutral-800 dark:bg-[#0d0d0d] overflow-hidden lg:hidden"
+                className="app-mobile-drawer fixed left-0 top-0 z-50 flex h-screen w-72 max-w-[80vw] flex-col border-r border-[#1c1d1a]/10 bg-[#f7f7f2] shadow-2xl dark:border-neutral-800 dark:bg-[#0d0d0d] overflow-hidden lg:hidden"
               >
                 {/* Mobile Drawer Header */}
                 <div className="flex w-full items-center justify-between border-b border-[#1c1d1a]/10 px-4 py-3 bg-white/60 dark:border-neutral-800 dark:bg-neutral-900/60 shrink-0">
