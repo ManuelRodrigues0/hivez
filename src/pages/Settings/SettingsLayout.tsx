@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
@@ -6,9 +6,12 @@ import { normalizePrivacy } from "@/services/privacy";
 import { SETTINGS_CATEGORIES } from "./settingsNav";
 
 /**
- * Settings layout:
- *  - Desktop: sticky category rail (left) + active category content (right).
- *  - Mobile:  header + content; the hub (/settings) is the drill-down list.
+ * Settings layout (strict drill-down):
+ *  - /settings renders ONLY the top-level category list (Settings hub).
+ *  - A category route renders ONLY that category — the parent list is fully
+ *    replaced, never shown beside it, on desktop and mobile alike.
+ *  - Navigation is route-based, so browser Back/Forward, refresh and deep
+ *    links all work; the in-page back button mirrors browser Back to /settings.
  */
 export default function SettingsLayout() {
   const navigate = useNavigate();
@@ -48,38 +51,8 @@ export default function SettingsLayout() {
         </div>
       </div>
 
-      <div className="flex items-start gap-5">
-        {/* Desktop category rail */}
-        <nav aria-label="Settings categories" className="hidden w-52 shrink-0 lg:block">
-          <ul className="sticky top-20 space-y-0.5">
-            {SETTINGS_CATEGORIES.map((cat) => (
-              <li key={cat.key}>
-                <NavLink
-                  to={cat.path}
-                  className={({ isActive: active }) =>
-                    `flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-bold transition ${
-                      cat.external
-                        ? location.pathname === cat.path
-                          ? "bg-[#3d654c]/10 text-[#3d654c] dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]"
-                          : "text-[#1c1d1a]/65 hover:bg-[#1c1d1a]/5 hover:text-[#1c1d1a] dark:text-neutral-400 dark:hover:bg-white/5 dark:hover:text-white"
-                        : active
-                          ? "bg-[#3d654c]/10 text-[#3d654c] dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]"
-                          : "text-[#1c1d1a]/65 hover:bg-[#1c1d1a]/5 hover:text-[#1c1d1a] dark:text-neutral-400 dark:hover:bg-white/5 dark:hover:text-white"
-                    }`
-                  }
-                >
-                  <cat.icon size={16} className="shrink-0" />
-                  <span className="truncate">{cat.label}</span>
-                </NavLink>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        {/* Active category content */}
-        <div className="min-w-0 flex-1 space-y-6 pb-8">
-          <Outlet />
-        </div>
+      <div className="mx-auto w-full max-w-3xl space-y-6 pb-8">
+        <Outlet />
       </div>
     </div>
   );
