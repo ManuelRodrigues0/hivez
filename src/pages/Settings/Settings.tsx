@@ -3,9 +3,11 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  Activity,
   ArrowLeft,
   AtSign,
   Bell,
+  Bookmark,
   ChevronRight,
   Eye,
   Lock,
@@ -26,9 +28,12 @@ import { enablePushNotifications } from "@/services/pushNotifications";
 import { db } from "@/firebase/firebase";
 import {
   normalizePrivacy,
+  saveSensitiveContentPreference,
   saveUserPrivacySettings,
+  sensitiveContentPreference,
   type InteractionPrivacy,
   type MessagePrivacy,
+  type SensitiveContentPreference,
   type UserPrivacySettings,
 } from "@/services/privacy";
 
@@ -63,6 +68,7 @@ export default function Settings() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [savingKey, setSavingKey] = useState("");
   const [privacy, setPrivacy] = useState<UserPrivacySettings>(() => normalizePrivacy(profile));
+  const [contentPref, setContentPref] = useState<SensitiveContentPreference>("show");
   const [notificationPrefs, setNotificationPrefs] = useState<Record<NotificationKey, boolean>>({
     likes: true,
     comments: true,
@@ -74,6 +80,7 @@ export default function Settings() {
 
   useEffect(() => {
     setPrivacy(normalizePrivacy(profile));
+    setContentPref(sensitiveContentPreference(profile));
     setNotificationPrefs((current) => ({
       ...current,
       ...((profile?.notificationPreferences || {}) as Partial<Record<NotificationKey, boolean>>),
@@ -108,6 +115,17 @@ export default function Settings() {
     setSavingKey(key);
     try {
       await saveUserPrivacySettings(user.uid, next);
+    } finally {
+      setSavingKey("");
+    }
+  }
+
+  async function updateSensitivePreference(value: SensitiveContentPreference) {
+    if (!user) return;
+    setContentPref(value);
+    setSavingKey("sensitive");
+    try {
+      await saveSensitiveContentPreference(user.uid, value);
     } finally {
       setSavingKey("");
     }
@@ -229,6 +247,22 @@ export default function Settings() {
         </SettingRow>
       </section>
 
+      <SectionTitle title="Content Preferences" />
+      <section className="rounded-2xl border border-[#1c1d1a]/10 bg-white p-4 shadow-xs dark:border-neutral-800/90 dark:bg-[#121212]">
+        <OptionRow
+          icon={Eye}
+          title="Sensitive Content"
+          subtitle="How posts the author flagged as sensitive appear to you."
+          options={[
+            { value: "show" as SensitiveContentPreference, label: "Show" },
+            { value: "blur" as SensitiveContentPreference, label: "Blur" },
+            { value: "hide" as SensitiveContentPreference, label: "Hide" },
+          ]}
+          value={contentPref}
+          onChange={updateSensitivePreference}
+        />
+      </section>
+
       <SectionTitle title="Notifications" />
       <section className="rounded-2xl border border-[#1c1d1a]/10 bg-white p-4 shadow-xs dark:border-neutral-800/90 dark:bg-[#121212]">
         <SettingRow icon={Bell} title="Push Notifications" subtitle="Enable device alerts for Hivez activity.">
@@ -258,6 +292,42 @@ export default function Settings() {
         <SettingRow icon={theme === "dark" ? Moon : Sun} title={theme === "dark" ? "Dark Mode" : "Light Mode"} subtitle="Switch Hivez between light and dark appearance.">
           <Switch checked={theme === "dark"} onClick={toggleTheme} />
         </SettingRow>
+      </section>
+
+      <SectionTitle title="Your Data" />
+      <section className="rounded-2xl border border-[#1c1d1a]/10 bg-white p-4 shadow-xs dark:border-neutral-800/90 dark:bg-[#121212]">
+        <button
+          type="button"
+          onClick={() => navigate("/saved")}
+          className="flex w-full items-center gap-3.5 border-b border-[#1c1d1a]/5 py-3.5 text-left dark:border-neutral-800/60"
+        >
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#1c1d1a]/10 bg-[#f7f7f2] text-[#3d654c] dark:border-neutral-800 dark:bg-[#1a1a1a] dark:text-[#f2c14e]">
+            <Bookmark size={17} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold text-[#1c1d1a] dark:text-white">Saved Posts</p>
+            <p className="mt-0.5 text-[11px] font-medium leading-4 text-[#1c1d1a]/55 dark:text-neutral-400">
+              Posts you've bookmarked — private to your account.
+            </p>
+          </div>
+          <ChevronRight size={17} className="shrink-0 text-[#1c1d1a]/35 dark:text-neutral-500" />
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate("/activity")}
+          className="flex w-full items-center gap-3.5 py-3.5 text-left"
+        >
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#1c1d1a]/10 bg-[#f7f7f2] text-[#3d654c] dark:border-neutral-800 dark:bg-[#1a1a1a] dark:text-[#f2c14e]">
+            <Activity size={17} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold text-[#1c1d1a] dark:text-white">Your Activity</p>
+            <p className="mt-0.5 text-[11px] font-medium leading-4 text-[#1c1d1a]/55 dark:text-neutral-400">
+              Alerts and interactions across your account.
+            </p>
+          </div>
+          <ChevronRight size={17} className="shrink-0 text-[#1c1d1a]/35 dark:text-neutral-500" />
+        </button>
       </section>
 
       <div className="w-full pb-10 pt-2">

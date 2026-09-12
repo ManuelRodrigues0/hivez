@@ -40,7 +40,9 @@ import { db } from "@/firebase/firebase";
 import { ULTRA_BEE_ID, ULTRA_BEE_PROFILE, ULTRA_BEE_TAGLINE, ULTRA_BEE_WELCOME, ultraBeeChatIdFor } from "@/constants/ultraBee";
 import { requestUltraBeeReply } from "@/services/ultraBee";
 import type { FeedPost } from "@/components/feed/Feed";
-import { canUserAccessPost } from "@/services/privacy";
+import { canUserAccessPost, canMessageUser } from "@/services/privacy";
+import { isBlockedBetween } from "@/services/blocks";
+import { toast } from "sonner";
 import type { TimestampLike } from "@/types/timestamp";
 
 interface ChatUser {
@@ -496,6 +498,20 @@ export default function Chats() {
 
     const recipientId = selectedChat.participants.find((id) => id !== user.uid);
     if (!recipientId) return;
+
+    // Mirror the server-side noBlockBetween + message-privacy enforcement
+    // client-side so blocked/filtered users get an honest error instead of a
+    // silent Firestore failure.
+    if (recipientId !== ULTRA_BEE_ID) {
+      if (await isBlockedBetween(user.uid, recipientId)) {
+        toast.error("You can't message this account");
+        return;
+      }
+      if (!(await canMessageUser(user.uid, recipientId))) {
+        toast.error("This account doesn't accept your messages");
+        return;
+      }
+    }
 
     setSending(true);
     setMessageText("");

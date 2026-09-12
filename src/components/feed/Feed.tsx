@@ -39,6 +39,7 @@ export interface FeedPost {
   urgency?: number;
   createdAt: any;
   category?: string;
+  sensitive?: boolean;
   hashtags?: string[];
   location?: string | null;
   locationSnapshot?: LocationSnapshot | null;

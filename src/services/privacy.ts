@@ -14,6 +14,7 @@ import {
 } from "firebase/firestore";
 
 import { db } from "@/firebase/firebase";
+import { isBlockedBetween } from "@/services/blocks";
 
 export type AccountPrivacy = "public" | "private";
 export type MessagePrivacy = "everyone" | "followers" | "following" | "mutuals" | "nobody";
@@ -43,6 +44,25 @@ export const DEFAULT_PRIVACY: UserPrivacySettings = {
   comments: "everyone",
   discoverable: true,
 };
+
+/** How the current viewer prefers to see posts the author flagged as sensitive. */
+export type SensitiveContentPreference = "show" | "blur" | "hide";
+
+export function sensitiveContentPreference(profile?: DocumentData | null): SensitiveContentPreference {
+  const raw = (profile?.preferences as { sensitiveContent?: string } | undefined)?.sensitiveContent;
+  return raw === "blur" || raw === "hide" ? raw : "show";
+}
+
+export async function saveSensitiveContentPreference(uid: string, pref: SensitiveContentPreference) {
+  await setDoc(
+    doc(db, "users", uid),
+    {
+      preferences: { sensitiveContent: pref },
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
+}
 
 function cleanSearchText(value: string) {
   return value.trim().replace(/^@+/, "").toLowerCase();
@@ -102,6 +122,7 @@ export async function canViewProfileContent(
   profileData?: DocumentData | null
 ) {
   if (viewerId === profileId) return true;
+  if (await isBlockedBetween(viewerId, profileId)) return false;
   const data = profileData ?? (await getUserProfileData(profileId));
   const privacy = normalizePrivacy(data);
   if (privacy.account === "public") return true;
@@ -114,6 +135,7 @@ export async function canUserAccessPost(
 ) {
   if (!post || !post.uid || post.deleted) return false;
   if (viewerId === post.uid) return true;
+  if (await isBlockedBetween(viewerId, post.uid)) return false;
 
   const author = await getUserProfileData(post.uid);
   const authorPrivacy = normalizePrivacy(author);
@@ -142,9 +164,20 @@ export async function filterVisiblePosts<T extends { uid?: string; visibility?: 
     })
   );
 
+  // Blocked pairs are hidden in both directions: the viewer never sees content
+  // from an author they blocked, and an author's block of the viewer is
+  // respected too.
+  const blockedAuthors = new Set<string>();
+  await Promise.all(
+    authorIds.map(async (uid) => {
+      if (uid !== viewerId && (await isBlockedBetween(viewerId, uid))) blockedAuthors.add(uid);
+    })
+  );
+
   return posts.filter((post) => {
     if (!post.uid || post.deleted) return false;
     if (viewerId === post.uid) return true;
+    if (blockedAuthors.has(post.uid)) return false;
     const privacy = normalizePrivacy(profiles.get(post.uid));
     const protectedPost = post.visibility === "followers" || post.visibility === "private" || privacy.account === "private";
     return !protectedPost || followAccess.has(post.uid);
@@ -153,6 +186,7 @@ export async function filterVisiblePosts<T extends { uid?: string; visibility?: 
 
 export async function canMessageUser(senderId: string | null | undefined, recipientId: string) {
   if (!senderId || senderId === recipientId) return false;
+  if (await isBlockedBetween(senderId, recipientId)) return false;
   const profile = await getUserProfileData(recipientId);
   const privacy = normalizePrivacy(profile);
   if (privacy.messages === "everyone") return true;
@@ -253,5 +287,13 @@ export async function searchUsers(term: string, currentUserId?: string | null, m
     });
   }
 
-  return [...byId.values()].slice(0, maxResults);
+  // Blocked pairs stay hidden from each other in search suggestions.
+  const visibleCandidates: SearchableUser[] = [];
+  for (const candidate of byId.values()) {
+    if (visibleCandidates.length >= maxResults) break;
+    if (await isBlockedBetween(currentUserId, candidate.uid)) continue;
+    visibleCandidates.push(candidate);
+  }
+
+  return visibleCandidates;
 }

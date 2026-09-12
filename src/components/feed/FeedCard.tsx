@@ -17,6 +17,9 @@ import {
   ExternalLink,
   Trash2,
   HandHeart,
+  Ban,
+  Bookmark,
+  AlertTriangle,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -43,6 +46,9 @@ import MediaGrid from "./MediaGrid";
 import type { PostMediaItem } from "./MediaGrid";
 import PostSendSheet from "./PostSendSheet";
 import { listenToReHiveState, toggleReHive } from "@/services/rehives";
+import { listenToSavedPostState, toggleSavePost } from "@/services/savedPosts";
+import { blockIdFor, blockUser, unblockUser } from "@/services/blocks";
+import { createReport } from "@/services/admin";
 import type { TimestampLike } from "@/types/timestamp";
 
 interface Props {
@@ -81,6 +87,10 @@ export default function FeedCard({ post, onCommentClick }: Props) {
   const [reHived, setReHived] = useState(false);
   const [reHiveCount, setReHiveCount] = useState(post.reHives || 0);
   const [reHiving, setReHiving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [blockState, setBlockState] = useState<"none" | "blocked-by-me" | "blocked-them">("none");
+  const [blockBusy, setBlockBusy] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [sendSheetOpen, setSendSheetOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -158,6 +168,26 @@ export default function FeedCard({ post, onCommentClick }: Props) {
   useEffect(() => {
     return listenToReHiveState(user?.uid, post.id, setReHived);
   }, [post.id, user?.uid]);
+
+  useEffect(() => {
+    return listenToSavedPostState(user?.uid, post.id, setSaved);
+  }, [post.id, user?.uid]);
+
+  // Live block state between the viewer and the post author (either direction).
+  useEffect(() => {
+    if (!user || !post.uid || user.uid === post.uid) {
+      setBlockState("none");
+      return;
+    }
+    return onSnapshot(doc(db, "blocks", blockIdFor(user.uid, post.uid)), (snap) => {
+      if (!snap.exists()) {
+        setBlockState("none");
+        return;
+      }
+      const data = snap.data() as { blockerId?: string };
+      setBlockState(data.blockerId === user.uid ? "blocked-by-me" : "blocked-them");
+    });
+  }, [post.id, user?.uid, post.uid]);
 
   async function handleLike() {
     if (!user || liking) return;
@@ -387,6 +417,66 @@ export default function FeedCard({ post, onCommentClick }: Props) {
     });
   }
 
+  async function handleSave() {
+    if (!user) {
+      toast.error("Sign in to save posts");
+      return;
+    }
+    if (saving) return;
+    setSaving(true);
+    try {
+      const result = await toggleSavePost({ userId: user.uid, post });
+      setSaved(result.saved);
+      toast.success(result.saved ? "Post saved" : "Post removed from saved");
+    } catch (err) {
+      console.error("Failed to save post:", err);
+      toast.error(err instanceof Error ? err.message : "Could not save this post");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleBlock() {
+    if (!user || !post.uid || blockBusy) return;
+    setMenuOpen(false);
+    setBlockBusy(true);
+    try {
+      if (blockState === "blocked-by-me") {
+        await unblockUser(user.uid, post.uid);
+        toast.success(`Unblocked @${post.username}`);
+      } else {
+        await blockUser(user.uid, post.uid);
+        toast.success(`Blocked @${post.username}`);
+      }
+    } catch (err) {
+      console.error("Failed to update block:", err);
+      toast.error("Could not update block");
+    } finally {
+      setBlockBusy(false);
+    }
+  }
+
+  async function handleReportPost() {
+    if (!user) {
+      toast.error("Sign in to report posts");
+      return;
+    }
+    setMenuOpen(false);
+    try {
+      await createReport({
+        reporterId: user.uid,
+        reporterName: myProfile?.displayName || user.displayName || user.email || "Hivez User",
+        targetId: post.id,
+        targetType: "post",
+        reason: "Reported from feed by user",
+      });
+      toast.success("Report submitted for review");
+    } catch (err) {
+      console.error("Failed to report post:", err);
+      toast.error("Could not submit report");
+    }
+  }
+
   return (
     <>
       <article className="app-feed-card p-4 md:p-5">
@@ -478,10 +568,23 @@ export default function FeedCard({ post, onCommentClick }: Props) {
                         </>
                       )}
                       <hr className="mx-3 border-zinc-200 dark:border-zinc-700" />
-                      <button className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30">
+                      <button
+                        onClick={() => void handleReportPost()}
+                        className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
+                      >
                         <Flag size={16} />
                         Report
                       </button>
+                      {user && post.uid && user.uid !== post.uid && (
+                        <button
+                          onClick={handleBlock}
+                          disabled={blockBusy}
+                          className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-600 disabled:opacity-50 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
+                        >
+                          <Ban size={16} />
+                          {blockState === "blocked-by-me" ? `Unblock @${post.username}` : `Block @${post.username}`}
+                        </button>
+                      )}
                       <button className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800">
                         <UserMinus size={16} />
                         Mute
@@ -498,6 +601,16 @@ export default function FeedCard({ post, onCommentClick }: Props) {
                 <span className="inline-flex items-center gap-2 rounded-full bg-[#f2c14e]/15 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-[#8a6d1f] dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
                   <span className="h-1.5 w-1.5 rounded-full bg-amber-500 dark:bg-[#f2c14e]" />
                   {post.category}
+                </span>
+              </div>
+            )}
+
+            {/* Sensitive badge */}
+            {post.sensitive && (
+              <div className="mt-3">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-200/80 px-3 py-1.5 text-[11px] font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                  <AlertTriangle size={13} />
+                  Sensitive
                 </span>
               </div>
             )}
@@ -526,7 +639,7 @@ export default function FeedCard({ post, onCommentClick }: Props) {
             {/* Media */}
             {mediaItems.length > 0 && (
               <div className="mt-3 min-w-0 overflow-hidden">
-                <MediaGrid items={mediaItems} />
+                <MediaGrid items={mediaItems} sensitive={Boolean(post.sensitive)} />
               </div>
             )}
 
@@ -595,6 +708,21 @@ export default function FeedCard({ post, onCommentClick }: Props) {
                 <span className="sr-only">
                   {community?.ownerId === user?.uid ? "Manage" : communityMember ? "Joined" : "Volunteer"}
                 </span>
+              </button>
+
+              {/* Save post */}
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={saving}
+                aria-label={saved ? "Remove from saved posts" : "Save post"}
+                aria-pressed={saved}
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-amber-50 disabled:opacity-60 dark:hover:bg-amber-950/30 group"
+              >
+                <Bookmark
+                  size={18}
+                  className={saved ? "fill-amber-500 text-amber-500" : "text-zinc-500 dark:text-zinc-400 group-hover:text-amber-500"}
+                />
               </button>
 
               {/* Share button with dropdown */}

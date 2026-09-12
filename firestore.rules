@@ -58,6 +58,22 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/communityMembers/$(communityId + "_" + request.auth.uid)).data.role == "owner";
     }
 
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && userDoc(request.auth.uid).data.role == "admin";
+    }
+
+    // Blocks are directional documents with a deterministic pair id. Both
+    // orderings are checked so enforcement holds regardless of who blocked whom.
+    function noBlockBetween(userA, userB) {
+      return userA == userB
+        || (
+          !exists(/databases/$(database)/documents/blocks/$(userA + "_" + userB))
+          && !exists(/databases/$(database)/documents/blocks/$(userB + "_" + userA))
+        );
+    }
+
     function isCommunityManager(communityId) {
       return signedIn()
         && exists(/databases/$(database)/documents/communityMembers/$(communityId + "_" + request.auth.uid))
@@ -150,7 +166,8 @@ service cloud.firestore {
         allow read: if signedIn();
         allow create: if isOwner(userId)
           && request.resource.data.userId == request.auth.uid
-          && canReadPostData(get(/databases/$(database)/documents/posts/$(postId)).data);
+          && canReadPostData(get(/databases/$(database)/documents/posts/$(postId)).data)
+          && noBlockBetween(request.auth.uid, get(/databases/$(database)/documents/posts/$(postId)).data.uid);
         allow delete: if isOwner(userId);
         allow update: if false;
       }
@@ -159,7 +176,8 @@ service cloud.firestore {
         allow read: if canReadPostData(get(/databases/$(database)/documents/posts/$(postId)).data);
         allow create: if signedIn()
           && request.resource.data.uid == request.auth.uid
-          && canReadPostData(get(/databases/$(database)/documents/posts/$(postId)).data);
+          && canReadPostData(get(/databases/$(database)/documents/posts/$(postId)).data)
+          && noBlockBetween(request.auth.uid, get(/databases/$(database)/documents/posts/$(postId)).data.uid);
         allow update, delete: if signedIn() && resource.data.uid == request.auth.uid;
 
         match /likes/{userId} {
@@ -173,7 +191,11 @@ service cloud.firestore {
 
     match /chats/{chatId} {
       allow read: if signedIn() && request.auth.uid in resource.data.participants;
-      allow create: if signedIn() && request.auth.uid in request.resource.data.participants;
+      allow create: if signedIn()
+        && request.auth.uid in request.resource.data.participants
+        && noBlockBetween(request.auth.uid, request.resource.data.participants[0])
+        && (request.resource.data.participants.size() < 2
+          || noBlockBetween(request.auth.uid, request.resource.data.participants[1]));
       allow update: if signedIn()
         && request.auth.uid in resource.data.participants
         && request.auth.uid in request.resource.data.participants;
@@ -184,7 +206,10 @@ service cloud.firestore {
           && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
         allow create: if signedIn()
           && request.resource.data.senderId == request.auth.uid
-          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants
+          && noBlockBetween(request.auth.uid, get(/databases/$(database)/documents/chats/$(chatId)).data.participants[0])
+          && (get(/databases/$(database)/documents/chats/$(chatId)).data.participants.size() < 2
+            || noBlockBetween(request.auth.uid, get(/databases/$(database)/documents/chats/$(chatId)).data.participants[1]));
         allow update: if signedIn()
           && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["readBy", "reactions"]);
@@ -201,7 +226,8 @@ service cloud.firestore {
       allow create: if signedIn()
         && request.resource.data.userId == request.auth.uid
         && reHiveId == request.auth.uid + "_" + request.resource.data.postId
-        && canReadPostData(get(/databases/$(database)/documents/posts/$(request.resource.data.postId)).data);
+        && canReadPostData(get(/databases/$(database)/documents/posts/$(request.resource.data.postId)).data)
+        && noBlockBetween(request.auth.uid, get(/databases/$(database)/documents/posts/$(request.resource.data.postId)).data.uid);
       allow delete: if signedIn() && resource.data.userId == request.auth.uid;
       allow update: if false;
     }
@@ -210,7 +236,8 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create: if signedIn()
         && request.resource.data.followerId == request.auth.uid
-        && followId == request.resource.data.followerId + "_" + request.resource.data.followingId;
+        && followId == request.resource.data.followerId + "_" + request.resource.data.followingId
+        && noBlockBetween(request.resource.data.followerId, request.resource.data.followingId);
       allow delete: if signedIn()
         && (resource.data.followerId == request.auth.uid || resource.data.followingId == request.auth.uid);
       allow update: if false;
@@ -225,6 +252,36 @@ service cloud.firestore {
       allow update: if false;
       allow delete: if signedIn()
         && (resource.data.requesterId == request.auth.uid || resource.data.targetId == request.auth.uid);
+    }
+match /blocks/{blockId} {
+      allow read: if signedIn()
+        && (
+          resource.data.blockerId == request.auth.uid
+          || resource.data.blockedId == request.auth.uid
+        );
+      allow create: if signedIn()
+        && request.resource.data.blockerId == request.auth.uid
+        && blockId == request.resource.data.blockerId + "_" + request.resource.data.blockedId
+        && request.resource.data.blockerId != request.resource.data.blockedId;
+      allow delete: if signedIn() && resource.data.blockerId == request.auth.uid;
+      allow update: if false;
+    }
+
+    match /savedPosts/{savedPostId} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && savedPostId == request.auth.uid + "_" + request.resource.data.postId;
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+      allow update: if false;
+    }
+
+    match /reports/{reportId} {
+      allow create: if signedIn() && request.resource.data.reporterId == request.auth.uid;
+      allow read: if signedIn()
+        && (resource.data.reporterId == request.auth.uid || isAdmin());
+      allow update: if isAdmin();
+      allow delete: if false;
     }
 
     match /notifications/{notificationId} {

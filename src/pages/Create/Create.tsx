@@ -64,6 +64,7 @@ export default function Create() {
   const [location, setLocation] = useState("");
   const [locationSnapshot, setLocationSnapshot] = useState<LocationSnapshot | null>(userLocation.location);
   const [mutedVideos, setMutedVideos] = useState<Set<number>>(new Set());
+  const [sensitivePost, setSensitivePost] = useState(false);
 
   const [reportStep, setReportStep] = useState<ReportStep>("category");
   const [selectedReportCategory, setSelectedReportCategory] = useState<ReportCategoryConfig | null>(null);
@@ -212,6 +213,7 @@ export default function Create() {
           shares: 0,
           reHives: 0,
           visibility,
+          sensitive: sensitivePost,
           createdAt: serverTimestamp(),
         });
 
@@ -269,6 +271,7 @@ export default function Create() {
         shares: 0,
         reHives: 0,
         visibility,
+        sensitive: sensitivePost,
         createdAt: serverTimestamp(),
       });
 
@@ -547,6 +550,7 @@ export default function Create() {
         shares: 0,
         reHives: 0,
         visibility,
+        sensitive: sensitivePost,
         createdAt: serverTimestamp(),
       }));
 
@@ -636,6 +640,18 @@ export default function Create() {
               ))}
             </div>
           )}
+
+          <label className="mt-3 flex items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={sensitivePost}
+              onChange={(e) => setSensitivePost(e.target.checked)}
+              className="h-4 w-4 accent-primary"
+            />
+            <span className="text-xs font-medium text-muted-foreground">
+              Mark as sensitive content — viewers with content filters will see a warning before it is shown.
+            </span>
+          </label>
 
           {showOptions && (
             <div className="mt-4">
@@ -1007,6 +1023,17 @@ export default function Create() {
                   </div>
                 </div>
               </div>
+              <label className="mt-3 flex items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={sensitivePost}
+                  onChange={(e) => setSensitivePost(e.target.checked)}
+                  className="h-4 w-4 accent-primary"
+                />
+                <span className="text-xs font-medium text-muted-foreground">
+                  Mark as sensitive content — viewers with content filters will see a warning before it is shown.
+                </span>
+              </label>
               {reportError && <p className="mt-4 text-sm font-medium text-red-500">{reportError}</p>}
               <div className="mt-6 flex flex-wrap justify-end gap-2">
                 <button type="button" onClick={() => setReportStep("details")} className="rounded-full border border-border px-4 py-2 text-sm font-semibold">Edit</button>

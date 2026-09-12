@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, BadgeCheck, Heart, MessageCircle, Repeat2, Send, Share2, Trash2, ShieldX, LogIn, UserPlus } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Heart, MessageCircle, Repeat2, Send, Share2, Trash2, ShieldX, LogIn, UserPlus, Bookmark, AlertTriangle } from "lucide-react";
 import { doc, deleteDoc, updateDoc, onSnapshot, runTransaction, increment } from "firebase/firestore";
 import { toast } from "sonner";
 import { db } from "../../firebase/firebase";
@@ -14,6 +14,7 @@ import { useLiveProfile } from "@/hooks/useLiveProfile";
 import CommentsSheet from "@/components/comments/CommentsSheet";
 import PostSendSheet from "@/components/feed/PostSendSheet";
 import { listenToReHiveState, toggleReHive } from "@/services/rehives";
+import { listenToSavedPostState, toggleSavePost } from "@/services/savedPosts";
 import { recordPostEngagement } from "@/services/engagementEvents";
 import type { TimestampLike } from "@/types/timestamp";
 
@@ -43,6 +44,8 @@ export default function PostPage() {
   const [liking, setLiking] = useState(false);
   const [reHived, setReHived] = useState(false);
   const [reHiving, setReHiving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [sendSheetOpen, setSendSheetOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,6 +96,11 @@ export default function PostPage() {
   useEffect(() => {
     if (!id) return;
     return listenToReHiveState(user?.uid, id, setReHived);
+  }, [id, user?.uid]);
+
+  useEffect(() => {
+    if (!id) return;
+    return listenToSavedPostState(user?.uid, id, setSaved);
   }, [id, user?.uid]);
 
   // Atomic like/unlike shared with the feed implementation.
@@ -146,6 +154,25 @@ export default function PostPage() {
       toast.error(err instanceof Error ? err.message : "Could not update ReHive");
     } finally {
       setReHiving(false);
+    }
+  }
+
+  async function handleSave() {
+    if (!user || !post) {
+      if (!user) navigate("/login");
+      return;
+    }
+    if (saving) return;
+    setSaving(true);
+    try {
+      const result = await toggleSavePost({ userId: user.uid, post });
+      setSaved(result.saved);
+      toast.success(result.saved ? "Post saved" : "Post removed from saved");
+    } catch (err) {
+      console.error("Failed to save post:", err);
+      toast.error(err instanceof Error ? err.message : "Could not save this post");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -354,7 +381,16 @@ export default function PostPage() {
 
             {mediaItems.length > 0 && (
               <div className="mt-3 min-w-0 overflow-hidden">
-                <MediaGrid items={mediaItems} />
+                <MediaGrid items={mediaItems} sensitive={Boolean(post.sensitive)} />
+              </div>
+            )}
+
+            {post.sensitive && (
+              <div className="mt-3">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-200/80 px-3 py-1.5 text-[11px] font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                  <AlertTriangle size={13} />
+                  Sensitive
+                </span>
               </div>
             )}
 
@@ -397,6 +433,15 @@ export default function PostPage() {
                 aria-label="Send post via direct message"
               >
                 <Send size={18} className="text-zinc-500 dark:text-zinc-400" />
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                aria-label={saved ? "Remove from saved posts" : "Save post"}
+                aria-pressed={saved}
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-amber-50 disabled:opacity-60 dark:hover:bg-amber-950/30"
+              >
+                <Bookmark size={18} className={saved ? "fill-amber-500 text-amber-500" : "text-zinc-500 dark:text-zinc-400"} />
               </button>
               {user && post.uid === user.uid && (
                 <button

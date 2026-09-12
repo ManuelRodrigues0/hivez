@@ -17,6 +17,7 @@ import CommunityDetails from "@/pages/Volunteering/CommunityDetails";
 import MyVolunteering from "@/pages/Volunteering/MyVolunteering";
 import VolunteerGroupPage from "@/pages/Volunteering/VolunteerGroup";
 import Chats from "@/pages/Chats/Chats";
+import SavedPosts from "@/pages/SavedPosts/SavedPosts";
 
 import Camera from "@/pages/Camera/Camera";
 import Create from "@/pages/Create/Create";
@@ -94,6 +95,7 @@ export default function AppRouter() {
         <Route path="/issue-community/:communityId" element={<IssueCommunityPage />} />
         <Route path="/issue-community/:communityId/details" element={<CommunityDetails />} />
         <Route path="/chats" element={<Chats />} />
+        <Route path="/saved" element={<SavedPosts />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/map" element={<MapPage />} />
         <Route path="/settings" element={<Settings />} />
