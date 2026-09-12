@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { AlertTriangle, Volume2, VolumeX } from "lucide-react";
+import { AlertTriangle, Maximize2, Volume2, VolumeX } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
 import { sensitiveContentPreference } from "@/services/privacy";
+import MediaViewer from "@/components/volunteering/MediaViewer";
 
 export interface PostMediaItem {
   url: string;
@@ -17,6 +18,8 @@ interface Props {
 }
 
 export default function MediaGrid({ items, compact = false, sensitive = false }: Props) {
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+
   if (!items.length) return null;
 
   const single = items.length === 1;
@@ -25,7 +28,7 @@ export default function MediaGrid({ items, compact = false, sensitive = false }:
     <div>
       {single ? (
         <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-          <MediaItem item={items[0]} single compact={compact} sensitive={sensitive} />
+          <MediaItem item={items[0]} single compact={compact} sensitive={sensitive} onOpen={() => setViewerIndex(0)} />
         </div>
       ) : (
         <div className="flex w-full max-w-full snap-x gap-1.5 overflow-x-auto overscroll-x-contain rounded-2xl">
@@ -36,10 +39,18 @@ export default function MediaGrid({ items, compact = false, sensitive = false }:
                 compact ? "h-64 w-48" : "h-[344px] w-[var(--media-card-width)]"
               }`}
             >
-              <MediaItem item={item} sensitive={sensitive} />
+              <MediaItem item={item} sensitive={sensitive} onOpen={() => setViewerIndex(index)} />
             </div>
           ))}
         </div>
+      )}
+    {viewerIndex !== null && (
+        <MediaViewer
+          items={items.map((item) => ({ src: item.url, mediaType: item.type }))}
+          index={viewerIndex}
+          onClose={() => setViewerIndex(null)}
+          title="Post media"
+        />
       )}
     </div>
   );
@@ -50,11 +61,14 @@ function MediaItem({
   single = false,
   compact = false,
   sensitive = false,
+  onOpen,
 }: {
   item: PostMediaItem;
   single?: boolean;
   compact?: boolean;
   sensitive?: boolean;
+  /** Invoked when the user taps/click the media to open the full viewer. */
+  onOpen?: () => void;
 }) {
   const [muted, setMuted] = useState(item.muted ?? true);
   const { profile } = useAuth();
@@ -137,15 +151,29 @@ function MediaItem({
         >
           {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
         </button>
+        <button
+          onClick={onOpen}
+          aria-label="Open video full screen"
+          className="absolute right-2 top-2 z-50 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition hover:bg-black/80"
+        >
+          <Maximize2 size={14} />
+        </button>
       </div>
     );
   }
 
   return (
-    <img
-      src={item.url}
-      alt=""
-      className={`h-full w-full ${single ? `${singleClass} object-contain` : "object-cover"}`}
-    />
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label="Open media full screen"
+      className="block h-full w-full cursor-zoom-in"
+    >
+      <img
+        src={item.url}
+        alt=""
+        className={`h-full w-full ${single ? `${singleClass} object-contain` : "object-cover"}`}
+      />
+    </button>
   );
 }

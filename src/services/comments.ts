@@ -34,6 +34,10 @@ export interface CommentDoc {
   displayName: string;
   photoURL: string;
   text: string;
+  /** Replies attach to their parent comment id; null on top-level comments. */
+  parentId?: string | null;
+  /** Thread depth for visual nesting (derived from the parent on write). */
+  depth?: number;
   mentionedUserIds?: string[];
   mentions?: MentionRef[];
   likes?: number;
@@ -93,6 +97,8 @@ export async function addPostComment(input: {
   post: FeedPost;
   actor: NotificationActor;
   text: string;
+  /** Set when replying to an existing comment; otherwise null for top-level. */
+  parentId?: string | null;
 }) {
   const text = input.text.trim();
   if (!text) return null;
@@ -105,12 +111,26 @@ export async function addPostComment(input: {
   const commentRef = doc(collection(db, "posts", input.post.id, "comments"));
   const batch = writeBatch(db);
 
+  // Reply threading: attach to the parent comment and inherit its depth.
+  let parentAuthorId: string | null = null;
+  let depth = 0;
+  if (input.parentId) {
+    const parentSnap = await getDoc(doc(db, "posts", input.post.id, "comments", input.parentId));
+    const parent = parentSnap.data() as CommentDoc | undefined;
+    if (parentSnap.exists() && parent) {
+      depth = Math.min((parent.depth ?? 0) + 1, 6);
+      parentAuthorId = parent.uid;
+    }
+  }
+
   batch.set(commentRef, {
     uid: input.actor.uid,
     username: input.actor.username || "",
     displayName: input.actor.displayName || input.actor.username || "Hivez User",
     photoURL: input.actor.photoURL || "",
     text,
+    parentId: input.parentId || null,
+    depth,
     mentionedUserIds: mentions.map((mention) => mention.uid),
     mentions,
     likes: 0,
@@ -128,12 +148,13 @@ export async function addPostComment(input: {
   });
 
   const recipients = new Set([input.post.uid, ...mentions.map((mention) => mention.uid)]);
+  if (parentAuthorId) recipients.add(parentAuthorId);
   await Promise.all(
     [...recipients].map((recipientId) =>
       createNotification({
         recipientId,
         actor: input.actor,
-        type: recipientId === input.post.uid ? "comment" : "mention",
+        type: recipientId === input.post.uid || recipientId === parentAuthorId ? "comment" : "mention",
         text,
         link: `/post/${input.post.id}`,
         postId: input.post.id,

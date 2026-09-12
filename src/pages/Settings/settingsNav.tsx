@@ -34,7 +34,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
   { key: "accessibility", label: "Accessibility", description: "Reduced motion and reading preferences", path: "/settings/accessibility", icon: Accessibility },
   { key: "language", label: "Language", description: "Display language for Hivez", path: "/settings/language", icon: Languages },
   { key: "data", label: "Data", description: "Download, usage and on-device cache", path: "/settings/data", icon: Database },
-  { key: "saved", label: "Saved posts", description: "Posts you have bookmarked — private to you", path: "/saved", icon: Bookmark, external: true },
-  { key: "activity", label: "Your activity", description: "Alerts and interactions across your account", path: "/activity", icon: Activity, external: true },
+  { key: "saved", label: "Saved posts", description: "Posts you have bookmarked — private to you", path: "/settings/saved", icon: Bookmark, external: true },
+  { key: "activity", label: "Your activity", description: "Alerts and interactions across your account", path: "/settings/activity", icon: Activity, external: true },
   { key: "delete", label: "Delete / deactivate", description: "Temporarily or permanently close your account", path: "/settings/delete", icon: Trash2 },
 ];

@@ -36,6 +36,7 @@ export default function CommentsSheet({
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [text, setText] = useState("");
+  const [replyTo, setReplyTo] = useState<CommentDoc | null>(null);
   const [mentionSuggestions, setMentionSuggestions] = useState<SearchableUser[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -106,9 +107,11 @@ export default function CommentsSheet({
           photoURL: profileData?.photoURL || user.photoURL || "",
         },
         text: text.trim(),
+        parentId: replyTo?.id ?? null,
       });
 
       setText("");
+      setReplyTo(null);
       setMentionSuggestions([]);
       textareaRef.current?.focus();
     } catch (err) {
@@ -129,6 +132,14 @@ export default function CommentsSheet({
 
   if (!open) return null;
 
+  const replyComposerProps = {
+    sending,
+    replyToLabel: replyTo?.username,
+    onCancelReply: () => setReplyTo(null),
+    mentionSuggestions,
+    onSelectMention: insertMention,
+  };
+
   return (
     <>
       {/* Backdrop */}
@@ -139,20 +150,17 @@ export default function CommentsSheet({
         <div className="flex h-full flex-col overflow-hidden rounded-t-[28px]">
           <CommentHeader count={comments.length} onClose={onClose} />
           <OriginalPost post={post} />
-          <CommentList comments={comments} loading={loading} postId={post.id} />
+          <CommentList comments={comments} loading={loading} postId={post.id} onReply={setReplyTo} />
           <CommentComposer
             ref={textareaRef}
             value={text}
-            sending={sending}
             onChange={setText}
             onSend={sendComment}
-            mentionSuggestions={mentionSuggestions}
-            onSelectMention={insertMention}
+            {...replyComposerProps}
           />
         </div>
       </div>
-
-      {/* Desktop: full-screen overlay that replaces the feed */}
+{/* Desktop: full-screen overlay that replaces the feed */}
       <div className="fixed inset-0 z-[100] hidden bg-white dark:bg-black sm:flex">
         <div className="mx-auto flex w-full max-w-2xl flex-col border-x border-zinc-200 bg-white dark:border-zinc-800 dark:bg-black">
           {/* Header */}
@@ -174,7 +182,7 @@ export default function CommentsSheet({
 
           {/* Scrollable comment feed */}
           <div className="flex-1 overflow-y-auto">
-            <CommentList comments={comments} loading={loading} postId={post.id} />
+            <CommentList comments={comments} loading={loading} postId={post.id} onReply={setReplyTo} />
           </div>
 
           {/* Composer at bottom */}
@@ -182,11 +190,9 @@ export default function CommentsSheet({
             <CommentComposer
               ref={textareaRef}
               value={text}
-              sending={sending}
               onChange={setText}
               onSend={sendComment}
-              mentionSuggestions={mentionSuggestions}
-              onSelectMention={insertMention}
+              {...replyComposerProps}
             />
           </div>
         </div>

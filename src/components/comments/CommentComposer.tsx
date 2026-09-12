@@ -2,7 +2,7 @@ import {
   forwardRef,
 } from "react";
 
-import { BadgeCheck, Send } from "lucide-react";
+import { BadgeCheck, Send, X } from "lucide-react";
 import type { SearchableUser } from "@/services/privacy";
 
 interface Props {
@@ -19,6 +19,11 @@ interface Props {
   mentionSuggestions?: SearchableUser[];
 
   onSelectMention?: (user: SearchableUser) => void;
+
+  /** When set, shows "Replying to @username" with a cancel button. */
+  replyToLabel?: string;
+
+  onCancelReply?: () => void;
 }
 
 const CommentComposer = forwardRef<
@@ -33,11 +38,29 @@ const CommentComposer = forwardRef<
       onSend,
       mentionSuggestions = [],
       onSelectMention,
+      replyToLabel,
+      onCancelReply,
     },
     ref
   ) => {
     return (
       <div className="sticky bottom-0 border-t border-zinc-800 dark:border-zinc-800 border-zinc-200 bg-white dark:bg-black/95 backdrop-blur-xl">
+        {replyToLabel && (
+          <div className="mx-4 mt-3 flex items-center justify-between gap-3 rounded-xl bg-zinc-100 px-3 py-2 dark:bg-zinc-900">
+            <p className="min-w-0 truncate text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+              Replying to <span className="text-sky-500">@{replyToLabel.replace(/^@/, "")}</span>
+            </p>
+            <button
+              type="button"
+              onClick={onCancelReply}
+              aria-label="Cancel reply"
+              className="rounded-full p-1 text-zinc-500 transition hover:bg-zinc-200 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
+
         {mentionSuggestions.length > 0 && (
           <div className="mx-4 mt-3 max-h-48 overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-1 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
             {mentionSuggestions.map((person) => (
@@ -65,7 +88,6 @@ const CommentComposer = forwardRef<
         )}
 
         <div className="flex items-end gap-3 p-4">
-
           <textarea
             ref={ref}
             value={value}
@@ -80,7 +102,6 @@ const CommentComposer = forwardRef<
                 !e.shiftKey
               ) {
                 e.preventDefault();
-
                 onSend();
               }
             }}
@@ -100,9 +121,7 @@ const CommentComposer = forwardRef<
               className="text-white"
             />
           </button>
-
         </div>
-
       </div>
     );
   }

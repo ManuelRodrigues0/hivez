@@ -18,6 +18,8 @@ interface Props {
   comment: CommentDoc;
   postId: string;
   depth?: number;
+  /** Invoked when the user presses Reply on this comment. */
+  onReply?: (comment: CommentDoc) => void;
 }
 
 function timeAgo(timestamp?: TimestampLike | null) {
@@ -40,7 +42,7 @@ function timeAgo(timestamp?: TimestampLike | null) {
   return `${years}y`;
 }
 
-export default function CommentCard({ comment, postId, depth = 0 }: Props) {
+export default function CommentCard({ comment, postId, depth = 0, onReply }: Props) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [liked, setLiked] = useState(false);
@@ -161,7 +163,11 @@ export default function CommentCard({ comment, postId, depth = 0 }: Props) {
                 </span>
               )}
             </button>
-            <button className="flex items-center gap-1 rounded-full p-1 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
+            <button
+              onClick={() => onReply?.(comment)}
+              aria-label={`Reply to @${author.username || "this comment"}`}
+              className="flex items-center gap-1 rounded-full p-1 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            >
               <MessageCircle size={14} className="text-zinc-500 dark:text-zinc-400" />
             </button>
             <div className="relative">

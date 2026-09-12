@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Navigate, Routes, Route } from "react-router-dom";
 import MainLayout from "../components/layout/MainLayout";
 import MobileLayout from "../components/layout/MobileLayout";
 import HivezLoader from "@/components/common/HivezLoader";
@@ -120,6 +120,8 @@ export default function AppRouter() {
             <Route path="accessibility" element={<AccessibilitySettings />} />
             <Route path="language" element={<LanguageSettings />} />
             <Route path="data" element={<DataSettings />} />
+            <Route path="saved" element={<Navigate to="/saved" replace />} />
+            <Route path="activity" element={<Navigate to="/activity" replace />} />
             <Route path="delete" element={<DeleteAccountSettings />} />
           </Route>
         <Route path="/profile/edit" element={<EditProfile />} />
