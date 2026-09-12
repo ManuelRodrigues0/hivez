@@ -1563,7 +1563,10 @@ body,
 
   .app-feed-card {
     width: calc(100% - 28px);
-    max-width: calc(var(--feed-max) - 28px);
+    /* Cards fill the center region (minus their 14px margins). The previous
+       760px readable cap left a large dead strip between the post and the
+       fixed Updates rail at wide desktop viewports. */
+    max-width: none;
   }
 }
 
