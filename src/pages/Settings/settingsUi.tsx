@@ -29,14 +29,14 @@ export function SettingRow({
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-3 border-b border-[#1c1d1a]/5 py-3.5 last:border-b-0 dark:border-neutral-800/60 sm:flex-row sm:items-center">
-      <div className="flex min-w-0 flex-1 items-center gap-3.5">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#1c1d1a]/10 bg-[#f7f7f2] text-[#3d654c] dark:border-neutral-800 dark:bg-[#1a1a1a] dark:text-[#f2c14e]">
-          <Icon size={17} />
+    <div className="flex flex-col gap-2.5 border-b border-[#1c1d1a]/5 py-2.5 last:border-b-0 dark:border-neutral-800/60 sm:flex-row sm:items-center">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#1c1d1a]/10 bg-[#f7f7f2] text-[#3d654c] dark:border-neutral-800 dark:bg-[#1a1a1a] dark:text-[#f2c14e]">
+          <Icon size={16} />
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-bold text-[#1c1d1a] dark:text-white">{title}</p>
-          <p className="mt-0.5 text-[11px] font-medium leading-4 text-[#1c1d1a]/55 dark:text-neutral-400">{subtitle}</p>
+          <p className="truncate text-[13px] font-bold text-[#1c1d1a] dark:text-white">{title}</p>
+          <p className="mt-0.5 truncate text-[11px] font-medium leading-4 text-[#1c1d1a]/55 dark:text-neutral-400">{subtitle}</p>
         </div>
       </div>
       <div className="sm:shrink-0">{children}</div>
@@ -144,18 +144,18 @@ export function NavRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3.5 border-b border-[#1c1d1a]/5 py-3.5 text-left last:border-b-0 dark:border-neutral-800/60"
+      className="flex w-full items-center gap-3 border-b border-[#1c1d1a]/5 py-2.5 text-left transition last:border-b-0 hover:bg-[#f7f7f2]/70 focus-visible:ring-2 focus-visible:ring-[#3d654c]/40 focus-visible:ring-offset-1 dark:border-neutral-800/60 dark:hover:bg-white/5"
     >
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#1c1d1a]/10 bg-[#f7f7f2] text-[#3d654c] dark:border-neutral-800 dark:bg-[#1a1a1a] dark:text-[#f2c14e]">
-        <Icon size={17} />
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#1c1d1a]/10 bg-[#f7f7f2] text-[#3d654c] dark:border-neutral-800 dark:bg-[#1a1a1a] dark:text-[#f2c14e]">
+        <Icon size={16} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-bold text-[#1c1d1a] dark:text-white">{title}</p>
+        <p className="truncate text-[13px] font-bold text-[#1c1d1a] dark:text-white">{title}</p>
         {subtitle ? (
-          <p className="mt-0.5 text-[11px] font-medium leading-4 text-[#1c1d1a]/55 dark:text-neutral-400">{subtitle}</p>
+          <p className="mt-0.5 truncate text-[11px] font-medium leading-4 text-[#1c1d1a]/55 dark:text-neutral-400">{subtitle}</p>
         ) : null}
       </div>
-      <ChevronRight size={17} className="shrink-0 text-[#1c1d1a]/35 dark:text-neutral-500" />
+      <ChevronRight size={16} className="shrink-0 text-[#1c1d1a]/35 dark:text-neutral-500" />
     </button>
   );
 }

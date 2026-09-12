@@ -1,8 +1,6 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
-import { useAuth } from "@/context/AuthContext";
-import { normalizePrivacy } from "@/services/privacy";
 import { SETTINGS_CATEGORIES } from "./settingsNav";
 
 /**
@@ -16,8 +14,6 @@ import { SETTINGS_CATEGORIES } from "./settingsNav";
 export default function SettingsLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { profile } = useAuth();
-  const privacy = normalizePrivacy(profile);
   const isRoot = location.pathname === "/settings";
 
   const activeCategory = [...SETTINGS_CATEGORIES]
@@ -30,28 +26,30 @@ export default function SettingsLayout() {
 
   return (
     <div className="app-settings-page w-full min-h-screen select-none">
-      <div className="mb-4 flex items-center gap-3 lg:mb-6">
-        {!isRoot && (
-          <button
-            type="button"
-            onClick={() => navigate("/settings")}
-            aria-label="Back to settings"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#1c1d1a]/10 bg-white text-[#1c1d1a] shadow-2xs transition hover:bg-[#ecece5] dark:border-neutral-800 dark:bg-[#141414] dark:text-white dark:hover:bg-neutral-800"
-          >
-            <ArrowLeft size={18} />
-          </button>
-        )}
-        <div>
+      <div className="mb-3 lg:mb-5">
+        <div className="flex items-center gap-3">
+          {!isRoot && (
+            <button
+              type="button"
+              onClick={() => navigate("/settings")}
+              aria-label="Back to settings"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#1c1d1a]/10 bg-white text-[#1c1d1a] shadow-2xs transition hover:bg-[#ecece5] focus-visible:ring-2 focus-visible:ring-[#3d654c]/40 dark:border-neutral-800 dark:bg-[#141414] dark:text-white dark:hover:bg-neutral-800"
+            >
+              <ArrowLeft size={18} />
+            </button>
+          )}
           <h1 className="text-lg font-black tracking-tight text-[#1c1d1a] dark:text-white">
-            {isRoot ? "Settings" : activeCategory?.label || "Settings"}
+            {isRoot ? "Settings" : (activeCategory?.label || "Settings")}
           </h1>
-          <p className="text-[11px] font-bold uppercase tracking-wider text-[#3d654c] dark:text-[#f2c14e]">
-            {privacy.account === "private" ? "Private account" : "Public account"}
-          </p>
         </div>
+        <p className="mt-1 truncate text-[11px] font-medium text-[#1c1d1a]/55 dark:text-neutral-400">
+          {isRoot
+            ? "Manage your account, privacy and Hivez preferences"
+            : (activeCategory?.description || "Manage your Hivez preferences")}
+        </p>
       </div>
 
-      <div className="mx-auto w-full max-w-3xl space-y-6 pb-8">
+      <div className="mx-auto w-full max-w-4xl space-y-4 pb-8">
         <Outlet />
       </div>
     </div>
