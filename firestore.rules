@@ -190,7 +190,17 @@ service cloud.firestore {
     }
 
     match /chats/{chatId} {
-      allow read: if signedIn() && request.auth.uid in resource.data.participants;
+      // ID-split fallback: DM/Ultra-Bee chat ids are "{uidA}_{uidB}" (sorted),
+      // so a get() is provable from the id alone. This is required because
+      // getDoc/onSnapshot on a NOT-YET-CREATED chat evaluates missing docs
+      // without resource.data, and a resource.data-only condition would deny
+      // the read and break first-time "start chat" and Ultra Bee seeding.
+      // Listing still requires the participants array-contains query.
+      allow read: if signedIn()
+        && (
+          request.auth.uid in resource.data.participants
+          || request.auth.uid in chatId.split("_")
+        );
       allow create: if signedIn()
         && request.auth.uid in request.resource.data.participants
         && noBlockBetween(request.auth.uid, request.resource.data.participants[0])
@@ -209,7 +219,14 @@ service cloud.firestore {
           && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants
           && noBlockBetween(request.auth.uid, get(/databases/$(database)/documents/chats/$(chatId)).data.participants[0])
           && (get(/databases/$(database)/documents/chats/$(chatId)).data.participants.size() < 2
-            || noBlockBetween(request.auth.uid, get(/databases/$(database)/documents/chats/$(chatId)).data.participants[1]));
+            || noBlockBetween(request.auth.uid, get(/databases/$(database)/documents/chats/$(chatId)).data.participants[1]))
+          // Ultra Bee (AI assistant) is not a Firebase Auth user; its replies
+          // are generated client-side, but ONLY inside the requester's own
+          // single Ultra Bee conversation (chatId == "{uid}_ultra-bee" sorted).
+          || (signedIn()
+            && request.resource.data.senderId == "ultra-bee"
+            && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants
+            && request.auth.uid in chatId.split("_"));
         allow update: if signedIn()
           && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["readBy", "reactions"]);
@@ -221,6 +238,12 @@ service cloud.firestore {
       allow read: if signedIn()
         && (
           resource.data.userId == request.auth.uid
+          // ID-split fallback: reHive ids are "{userId}_{postId}" (enforced on
+          // create), so the owner is provable from the id alone. Required for
+          // onSnapshot on state docs that do not exist yet — missing docs
+          // evaluate without resource.data, so resource.data-based reads of
+          // e.g. /posts/undefined would be denied.
+          || reHiveId.split("_")[0] == request.auth.uid
           || canReadPostData(get(/databases/$(database)/documents/posts/$(resource.data.postId)).data)
         );
       allow create: if signedIn()
@@ -253,11 +276,19 @@ service cloud.firestore {
       allow delete: if signedIn()
         && (resource.data.requesterId == request.auth.uid || resource.data.targetId == request.auth.uid);
     }
-match /blocks/{blockId} {
-      allow read: if signedIn()
+    match /blocks/{blockId} {
+      // ID-split read: the document id is the deterministic "blockerId_blockedId"
+      // pair (sorted), so authorization is provable from the id alone. This is
+      // required for get()/onSnapshot on pair documents that do not exist yet
+      // (Firestore evaluates missing docs without resource.data, so any
+      // resource.data-based condition would deny the read and break first-time
+      // block checks like "is this author blocked?").
+      allow get, list: if signedIn()
         && (
           resource.data.blockerId == request.auth.uid
           || resource.data.blockedId == request.auth.uid
+          || blockId.split("_")[0] == request.auth.uid
+          || blockId.split("_")[1] == request.auth.uid
         );
       allow create: if signedIn()
         && request.resource.data.blockerId == request.auth.uid
@@ -268,7 +299,12 @@ match /blocks/{blockId} {
     }
 
     match /savedPosts/{savedPostId} {
-      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      // ID-split read: savedPosts ids are always "{userId}_{postId}" (enforced
+      // on create), so the owner is provable from the id even when the document
+      // does not exist yet (missing docs fail resource.data-based rules).
+      allow get, list: if signedIn()
+        && (resource.data.userId == request.auth.uid
+          || savedPostId.split("_")[0] == request.auth.uid);
       allow create: if signedIn()
         && request.resource.data.userId == request.auth.uid
         && savedPostId == request.auth.uid + "_" + request.resource.data.postId;

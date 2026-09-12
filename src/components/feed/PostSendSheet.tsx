@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useMemo, useState } from "react";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { BadgeCheck, Check, Search, Send, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -50,7 +50,7 @@ export default function PostSendSheet({ post, open, onClose }: Props) {
 
   useEffect(() => {
     if (!open || !user) return;
-    return onSnapshot(collection(db, "chats"), (snapshot) => {
+    return onSnapshot(query(collection(db, "chats"), where("participants", "array-contains", user.uid)), (snapshot) => {
       const nextChats = snapshot.docs
         .map((chatDoc) => ({ id: chatDoc.id, ...(chatDoc.data() as Omit<ChatDoc, "id">) }))
         .filter((chat) => chat.participants?.includes(user.uid))

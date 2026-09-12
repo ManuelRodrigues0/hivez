@@ -16,6 +16,7 @@ import {
   serverTimestamp,
   setDoc,
   updateDoc,
+  where,
   writeBatch,
 } from "firebase/firestore";
 import {
@@ -240,19 +241,21 @@ export default function Chats() {
 
   useEffect(() => {
     if (!user) return;
-    return onSnapshot(collection(db, "chats"), (snapshot) => {
-      const nextChats = snapshot.docs
-        .map((chatDoc) => ({
-          id: chatDoc.id,
-          ...(chatDoc.data() as Omit<ChatDoc, "id">),
-        }))
-        .filter((chat) => chat.participants?.includes(user.uid))
-        .sort((a, b) => {
-          const aTime = a.lastMessageAt?.toDate?.().getTime?.() || 0;
-          const bTime = b.lastMessageAt?.toDate?.().getTime?.() || 0;
-          return bTime - aTime;
-        });
-      setChats(nextChats);
+    return onSnapshot(
+      query(collection(db, "chats"), where("participants", "array-contains", user.uid)),
+      (snapshot) => {
+        const nextChats = snapshot.docs
+          .map((chatDoc) => ({
+            id: chatDoc.id,
+            ...(chatDoc.data() as Omit<ChatDoc, "id">),
+          }))
+          .filter((chat) => chat.participants?.includes(user.uid))
+          .sort((a, b) => {
+            const aTime = a.lastMessageAt?.toDate?.().getTime?.() || 0;
+            const bTime = b.lastMessageAt?.toDate?.().getTime?.() || 0;
+            return bTime - aTime;
+          });
+        setChats(nextChats);
       if (nextChats.length) persistLocalChats(nextChats);
       setDraftChat((draft) => (draft && nextChats.some((chat) => chat.id === draft.id) ? null : draft));
       setSelectedChatId((current) => current || (window.innerWidth >= 768 ? nextChats[0]?.id || null : current));

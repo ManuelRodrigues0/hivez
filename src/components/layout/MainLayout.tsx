@@ -14,7 +14,7 @@ import {
   MessageCircle,
   Map,
 } from "lucide-react";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 import gsap from "gsap";
 import { useAuth } from "../../context/AuthContext";
 import { COMMUNITIES } from "../../constants/communities";
@@ -166,7 +166,7 @@ export default function MainLayout() {
     chatsReady.current = false;
     seenChatTimes.current = {};
 
-    return onSnapshot(collection(db, "chats"), (snapshot) => {
+    return onSnapshot(query(collection(db, "chats"), where("participants", "array-contains", user.uid)), (snapshot) => {
       const chats = snapshot.docs
         .map((chatDoc) => ({ id: chatDoc.id, ...(chatDoc.data() as any) }))
         .filter((chat) => chat.participants?.includes(user.uid));
