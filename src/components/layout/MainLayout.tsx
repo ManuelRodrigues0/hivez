@@ -28,6 +28,14 @@ import UpdatesPanel from "./UpdatesPanel";
 
 const ultraBeeSrc = "/assets/hivez-ultra-bee.webm";
 
+interface ChatPreviewDoc {
+  id: string;
+  participants?: string[];
+  participantProfiles?: Record<string, { displayName?: string; username?: string }>;
+  lastMessageAt?: { toDate?: () => Date } | null;
+  lastMessageSenderId?: string;
+}
+
 function UltraBeeMark({ size = "md" }: { size?: "sm" | "md" }) {
   const sizeClasses = {
     sm: "h-5 w-5",
@@ -99,7 +107,7 @@ export default function MainLayout() {
     "--layout-left": isSidebarExpanded ? "280px" : "72px",
     "--layout-right": "384px",
     "--layout-gap": "16px",
-    "--feed-max": "min(760px, calc(100vw - var(--layout-right) - var(--layout-gap)))",
+    "--feed-max": "760px",
     "--media-card-width": "236px",
   } as CSSProperties;
 
@@ -168,7 +176,7 @@ export default function MainLayout() {
 
     return onSnapshot(query(collection(db, "chats"), where("participants", "array-contains", user.uid)), (snapshot) => {
       const chats = snapshot.docs
-        .map((chatDoc) => ({ id: chatDoc.id, ...(chatDoc.data() as any) }))
+        .map((chatDoc) => ({ id: chatDoc.id, ...(chatDoc.data() as Omit<ChatPreviewDoc, "id">) }))
         .filter((chat) => chat.participants?.includes(user.uid));
 
       if (!chatsReady.current) {
@@ -395,7 +403,7 @@ export default function MainLayout() {
       {/* Desktop Sidebar Rail */}
       <aside 
         ref={sidebarRef}
-        className="hidden lg:fixed lg:left-0 lg:top-16 lg:z-40 lg:flex lg:h-[calc(100vh-64px)] lg:flex-col lg:border-r lg:border-[#1c1d1a]/10 lg:bg-[#f7f7f2] dark:lg:border-neutral-800/80 dark:lg:bg-[#0a0a0a] transition-[width] duration-300 overflow-hidden"
+        className="app-sidebar hidden lg:fixed lg:left-0 lg:top-16 lg:z-40 lg:flex lg:h-[calc(100vh-64px)] lg:flex-col lg:border-r lg:border-[#1c1d1a]/10 lg:bg-[#f7f7f2] dark:lg:border-neutral-800/80 dark:lg:bg-[#0a0a0a] transition-[width] duration-300 overflow-hidden"
         style={{ width: "var(--layout-left)" }}
         onMouseEnter={handleSidebarMouseEnter}
         onMouseLeave={handleSidebarMouseLeave}
@@ -498,7 +506,7 @@ export default function MainLayout() {
                 onClick={() => setSidebarOpen(false)}
               />
               <div
-                className="fixed left-0 top-0 z-50 flex h-screen w-72 max-w-[80vw] flex-col border-r border-[#1c1d1a]/10 bg-[#f7f7f2] shadow-2xl dark:border-neutral-800 dark:bg-[#0d0d0d] overflow-hidden lg:hidden"
+              className="app-mobile-drawer fixed left-0 top-0 z-50 flex h-screen w-72 max-w-[80vw] flex-col border-r border-[#1c1d1a]/10 bg-[#f7f7f2] shadow-2xl dark:border-neutral-800 dark:bg-[#0d0d0d] overflow-hidden lg:hidden"
               >
                 {/* Mobile Drawer Header */}
                 <div className="flex w-full items-center justify-between border-b border-[#1c1d1a]/10 px-4 py-3 bg-white/60 dark:border-neutral-800 dark:bg-neutral-900/60 shrink-0">
@@ -523,7 +531,7 @@ export default function MainLayout() {
 
           {/* Page Content */}
           <main className="app-main flex-1 overflow-y-auto pb-20 lg:pb-0 lg:pt-16">
-            <div className="app-feed-shell min-w-0 px-0 lg:ml-[var(--layout-gap)] lg:mr-[var(--layout-gap)]">
+            <div className="app-feed-shell min-w-0 px-0">
               <Outlet />
             </div>
           </main>

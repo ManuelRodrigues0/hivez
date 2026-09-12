@@ -202,6 +202,7 @@ export async function canMessageUser(senderId: string | null | undefined, recipi
 
 export async function canMentionUser(actorId: string | null | undefined, targetId: string) {
   if (!actorId || actorId === targetId) return true;
+  if (await isBlockedBetween(actorId, targetId)) return false;
   const profile = await getUserProfileData(targetId);
   const privacy = normalizePrivacy(profile);
   if (privacy.mentions === "everyone") return true;
@@ -212,6 +213,7 @@ export async function canMentionUser(actorId: string | null | undefined, targetI
 export async function canCommentOnPost(actorId: string | null | undefined, post: { uid?: string }) {
   if (!actorId || !post.uid) return false;
   if (actorId === post.uid) return true;
+  if (await isBlockedBetween(actorId, post.uid)) return false;
   const profile = await getUserProfileData(post.uid);
   const privacy = normalizePrivacy(profile);
   if (privacy.comments === "everyone") return true;

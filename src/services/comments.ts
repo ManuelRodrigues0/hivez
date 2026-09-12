@@ -114,12 +114,14 @@ export async function addPostComment(input: {
   // Reply threading: attach to the parent comment and inherit its depth.
   let parentAuthorId: string | null = null;
   let depth = 0;
+  let parentId: string | null = null;
   if (input.parentId) {
     const parentSnap = await getDoc(doc(db, "posts", input.post.id, "comments", input.parentId));
     const parent = parentSnap.data() as CommentDoc | undefined;
     if (parentSnap.exists() && parent) {
       depth = Math.min((parent.depth ?? 0) + 1, 6);
       parentAuthorId = parent.uid;
+      parentId = parentSnap.id;
     }
   }
 
@@ -129,7 +131,7 @@ export async function addPostComment(input: {
     displayName: input.actor.displayName || input.actor.username || "Hivez User",
     photoURL: input.actor.photoURL || "",
     text,
-    parentId: input.parentId || null,
+    parentId,
     depth,
     mentionedUserIds: mentions.map((mention) => mention.uid),
     mentions,
@@ -149,6 +151,7 @@ export async function addPostComment(input: {
 
   const recipients = new Set([input.post.uid, ...mentions.map((mention) => mention.uid)]);
   if (parentAuthorId) recipients.add(parentAuthorId);
+  recipients.delete(input.actor.uid);
   await Promise.all(
     [...recipients].map((recipientId) =>
       createNotification({

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useRef, useState } from "react";
 import { onSnapshot } from "firebase/firestore";
 
@@ -15,6 +16,7 @@ import {
 } from "@/services/feedRanking";
 import type { LocationSnapshot } from "@/services/location";
 import { filterVisiblePosts } from "@/services/privacy";
+import type { TimestampLike } from "@/types/timestamp";
 
 export interface FeedPost {
   id: string;
@@ -37,7 +39,7 @@ export interface FeedPost {
   impressions?: number;
   confirmations?: number;
   urgency?: number;
-  createdAt: any;
+  createdAt: TimestampLike | null;
   category?: string;
   sensitive?: boolean;
   hashtags?: string[];
@@ -198,7 +200,7 @@ export default function Feed({ category, hashtag, onCommentClick }: FeedProps) {
   }
 
   return (
-    <div>
+    <div className="app-feed">
       {posts.map((post) => (
         <FeedCard
           key={post.id}

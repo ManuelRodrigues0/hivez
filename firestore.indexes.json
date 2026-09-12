@@ -28,7 +28,7 @@
         }
       ]
     },
-{
+    {
       "collectionGroup": "savedPosts",
       "queryScope": "COLLECTION",
       "fields": [
@@ -42,7 +42,7 @@
         }
       ]
     },
-{
+    {
       "collectionGroup": "followRequests",
       "queryScope": "COLLECTION",
       "fields": [

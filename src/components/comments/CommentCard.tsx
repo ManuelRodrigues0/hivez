@@ -18,6 +18,7 @@ interface Props {
   comment: CommentDoc;
   postId: string;
   depth?: number;
+  replyCount?: number;
   /** Invoked when the user presses Reply on this comment. */
   onReply?: (comment: CommentDoc) => void;
 }
@@ -42,7 +43,7 @@ function timeAgo(timestamp?: TimestampLike | null) {
   return `${years}y`;
 }
 
-export default function CommentCard({ comment, postId, depth = 0, onReply }: Props) {
+export default function CommentCard({ comment, postId, depth = 0, replyCount = 0, onReply }: Props) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [liked, setLiked] = useState(false);
@@ -114,8 +115,14 @@ export default function CommentCard({ comment, postId, depth = 0, onReply }: Pro
   }
 
   return (
-    <div style={{ marginLeft }}>
-      <article className="group flex gap-2.5 rounded-2xl px-4 py-3 transition hover:bg-zinc-100 dark:hover:bg-zinc-900/50">
+    <div className="relative" style={{ marginLeft }}>
+      {depth > 0 && (
+        <span
+          aria-hidden="true"
+          className="absolute bottom-3 left-2 top-0 w-px bg-zinc-200 dark:bg-zinc-800"
+        />
+      )}
+      <article className="group relative flex gap-2.5 rounded-2xl px-4 py-3 transition hover:bg-zinc-100 dark:hover:bg-zinc-900/50">
         <img
           src={
             author.photoURL ||
@@ -169,6 +176,11 @@ export default function CommentCard({ comment, postId, depth = 0, onReply }: Pro
               className="flex items-center gap-1 rounded-full p-1 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
               <MessageCircle size={14} className="text-zinc-500 dark:text-zinc-400" />
+              {replyCount > 0 && (
+                <span className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400">
+                  {replyCount}
+                </span>
+              )}
             </button>
             <div className="relative">
               <button

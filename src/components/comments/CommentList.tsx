@@ -27,9 +27,10 @@ export default function CommentList({
   onReply,
 }: Props) {
   const childrenByParent = useMemo(() => {
+    const validIds = new Set(comments.map((comment) => comment.id));
     const map = new Map<string, CommentDoc[]>();
     for (const comment of comments) {
-      const parentKey = comment.parentId || "__root__";
+      const parentKey = comment.parentId && validIds.has(comment.parentId) ? comment.parentId : "__root__";
       const list = map.get(parentKey) || [];
       list.push(comment);
       map.set(parentKey, list);
@@ -66,7 +67,13 @@ export default function CommentList({
     const replies = childrenByParent.get(comment.id) || [];
     return (
       <div key={comment.id}>
-        <CommentCard comment={comment} postId={postId} depth={depth} onReply={onReply} />
+        <CommentCard
+          comment={comment}
+          postId={postId}
+          depth={Math.min(depth, 6)}
+          replyCount={replies.length}
+          onReply={onReply}
+        />
         {replies.map((reply) => renderNode(reply, depth + 1))}
       </div>
     );

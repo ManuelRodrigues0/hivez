@@ -1538,6 +1538,32 @@ body,
   background: color-mix(in srgb, var(--hivez-surface) 58%, transparent) !important;
 }
 
+@media (min-width: 1024px) {
+  .app-shell {
+    overflow-x: clip;
+  }
+
+  .app-main {
+    width: calc(100vw - var(--layout-left) - var(--layout-right));
+    max-width: calc(100vw - var(--layout-left) - var(--layout-right));
+    min-width: 0;
+  }
+
+  .app-feed-shell {
+    width: calc(100vw - var(--layout-left) - var(--layout-right) - (var(--layout-gap) * 2));
+    max-width: calc(100vw - var(--layout-left) - var(--layout-right) - (var(--layout-gap) * 2));
+    min-width: 0;
+    margin-left: var(--layout-gap);
+    margin-right: var(--layout-gap);
+    overflow-x: clip;
+  }
+
+  .app-feed-card {
+    width: calc(100% - 28px);
+    max-width: calc(var(--feed-max) - 28px);
+  }
+}
+
 .app-page,
 .app-profile-page,
 .app-search-page,
