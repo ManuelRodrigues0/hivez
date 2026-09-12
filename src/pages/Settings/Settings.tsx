@@ -5,7 +5,7 @@ import { ChevronRight, LogOut, Sparkles } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { logout } from "../../services/auth";
 import { SETTINGS_CATEGORIES } from "./settingsNav";
-import { NavRow, SectionTitle, SettingsSection } from "./settingsUi";
+import { NavRow, SettingsSection } from "./settingsUi";
 
 /**
  * Settings hub (/settings). Shows the account summary card, the full category
@@ -51,7 +51,6 @@ export default function Settings() {
         </button>
       </SettingsSection>
 
-      <SectionTitle title="All settings" />
       <SettingsSection>
         {SETTINGS_CATEGORIES.map((cat) => (
           <NavRow
