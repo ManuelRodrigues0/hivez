@@ -33,6 +33,7 @@ import { verifyReportEvidence, type ReportVerificationResult } from "@/services/
 import HiveSearch from "@/components/hiveSearch/HiveSearch";
 import { buildHiveRegistry, intelAnalyzeIssue, intelAssistDescription, type HiveRegistryEntry } from "@/services/omnirouteIntel";
 import { categoryFromHive, createProvisionalHive, isNewIssueCategory } from "@/services/hives";
+import { visibilityForProfile } from "@/services/privacy";
 
 type ReportStep = "category" | "media" | "verify" | "location" | "details" | "preview";
 
@@ -191,6 +192,7 @@ export default function Create() {
         // Live profile from AuthContext, fresh without an extra read.
         const profile = profileCtx || (await getDoc(doc(db, "users", user.uid))).data();
         const hashtags = extractHashtags(caption);
+        const visibility = visibilityForProfile(profile);
 
         const postRef = await addDoc(collection(db, "posts"), {
           uid: user.uid,
@@ -208,6 +210,8 @@ export default function Create() {
           likes: 0,
           comments: 0,
           shares: 0,
+          reHives: 0,
+          visibility,
           createdAt: serverTimestamp(),
         });
 
@@ -243,6 +247,7 @@ export default function Create() {
       // Live profile from AuthContext, fresh without an extra read.
       const profile = profileCtx || (await getDoc(doc(db, "users", user.uid))).data();
       const hashtags = extractHashtags(caption);
+      const visibility = visibilityForProfile(profile);
 
       const postRef = await addDoc(collection(db, "posts"), {
         uid: user.uid,
@@ -262,6 +267,8 @@ export default function Create() {
         likes: 0,
         comments: 0,
         shares: 0,
+        reHives: 0,
+        visibility,
         createdAt: serverTimestamp(),
       });
 
@@ -475,6 +482,7 @@ export default function Create() {
 
       // Live profile from AuthContext, fresh without an extra read.
       const profile = profileCtx || (await getDoc(doc(db, "users", user.uid))).data();
+      const visibility = visibilityForProfile(profile);
       const captionText = reportDescription.trim();
       const localModel = verification?.localModel;
       const gemini = verification?.gemini;
@@ -537,6 +545,8 @@ export default function Create() {
         likes: 0,
         comments: 0,
         shares: 0,
+        reHives: 0,
+        visibility,
         createdAt: serverTimestamp(),
       }));
 

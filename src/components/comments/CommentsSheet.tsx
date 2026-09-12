@@ -1,23 +1,17 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useRef, useState } from "react";
 
 import {
-  addDoc,
-  collection,
   doc,
   getDoc,
-  increment,
-  onSnapshot,
-  orderBy,
-  query,
-  serverTimestamp,
-  updateDoc,
 } from "firebase/firestore";
+import { toast } from "sonner";
 
 import { db } from "../../firebase/firebase";
 
 import { useAuth } from "../../context/AuthContext";
-import { createNotification } from "@/services/notifications";
-import { recordPostEngagement } from "@/services/engagementEvents";
+import { addPostComment, getActiveMentionQuery, listenToPostComments, type CommentDoc } from "@/services/comments";
+import { searchUsers, type SearchableUser } from "@/services/privacy";
 
 import type { FeedPost } from "../feed/Feed";
 
@@ -32,45 +26,34 @@ interface Props {
   onClose: () => void;
 }
 
-interface Comment {
-  id: string;
-  uid: string;
-  username: string;
-  displayName: string;
-  photoURL: string;
-  text: string;
-  createdAt: any;
-}
-
 export default function CommentsSheet({
   post,
   open,
   onClose,
 }: Props) {
   const { user, profile } = useAuth();
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [comments, setComments] = useState<CommentDoc[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [text, setText] = useState("");
+  const [mentionSuggestions, setMentionSuggestions] = useState<SearchableUser[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (!open) return;
     setLoading(true);
 
-    const q = query(
-      collection(db, "posts", post.id, "comments"),
-      orderBy("createdAt", "asc")
+    const unsubscribe = listenToPostComments(
+      post.id,
+      (data) => {
+        setComments(data);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Comments listener failed:", error);
+        setLoading(false);
+      }
     );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data: Comment[] = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...(doc.data() as Omit<Comment, "id">),
-      }));
-      setComments(data);
-      setLoading(false);
-    });
 
     return unsubscribe;
   }, [open, post.id]);
@@ -81,6 +64,25 @@ export default function CommentsSheet({
       textareaRef.current?.focus();
     }, 250);
   }, [open]);
+
+  useEffect(() => {
+    if (!open || !user) {
+      setMentionSuggestions([]);
+      return;
+    }
+
+    const mentionQuery = getActiveMentionQuery(text);
+    if (mentionQuery.length < 2) {
+      setMentionSuggestions([]);
+      return;
+    }
+
+    const timeout = window.setTimeout(async () => {
+      setMentionSuggestions(await searchUsers(mentionQuery, user.uid, 6));
+    }, 220);
+
+    return () => window.clearTimeout(timeout);
+  }, [open, text, user]);
 
   async function sendComment() {
     if (!user) return;
@@ -95,50 +97,34 @@ export default function CommentsSheet({
         profile ||
         (await getDoc(doc(db, "users", user.uid))).data();
 
-      const commentRef = await addDoc(
-        collection(db, "posts", post.id, "comments"),
-        {
-          uid: user.uid,
-          username: profileData?.username || "",
-          displayName: profileData?.displayName || user.displayName || "",
-          photoURL: profileData?.photoURL || user.photoURL || "",
-          text: text.trim(),
-          createdAt: serverTimestamp(),
-        }
-      );
-
-      await updateDoc(doc(db, "posts", post.id), {
-        comments: increment(1),
-      });
-
-      await recordPostEngagement({
-        postId: post.id,
-        actorId: user.uid,
-        authorId: post.uid,
-        type: "comment",
-        category: post.category,
-      });
-
-      await createNotification({
-        recipientId: post.uid,
+      await addPostComment({
+        post,
         actor: {
           uid: user.uid,
           username: profileData?.username || "",
           displayName: profileData?.displayName || user.displayName || "",
           photoURL: profileData?.photoURL || user.photoURL || "",
         },
-        type: "comment",
         text: text.trim(),
-        link: `/post/${post.id}`,
-        postId: post.id,
-        commentId: commentRef.id,
       });
 
       setText("");
+      setMentionSuggestions([]);
       textareaRef.current?.focus();
+    } catch (err) {
+      console.error("Failed to send comment:", err);
+      toast.error(err instanceof Error ? err.message : "Could not post comment");
     } finally {
       setSending(false);
     }
+  }
+
+  function insertMention(person: SearchableUser) {
+    setText((current) =>
+      current.replace(/(^|\s)@[a-z0-9_]{1,24}$/i, (_, prefix: string) => `${prefix}@${person.username} `)
+    );
+    setMentionSuggestions([]);
+    textareaRef.current?.focus();
   }
 
   if (!open) return null;
@@ -153,13 +139,15 @@ export default function CommentsSheet({
         <div className="flex h-full flex-col overflow-hidden rounded-t-[28px]">
           <CommentHeader count={comments.length} onClose={onClose} />
           <OriginalPost post={post} />
-          <CommentList comments={comments} loading={loading} />
+          <CommentList comments={comments} loading={loading} postId={post.id} />
           <CommentComposer
             ref={textareaRef}
             value={text}
             sending={sending}
             onChange={setText}
             onSend={sendComment}
+            mentionSuggestions={mentionSuggestions}
+            onSelectMention={insertMention}
           />
         </div>
       </div>
@@ -186,7 +174,7 @@ export default function CommentsSheet({
 
           {/* Scrollable comment feed */}
           <div className="flex-1 overflow-y-auto">
-            <CommentList comments={comments} loading={loading} />
+            <CommentList comments={comments} loading={loading} postId={post.id} />
           </div>
 
           {/* Composer at bottom */}
@@ -197,6 +185,8 @@ export default function CommentsSheet({
               sending={sending}
               onChange={setText}
               onSend={sendComment}
+              mentionSuggestions={mentionSuggestions}
+              onSelectMention={insertMention}
             />
           </div>
         </div>

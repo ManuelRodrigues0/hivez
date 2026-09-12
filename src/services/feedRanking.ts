@@ -38,6 +38,7 @@ const ACTION_WEIGHTS = {
   like: 1,
   comment: 3,
   share: 5,
+  rehive: 6,
   save: 4,
   volunteer: 8,
   confirm: 5,
@@ -284,6 +285,7 @@ function weightedEngagement(post: FeedPost) {
   return (
     (post.likes || 0) * ACTION_WEIGHTS.like +
     (post.comments || 0) * ACTION_WEIGHTS.comment +
+    (post.reHives || 0) * ACTION_WEIGHTS.rehive +
     (post.shares || 0) * ACTION_WEIGHTS.share +
     (post.saves || 0) * ACTION_WEIGHTS.save +
     (post.confirmations || 0) * ACTION_WEIGHTS.confirm +

@@ -1,31 +1,19 @@
 import CommentCard from "./CommentCard";
 import HivezLoader from "../common/HivezLoader";
-
-interface Comment {
-  id: string;
-
-  uid: string;
-
-  username: string;
-
-  displayName: string;
-
-  photoURL: string;
-
-  text: string;
-
-  createdAt: any;
-}
+import type { CommentDoc } from "@/services/comments";
 
 interface Props {
-  comments: Comment[];
+  comments: CommentDoc[];
 
   loading: boolean;
+
+  postId: string;
 }
 
 export default function CommentList({
   comments,
   loading,
+  postId,
 }: Props) {
   if (loading) {
     return (
@@ -60,6 +48,7 @@ export default function CommentList({
         <CommentCard
           key={comment.id}
           comment={comment}
+          postId={postId}
         />
       ))}
 

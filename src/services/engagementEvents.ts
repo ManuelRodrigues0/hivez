@@ -5,6 +5,7 @@ export type EngagementEventType =
   | "like"
   | "comment"
   | "share"
+  | "rehive"
   | "save"
   | "view"
   | "volunteer"

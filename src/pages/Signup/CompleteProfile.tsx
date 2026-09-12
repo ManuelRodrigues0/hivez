@@ -78,8 +78,19 @@ export default function CompleteProfile() {
         doc(db, "users", user.uid),
         {
           username: cleanUsername,
+          usernameLower: cleanUsername,
+          displayNameLower: (user.displayName || "").toLowerCase(),
           bio,
           photoURL: photoURL || "",
+          privacy: {
+            account: "public",
+            messages: "everyone",
+            mentions: "everyone",
+            comments: "everyone",
+            discoverable: true,
+          },
+          accountPrivacy: "public",
+          isPrivate: false,
           profileCompleted: true,
         },
         { merge: true }

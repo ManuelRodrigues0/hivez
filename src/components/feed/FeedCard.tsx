@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -40,13 +41,16 @@ import { formatDistance, locationLabel, normalizeLocation } from "@/services/loc
 import CommentsSheet from "../comments/CommentsSheet";
 import MediaGrid from "./MediaGrid";
 import type { PostMediaItem } from "./MediaGrid";
+import PostSendSheet from "./PostSendSheet";
+import { listenToReHiveState, toggleReHive } from "@/services/rehives";
+import type { TimestampLike } from "@/types/timestamp";
 
 interface Props {
   post: FeedPost;
   onCommentClick?: (post: FeedPost) => void;
 }
 
-function timeAgo(timestamp: any) {
+function timeAgo(timestamp?: TimestampLike | null) {
   if (!timestamp?.toDate) return "Now";
 
   const seconds = Math.floor(
@@ -74,7 +78,11 @@ export default function FeedCard({ post, onCommentClick }: Props) {
   const author = useLiveProfile(post.uid, post) as FeedPost;
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likes);
+  const [reHived, setReHived] = useState(false);
+  const [reHiveCount, setReHiveCount] = useState(post.reHives || 0);
+  const [reHiving, setReHiving] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [sendSheetOpen, setSendSheetOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [shareMenuOpen, setShareMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -118,6 +126,10 @@ export default function FeedCard({ post, onCommentClick }: Props) {
   }, [post.likes]);
 
   useEffect(() => {
+    setReHiveCount(post.reHives || 0);
+  }, [post.reHives]);
+
+  useEffect(() => {
     return listenCommunityByPost(post.id, setCommunity);
   }, [post.id]);
 
@@ -142,6 +154,10 @@ export default function FeedCard({ post, onCommentClick }: Props) {
     });
     return () => unsubscribe();
   }, [post.id, user]);
+
+  useEffect(() => {
+    return listenToReHiveState(user?.uid, post.id, setReHived);
+  }, [post.id, user?.uid]);
 
   async function handleLike() {
     if (!user || liking) return;
@@ -205,6 +221,34 @@ export default function FeedCard({ post, onCommentClick }: Props) {
       setLikesCount(post.likes || 0);
     } finally {
       setLiking(false);
+    }
+  }
+
+  async function handleReHive() {
+    if (!user) return;
+    if (reHiving) return;
+    setReHiving(true);
+    setReHiveCount((count) => (reHived ? Math.max(0, count - 1) : count + 1));
+
+    try {
+      const result = await toggleReHive({
+        userId: user.uid,
+        post,
+        actor: {
+          uid: user.uid,
+          username: myProfile?.username || "",
+          displayName: myProfile?.displayName || user.displayName || "Hivez User",
+          photoURL: myProfile?.photoURL || user.photoURL || "",
+        },
+      });
+      setReHived(result.active);
+      toast.success(result.active ? "ReHived" : "ReHive removed", { duration: 1400 });
+    } catch (err) {
+      console.error("Failed to update ReHive:", err);
+      setReHiveCount(post.reHives || 0);
+      toast.error(err instanceof Error ? err.message : "Could not update ReHive");
+    } finally {
+      setReHiving(false);
     }
   }
 
@@ -512,7 +556,7 @@ export default function FeedCard({ post, onCommentClick }: Props) {
                 </span>
               </button>
               <button
-                onClick={() => onCommentClick?.(post)}
+                onClick={() => (onCommentClick ? onCommentClick(post) : setCommentsOpen(true))}
                 className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-sky-50 dark:hover:bg-sky-950/30 group"
               >
                 <MessageCircle size={20} className="text-zinc-500 dark:text-zinc-400 group-hover:text-sky-500" />
@@ -520,10 +564,16 @@ export default function FeedCard({ post, onCommentClick }: Props) {
                   {post.comments}
                 </span>
               </button>
-              <button className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-green-50 dark:hover:bg-green-950/30 group">
-                <Repeat2 size={20} className="text-zinc-500 dark:text-zinc-400 group-hover:text-green-500" />
-                <span className="text-[13px] font-medium text-zinc-500 dark:text-zinc-400 group-hover:text-green-500">
-                  {post.shares}
+              <button
+                type="button"
+                onClick={handleReHive}
+                disabled={!user || reHiving}
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-green-50 disabled:opacity-60 dark:hover:bg-green-950/30 group"
+                aria-label={reHived ? "Remove ReHive" : "ReHive post"}
+              >
+                <Repeat2 size={20} className={reHived ? "text-green-500" : "text-zinc-500 dark:text-zinc-400 group-hover:text-green-500"} />
+                <span className={`text-[13px] font-medium ${reHived ? "text-green-500" : "text-zinc-500 dark:text-zinc-400 group-hover:text-green-500"}`}>
+                  {reHiveCount}
                 </span>
               </button>
               </div>
@@ -555,11 +605,12 @@ export default function FeedCard({ post, onCommentClick }: Props) {
                     setMenuOpen(false);
                   }}
                   className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-blue-50 dark:hover:bg-blue-950/30 group"
+                  aria-label="Share post"
                 >
                   {copied ? (
                     <span className="text-xs text-green-500 font-medium">Copied!</span>
                   ) : (
-                    <Send size={20} className="text-zinc-500 dark:text-zinc-400 group-hover:text-blue-500" />
+                    <Share2 size={20} className="text-zinc-500 dark:text-zinc-400 group-hover:text-blue-500" />
                   )}
                 </button>
                 {shareMenuOpen && (
@@ -584,6 +635,14 @@ export default function FeedCard({ post, onCommentClick }: Props) {
                   </>
                 )}
               </div>
+              <button
+                type="button"
+                onClick={() => (user ? setSendSheetOpen(true) : toast.error("Sign in to send posts"))}
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-blue-50 dark:hover:bg-blue-950/30 group"
+                aria-label="Send post via direct message"
+              >
+                <Send size={20} className="text-zinc-500 dark:text-zinc-400 group-hover:text-blue-500" />
+              </button>
               </div>
             </div>
       </article>
@@ -593,6 +652,7 @@ export default function FeedCard({ post, onCommentClick }: Props) {
         open={commentsOpen}
         onClose={() => setCommentsOpen(false)}
       />
+      <PostSendSheet post={post} open={sendSheetOpen} onClose={() => setSendSheetOpen(false)} />
     </>
   );
 }

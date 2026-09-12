@@ -1,7 +1,10 @@
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   addDoc,
   collection,
+  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -20,6 +23,7 @@ import {
   BadgeCheck,
   Check,
   CheckCheck,
+  Heart,
   MessageCircle,
   MoreHorizontal,
   Search,
@@ -35,6 +39,9 @@ import HivezLoader from "@/components/common/HivezLoader";
 import { db } from "@/firebase/firebase";
 import { ULTRA_BEE_ID, ULTRA_BEE_PROFILE, ULTRA_BEE_TAGLINE, ULTRA_BEE_WELCOME, ultraBeeChatIdFor } from "@/constants/ultraBee";
 import { requestUltraBeeReply } from "@/services/ultraBee";
+import type { FeedPost } from "@/components/feed/Feed";
+import { canUserAccessPost } from "@/services/privacy";
+import type { TimestampLike } from "@/types/timestamp";
 
 interface ChatUser {
   uid: string;
@@ -50,7 +57,7 @@ interface ChatDoc {
   participants: string[];
   participantProfiles: Record<string, ChatUser>;
   lastMessage?: string;
-  lastMessageAt?: any;
+  lastMessageAt?: TimestampLike | null;
   lastMessageSenderId?: string;
   unreadCounts?: Record<string, number>;
   typing?: Record<string, boolean>;
@@ -61,20 +68,24 @@ interface MessageDoc {
   clientId?: string;
   text: string;
   senderId: string;
-  createdAt?: any;
+  messageType?: "TEXT" | "POST_SHARE";
+  postId?: string;
+  postAuthorId?: string;
+  createdAt?: TimestampLike | null;
   readBy?: string[];
+  reactions?: Record<string, string>;
 }
 
 function chatIdFor(a: string, b: string) {
   return [a, b].sort().join("_");
 }
 
-function formatTime(timestamp: any) {
+function formatTime(timestamp?: TimestampLike | null) {
   if (!timestamp?.toDate) return "";
   return timestamp.toDate().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 
-function formatListTime(timestamp: any) {
+function formatListTime(timestamp?: TimestampLike | null) {
   if (!timestamp?.toDate) return "";
   const date = timestamp.toDate();
   const now = new Date();
@@ -90,18 +101,19 @@ function localTimestamp(date = new Date()) {
   };
 }
 
-function serializeTimestamp(timestamp: any) {
+function serializeTimestamp(timestamp?: TimestampLike | null) {
   return timestamp?.toDate ? timestamp.toDate().getTime() : null;
 }
 
-function restoreTimestamp(value: any) {
+function restoreTimestamp(value: unknown) {
   if (!value) return null;
-  if (value?.toDate) return value;
-  return localTimestamp(new Date(value));
+  if (typeof value === "object" && value && "toDate" in value) return value as TimestampLike;
+  return localTimestamp(new Date(value as string | number | Date));
 }
 
 export default function Chats() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [me, setMe] = useState<ChatUser | null>(null);
   const [chats, setChats] = useState<ChatDoc[]>([]);
   const [localChats, setLocalChats] = useState<ChatDoc[]>([]);
@@ -413,6 +425,18 @@ export default function Chats() {
 
   const isUltraBeeChat = Boolean(user && selectedChat && selectedChat.id === ultraBeeChatIdFor(user.uid));
 
+  async function toggleMessageReaction(message: MessageDoc) {
+    if (!user || !selectedChat || message.clientId) return;
+    const currentReaction = message.reactions?.[user.uid];
+    try {
+      await updateDoc(doc(db, "chats", selectedChat.id, "messages", message.id), {
+        [`reactions.${user.uid}`]: currentReaction ? deleteField() : "heart",
+      });
+    } catch (error) {
+      console.error("Failed to update message reaction:", error);
+    }
+  }
+
   async function startChat(person: ChatUser) {
     if (!user) return;
     const currentMe =
@@ -453,7 +477,8 @@ export default function Chats() {
     try {
       const snap = await getDoc(chatRef);
       if (!snap.exists()) {
-        const { id: _id, ...chatData } = optimisticChat;
+        const { id: chatId, ...chatData } = optimisticChat;
+        void chatId;
         await setDoc(chatRef, {
           ...chatData,
           lastMessageAt: serverTimestamp(),
@@ -480,8 +505,10 @@ export default function Chats() {
       clientId,
       text,
       senderId: user.uid,
+      messageType: "TEXT",
       createdAt: localTimestamp(),
       readBy: [user.uid],
+      reactions: {},
     };
     addLocalMessage(selectedChat.id, optimisticMessage);
 
@@ -505,7 +532,8 @@ export default function Chats() {
     upsertLocalChat(optimisticChat);
 
     try {
-      const { id: _id, ...chatData } = selectedChat;
+      const { id: chatId, ...chatData } = selectedChat;
+      void chatId;
       await setDoc(
         doc(db, "chats", selectedChat.id),
         {
@@ -527,8 +555,10 @@ export default function Chats() {
         clientId,
         text,
         senderId: user.uid,
+        messageType: "TEXT",
         createdAt: serverTimestamp(),
         readBy: [user.uid],
+        reactions: {},
       });
 
       await updateDoc(doc(db, "chats", selectedChat.id), {
@@ -816,12 +846,36 @@ export default function Chats() {
                                 : "rounded-bl-xs bg-white text-[#1c1d1a] border border-[#1c1d1a]/10 dark:border-neutral-800 dark:bg-[#121212] dark:text-white"
                             }`}
                           >
-                            {message.text}
+                            {message.messageType === "POST_SHARE" && message.postId ? (
+                              <PostSharePreview
+                                postId={message.postId}
+                                viewerId={user?.uid}
+                                mine={mine}
+                                onOpen={(postId) => navigate(`/post/${postId}`)}
+                              />
+                            ) : null}
+                            {message.text && <p className={message.messageType === "POST_SHARE" ? "mt-2 whitespace-pre-wrap" : "whitespace-pre-wrap"}>{message.text}</p>}
                           </div>
                           <div className="mt-1 flex items-center gap-1 px-1 text-[10px] font-bold text-[#1c1d1a]/40 dark:text-neutral-500">
                             <span>{formatTime(message.createdAt)}</span>
                             {mine && (read ? <CheckCheck size={12} className="text-[#3d654c] dark:text-[#f2c14e]" /> : <Check size={12} />)}
+                            <button
+                              type="button"
+                              onClick={() => toggleMessageReaction(message)}
+                              disabled={Boolean(message.clientId)}
+                              className={`ml-1 rounded-full px-1.5 py-0.5 transition hover:bg-[#1c1d1a]/5 disabled:opacity-40 dark:hover:bg-white/10 ${
+                                message.reactions?.[user?.uid || ""] ? "text-rose-500" : ""
+                              }`}
+                              aria-label="React to message"
+                            >
+                              <Heart size={12} className={message.reactions?.[user?.uid || ""] ? "fill-rose-500 text-rose-500" : ""} />
+                            </button>
                           </div>
+                          {message.reactions && Object.keys(message.reactions).length > 0 && (
+                            <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-rose-500 shadow-2xs dark:bg-[#181818]">
+                              <Heart size={10} className="fill-rose-500" /> {Object.keys(message.reactions).length}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -963,5 +1017,90 @@ function Avatar({ user }: { user?: ChatUser | null }) {
       alt={name}
       className="h-10 w-10 shrink-0 rounded-full object-cover border border-[#1c1d1a]/10 dark:border-neutral-700 shadow-2xs"
     />
+  );
+}
+
+function PostSharePreview({
+  postId,
+  viewerId,
+  mine,
+  onOpen,
+}: {
+  postId: string;
+  viewerId?: string;
+  mine: boolean;
+  onOpen: (postId: string) => void;
+}) {
+  const [post, setPost] = useState<FeedPost | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [unavailable, setUnavailable] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    getDoc(doc(db, "posts", postId))
+      .then(async (snap) => {
+        if (!active) return;
+        if (!snap.exists()) {
+          setUnavailable(true);
+          return;
+        }
+        const data = { id: snap.id, ...(snap.data() as Omit<FeedPost, "id">) } as FeedPost;
+        const allowed = await canUserAccessPost(viewerId, data);
+        if (!active) return;
+        if (!allowed) {
+          setUnavailable(true);
+          return;
+        }
+        setPost(data);
+        setUnavailable(false);
+      })
+      .catch(() => {
+        if (active) setUnavailable(true);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [postId, viewerId]);
+
+  if (loading) {
+    return <div className="min-w-48 rounded-xl bg-black/10 p-3 text-[11px] font-bold">Loading post...</div>;
+  }
+
+  if (unavailable || !post) {
+    return <div className="min-w-48 rounded-xl bg-black/10 p-3 text-[11px] font-bold">Post unavailable</div>;
+  }
+
+  const media = post.mediaItems?.[0];
+  const mediaUrl = media?.url || post.mediaUrls?.[0] || post.mediaUrl;
+  const isVideo = media?.type === "video" || post.mediaType === "video";
+
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(post.id)}
+      className={`block min-w-52 overflow-hidden rounded-xl border text-left transition hover:opacity-95 ${
+        mine ? "border-white/25 bg-white/10" : "border-[#1c1d1a]/10 bg-[#f7f7f2] dark:border-neutral-800 dark:bg-[#181818]"
+      }`}
+    >
+      {mediaUrl && (
+        <div className="aspect-video bg-black/10">
+          {isVideo ? (
+            <video src={mediaUrl} className="h-full w-full object-cover" muted playsInline preload="metadata" disablePictureInPicture />
+          ) : (
+            <img src={mediaUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+          )}
+        </div>
+      )}
+      <div className="p-2.5">
+        <p className="text-[10px] font-black uppercase tracking-wider opacity-70">Shared Hivez post</p>
+        <p className="mt-1 line-clamp-2 text-[11px] font-semibold leading-4">{post.caption || "Community update"}</p>
+        <p className="mt-1 truncate text-[10px] opacity-70">@{post.username || "user"}</p>
+      </div>
+    </button>
   );
 }

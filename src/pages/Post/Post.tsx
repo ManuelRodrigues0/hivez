@@ -1,6 +1,7 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, BadgeCheck, Heart, MessageCircle, Repeat2, Send, Trash2, ShieldX, LogIn, UserPlus } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Heart, MessageCircle, Repeat2, Send, Share2, Trash2, ShieldX, LogIn, UserPlus } from "lucide-react";
 import { doc, deleteDoc, updateDoc, onSnapshot, runTransaction, increment } from "firebase/firestore";
 import { toast } from "sonner";
 import { db } from "../../firebase/firebase";
@@ -10,8 +11,13 @@ import type { FeedPost } from "../../components/feed/Feed";
 import MediaGrid from "../../components/feed/MediaGrid";
 import type { PostMediaItem } from "../../components/feed/MediaGrid";
 import { useLiveProfile } from "@/hooks/useLiveProfile";
+import CommentsSheet from "@/components/comments/CommentsSheet";
+import PostSendSheet from "@/components/feed/PostSendSheet";
+import { listenToReHiveState, toggleReHive } from "@/services/rehives";
+import { recordPostEngagement } from "@/services/engagementEvents";
+import type { TimestampLike } from "@/types/timestamp";
 
-function timeAgo(timestamp: any) {
+function timeAgo(timestamp?: TimestampLike | null) {
   if (!timestamp?.toDate) return "Now";
   const seconds = Math.floor((Date.now() - timestamp.toDate().getTime()) / 1000);
   if (seconds < 60) return "Now";
@@ -30,11 +36,15 @@ function timeAgo(timestamp: any) {
 export default function PostPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const [post, setPost] = useState<FeedPost | null>(null);
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState(false);
   const [liking, setLiking] = useState(false);
+  const [reHived, setReHived] = useState(false);
+  const [reHiving, setReHiving] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [sendSheetOpen, setSendSheetOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Live post: edits, status changes and deletions propagate without refresh.
@@ -54,9 +64,9 @@ export default function PostPage() {
         }
         setLoading(false);
       },
-      (err: any) => {
+      (err: unknown) => {
         console.error("Failed to load post:", err);
-        if (err?.code === "permission-denied") {
+        if (typeof err === "object" && err && "code" in err && err.code === "permission-denied") {
           setError("Unable to load this post. It may not be publicly accessible. Check your Firestore security rules.");
         } else {
           setError("Failed to load this post. Please try again.");
@@ -79,6 +89,11 @@ export default function PostPage() {
     });
     return () => unsubscribe();
   }, [id, user]);
+
+  useEffect(() => {
+    if (!id) return;
+    return listenToReHiveState(user?.uid, id, setReHived);
+  }, [id, user?.uid]);
 
   // Atomic like/unlike shared with the feed implementation.
   async function toggleLike() {
@@ -105,6 +120,32 @@ export default function PostPage() {
       toast.error("Could not update like. Please try again.");
     } finally {
       setLiking(false);
+    }
+  }
+
+  async function handleReHive() {
+    if (!user || !post || reHiving) {
+      if (!user) navigate("/login");
+      return;
+    }
+
+    setReHiving(true);
+    try {
+      await toggleReHive({
+        userId: user.uid,
+        post,
+        actor: {
+          uid: user.uid,
+          username: profile?.username || "",
+          displayName: profile?.displayName || user.displayName || "Hivez User",
+          photoURL: profile?.photoURL || user.photoURL || "",
+        },
+      });
+    } catch (err) {
+      console.error("Failed to update ReHive:", err);
+      toast.error(err instanceof Error ? err.message : "Could not update ReHive");
+    } finally {
+      setReHiving(false);
     }
   }
 
@@ -215,6 +256,31 @@ export default function PostPage() {
     // Navigate to signup and come back to this post after signup
     navigate("/signup", { state: { from: `/post/${id}` } });
   };
+
+  async function sharePost() {
+    if (!post) return;
+    const url = `${window.location.origin}/post/${post.id}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: post.caption || "Check this post on Hivez", url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link copied");
+      }
+      if (user) {
+        await recordPostEngagement({
+          postId: post.id,
+          actorId: user.uid,
+          authorId: post.uid,
+          type: "share",
+          category: post.category,
+        });
+      }
+    } catch (err) {
+      console.error("Share failed:", err);
+    }
+  }
+
   const mediaItems: PostMediaItem[] =
     post.mediaItems?.length
       ? post.mediaItems
@@ -304,22 +370,31 @@ export default function PostPage() {
                 </span>
               </button>
               <button
-                onClick={() => user ? null : navigate("/login")}
+                onClick={() => (user ? setCommentsOpen(true) : navigate("/login"))}
                 className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-sky-50 dark:hover:bg-sky-950/30"
               >
                 <MessageCircle size={18} className="text-zinc-500 dark:text-zinc-400" />
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">{post.comments}</span>
               </button>
               <button
-                onClick={() => user ? null : navigate("/login")}
-                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-green-50 dark:hover:bg-green-950/30"
+                onClick={handleReHive}
+                disabled={!user || reHiving}
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-green-50 disabled:opacity-60 dark:hover:bg-green-950/30"
               >
-                <Repeat2 size={18} className="text-zinc-500 dark:text-zinc-400" />
-                <span className="text-xs text-zinc-500 dark:text-zinc-400">{post.shares}</span>
+                <Repeat2 size={18} className={reHived ? "text-green-500" : "text-zinc-500 dark:text-zinc-400"} />
+                <span className={`text-xs ${reHived ? "text-green-500" : "text-zinc-500 dark:text-zinc-400"}`}>{post.reHives || 0}</span>
               </button>
               <button
-                onClick={() => user ? null : navigate("/login")}
+                onClick={sharePost}
                 className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-blue-50 dark:hover:bg-blue-950/30"
+                aria-label="Share post"
+              >
+                <Share2 size={18} className="text-zinc-500 dark:text-zinc-400" />
+              </button>
+              <button
+                onClick={() => (user ? setSendSheetOpen(true) : navigate("/login"))}
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-blue-50 dark:hover:bg-blue-950/30"
+                aria-label="Send post via direct message"
               >
                 <Send size={18} className="text-zinc-500 dark:text-zinc-400" />
               </button>
@@ -339,6 +414,8 @@ export default function PostPage() {
           </div>
         </div>
       </div>
+      <CommentsSheet post={post} open={commentsOpen} onClose={() => setCommentsOpen(false)} />
+      <PostSendSheet post={post} open={sendSheetOpen} onClose={() => setSendSheetOpen(false)} />
     </div>
   );
 }

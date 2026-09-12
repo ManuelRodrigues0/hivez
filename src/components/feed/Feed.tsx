@@ -14,6 +14,7 @@ import {
   type FeedContextBundle,
 } from "@/services/feedRanking";
 import type { LocationSnapshot } from "@/services/location";
+import { filterVisiblePosts } from "@/services/privacy";
 
 export interface FeedPost {
   id: string;
@@ -30,6 +31,7 @@ export interface FeedPost {
   likes: number;
   comments: number;
   shares: number;
+  reHives?: number;
   saves?: number;
   views?: number;
   impressions?: number;
@@ -75,9 +77,11 @@ export default function Feed({ category, hashtag, onCommentClick }: FeedProps) {
     setLoading(true);
 
     loadRankedFeed({ uid: user?.uid, location, category, hashtag })
-      .then((data) => {
+      .then(async (data) => {
         if (!active) return;
-        setPosts(data);
+        const visible = await filterVisiblePosts(user?.uid, data);
+        if (!active) return;
+        setPosts(visible);
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -112,19 +116,22 @@ export default function Feed({ category, hashtag, onCommentClick }: FeedProps) {
   // - deleted posts -> removed automatically
   // - new posts     -> merged in with a light local re-rank (debounced, zero extra reads)
   useEffect(() => {
+    let active = true;
     const matchesFeed = (post: FeedPost) =>
       !hashtag ||
       post.hashtags?.some((tag) => tag.toLowerCase() === hashtag.toLowerCase());
 
     const unsubscribe = onSnapshot(
       recentPostsQuery(category),
-      (snapshot) => {
+      async (snapshot) => {
         const live = snapshot.docs.map((docSnapshot) => ({
           id: docSnapshot.id,
           ...docSnapshot.data(),
         })) as FeedPost[];
+        const visibleLive = await filterVisiblePosts(user?.uid, live);
+        if (!active) return;
 
-        const liveById = new Map(live.map((post) => [post.id, post]));
+        const liveById = new Map(visibleLive.map((post) => [post.id, post]));
         const current = postsRef.current;
         const currentIds = new Set(current.map((post) => post.id));
 
@@ -138,7 +145,7 @@ export default function Feed({ category, hashtag, onCommentClick }: FeedProps) {
         setPosts(next);
         postsRef.current = next;
 
-        const hasNewPosts = live.some((post) => !currentIds.has(post.id) && matchesFeed(post));
+        const hasNewPosts = visibleLive.some((post) => !currentIds.has(post.id) && matchesFeed(post));
 
         if (hasNewPosts && bundleRef.current) {
           if (rerankTimerRef.current) window.clearTimeout(rerankTimerRef.current);
@@ -148,7 +155,7 @@ export default function Feed({ category, hashtag, onCommentClick }: FeedProps) {
             if (!bundle) return;
             // The snapshot already holds every candidate post, so re-ranking is
             // computed locally - no additional Firestore reads.
-            const ranked = rankFeedPosts(live, bundle);
+            const ranked = rankFeedPosts(visibleLive, bundle);
             setPosts(ranked);
             postsRef.current = ranked;
           }, 900);
@@ -160,13 +167,14 @@ export default function Feed({ category, hashtag, onCommentClick }: FeedProps) {
     );
 
     return () => {
+      active = false;
       if (rerankTimerRef.current) {
         window.clearTimeout(rerankTimerRef.current);
         rerankTimerRef.current = null;
       }
       unsubscribe();
     };
-  }, [category, hashtag]);
+  }, [category, hashtag, user?.uid]);
 
   if (loading) {
     return (

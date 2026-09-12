@@ -176,6 +176,8 @@ export default function EditProfile() {
         {
           displayName: displayName.trim(),
           username: cleanUsername,
+          usernameLower: cleanUsername,
+          displayNameLower: displayName.trim().toLowerCase(),
           bio: bio.trim(),
           photoURL,
           bannerURL,

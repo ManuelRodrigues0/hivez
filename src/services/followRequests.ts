@@ -6,66 +6,113 @@ import {
   increment,
   onSnapshot,
   query,
+  runTransaction,
   serverTimestamp,
-  setDoc,
-  updateDoc,
   where,
 } from "firebase/firestore";
 
 import { db } from "@/firebase/firebase";
+import type { TimestampLike } from "@/types/timestamp";
 
 export interface FollowRequest {
+  id?: string;
   requesterId: string;
   targetId: string;
   status: "pending" | "accepted" | "declined";
-  createdAt: any;
+  createdAt?: TimestampLike | null;
 }
 
 export async function createFollowRequest(requesterId: string, targetId: string) {
   const requestRef = doc(db, "followRequests", `${requesterId}_${targetId}`);
-  const snapshot = await getDoc(requestRef);
-  
-  // If request exists and is pending, don't create duplicate
-  if (snapshot.exists() && snapshot.data()?.status === "pending") {
-    return; // Request already exists
-  }
+  const followRef = doc(db, "follows", `${requesterId}_${targetId}`);
 
-  // Create or update the request (in case it was previously declined)
-  await setDoc(requestRef, {
-    requesterId,
-    targetId,
-    status: "pending",
-    createdAt: serverTimestamp(),
-  }, { merge: true });
+  return runTransaction(db, async (tx) => {
+    const [requestSnap, followSnap] = await Promise.all([tx.get(requestRef), tx.get(followRef)]);
+    if (followSnap.exists()) return "following" as const;
+    if (requestSnap.exists() && requestSnap.data()?.status === "pending") return "pending" as const;
+
+    tx.set(
+      requestRef,
+      {
+        requesterId,
+        targetId,
+        status: "pending",
+        createdAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+    return "pending" as const;
+  });
+}
+
+export async function createPublicFollow(requesterId: string, targetId: string) {
+  const followRef = doc(db, "follows", `${requesterId}_${targetId}`);
+  const followerRef = doc(db, "users", targetId, "followers", requesterId);
+  const followingRef = doc(db, "users", requesterId, "following", targetId);
+  const requestRef = doc(db, "followRequests", `${requesterId}_${targetId}`);
+
+  await runTransaction(db, async (tx) => {
+    const followSnap = await tx.get(followRef);
+    if (followSnap.exists()) return;
+
+    const followData = {
+      followerId: requesterId,
+      followingId: targetId,
+      createdAt: serverTimestamp(),
+    };
+
+    tx.set(followRef, followData);
+    tx.set(followerRef, followData);
+    tx.set(followingRef, followData);
+    tx.update(doc(db, "users", targetId), { followers: increment(1) });
+    tx.update(doc(db, "users", requesterId), { following: increment(1) });
+    tx.delete(requestRef);
+  });
 }
 
 export async function acceptFollowRequest(requesterId: string, targetId: string) {
   const requestRef = doc(db, "followRequests", `${requesterId}_${targetId}`);
-  const snapshot = await getDoc(requestRef);
-  
-  if (!snapshot.exists()) return;
-
-  // Create follow relationship first
   const followRef = doc(db, "follows", `${requesterId}_${targetId}`);
   const followerRef = doc(db, "users", targetId, "followers", requesterId);
   const followingRef = doc(db, "users", requesterId, "following", targetId);
 
-  const followData = {
-    followerId: requesterId,
-    followingId: targetId,
-    createdAt: serverTimestamp(),
-  };
+  await runTransaction(db, async (tx) => {
+    const [requestSnap, followSnap] = await Promise.all([tx.get(requestRef), tx.get(followRef)]);
+    if (!requestSnap.exists()) return;
 
-  await setDoc(followRef, followData);
-  await setDoc(followerRef, followData);
-  await setDoc(followingRef, followData);
+    const followData = {
+      followerId: requesterId,
+      followingId: targetId,
+      createdAt: serverTimestamp(),
+    };
 
-  // Update follower counts
-  await updateDoc(doc(db, "users", targetId), { followers: increment(1) });
-  await updateDoc(doc(db, "users", requesterId), { following: increment(1) });
+    if (!followSnap.exists()) {
+      tx.set(followRef, followData);
+      tx.set(followerRef, followData);
+      tx.set(followingRef, followData);
+      tx.update(doc(db, "users", targetId), { followers: increment(1) });
+      tx.update(doc(db, "users", requesterId), { following: increment(1) });
+    }
 
-  // Delete the follow request document
-  await deleteDoc(requestRef);
+    tx.delete(requestRef);
+  });
+}
+
+export async function unfollowUser(requesterId: string, targetId: string) {
+  const followRef = doc(db, "follows", `${requesterId}_${targetId}`);
+  const followerRef = doc(db, "users", targetId, "followers", requesterId);
+  const followingRef = doc(db, "users", requesterId, "following", targetId);
+
+  await runTransaction(db, async (tx) => {
+    const followSnap = await tx.get(followRef);
+    if (!followSnap.exists()) return;
+
+    tx.delete(followRef);
+    tx.delete(followerRef);
+    tx.delete(followingRef);
+    tx.update(doc(db, "users", targetId), { followers: increment(-1) });
+    tx.update(doc(db, "users", requesterId), { following: increment(-1) });
+  });
 }
 
 export async function declineFollowRequest(requesterId: string, targetId: string) {

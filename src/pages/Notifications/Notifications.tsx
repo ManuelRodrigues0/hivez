@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Heart, MessageCircle, UserPlus, Check, X, Megaphone, Bell, Sparkles } from "lucide-react";
+import { AtSign, Heart, MessageCircle, Repeat2, UserPlus, Check, X, Megaphone, Bell, Sparkles } from "lucide-react";
 import HivezLoader from "@/components/common/HivezLoader";
 import { useNavigate } from "react-router-dom";
 import { deleteDoc, doc } from "firebase/firestore";
@@ -33,6 +33,8 @@ function iconFor(type: NotificationDoc["type"]) {
   if (type === "follow") return <UserPlus size={14} className="text-emerald-500 dark:text-[#f2c14e]" />;
   if (type === "broadcast") return <Megaphone size={14} className="text-amber-500" />;
   if (type === "message") return <MessageCircle size={14} className="text-emerald-500" />;
+  if (type === "rehive") return <Repeat2 size={14} className="text-emerald-500" />;
+  if (type === "mention") return <AtSign size={14} className="text-sky-500" />;
   return <Heart size={14} className="fill-rose-500 text-rose-500" />;
 }
 
@@ -42,6 +44,8 @@ function titleFor(notification: NotificationDoc, actorName?: string) {
   if (notification.type === "follow") return `${name} sent you a follow request`;
   if (notification.type === "broadcast") return `${notification.actorDisplayName || "Hivez Official"}`;
   if (notification.type === "message") return `${name} sent you a message`;
+  if (notification.type === "rehive") return `${name} ReHived your post`;
+  if (notification.type === "mention") return `${name} mentioned you in a comment`;
   return `${name} liked your post`;
 }
 

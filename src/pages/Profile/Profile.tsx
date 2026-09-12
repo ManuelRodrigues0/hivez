@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -8,22 +9,26 @@ import {
   Settings,
   Share2,
   Heart,
+  Lock,
   MessageSquare,
   Play,
   Grid3X3,
-  MessageCircleReply,
   Film,
   Sparkles,
   ShieldCheck,
   Calendar,
+  Repeat2,
 } from "lucide-react";
-import { doc, deleteDoc, getDoc, increment, onSnapshot, query, where, writeBatch, collection } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDoc, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../context/AuthContext";
 import HivezLoader from "@/components/common/HivezLoader";
 import { createNotification } from "@/services/notifications";
-import { createFollowRequest, listenToSentFollowRequests } from "@/services/followRequests";
+import { createFollowRequest, createPublicFollow, listenToSentFollowRequests, unfollowUser } from "@/services/followRequests";
 import type { FeedPost } from "../../components/feed/Feed";
+import { canViewProfileContent, filterVisiblePosts, normalizePrivacy } from "@/services/privacy";
+import type { UserPrivacySettings } from "@/services/privacy";
+import { listenToPostsByIds, listenToUserReHives, type ReHiveDoc } from "@/services/rehives";
 
 interface UserProfile {
   uid: string;
@@ -36,6 +41,9 @@ interface UserProfile {
   posts: number;
   followers: number;
   following: number;
+  privacy?: Partial<UserPrivacySettings>;
+  accountPrivacy?: string;
+  isPrivate?: boolean;
 }
 
 export default function Profile() {
@@ -49,10 +57,14 @@ export default function Profile() {
   const [following, setFollowing] = useState(false);
   const [followRequestPending, setFollowRequestPending] = useState(false);
   const [followBusy, setFollowBusy] = useState(false);
-  const [activeTab, setActiveTab] = useState<"posts" | "replies" | "media">("posts");
+  const [activeTab, setActiveTab] = useState<"posts" | "rehives" | "media">("posts");
   const [localError, setLocalError] = useState<string | null>(null);
   const [userPosts, setUserPosts] = useState<FeedPost[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
+  const [canViewProtectedContent, setCanViewProtectedContent] = useState(false);
+  const [reHiveRecords, setReHiveRecords] = useState<ReHiveDoc[]>([]);
+  const [reHivePosts, setReHivePosts] = useState<FeedPost[]>([]);
+  const [reHivesLoading, setReHivesLoading] = useState(true);
 
   const isOwnProfile = !uid || uid === currentUser?.uid;
   const profileUid = isOwnProfile ? currentUser?.uid : uid;
@@ -83,7 +95,27 @@ export default function Profile() {
   }, [profileUid]);
 
   useEffect(() => {
+    if (!profileUid || !profile) {
+      setCanViewProtectedContent(false);
+      return;
+    }
+
+    let active = true;
+    canViewProfileContent(currentUser?.uid, profileUid, profile).then((allowed) => {
+      if (active) setCanViewProtectedContent(allowed);
+    });
+    return () => {
+      active = false;
+    };
+  }, [currentUser?.uid, profile, profileUid]);
+
+  useEffect(() => {
     if (!profileUid) {
+      setPostsLoading(false);
+      return;
+    }
+    if (!canViewProtectedContent) {
+      setUserPosts([]);
       setPostsLoading(false);
       return;
     }
@@ -105,7 +137,9 @@ export default function Profile() {
           return bTime - aTime;
         });
 
-        setUserPosts(posts);
+        filterVisiblePosts(currentUser?.uid, posts).then((visiblePosts) => {
+          setUserPosts(visiblePosts);
+        });
         setPostsLoading(false);
       },
       (error) => {
@@ -115,7 +149,52 @@ export default function Profile() {
     );
 
     return () => unsubscribe();
-  }, [profileUid]);
+  }, [canViewProtectedContent, currentUser?.uid, profileUid]);
+
+  useEffect(() => {
+    if (!profileUid || !canViewProtectedContent) {
+      setReHiveRecords([]);
+      setReHivePosts([]);
+      setReHivesLoading(false);
+      return;
+    }
+
+    setReHivesLoading(true);
+    return listenToUserReHives(
+      profileUid,
+      (records) => {
+        setReHiveRecords(records);
+        if (!records.length) {
+          setReHivePosts([]);
+          setReHivesLoading(false);
+        }
+      },
+      (error) => {
+        console.error("Error fetching ReHives:", error);
+        setReHivesLoading(false);
+      }
+    );
+  }, [canViewProtectedContent, profileUid]);
+
+  useEffect(() => {
+    if (!reHiveRecords.length) return;
+    return listenToPostsByIds(
+      reHiveRecords.map((record) => record.postId),
+      async (posts) => {
+        const visible = await filterVisiblePosts(currentUser?.uid, posts);
+        setReHivePosts(
+          reHiveRecords
+            .map((record) => visible.find((post) => post.id === record.postId))
+            .filter(Boolean) as FeedPost[]
+        );
+        setReHivesLoading(false);
+      },
+      (error) => {
+        console.error("Error fetching ReHive posts:", error);
+        setReHivesLoading(false);
+      }
+    );
+  }, [currentUser?.uid, reHiveRecords]);
 
   useEffect(() => {
     if (!currentUser || !profileUid || isOwnProfile) {
@@ -187,18 +266,7 @@ export default function Profile() {
 
     try {
       if (following) {
-        const followRef = doc(db, "follows", `${currentUser.uid}_${profile.uid}`);
-        const followerRef = doc(db, "users", profile.uid, "followers", currentUser.uid);
-        const followingRef = doc(db, "users", currentUser.uid, "following", profile.uid);
-        const batch = writeBatch(db);
-
-        batch.delete(followRef);
-        batch.delete(followerRef);
-        batch.delete(followingRef);
-        batch.update(doc(db, "users", profile.uid), { followers: increment(-1) });
-        batch.update(doc(db, "users", currentUser.uid), { following: increment(-1) });
-
-        await batch.commit();
+        await unfollowUser(currentUser.uid, profile.uid);
 
         setFollowing(false);
         setProfile((current) =>
@@ -214,28 +282,42 @@ export default function Profile() {
         await deleteDoc(requestRef);
         setFollowRequestPending(false);
       } else {
-        await createFollowRequest(currentUser.uid, profile.uid);
-        setFollowRequestPending(true);
+        const privacy = normalizePrivacy(profile);
+        if (privacy.account === "private") {
+          await createFollowRequest(currentUser.uid, profile.uid);
+          setFollowRequestPending(true);
 
-        const mySnap = await getDoc(doc(db, "users", currentUser.uid));
-        const myProfile = mySnap.data();
+          const mySnap = await getDoc(doc(db, "users", currentUser.uid));
+          const myProfile = mySnap.data();
 
-        await createNotification({
-          recipientId: profile.uid,
-          actor: {
-            uid: currentUser.uid,
-            username: myProfile?.username || currentUser.email?.split("@")[0] || "",
-            displayName: myProfile?.displayName || currentUser.displayName || "Hivez User",
-            photoURL: myProfile?.photoURL || currentUser.photoURL || "",
-          },
-          type: "follow",
-          text: "sent you a follow request",
-          link: `/profile?uid=${currentUser.uid}`,
-        });
+          await createNotification({
+            recipientId: profile.uid,
+            actor: {
+              uid: currentUser.uid,
+              username: myProfile?.username || currentUser.email?.split("@")[0] || "",
+              displayName: myProfile?.displayName || currentUser.displayName || "Hivez User",
+              photoURL: myProfile?.photoURL || currentUser.photoURL || "",
+            },
+            type: "follow",
+            text: "sent you a follow request",
+            link: `/profile?uid=${currentUser.uid}`,
+          });
+        } else {
+          await createPublicFollow(currentUser.uid, profile.uid);
+          setFollowing(true);
+          setProfile((current) =>
+            current
+              ? {
+                  ...current,
+                  followers: (current.followers || 0) + 1,
+                }
+              : current
+          );
+        }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error in toggle follow:", error);
-      setLocalError(`Failed: ${error.message}`);
+      setLocalError(`Failed: ${error instanceof Error ? error.message : "Could not update follow state."}`);
     } finally {
       setFollowBusy(false);
     }
@@ -271,9 +353,112 @@ export default function Profile() {
 
   const tabs = [
     { key: "posts" as const, label: "Posts", icon: Grid3X3 },
-    { key: "replies" as const, label: "Replies", icon: MessageCircleReply },
+    { key: "rehives" as const, label: "ReHives", icon: Repeat2 },
     { key: "media" as const, label: "Media", icon: Film },
   ];
+  const privacy = normalizePrivacy(profile);
+  const mediaPosts = userPosts.filter((post) => post.mediaItems?.length || post.mediaUrls?.length || post.mediaUrl);
+
+  function renderProtectedState() {
+    return (
+      <div className="flex min-h-[240px] flex-col items-center justify-center py-16 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#1c1d1a]/10 bg-white dark:border-neutral-800 dark:bg-[#121212]">
+          <Lock size={20} className="text-[#3d654c] dark:text-[#f2c14e]" />
+        </div>
+        <h3 className="mt-3 text-xs font-bold text-[#1c1d1a] dark:text-white">This account is private</h3>
+        <p className="mt-1 max-w-xs text-[11px] text-[#1c1d1a]/50 dark:text-neutral-400">
+          Follow @{profile?.username || "this user"} and wait for approval to see protected posts and ReHives.
+        </p>
+      </div>
+    );
+  }
+
+  function renderEmptyState(icon: "posts" | "rehives" | "media", title: string, body: string) {
+    const Icon = icon === "rehives" ? Repeat2 : icon === "media" ? Film : Grid3X3;
+    return (
+      <div className="flex min-h-[220px] flex-col items-center justify-center py-16 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#1c1d1a]/10 bg-white dark:border-neutral-800 dark:bg-[#121212]">
+          <Icon size={20} className="text-[#3d654c] dark:text-[#f2c14e]" />
+        </div>
+        <h3 className="mt-3 text-xs font-bold text-[#1c1d1a] dark:text-white">{title}</h3>
+        <p className="mt-1 text-[11px] text-[#1c1d1a]/50 dark:text-neutral-400">{body}</p>
+      </div>
+    );
+  }
+
+  function renderPostTile(post: FeedPost, meta?: string) {
+    const mediaUrl = post.mediaItems?.[0]?.url || post.mediaUrls?.[0] || post.mediaUrl;
+    const isVideo = post.mediaItems?.[0]?.type === "video" || post.mediaType === "video";
+
+    return (
+      <button
+        key={`${meta || "post"}-${post.id}`}
+        onClick={() => navigate(`/post/${post.id}`)}
+        className="group relative aspect-square w-full overflow-hidden rounded-xl border border-[#1c1d1a]/5 bg-white text-left shadow-2xs transition hover:border-[#3d654c]/30 focus:outline-none focus:ring-2 focus:ring-[#3d654c]/30 dark:border-neutral-800/80 dark:bg-[#121212] dark:focus:ring-[#f2c14e]/30"
+      >
+        {mediaUrl ? (
+          isVideo ? (
+            <div className="relative h-full w-full">
+              <video
+                src={mediaUrl}
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                muted
+                playsInline
+                preload="metadata"
+                disablePictureInPicture
+              />
+              <div className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-md bg-black/60 text-white backdrop-blur-xs">
+                <Play size={10} className="fill-white translate-x-0.5" />
+              </div>
+            </div>
+          ) : (
+            <img
+              src={mediaUrl}
+              alt={post.caption || "Post"}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              loading="lazy"
+            />
+          )
+        ) : (
+          <div className="flex h-full w-full flex-col justify-between bg-neutral-50 p-3 dark:bg-[#141414]">
+            <p className="line-clamp-4 text-[11px] font-medium leading-snug text-[#1c1d1a]/80 dark:text-neutral-300">
+              {post.caption || "Civic report"}
+            </p>
+            <span className="text-[9px] font-bold uppercase tracking-wider text-[#3d654c] dark:text-[#f2c14e]">
+              Text Report
+            </span>
+          </div>
+        )}
+
+        {meta && (
+          <div className="absolute left-2 right-2 top-2 truncate rounded-md bg-black/65 px-2 py-1 text-[9px] font-black uppercase tracking-wider text-white backdrop-blur-xs">
+            {meta}
+          </div>
+        )}
+
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+          <p className="truncate text-[10px] font-bold text-white">
+            {meta ? "Original: " : ""}@{post.username || "user"}
+          </p>
+        </div>
+
+        <div className="absolute inset-0 flex items-center justify-center gap-4 bg-black/50 opacity-0 backdrop-blur-2xs transition-opacity duration-200 group-hover:opacity-100">
+          <span className="flex items-center gap-1 text-xs font-black text-white">
+            <Heart size={13} className="fill-white" />
+            {post.likes || 0}
+          </span>
+          <span className="flex items-center gap-1 text-xs font-black text-white">
+            <MessageSquare size={13} className="fill-white" />
+            {post.comments || 0}
+          </span>
+          <span className="flex items-center gap-1 text-xs font-black text-white">
+            <Repeat2 size={13} />
+            {post.reHives || 0}
+          </span>
+        </div>
+      </button>
+    );
+  }
 
   return (
     <div className="w-full min-h-screen bg-[#f7f7f2] font-sans text-[#1c1d1a] selection:bg-[#3d654c]/20 selection:text-[#2d4d38] dark:bg-[#0a0a0a] dark:text-neutral-100 pb-20">
@@ -415,6 +600,9 @@ export default function Profile() {
             <span className="inline-flex items-center gap-1 text-[10px]">
               <Calendar size={11} /> Active Contributor
             </span>
+            <span className="inline-flex items-center gap-1 text-[10px]">
+              <Lock size={11} /> {privacy.account === "private" ? "Private Account" : "Public Account"}
+            </span>
           </div>
 
           {/* Stats Bar */}
@@ -472,106 +660,68 @@ export default function Profile() {
       <div className="w-full px-4 md:px-6 pt-4">
         {activeTab === "posts" && (
           <>
-            {postsLoading ? (
+            {!canViewProtectedContent ? (
+              renderProtectedState()
+            ) : postsLoading ? (
               <div className="flex min-h-[220px] items-center justify-center py-16">
                 <HivezLoader size="md" progress={58} label="Loading profile posts" />
               </div>
             ) : userPosts.length > 0 ? (
               <div className="grid grid-cols-3 gap-1.5 md:gap-2">
-                {userPosts.map((post) => {
-                  const mediaUrl = post.mediaItems?.[0]?.url || post.mediaUrls?.[0] || post.mediaUrl;
-                  const isVideo = post.mediaItems?.[0]?.type === "video" || post.mediaType === "video";
-
-                  return (
-                    <button
-                      key={post.id}
-                      onClick={() => navigate(`/post/${post.id}`)}
-                      className="group relative aspect-square w-full overflow-hidden rounded-xl border border-[#1c1d1a]/5 bg-white text-left shadow-2xs transition hover:border-[#3d654c]/30 dark:border-neutral-800/80 dark:bg-[#121212]"
-                    >
-                      {mediaUrl ? (
-                        isVideo ? (
-                          <div className="relative h-full w-full">
-                            <video
-                              src={mediaUrl}
-                              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                              muted
-                              playsInline
-                              disablePictureInPicture
-                            />
-                            <div className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-md bg-black/60 text-white backdrop-blur-xs">
-                              <Play size={10} className="fill-white translate-x-0.5" />
-                            </div>
-                          </div>
-                        ) : (
-                          <img
-                            src={mediaUrl}
-                            alt={post.caption || "Post"}
-                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                            loading="lazy"
-                          />
-                        )
-                      ) : (
-                        <div className="flex h-full w-full flex-col justify-between p-3 bg-neutral-50 dark:bg-[#141414]">
-                          <p className="line-clamp-4 text-[11px] font-medium leading-snug text-[#1c1d1a]/80 dark:text-neutral-300">
-                            {post.caption || "Civic report"}
-                          </p>
-                          <span className="text-[9px] font-bold uppercase tracking-wider text-[#3d654c] dark:text-[#f2c14e]">
-                            Text Report
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Hover Overlay Stats */}
-                      <div className="absolute inset-0 flex items-center justify-center gap-4 bg-black/50 opacity-0 backdrop-blur-2xs transition-opacity duration-200 group-hover:opacity-100">
-                        <span className="flex items-center gap-1 text-xs font-black text-white">
-                          <Heart size={13} className="fill-white" />
-                          {post.likes || 0}
-                        </span>
-                        <span className="flex items-center gap-1 text-xs font-black text-white">
-                          <MessageSquare size={13} className="fill-white" />
-                          {post.comments || 0}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
+                {userPosts.map((post) => renderPostTile(post))}
               </div>
             ) : (
-              <div className="flex min-h-[220px] flex-col items-center justify-center py-16 text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#1c1d1a]/10 bg-white dark:border-neutral-800 dark:bg-[#121212]">
-                  <Grid3X3 size={20} className="text-[#3d654c] dark:text-[#f2c14e]" />
-                </div>
-                <h3 className="mt-3 text-xs font-bold text-[#1c1d1a] dark:text-white">No posts published yet</h3>
-                <p className="mt-1 text-[11px] text-[#1c1d1a]/50 dark:text-neutral-400">
-                  {isOwnProfile ? "Your published reports and updates will appear here." : "This user hasn't published any posts yet."}
-                </p>
-              </div>
+              renderEmptyState(
+                "posts",
+                "No posts published yet",
+                isOwnProfile ? "Your published reports and updates will appear here." : "This user hasn't published any posts yet."
+              )
             )}
           </>
         )}
 
-        {activeTab === "replies" && (
-          <div className="flex min-h-[220px] flex-col items-center justify-center py-16 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#1c1d1a]/10 bg-white dark:border-neutral-800 dark:bg-[#121212]">
-              <MessageCircleReply size={20} className="text-[#3d654c] dark:text-[#f2c14e]" />
-            </div>
-            <h3 className="mt-3 text-xs font-bold text-[#1c1d1a] dark:text-white">No replies recorded</h3>
-            <p className="mt-1 text-[11px] text-[#1c1d1a]/50 dark:text-neutral-400">
-              {isOwnProfile ? "Responses to community posts will appear here." : "This user hasn't posted any replies."}
-            </p>
-          </div>
+        {activeTab === "rehives" && (
+          <>
+            {!canViewProtectedContent ? (
+              renderProtectedState()
+            ) : reHivesLoading ? (
+              <div className="flex min-h-[220px] items-center justify-center py-16">
+                <HivezLoader size="md" progress={58} label="Loading ReHives" />
+              </div>
+            ) : reHivePosts.length > 0 ? (
+              <div className="grid grid-cols-3 gap-1.5 md:gap-2">
+                {reHivePosts.map((post) => renderPostTile(post, `ReHived by @${profile.username}`))}
+              </div>
+            ) : (
+              renderEmptyState(
+                "rehives",
+                "No ReHives yet",
+                isOwnProfile ? "Posts you ReHive will appear here with original attribution." : "This user hasn't ReHived any posts yet."
+              )
+            )}
+          </>
         )}
 
         {activeTab === "media" && (
-          <div className="flex min-h-[220px] flex-col items-center justify-center py-16 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#1c1d1a]/10 bg-white dark:border-neutral-800 dark:bg-[#121212]">
-              <Film size={20} className="text-[#3d654c] dark:text-[#f2c14e]" />
-            </div>
-            <h3 className="mt-3 text-xs font-bold text-[#1c1d1a] dark:text-white">No media records</h3>
-            <p className="mt-1 text-[11px] text-[#1c1d1a]/50 dark:text-neutral-400">
-              {isOwnProfile ? "Uploaded photos and videos will be indexed here." : "No media submissions found."}
-            </p>
-          </div>
+          <>
+            {!canViewProtectedContent ? (
+              renderProtectedState()
+            ) : postsLoading ? (
+              <div className="flex min-h-[220px] items-center justify-center py-16">
+                <HivezLoader size="md" progress={58} label="Loading media" />
+              </div>
+            ) : mediaPosts.length > 0 ? (
+              <div className="grid grid-cols-3 gap-1.5 md:gap-2">
+                {mediaPosts.map((post) => renderPostTile(post))}
+              </div>
+            ) : (
+              renderEmptyState(
+                "media",
+                "No media records",
+                isOwnProfile ? "Uploaded photos and videos will be indexed here." : "No media submissions found."
+              )
+            )}
+          </>
         )}
       </div>
     </div>

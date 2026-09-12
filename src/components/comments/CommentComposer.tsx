@@ -2,7 +2,8 @@ import {
   forwardRef,
 } from "react";
 
-import { Send } from "lucide-react";
+import { BadgeCheck, Send } from "lucide-react";
+import type { SearchableUser } from "@/services/privacy";
 
 interface Props {
   value: string;
@@ -14,6 +15,10 @@ interface Props {
   ) => void;
 
   onSend: () => void;
+
+  mentionSuggestions?: SearchableUser[];
+
+  onSelectMention?: (user: SearchableUser) => void;
 }
 
 const CommentComposer = forwardRef<
@@ -26,11 +31,38 @@ const CommentComposer = forwardRef<
       sending,
       onChange,
       onSend,
+      mentionSuggestions = [],
+      onSelectMention,
     },
     ref
   ) => {
     return (
       <div className="sticky bottom-0 border-t border-zinc-800 dark:border-zinc-800 border-zinc-200 bg-white dark:bg-black/95 backdrop-blur-xl">
+        {mentionSuggestions.length > 0 && (
+          <div className="mx-4 mt-3 max-h-48 overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-1 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+            {mentionSuggestions.map((person) => (
+              <button
+                key={person.uid}
+                type="button"
+                onClick={() => onSelectMention?.(person)}
+                className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              >
+                <img
+                  src={person.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.displayName || person.username || "Hivez")}&background=3d654c&color=fff`}
+                  alt=""
+                  className="h-8 w-8 rounded-full object-cover"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1">
+                    <span className="truncate text-xs font-bold text-zinc-900 dark:text-white">{person.displayName}</span>
+                    {person.verified && <BadgeCheck size={12} className="shrink-0 text-sky-500" />}
+                  </div>
+                  <p className="truncate text-[11px] text-zinc-500 dark:text-zinc-400">@{person.username}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="flex items-end gap-3 p-4">
 
