@@ -1,21 +1,43 @@
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 import { flushSync } from "react-dom";
 import type { ReactNode } from "react";
 
-type Theme = "dark" | "light";
+type Theme = "dark" | "light" | "system";
+type FontSize = "small" | "default" | "large";
 
 interface ThemeContextType {
   theme: Theme;
+  resolvedTheme: "dark" | "light";
   toggleTheme: () => void;
+  setTheme: (theme: Theme) => void;
+  fontSize: FontSize;
+  setFontSize: (size: FontSize) => void;
+  reducedMotion: boolean;
+  setReducedMotion: (reduced: boolean) => void;
+  highContrast: boolean;
+  setHighContrast: (high: boolean) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType>({
   theme: "dark",
+  resolvedTheme: "dark",
   toggleTheme: () => {},
+  setTheme: () => {},
+  fontSize: "default",
+  setFontSize: () => {},
+  reducedMotion: false,
+  setReducedMotion: () => {},
+  highContrast: false,
+  setHighContrast: () => {},
 });
 
 const TRANSITION_DURATION = 520;
 const EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
+
+function getSystemTheme(): "dark" | "light" {
+  if (typeof window === "undefined") return "dark";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
 
 /** Lower-left origin (matches the reference video), responsive to any viewport. */
 function getOrigin() {
@@ -59,43 +81,105 @@ function runFallbackWipe(theme: Theme) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
+  const [theme, setThemeState] = useState<Theme>(() => {
     const saved = localStorage.getItem("hivez-theme");
-    return saved === "light" || saved === "dark" ? saved : "dark";
+    return saved === "light" || saved === "dark" || saved === "system" ? saved : "dark";
+  });
+  const [fontSize, setFontSizeState] = useState<FontSize>(() => {
+    const saved = localStorage.getItem("hivez-font-size");
+    return saved === "small" || saved === "large" ? saved : "default";
+  });
+  const [reducedMotion, setReducedMotionState] = useState<boolean>(() => {
+    const saved = localStorage.getItem("hivez-reduced-motion");
+    if (saved === "true") return true;
+    if (saved === "false") return false;
+    // Default to system preference
+    return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  });
+  const [highContrast, setHighContrastState] = useState<boolean>(() => {
+    return localStorage.getItem("hivez-high-contrast") === "true";
   });
   const animating = useRef(false);
 
-  // Keep the DOM class + storage in sync (no animation here).
+  // Compute resolved theme (system → actual)
+  const resolvedTheme: "dark" | "light" = theme === "system" ? getSystemTheme() : theme;
+
+  // Keep the DOM class + storage in sync
   useEffect(() => {
     localStorage.setItem("hivez-theme", theme);
-    applyThemeClass(theme);
+    applyThemeClass(resolvedTheme);
+  }, [theme, resolvedTheme]);
+
+  // Apply font size
+  useEffect(() => {
+    localStorage.setItem("hivez-font-size", fontSize);
+    const root = document.documentElement;
+    const sizes: Record<FontSize, string> = { small: "14px", default: "16px", large: "18px" };
+    root.style.fontSize = sizes[fontSize];
+  }, [fontSize]);
+
+  // Apply reduced motion
+  useEffect(() => {
+    localStorage.setItem("hivez-reduced-motion", String(reducedMotion));
+    document.documentElement.classList.toggle("reduce-motion", reducedMotion);
+  }, [reducedMotion]);
+
+  // Apply high contrast
+  useEffect(() => {
+    localStorage.setItem("hivez-high-contrast", String(highContrast));
+    document.documentElement.classList.toggle("high-contrast", highContrast);
+  }, [highContrast]);
+
+  // Listen for system theme changes when in system mode
+  useEffect(() => {
+    if (theme !== "system") return;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = () => applyThemeClass(getSystemTheme());
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
   }, [theme]);
+
+  const setTheme = useCallback((newTheme: Theme) => {
+    setThemeState(newTheme);
+  }, []);
+
+  const setFontSize = useCallback((size: FontSize) => {
+    setFontSizeState(size);
+  }, []);
+
+  const setReducedMotion = useCallback((reduced: boolean) => {
+    setReducedMotionState(reduced);
+  }, []);
+
+  const setHighContrast = useCallback((high: boolean) => {
+    setHighContrastState(high);
+  }, []);
 
   const toggleTheme = () => {
     if (animating.current) return;
-    const next: Theme = theme === "dark" ? "light" : "dark";
+    // Toggle cycles: dark → light → (system if was system, otherwise dark)
+    const next: Theme = resolvedTheme === "dark" ? "light" : "dark";
 
-    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const userReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches || reducedMotion;
     const startViewTransition = (
       document as Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void>; finished: Promise<void> } }
     ).startViewTransition?.bind(document);
 
-    if (prefersReduced || !startViewTransition) {
-      if (!prefersReduced) runFallbackWipe(next);
-      setTheme(next);
+    if (userReduced || !startViewTransition) {
+      if (!userReduced) runFallbackWipe(next);
+      setThemeState(next);
       return;
     }
 
     animating.current = true;
     const { x, y, radius } = getOrigin();
     const root = document.documentElement;
-    // Freeze color transitions so both snapshots are the pure themes (no fade/flash).
     root.classList.add("theme-switching");
 
     const transition = startViewTransition(() => {
       flushSync(() => {
         applyThemeClass(next);
-        setTheme(next);
+        setThemeState(next);
       });
     });
 
@@ -121,7 +205,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>
+    <ThemeContext.Provider value={{
+      theme,
+      resolvedTheme,
+      toggleTheme,
+      setTheme,
+      fontSize,
+      setFontSize,
+      reducedMotion,
+      setReducedMotion,
+      highContrast,
+      setHighContrast,
+    }}>{children}</ThemeContext.Provider>
   );
 }
 

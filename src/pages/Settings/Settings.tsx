@@ -19,7 +19,7 @@
 // IMPORTS
 // ============================================================
 
-import { doc, setDoc } from "firebase/firestore";
+import { doc, getDoc, getDocs, collection, query, where, setDoc } from "firebase/firestore";
 import {
   Accessibility,
   Activity,
@@ -29,16 +29,12 @@ import {
   Bell,
   Bookmark,
   CalendarDays,
-  Check,
   ChevronRight,
   Contrast,
   Database,
   Download,
   Eye,
   Fingerprint,
-  Globe,
-  Hash,
-  HeartHandshake,
   KeyRound,
   Languages,
   Laptop,
@@ -66,8 +62,8 @@ import gsap from "gsap";
 import { useAuth } from "@/context/AuthContext.tsx";
 import { useTheme } from "@/context/ThemeContext.tsx";
 import { db } from "@/firebase/firebase.ts";
-import { useReducedMotion } from "@/hooks/useReducedMotion.ts";
 import { logout } from "@/services/auth.ts";
+import { enablePushNotifications } from "@/services/pushNotifications.ts";
 import {
   normalizePrivacy,
   saveSensitiveContentPreference,
@@ -78,7 +74,7 @@ import {
   type SensitiveContentPreference,
   type UserPrivacySettings,
 } from "@/services/privacy.ts";
-import { enablePushNotifications } from "@/services/pushNotifications.ts";
+import { reauthenticateWithCredential, EmailAuthProvider, updateEmail, updatePassword } from "firebase/auth";
 
 // ============================================================
 // LOCAL CONFIG — SETTINGS NAV MODEL   (consolidated from settingsNav.tsx)
@@ -474,6 +470,15 @@ function AccountSettings() {
   const { user, profile } = useAuth();
   const [privacy, setPrivacy] = useState<UserPrivacySettings>(() => normalizePrivacy(profile));
   const [savingKey, setSavingKey] = useState("");
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [emailForm, setEmailForm] = useState({ newEmail: "", password: "" });
+  const [passwordForm, setPasswordForm] = useState({ current: "", next: "", confirm: "" });
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [emailSuccess, setEmailSuccess] = useState(false);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const isPasswordProvider = user?.providerData?.some((p) => p.providerId === "password") ?? false;
 
   useEffect(() => {
     setPrivacy(normalizePrivacy(profile));
@@ -485,6 +490,89 @@ function AccountSettings() {
     setSavingKey("account-privacy");
     try {
       await saveUserPrivacySettings(user.uid, next);
+    } finally {
+      setSavingKey("");
+    }
+  }
+
+  async function handleEmailChange() {
+    if (!user) return;
+    setEmailError("");
+    setEmailSuccess(false);
+    const newEmail = emailForm.newEmail.trim();
+    if (!newEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+      setEmailError("Please enter a valid email address.");
+      return;
+    }
+    if (newEmail === user.email) {
+      setEmailError("New email must be different from current email.");
+      return;
+    }
+    if (!emailForm.password) {
+      setEmailError("Please enter your current password to confirm.");
+      return;
+    }
+    setSavingKey("email");
+    try {
+      const credential = EmailAuthProvider.credential(user.email!, emailForm.password);
+      await reauthenticateWithCredential(user, credential);
+      await updateEmail(user, newEmail);
+      setEmailSuccess(true);
+      setShowEmailForm(false);
+      setEmailForm({ newEmail: "", password: "" });
+      toast.success("Email updated successfully");
+    } catch (err: unknown) {
+      const code = (err as { code?: string })?.code || "";
+      if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
+        setEmailError("Incorrect password. Please try again.");
+      } else if (code === "auth/email-already-in-use") {
+        setEmailError("This email is already in use by another account.");
+      } else if (code === "auth/requires-recent-login") {
+        setEmailError("Please sign in again before changing your email.");
+      } else {
+        setEmailError("Could not update email. Please try again.");
+      }
+    } finally {
+      setSavingKey("");
+    }
+  }
+
+  async function handlePasswordChange() {
+    if (!user) return;
+    setPasswordError("");
+    setPasswordSuccess(false);
+    if (!passwordForm.current) {
+      setPasswordError("Please enter your current password.");
+      return;
+    }
+    if (passwordForm.next.length < 6) {
+      setPasswordError("New password must be at least 6 characters.");
+      return;
+    }
+    if (passwordForm.next !== passwordForm.confirm) {
+      setPasswordError("New passwords do not match.");
+      return;
+    }
+    setSavingKey("password");
+    try {
+      const credential = EmailAuthProvider.credential(user.email!, passwordForm.current);
+      await reauthenticateWithCredential(user, credential);
+      await updatePassword(user, passwordForm.next);
+      setPasswordSuccess(true);
+      setShowPasswordForm(false);
+      setPasswordForm({ current: "", next: "", confirm: "" });
+      toast.success("Password updated successfully");
+    } catch (err: unknown) {
+      const code = (err as { code?: string })?.code || "";
+      if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
+        setPasswordError("Incorrect current password. Please try again.");
+      } else if (code === "auth/requires-recent-login") {
+        setPasswordError("Please sign in again before changing your password.");
+      } else if (code === "auth/weak-password") {
+        setPasswordError("Password is too weak. Use at least 6 characters.");
+      } else {
+        setPasswordError("Could not update password. Please try again.");
+      }
     } finally {
       setSavingKey("");
     }
@@ -521,16 +609,39 @@ function AccountSettings() {
       <section className="space-y-2.5">
         <SectionTitle title="Contact & credentials" />
         <SettingsSection>
-          <div className="flex w-full items-center gap-3.5 rounded-2xl p-3 border-b border-[#1c1d1a]/5 last:border-b-0 dark:border-neutral-800/60">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#3d654c]/15 bg-[#3d654c]/10 text-[#3d654c] dark:border-[#f2c14e]/25 dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
-              <Mail size={18} />
+          <div className="w-full">
+            <div className="flex w-full items-center gap-3.5 rounded-2xl p-3 border-b border-[#1c1d1a]/5 last:border-b-0 dark:border-neutral-800/60">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#3d654c]/15 bg-[#3d654c]/10 text-[#3d654c] dark:border-[#f2c14e]/25 dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
+                <Mail size={18} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-[#1c1d1a] dark:text-white">Email</p>
+                <p className="mt-0.5 truncate text-xs font-medium text-[#1c1d1a]/55 dark:text-neutral-400">
+                  {user?.email || "-"}
+                </p>
+              </div>
+              {isPasswordProvider && (
+                <button
+                  type="button"
+                  onClick={() => { setShowEmailForm(!showEmailForm); setShowPasswordForm(false); setEmailError(""); }}
+                  className="rounded-full bg-[#3d654c]/10 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-[#3d654c] hover:bg-[#3d654c]/20 dark:bg-[#f2c14e]/15 dark:text-[#f2c14e]"
+                >
+                  {showEmailForm ? "Cancel" : "Change"}
+                </button>
+              )}
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold text-[#1c1d1a] dark:text-white">Email</p>
-              <p className="mt-0.5 truncate text-xs font-medium text-[#1c1d1a]/55 dark:text-neutral-400">
-                {user?.email || "-"} — managed by your sign-in provider
-              </p>
-            </div>
+            {showEmailForm && isPasswordProvider && (
+              <div className="mt-2 space-y-2 rounded-2xl border border-[#1c1d1a]/10 bg-[#f7f7f2]/50 p-3 dark:border-neutral-800 dark:bg-[#1a1a1a]/50">
+                <input type="email" placeholder="New email address" value={emailForm.newEmail} onChange={(e) => setEmailForm({ ...emailForm, newEmail: e.target.value })} className="w-full rounded-xl border border-[#1c1d1a]/10 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-[#121212] dark:text-white" />
+                <input type="password" placeholder="Current password" value={emailForm.password} onChange={(e) => setEmailForm({ ...emailForm, password: e.target.value })} className="w-full rounded-xl border border-[#1c1d1a]/10 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-[#121212] dark:text-white" />
+                {emailError && <p className="text-xs font-medium text-rose-600 dark:text-rose-400">{emailError}</p>}
+                <button type="button" onClick={() => void handleEmailChange()} disabled={savingKey === "email"} className="rounded-xl bg-[#3d654c] px-4 py-2 text-xs font-bold text-white hover:bg-[#32533e] disabled:opacity-50 dark:bg-[#f2c14e] dark:text-[#121212]">
+                  {savingKey === "email" ? "Updating..." : "Update email"}
+                </button>
+              </div>
+            )}
+            {emailSuccess && <p className="mt-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">Email updated successfully.</p>}
+            {!isPasswordProvider && <p className="mt-1 px-3 text-[10px] font-medium text-[#1c1d1a]/40 dark:text-neutral-500">Email is managed by your social sign-in provider.</p>}
           </div>
           <div className="flex w-full items-center gap-3.5 rounded-2xl p-3 border-b border-[#1c1d1a]/5 last:border-b-0 dark:border-neutral-800/60">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#3d654c]/15 bg-[#3d654c]/10 text-[#3d654c] dark:border-[#f2c14e]/25 dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
@@ -539,26 +650,44 @@ function AccountSettings() {
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold text-[#1c1d1a] dark:text-white">Phone</p>
               <p className="mt-0.5 truncate text-xs font-medium text-[#1c1d1a]/55 dark:text-neutral-400">
-                {user?.phoneNumber || "Not yet linked"}
+                {user?.phoneNumber || "Not linked"}
               </p>
             </div>
             <span className="rounded-full bg-[#1c1d1a]/5 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-[#1c1d1a]/45 dark:bg-white/10 dark:text-neutral-400">
-              Unavailable
+              {user?.phoneNumber ? "Linked" : "Coming soon"}
             </span>
           </div>
-          <div className="flex w-full items-center gap-3.5 rounded-2xl p-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#3d654c]/15 bg-[#3d654c]/10 text-[#3d654c] dark:border-[#f2c14e]/25 dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
-              <KeyRound size={18} />
+          <div className="w-full">
+            <div className="flex w-full items-center gap-3.5 rounded-2xl p-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#3d654c]/15 bg-[#3d654c]/10 text-[#3d654c] dark:border-[#f2c14e]/25 dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
+                <KeyRound size={18} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-[#1c1d1a] dark:text-white">Password</p>
+                <p className="mt-0.5 text-xs font-medium text-[#1c1d1a]/55 dark:text-neutral-400">
+                  {isPasswordProvider ? "Change your account password" : "Password managed by your sign-in provider"}
+                </p>
+              </div>
+              {isPasswordProvider ? (
+                <button type="button" onClick={() => { setShowPasswordForm(!showPasswordForm); setShowEmailForm(false); setPasswordError(""); }} className="rounded-full bg-[#3d654c]/10 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-[#3d654c] hover:bg-[#3d654c]/20 dark:bg-[#f2c14e]/15 dark:text-[#f2c14e]">
+                  {showPasswordForm ? "Cancel" : "Change"}
+                </button>
+              ) : (
+                <span className="rounded-full bg-[#1c1d1a]/5 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-[#1c1d1a]/45 dark:bg-white/10 dark:text-neutral-400">Social auth</span>
+              )}
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold text-[#1c1d1a] dark:text-white">Password</p>
-              <p className="mt-0.5 text-xs font-medium text-[#1c1d1a]/55 dark:text-neutral-400">
-                Password changes require reauthentication and are not available yet.
-              </p>
-            </div>
-            <span className="rounded-full bg-[#1c1d1a]/5 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-[#1c1d1a]/45 dark:bg-white/10 dark:text-neutral-400">
-              Unavailable
-            </span>
+            {showPasswordForm && isPasswordProvider && (
+              <div className="mt-2 space-y-2 rounded-2xl border border-[#1c1d1a]/10 bg-[#f7f7f2]/50 p-3 dark:border-neutral-800 dark:bg-[#1a1a1a]/50">
+                <input type="password" placeholder="Current password" value={passwordForm.current} onChange={(e) => setPasswordForm({ ...passwordForm, current: e.target.value })} className="w-full rounded-xl border border-[#1c1d1a]/10 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-[#121212] dark:text-white" />
+                <input type="password" placeholder="New password (min 6 chars)" value={passwordForm.next} onChange={(e) => setPasswordForm({ ...passwordForm, next: e.target.value })} className="w-full rounded-xl border border-[#1c1d1a]/10 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-[#121212] dark:text-white" />
+                <input type="password" placeholder="Confirm new password" value={passwordForm.confirm} onChange={(e) => setPasswordForm({ ...passwordForm, confirm: e.target.value })} className="w-full rounded-xl border border-[#1c1d1a]/10 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-[#121212] dark:text-white" />
+                {passwordError && <p className="text-xs font-medium text-rose-600 dark:text-rose-400">{passwordError}</p>}
+                <button type="button" onClick={() => void handlePasswordChange()} disabled={savingKey === "password"} className="rounded-xl bg-[#3d654c] px-4 py-2 text-xs font-bold text-white hover:bg-[#32533e] disabled:opacity-50 dark:bg-[#f2c14e] dark:text-[#121212]">
+                  {savingKey === "password" ? "Updating..." : "Update password"}
+                </button>
+              </div>
+            )}
+            {passwordSuccess && <p className="mt-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">Password updated successfully.</p>}
           </div>
         </SettingsSection>
       </section>
@@ -758,8 +887,23 @@ function PrivacySettings() {
             />
           </SettingRow>
 
-          <PlannedRow icon={Tag} title="Tags" subtitle="Control who can tag you in posts." note="Not available yet" />
-          <PlannedRow icon={MapPin} title="Location" subtitle="Control where your location is shared on Hivez." note="Not available yet" />
+          <OptionRow
+            icon={Tag}
+            title="Tags"
+            subtitle="Controls who can tag you in posts and comments."
+            options={INTERACTION_OPTIONS}
+            value={privacy.mentions}
+            onChange={(tags) => updatePrivacy({ ...privacy, mentions: tags }, "tags")}
+          />
+          <SettingRow
+            icon={MapPin}
+            title="Location sharing"
+            subtitle="Control whether your posts can include location data."
+          >
+            <span className="inline-flex items-center rounded-full bg-[#3d654c]/10 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-[#3d654c] dark:bg-[#f2c14e]/15 dark:text-[#f2c14e]">
+              Off by default
+            </span>
+          </SettingRow>
         </SettingsSection>
       </section>
     </div>
@@ -770,25 +914,91 @@ function PrivacySettings() {
 // ============================================================
 
 /**
- * Security section. Hivez relies on Firebase Auth for identity; the richer
- * account-security features below are not wired to any provider yet, so they
- * are honestly flagged "Not available yet" instead of being faked.
+ * Security section. Hivez relies on Firebase Auth for identity. The richer
+ * account-security features require server-side infrastructure (Firebase Auth
+ * MFA enrollment, WebAuthn challenge generation, auth event cloud functions)
+ * that is not available in the current client-only architecture. They are
+ * honestly documented below instead of being faked.
  */
 function SecuritySettings() {
+  const { user } = useAuth();
+  const isPasswordProvider = user?.providerData?.some((p) => p.providerId === "password") ?? false;
+
   return (
     <div className="space-y-6">
       <section className="space-y-2.5">
         <SectionTitle title="Security" />
         <SettingsSection>
-          <PlannedRow
-            icon={Lock}
-            title="Two-factor authentication"
-            subtitle="Add a second verification step when you sign in."
-            note="Coming soon"
-          />
-          <PlannedRow icon={Fingerprint} title="Passkeys" subtitle="Sign in with a passkey or your device." note="Not available yet" />
-          <PlannedRow icon={Laptop} title="Devices" subtitle="Review and manage devices signed in to your account." note="Not available yet" />
-          <PlannedRow icon={ShieldCheck} title="Login activity" subtitle="Review recent sign-ins to your account." note="Not available yet" />
+          <div className="flex w-full items-center gap-3.5 rounded-2xl p-3 border-b border-[#1c1d1a]/5 last:border-b-0 dark:border-neutral-800/60">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#3d654c]/15 bg-[#3d654c]/10 text-[#3d654c] dark:border-[#f2c14e]/25 dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
+              <Shield size={18} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-[#1c1d1a] dark:text-white">Sign-in method</p>
+              <p className="mt-0.5 text-xs font-medium text-[#1c1d1a]/55 dark:text-neutral-400">
+                {isPasswordProvider ? "Email and password" : "Google social sign-in"}
+              </p>
+            </div>
+            <span className="rounded-full bg-[#3d654c]/10 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-[#3d654c] dark:bg-[#f2c14e]/15 dark:text-[#f2c14e]">
+              Active
+            </span>
+          </div>
+          <div className="flex w-full items-center gap-3.5 rounded-2xl p-3 border-b border-[#1c1d1a]/5 last:border-b-0 dark:border-neutral-800/60">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#3d654c]/15 bg-[#3d654c]/10 text-[#3d654c] dark:border-[#f2c14e]/25 dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
+              <Lock size={18} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-[#1c1d1a] dark:text-white">Two-factor authentication</p>
+              <p className="mt-0.5 text-xs font-medium text-[#1c1d1a]/55 dark:text-neutral-400">
+                Requires Firebase Auth MFA enrollment (server-side). Not available in client-only mode.
+              </p>
+            </div>
+            <span className="rounded-full bg-amber-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-amber-600 dark:text-amber-400">
+              Server required
+            </span>
+          </div>
+          <div className="flex w-full items-center gap-3.5 rounded-2xl p-3 border-b border-[#1c1d1a]/5 last:border-b-0 dark:border-neutral-800/60">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#3d654c]/15 bg-[#3d654c]/10 text-[#3d654c] dark:border-[#f2c14e]/25 dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
+              <Fingerprint size={18} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-[#1c1d1a] dark:text-white">Passkeys</p>
+              <p className="mt-0.5 text-xs font-medium text-[#1c1d1a]/55 dark:text-neutral-400">
+                Requires WebAuthn server-side challenge generation. Not available in client-only mode.
+              </p>
+            </div>
+            <span className="rounded-full bg-amber-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-amber-600 dark:text-amber-400">
+              Server required
+            </span>
+          </div>
+          <div className="flex w-full items-center gap-3.5 rounded-2xl p-3 border-b border-[#1c1d1a]/5 last:border-b-0 dark:border-neutral-800/60">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#3d654c]/15 bg-[#3d654c]/10 text-[#3d654c] dark:border-[#f2c14e]/25 dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
+              <Laptop size={18} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-[#1c1d1a] dark:text-white">Devices</p>
+              <p className="mt-0.5 text-xs font-medium text-[#1c1d1a]/55 dark:text-neutral-400">
+                Firebase Auth does not expose session management from the client. Requires a cloud function backend.
+              </p>
+            </div>
+            <span className="rounded-full bg-amber-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-amber-600 dark:text-amber-400">
+              Server required
+            </span>
+          </div>
+          <div className="flex w-full items-center gap-3.5 rounded-2xl p-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#3d654c]/15 bg-[#3d654c]/10 text-[#3d654c] dark:border-[#f2c14e]/25 dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
+              <ShieldCheck size={18} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-[#1c1d1a] dark:text-white">Login activity</p>
+              <p className="mt-0.5 text-xs font-medium text-[#1c1d1a]/55 dark:text-neutral-400">
+                Requires auth event cloud functions to record sign-ins. Not available in client-only mode.
+              </p>
+            </div>
+            <span className="rounded-full bg-amber-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-amber-600 dark:text-amber-400">
+              Server required
+            </span>
+          </div>
         </SettingsSection>
       </section>
     </div>
@@ -915,10 +1125,17 @@ function ContentPreferencesSettings() {
   const [contentPref, setContentPref] = useState<SensitiveContentPreference>(() =>
     sensitiveContentPreference(profile)
   );
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+
+  useEffect(() => {
+    const prefs = profile?.preferences as Record<string, unknown> | undefined;
+    if (prefs?.topics && Array.isArray(prefs.topics)) setSelectedTopics(prefs.topics as string[]);
+    if (prefs?.interests && Array.isArray(prefs.interests)) setSelectedInterests(prefs.interests as string[]);
+  }, [profile]);
 
   async function updatePreference(value: SensitiveContentPreference) {
     if (!user) return;
-    // Optimistically apply; roll back on failure.
     const previous = contentPref;
     setContentPref(value);
     try {
@@ -927,6 +1144,32 @@ function ContentPreferencesSettings() {
       console.error("Failed to save sensitive content preference:", error);
       setContentPref(previous);
     }
+  }
+
+  async function savePreference(key: string, value: string[]) {
+    if (!user) return;
+    try {
+      await setDoc(doc(db, "users", user.uid), { preferences: { [key]: value } }, { merge: true });
+      toast.success("Preferences saved");
+    } catch (error) {
+      console.error("Failed to save preference:", error);
+      toast.error("Could not save preferences.");
+    }
+  }
+
+  const TOPICS = ["Environment", "Education", "Health", "Infrastructure", "Safety", "Community", "Technology", "Culture"];
+  const INTERESTS = ["Volunteering", "Community Building", "Emergency Response", "Mentorship", "Fundraising", "Advocacy"];
+
+  function toggleTopic(topic: string) {
+    const next = selectedTopics.includes(topic) ? selectedTopics.filter((t) => t !== topic) : [...selectedTopics, topic];
+    setSelectedTopics(next);
+    void savePreference("topics", next);
+  }
+
+  function toggleInterest(interest: string) {
+    const next = selectedInterests.includes(interest) ? selectedInterests.filter((i) => i !== interest) : [...selectedInterests, interest];
+    setSelectedInterests(next);
+    void savePreference("interests", next);
   }
 
   return (
@@ -950,21 +1193,46 @@ function ContentPreferencesSettings() {
       </section>
 
       <section className="space-y-2.5">
-        <SectionTitle title="Preferences" />
+        <SectionTitle title="Topics" />
         <SettingsSection>
-          <PlannedRow
-            icon={Globe}
-            title="Languages"
-            subtitle="Which languages you prefer seeing on Hivez."
-            note="Coming soon"
-          />
-          <PlannedRow icon={Hash} title="Topics" subtitle="Topics you follow for a more relevant feed." note="Coming soon" />
-          <PlannedRow
-            icon={HeartHandshake}
-            title="Interests"
-            subtitle="Personalised volunteering and community interests."
-            note="Coming soon"
-          />
+          <div className="flex flex-wrap gap-2 p-3">
+            {TOPICS.map((topic) => (
+              <button
+                key={topic}
+                type="button"
+                onClick={() => toggleTopic(topic)}
+                className={`rounded-full px-3 py-1.5 text-xs font-bold transition-all ${
+                  selectedTopics.includes(topic)
+                    ? "bg-[#3d654c] text-white dark:bg-[#f2c14e] dark:text-[#121212]"
+                    : "bg-[#f7f7f2] text-[#1c1d1a]/60 hover:bg-[#3d654c]/10 dark:bg-[#1a1a1a] dark:text-neutral-400"
+                }`}
+              >
+                {topic}
+              </button>
+            ))}
+          </div>
+        </SettingsSection>
+      </section>
+
+      <section className="space-y-2.5">
+        <SectionTitle title="Interests" />
+        <SettingsSection>
+          <div className="flex flex-wrap gap-2 p-3">
+            {INTERESTS.map((interest) => (
+              <button
+                key={interest}
+                type="button"
+                onClick={() => toggleInterest(interest)}
+                className={`rounded-full px-3 py-1.5 text-xs font-bold transition-all ${
+                  selectedInterests.includes(interest)
+                    ? "bg-[#3d654c] text-white dark:bg-[#f2c14e] dark:text-[#121212]"
+                    : "bg-[#f7f7f2] text-[#1c1d1a]/60 hover:bg-[#3d654c]/10 dark:bg-[#1a1a1a] dark:text-neutral-400"
+                }`}
+              >
+                {interest}
+              </button>
+            ))}
+          </div>
         </SettingsSection>
       </section>
     </div>
@@ -975,8 +1243,7 @@ function ContentPreferencesSettings() {
 // ============================================================
 
 function AppearanceSettings() {
-  const { theme, toggleTheme } = useTheme();
-  const reducedMotion = useReducedMotion();
+  const { theme, resolvedTheme, setTheme, fontSize, setFontSize, reducedMotion, setReducedMotion } = useTheme();
 
   return (
     <div className="space-y-6">
@@ -984,60 +1251,64 @@ function AppearanceSettings() {
         <SectionTitle title="Theme" />
         <SettingsSection>
           <SettingRow
-            icon={theme === "dark" ? Moon : Sun}
-            title={theme === "dark" ? "Dark mode" : "Light mode"}
-            subtitle="Switch Hivez between light and dark appearance."
+            icon={resolvedTheme === "dark" ? Moon : Sun}
+            title="App theme"
+            subtitle="Choose light, dark, or follow your device."
           >
-            <div className="grid shrink-0 grid-cols-2 rounded-xl bg-[#f7f7f2] p-1.5 dark:bg-[#1a1a1a]">
-              <button
-                type="button"
-                onClick={() => {
-                  if (theme !== "light") toggleTheme();
-                }}
-                className={`rounded-lg px-3 py-1.5 text-xs font-black transition-all ${
-                  theme === "light"
-                    ? "bg-[#3d654c] text-white shadow-sm dark:bg-[#f2c14e] dark:text-[#121212]"
-                    : "text-[#1c1d1a]/60 dark:text-neutral-400"
-                }`}
-              >
-                Light
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (theme !== "dark") toggleTheme();
-                }}
-                className={`rounded-lg px-3 py-1.5 text-xs font-black transition-all ${
-                  theme === "dark"
-                    ? "bg-[#3d654c] text-white shadow-sm dark:bg-[#f2c14e] dark:text-[#121212]"
-                    : "text-[#1c1d1a]/60 dark:text-neutral-400"
-                }`}
-              >
-                Dark
-              </button>
+            <div className="grid shrink-0 grid-cols-3 gap-1 rounded-xl bg-[#f7f7f2] p-1.5 dark:bg-[#1a1a1a]">
+              {(["light", "dark", "system"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTheme(t)}
+                  className={`rounded-lg px-2 py-1.5 text-[10px] font-black uppercase transition-all ${
+                    theme === t
+                      ? "bg-[#3d654c] text-white shadow-sm dark:bg-[#f2c14e] dark:text-[#121212]"
+                      : "text-[#1c1d1a]/60 dark:text-neutral-400"
+                  }`}
+                >
+                  {t === "system" ? "Auto" : t === "light" ? "Light" : "Dark"}
+                </button>
+              ))}
             </div>
           </SettingRow>
-          <PlannedRow
-            icon={Sun}
-            title="System theme"
-            subtitle="Automatically follow your device appearance."
-            note="Coming soon"
-          />
         </SettingsSection>
       </section>
 
       <section className="space-y-2.5">
         <SectionTitle title="Typography & motion" />
         <SettingsSection>
-          <PlannedRow icon={Type} title="Font size" subtitle="Adjust text size across Hivez." note="Coming soon" />
+          <SettingRow
+            icon={Type}
+            title="Font size"
+            subtitle="Adjust text size across Hivez."
+          >
+            <div className="grid shrink-0 grid-cols-3 gap-1 rounded-xl bg-[#f7f7f2] p-1.5 dark:bg-[#1a1a1a]">
+              {(["small", "default", "large"] as const).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setFontSize(s)}
+                  className={`rounded-lg px-2 py-1.5 text-[10px] font-black uppercase transition-all ${
+                    fontSize === s
+                      ? "bg-[#3d654c] text-white shadow-sm dark:bg-[#f2c14e] dark:text-[#121212]"
+                      : "text-[#1c1d1a]/60 dark:text-neutral-400"
+                  }`}
+                >
+                  {s === "small" ? "Small" : s === "large" ? "Large" : "Default"}
+                </button>
+              ))}
+            </div>
+          </SettingRow>
           <SettingRow
             icon={Sparkles}
             title="Reduce motion"
-            subtitle={`Your device preference: ${reducedMotion ? "reduced motion is on" : "standard motion is on"}.`}
+            subtitle="Minimize animations across the interface."
           >
-            <span className="inline-flex items-center rounded-full bg-[#1c1d1a]/5 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-[#1c1d1a]/45 dark:bg-white/10 dark:text-neutral-400">
-              Follows system
-            </span>
+            <Switch
+              checked={reducedMotion}
+              onClick={() => setReducedMotion(!reducedMotion)}
+            />
           </SettingRow>
         </SettingsSection>
       </section>
@@ -1049,7 +1320,7 @@ function AppearanceSettings() {
 // ============================================================
 
 function AccessibilitySettings() {
-  const reducedMotion = useReducedMotion();
+  const { fontSize, setFontSize, reducedMotion, setReducedMotion, highContrast, setHighContrast } = useTheme();
 
   return (
     <div className="space-y-6">
@@ -1059,14 +1330,45 @@ function AccessibilitySettings() {
           <SettingRow
             icon={Accessibility}
             title="Reduce motion"
-            subtitle={`Device setting: ${reducedMotion ? "reduced motion is enabled" : "standard motion is enabled"}.`}
+            subtitle="Minimize animations across the interface."
           >
-            <span className="inline-flex items-center rounded-full bg-[#3d654c]/10 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-[#3d654c] dark:bg-[#f2c14e]/15 dark:text-[#f2c14e]">
-              Follows system
-            </span>
+            <Switch
+              checked={reducedMotion}
+              onClick={() => setReducedMotion(!reducedMotion)}
+            />
           </SettingRow>
-          <PlannedRow icon={Type} title="Text size" subtitle="Adjust interface text size without zooming the whole page." note="Coming soon" />
-          <PlannedRow icon={Contrast} title="High contrast" subtitle="Increase the contrast of surfaces and text." note="Coming soon" />
+          <SettingRow
+            icon={Type}
+            title="Text size"
+            subtitle="Adjust interface text size."
+          >
+            <div className="grid shrink-0 grid-cols-3 gap-1 rounded-xl bg-[#f7f7f2] p-1.5 dark:bg-[#1a1a1a]">
+              {(["small", "default", "large"] as const).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setFontSize(s)}
+                  className={`rounded-lg px-2 py-1.5 text-[10px] font-black uppercase transition-all ${
+                    fontSize === s
+                      ? "bg-[#3d654c] text-white shadow-sm dark:bg-[#f2c14e] dark:text-[#121212]"
+                      : "text-[#1c1d1a]/60 dark:text-neutral-400"
+                  }`}
+                >
+                  {s === "small" ? "Small" : s === "large" ? "Large" : "Default"}
+                </button>
+              ))}
+            </div>
+          </SettingRow>
+          <SettingRow
+            icon={Contrast}
+            title="High contrast"
+            subtitle="Increase the contrast of surfaces and text."
+          >
+            <Switch
+              checked={highContrast}
+              onClick={() => setHighContrast(!highContrast)}
+            />
+          </SettingRow>
         </SettingsSection>
       </section>
     </div>
@@ -1083,11 +1385,37 @@ const LANGUAGES = [
 ];
 
 function LanguageSettings() {
+  const { user, profile } = useAuth();
+  const [saving, setSaving] = useState(false);
+  const [currentLang, setCurrentLang] = useState<string>(() => {
+    return (profile?.preferences as Record<string, unknown> | undefined)?.language as string || "en-US";
+  });
+
+  async function handleLanguageChange(code: string) {
+    if (!user || code === currentLang) return;
+    setCurrentLang(code);
+    setSaving(true);
+    try {
+      await setDoc(doc(db, "users", user.uid), { preferences: { language: code } }, { merge: true });
+      toast.success("Language preference saved");
+    } catch (error) {
+      console.error("Failed to save language:", error);
+      toast.error("Could not save language preference.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <section className="space-y-2.5">
         <SectionTitle title="Language" />
         <SettingsSection>
+          <div className="px-2 pb-2">
+            <p className="text-xs font-medium text-[#1c1d1a]/55 dark:text-neutral-400">
+              Choose your display language. Currently only English (US) is fully supported.
+            </p>
+          </div>
           {LANGUAGES.map((lang) => (
             <div
               key={lang.code}
@@ -1098,12 +1426,20 @@ function LanguageSettings() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold text-[#1c1d1a] dark:text-white">{lang.label}</p>
-                <p className="mt-0.5 text-xs font-medium text-[#1c1d1a]/55 dark:text-neutral-400">
-                  {lang.available ? "Currently active" : "Localized UI not available yet"}
-                </p>
               </div>
               {lang.available ? (
-                <Check size={18} className="text-[#3d654c] dark:text-[#f2c14e]" />
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => void handleLanguageChange(lang.code)}
+                  className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wide transition ${
+                    currentLang === lang.code
+                      ? "bg-[#3d654c] text-white dark:bg-[#f2c14e] dark:text-[#121212]"
+                      : "bg-[#3d654c]/10 text-[#3d654c] hover:bg-[#3d654c]/20 dark:bg-[#f2c14e]/15 dark:text-[#f2c14e]"
+                  }`}
+                >
+                  {currentLang === lang.code ? "Selected" : "Select"}
+                </button>
               ) : (
                 <span className="inline-flex items-center rounded-full bg-[#1c1d1a]/5 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-[#1c1d1a]/45 dark:bg-white/10 dark:text-neutral-400">
                   Soon
@@ -1121,26 +1457,30 @@ function LanguageSettings() {
 // ============================================================
 
 function DataSettings() {
+  const { user } = useAuth();
   const [clearing, setClearing] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [usage, setUsage] = useState<{ localStorage: string; estimated: string } | null>(null);
+
+  useEffect(() => {
+    let totalBytes = 0;
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key) totalBytes += (localStorage.getItem(key)?.length ?? 0) * 2;
+    }
+    const fmt = (b: number) => b < 1024 ? `${b} B` : b < 1048576 ? `${(b / 1024).toFixed(1)} KB` : `${(b / 1048576).toFixed(1)} MB`;
+    setUsage({ localStorage: fmt(totalBytes), estimated: fmt(totalBytes) });
+  }, []);
 
   async function handleClearCache() {
     setClearing(true);
     try {
-      // Clears only on-device caches. Firebase Auth persists in IndexedDB and
-      // the stored theme preference is restored; nothing in Firestore is touched.
-      const themeKey = localStorage.getItem("hivez-theme");
+      const keys = ["hivez-theme", "hivez-font-size", "hivez-reduced-motion", "hivez-high-contrast"];
+      const saved = keys.reduce((acc, k) => { const v = localStorage.getItem(k); if (v) acc[k] = v; return acc; }, {} as Record<string, string>);
       localStorage.clear();
-      if (themeKey) {
-        try {
-          localStorage.setItem("hivez-theme", themeKey);
-        } catch {
-          /* ignore quota errors */
-        }
-      }
+      Object.entries(saved).forEach(([k, v]) => localStorage.setItem(k, v));
       const storage = (navigator as Navigator & { storage?: { clear?: () => Promise<void> } }).storage;
-      if (storage?.clear) {
-        await storage.clear().catch(() => undefined);
-      }
+      if (storage?.clear) await storage.clear().catch(() => undefined);
       toast.success("On-device cache cleared");
     } catch (error) {
       console.error("Failed to clear cache:", error);
@@ -1150,23 +1490,70 @@ function DataSettings() {
     }
   }
 
+  async function handleExportData() {
+    if (!user) return;
+    setExporting(true);
+    try {
+      const followsData: { followers: unknown[]; following: unknown[] } = { followers: [], following: [] };
+      const exportData: Record<string, unknown> = { exportedAt: new Date().toISOString(), profile: null, posts: [] as unknown[], comments: [] as unknown[], follows: followsData, settings: {} as Record<string, unknown> };
+      const profileSnap = await getDoc(doc(db, "users", user.uid));
+      if (profileSnap.exists()) {
+        const p = profileSnap.data();
+        exportData.profile = { displayName: p.displayName, username: p.username, bio: p.bio, photoURL: p.photoURL, verified: p.verified, followers: p.followers, following: p.following, posts: p.posts, createdAt: p.createdAt };
+        exportData.settings = { privacy: p.privacy, notificationPreferences: p.notificationPreferences, preferences: p.preferences };
+      }
+      const postsSnap = await getDocs(query(collection(db, "posts"), where("uid", "==", user.uid)));
+      exportData.posts = postsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const commentsSnap = await getDocs(query(collection(db, "comments"), where("uid", "==", user.uid)));
+      exportData.comments = commentsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const followersSnap = await getDocs(collection(db, "users", user.uid, "followers"));
+      const followingSnap = await getDocs(collection(db, "users", user.uid, "following"));
+      followsData.followers = followersSnap.docs.map((d) => d.data());
+      followsData.following = followingSnap.docs.map((d) => d.data());
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `hivez-data-${user.uid}-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Data export downloaded");
+    } catch (error) {
+      console.error("Failed to export data:", error);
+      toast.error("Could not export data. Please try again.");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <section className="space-y-2.5">
         <SectionTitle title="Your data" />
         <SettingsSection>
-          <PlannedRow
+          <SettingRow
             icon={Download}
             title="Download data"
-            subtitle="Get an export of your posts, activity and settings."
-            note="Coming soon"
-          />
-          <PlannedRow
+            subtitle="Get an export of your posts, comments, profile and settings as JSON."
+          >
+            <button
+              type="button"
+              onClick={() => void handleExportData()}
+              disabled={exporting}
+              className="rounded-xl bg-[#3d654c]/10 px-4 py-2 text-xs font-bold text-[#3d654c] transition hover:bg-[#3d654c]/20 disabled:opacity-50 dark:bg-[#f2c14e]/15 dark:text-[#f2c14e]"
+            >
+              {exporting ? "Exporting..." : "Export"}
+            </button>
+          </SettingRow>
+          <SettingRow
             icon={Database}
             title="Data usage"
-            subtitle="See storage used by photos, videos and drafts on this device."
-            note="Coming soon"
-          />
+            subtitle={usage ? `Local storage: ${usage.localStorage} (estimated)` : "Calculating..."}
+          >
+            <span className="inline-flex items-center rounded-full bg-[#1c1d1a]/5 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-[#1c1d1a]/45 dark:bg-white/10 dark:text-neutral-400">
+              Local only
+            </span>
+          </SettingRow>
           <SettingRow
             icon={Trash2}
             title="Clear cache"
@@ -1214,8 +1601,14 @@ function DeleteAccountSettings() {
             <div className="min-w-0 space-y-1 text-xs leading-relaxed">
               <p className="font-bold">This area controls the future of your Hivez account.</p>
               <p>
-                Deactivation and permanent deletion are not available in-app yet. If you need to close your
-                account, contact Hivez support with your username. Nothing will be deleted unless you confirm it.
+                <strong>Deactivation</strong> temporarily hides your profile and posts. You can reactivate by signing back in.
+              </p>
+              <p>
+                <strong>Deletion</strong> permanently removes your account, posts, and data. This cannot be undone.
+              </p>
+              <p className="text-rose-600 dark:text-rose-300">
+                Full account deletion requires backend cleanup (cloud functions) that is not available in client-only mode.
+                Contact Hivez support for permanent deletion.
               </p>
             </div>
           </div>
@@ -1229,7 +1622,7 @@ function DeleteAccountSettings() {
               <div className="mt-3 flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setConfirming(false)}
+                  onClick={() => { setConfirming(false); }}
                   className="rounded-xl border border-[#1c1d1a]/10 bg-white px-4 py-2 text-xs font-bold text-[#1c1d1a] transition hover:bg-[#ecece5] disabled:opacity-50 dark:border-neutral-800 dark:bg-[#141414] dark:text-white dark:hover:bg-neutral-800"
                 >
                   Cancel

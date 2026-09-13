@@ -31,6 +31,67 @@ html.light,
   transition: background-color 0.7s ease, color 0.7s ease;
 }
 
+/* === Accessibility: Reduced Motion === */
+html.reduce-motion,
+html.reduce-motion *,
+html.reduce-motion *::before,
+html.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* === Accessibility: High Contrast === */
+html.high-contrast {
+  --background: #000000 !important;
+  --foreground: #ffffff !important;
+  --card: #000000 !important;
+  --card-foreground: #ffffff !important;
+  --primary: #ffff00 !important;
+  --primary-foreground: #000000 !important;
+  --secondary: #00ffff !important;
+  --secondary-foreground: #000000 !important;
+  --muted: #333333 !important;
+  --muted-foreground: #ffffff !important;
+  --accent: #ffff00 !important;
+  --accent-foreground: #000000 !important;
+  --border: #ffffff !important;
+  --input: #ffffff !important;
+  --ring: #ffff00 !important;
+}
+
+html.high-contrast.dark {
+  --background: #000000 !important;
+  --foreground: #ffffff !important;
+}
+
+html.high-contrast.light {
+  --background: #ffffff !important;
+  --foreground: #000000 !important;
+  --card: #ffffff !important;
+  --card-foreground: #000000 !important;
+  --primary: #0000ff !important;
+  --primary-foreground: #ffffff !important;
+  --border: #000000 !important;
+  --input: #000000 !important;
+  --muted-foreground: #000000 !important;
+}
+
+/* === Font Size Scaling (applied via root font-size) === */
+/* Small = 14px, Default = 16px, Large = 18px — set by ThemeContext */
+
 html,
 body,
 #root {
