@@ -1263,7 +1263,7 @@ function MemberRow({ member }: { member: CommunityMember }) {
       <img
         src={liveUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.user.displayName)}&background=111&color=fff`}
         alt=""
-        className="h-11 w-11 rounded-2xl object-cover ring-2 ring-primary/20"
+        className="h-11 w-11 rounded-full object-cover ring-2 ring-primary/20"
       />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-black text-zinc-950 dark:text-white">
@@ -1846,7 +1846,7 @@ function IssueCommunityPage() {
                               onClick={() => setSelectedParticipantId(selectedParticipantId === p.id ? null : p.id)}
                               className={`flex flex-wrap items-center gap-3 rounded-2xl border p-3 transition-colors ${selectedParticipantId === p.id ? "border-primary bg-primary/5" : "border-zinc-200/80 bg-zinc-50/50 dark:border-neutral-800 dark:bg-zinc-900/50"}`}
                             >
-                              <img src={p.user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.user.displayName)}&background=111&color=fff`} alt="" className="h-9 w-9 rounded-xl object-cover ring-2 ring-primary/20" />
+                              <img src={p.user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.user.displayName)}&background=111&color=fff`} alt="" className="h-9 w-9 rounded-full object-cover ring-2 ring-primary/20" />
                               <span className="min-w-0 flex-1 truncate text-xs font-black text-zinc-900 dark:text-white">{p.user.displayName}</span>
                               <select
                                 value={p.role}
@@ -1987,7 +1987,7 @@ function IssueCommunityPage() {
             <div className="grid gap-3 sm:grid-cols-2">
               {members.map((item) => (
                 <div key={item.id} className="flex items-center gap-4 rounded-3xl border border-zinc-200/80 bg-white p-4 shadow-2xs dark:border-neutral-800/80 dark:bg-zinc-950">
-                  <img src={item.user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.user.displayName)}&background=111&color=fff`} alt="" className="h-12 w-12 rounded-2xl object-cover ring-2 ring-primary/20" />
+                  <img src={item.user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.user.displayName)}&background=111&color=fff`} alt="" className="h-12 w-12 rounded-full object-cover ring-2 ring-primary/20" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-black text-zinc-950 dark:text-white">{item.user.displayName}</p>
                     <p className="truncate text-xs font-semibold text-zinc-400">@{item.user.username || "hivez"}</p>
@@ -2092,7 +2092,7 @@ function IssueCommunityMessagePanel({ messages, canPost, value, onChange, onSubm
       <div className="space-y-3">
         {messages.map((message) => (
           <div key={message.id} className="flex gap-4 rounded-[28px] border border-zinc-200/80 bg-white p-5 shadow-2xs dark:border-neutral-800/80 dark:bg-zinc-950">
-            <img src={message.user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(message.user.displayName)}&background=111&color=fff`} alt="" className="h-11 w-11 shrink-0 rounded-2xl object-cover ring-2 ring-primary/20" />
+            <img src={message.user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(message.user.displayName)}&background=111&color=fff`} alt="" className="h-11 w-11 shrink-0 rounded-full object-cover ring-2 ring-primary/20" />
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs font-black text-zinc-950 dark:text-white">{message.user.displayName}</p>
@@ -3039,7 +3039,7 @@ function MemberFace({ member }: { member: VolunteerGroupMember }) {
       <img
         src={liveUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(liveUser.displayName || "Hivez")}&background=111&color=fff`}
         alt=""
-        className="h-10 w-10 rounded-xl object-cover ring-2 ring-primary/20"
+        className="h-10 w-10 rounded-full object-cover ring-2 ring-primary/20"
       />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-black text-zinc-950 dark:text-white">{liveUser.displayName}</p>
@@ -3086,7 +3086,7 @@ function GroupMessagePanel({ messages, value, onChange, onSubmit, canPost, title
       <div className="space-y-3">
         {messages.map((message) => (
           <div key={message.id} className="flex gap-4 rounded-[28px] border border-zinc-200/80 bg-white p-5 shadow-2xs dark:border-neutral-800/80 dark:bg-zinc-950">
-            <img src={message.user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(message.user.displayName)}&background=111&color=fff`} alt="" className="h-11 w-11 shrink-0 rounded-2xl object-cover ring-2 ring-primary/20" />
+            <img src={message.user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(message.user.displayName)}&background=111&color=fff`} alt="" className="h-11 w-11 shrink-0 rounded-full object-cover ring-2 ring-primary/20" />
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs font-black text-zinc-950 dark:text-white">{message.user.displayName}</p>
@@ -3172,7 +3172,7 @@ function GroupMemberRow({ item, isOwner, onRoleChange, onRemove }: {
   const liveUser = useLiveProfile(item.uid, item.user) || item.user;
   return (
     <div className="flex items-center gap-4 rounded-3xl border border-zinc-200/80 bg-white p-4 shadow-2xs dark:border-neutral-800/80 dark:bg-zinc-950">
-      <img src={liveUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(liveUser.displayName || "Hivez")}&background=111&color=fff`} alt="" className="h-11 w-11 shrink-0 rounded-2xl object-cover ring-2 ring-primary/20" />
+      <img src={liveUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(liveUser.displayName || "Hivez")}&background=111&color=fff`} alt="" className="h-11 w-11 shrink-0 rounded-full object-cover ring-2 ring-primary/20" />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-black text-zinc-950 dark:text-white">{liveUser.displayName}</p>
         <p className="truncate text-xs font-semibold text-zinc-400">@{liveUser.username || "hivez"}</p>

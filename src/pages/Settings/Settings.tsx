@@ -400,7 +400,7 @@ function Settings() {
                 <img
                   src={profile?.photoURL || user?.photoURL || "https://ui-avatars.com/api/?name=Hivez&background=3d654c&color=fff"}
                   alt=""
-                  className="h-12 w-12 rounded-2xl border-2 border-[#3d654c]/30 object-cover shadow-sm transition group-hover:scale-105 dark:border-[#f2c14e]/30"
+                  className="h-12 w-12 rounded-full border-2 border-[#3d654c]/30 object-cover shadow-sm transition group-hover:scale-105 dark:border-[#f2c14e]/30"
                 />
                 <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#3d654c] text-white shadow-xs dark:bg-[#f2c14e] dark:text-[#121212]">
                   <Sparkles size={9} />
