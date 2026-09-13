@@ -41,6 +41,7 @@ import {
   Plus,
   RotateCcw,
   Send,
+  Sparkles,
   Shield,
   ShieldCheck,
   Trash2,

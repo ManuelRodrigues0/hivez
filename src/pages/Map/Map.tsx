@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Compass, LocateFixed, MapPin, Minus, Plus, X } from "lucide-react";
+import { LocateFixed, MapPin, Minus, Plus, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import HivezLoader from "@/components/common/HivezLoader";
 import type { FeedPost } from "@/components/feed/Feed";
