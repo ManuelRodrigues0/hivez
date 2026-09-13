@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, Megaphone } from "lucide-react";
+import { Check, Megaphone, Sparkles, ChevronDown } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import {
   dismissUpdates,
@@ -35,7 +35,7 @@ const TYPE_VISUALS: Record<CommunityUpdateType, TypeVisual> = {
 
 /**
  * One compact feed row:
- *   [source icon] Title                    timestamp
+ *   [source icon] Title                     timestamp
  *                 source · organizer
  *                 description (max 2 lines)
  *                 event-time / counts (real values only)
@@ -79,66 +79,66 @@ function UpdateRow({ update, freshSince }: { update: CommunityUpdate; freshSince
   })();
 
   return (
-    <span className="flex min-w-0 flex-1 items-start gap-2.5">
-      {/* Source identity: small icon (action-type emoji or Lucide glyph). Never a big image. */}
-      <span
+    <div className="flex min-w-0 flex-1 items-start gap-3.5">
+      {/* Source identity: compact structured emblem */}
+      <div
         aria-hidden="true"
-        className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#1c1d1a]/5 text-[13px] leading-none dark:bg-white/10"
+        className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl border border-[#3d654c]/15 bg-[#3d654c]/10 text-xs shadow-2xs dark:border-[#f2c14e]/25 dark:bg-[#f2c14e]/10"
       >
         {meta?.emoji ? (
           meta.emoji
         ) : update.type === "announcement" ? (
-          <Megaphone size={12} className={visual.iconClass} />
+          <Megaphone size={14} className={visual.iconClass} />
         ) : update.type === "issue_resolved" ? (
-          <Check size={13} strokeWidth={3} className={visual.iconClass} />
+          <Check size={15} strokeWidth={3} className={visual.iconClass} />
         ) : (
-          <span className="h-1.5 w-1.5 rounded-full bg-current opacity-60" />
+          <span className="h-2 w-2 rounded-full bg-current opacity-75" />
         )}
-      </span>
+      </div>
 
-      <span className="min-w-0 flex-1">
-        <span className="flex items-baseline gap-2">
-          <span className="min-w-0 flex-1 truncate text-[13px] font-semibold leading-5 text-[#1c1d1a] dark:text-white">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline gap-2">
+          <p className="min-w-0 flex-1 truncate text-xs font-black leading-tight text-[#1c1d1a] dark:text-white group-hover:text-[#3d654c] dark:group-hover:text-[#f2c14e] transition-colors">
             {update.title}
-          </span>
+          </p>
           {timeLabel && (
-            <span className="shrink-0 text-[11px] leading-5 text-[#1c1d1a]/50 dark:text-neutral-500">
+            <span className="shrink-0 text-[10px] font-bold tracking-tight text-[#1c1d1a]/40 dark:text-neutral-500">
               {timeLabel}
             </span>
           )}
-        </span>
+        </div>
 
         {byline && (
-          <span className="mt-px block truncate text-[11px] leading-4 text-[#1c1d1a]/55 dark:text-neutral-500">
+          <p className="mt-0.5 truncate text-[11px] font-bold tracking-wide text-[#3d654c]/85 dark:text-[#f2c14e]/85">
             {byline}
-          </span>
+          </p>
         )}
 
         {update.description.trim() && (
-          <span className="mt-0.5 line-clamp-2 block text-[12.5px] leading-[1.35] text-[#1c1d1a]/75 dark:text-neutral-400">
+          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[#1c1d1a]/70 dark:text-neutral-300 font-medium">
             {update.description}
-          </span>
+          </p>
         )}
 
         {detailBits.length > 0 && (
-          <span className="mt-0.5 block truncate text-[11px] leading-4 text-[#1c1d1a]/55 dark:text-neutral-500">
+          <p className="mt-1 truncate text-[11px] font-medium text-[#1c1d1a]/50 dark:text-neutral-400">
             {detailBits.join("  ·  ")}
-          </span>
+          </p>
         )}
 
-        <span className="mt-1 flex flex-wrap items-center gap-1.5">
+        <div className="mt-2.5 flex flex-wrap items-center gap-2">
           {meta?.status && <StatusPill status={meta.status} />}
           {isFresh && (
-            <span className="inline-flex shrink-0 items-center rounded-full bg-[#3d654c]/10 px-1.5 py-px text-[10px] font-bold uppercase tracking-wide text-[#3d654c] dark:bg-[#f2c14e]/15 dark:text-[#f2c14e]">
-              New
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/15 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-primary dark:bg-[#f2c14e]/20 dark:text-[#f2c14e] shadow-2xs">
+              <Sparkles size={9} /> New
             </span>
           )}
-        </span>
-      </span>
+        </div>
+      </div>
 
-      {/* Real media only: issue photo/video thumbnail on the right. Never a placeholder. */}
+      {/* Real media thumbnail */}
       {meta?.mediaUrl && (
-        <span className="block h-12 w-16 shrink-0 overflow-hidden rounded-lg bg-[#1c1d1a]/5 dark:bg-white/10">
+        <div className="block h-15 w-16 shrink-0 overflow-hidden rounded-2xl border border-[#1c1d1a]/10 bg-[#1c1d1a]/5 shadow-xs dark:border-white/10 dark:bg-white/10">
           {meta.mediaType === "video" ? (
             <video
               src={meta.mediaUrl}
@@ -146,44 +146,44 @@ function UpdateRow({ update, freshSince }: { update: CommunityUpdate; freshSince
               muted
               playsInline
               aria-label={`${mediaKindLabel} for ${update.title}`}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
             <img
               src={meta.mediaUrl}
               alt={`${mediaKindLabel} for ${update.title}`}
               loading="lazy"
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           )}
-        </span>
+        </div>
       )}
-    </span>
+    </div>
   );
 }
 
-/** Restrained status pill (Urgent / Upcoming / Active / Resolved / Verified / Announcement). */
+/** Restrained status pill */
 function StatusPill({ status }: { status: string }) {
   return (
-    <span className="inline-flex shrink-0 items-center rounded-full border border-[#1c1d1a]/10 px-1.5 py-px text-[10px] font-bold uppercase tracking-wide text-[#1c1d1a]/55 dark:border-white/10 dark:text-neutral-400">
+    <span className="inline-flex shrink-0 items-center rounded-full border border-[#1c1d1a]/10 bg-[#1c1d1a]/5 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#1c1d1a]/60 dark:border-white/15 dark:bg-white/10 dark:text-neutral-300">
       {status}
     </span>
   );
 }
 
-/** Subtle feed skeleton rows — no blank card, no layout shift while loading. */
+/** Subtle feed skeleton rows */
 function LoadingRows() {
   return (
-    <div aria-hidden="true" className="animate-pulse">
+    <div aria-hidden="true" className="animate-pulse space-y-3">
       {[0, 1, 2].map((row) => (
         <div
           key={row}
-          className="flex items-start gap-2.5 border-b border-[#1c1d1a]/8 px-1.5 py-2.5 last:border-b-0 dark:border-white/10"
+          className="flex items-start gap-3.5 rounded-2xl border border-[#1c1d1a]/5 bg-white/40 p-3.5 dark:border-white/5 dark:bg-[#161616]/40"
         >
-          <div className="h-6 w-6 shrink-0 rounded-full bg-[#1c1d1a]/10 dark:bg-white/10" />
-          <div className="min-w-0 flex-1">
-            <div className="h-3.5 w-3/4 rounded bg-[#1c1d1a]/10 dark:bg-white/10" />
-            <div className="mt-1.5 h-3 w-1/2 rounded bg-[#1c1d1a]/8 dark:bg-white/8" />
+          <div className="h-8 w-8 shrink-0 rounded-2xl bg-[#1c1d1a]/10 dark:bg-white/10" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="h-3.5 w-3/4 rounded-md bg-[#1c1d1a]/10 dark:bg-white/10" />
+            <div className="h-3 w-1/2 rounded-md bg-[#1c1d1a]/8 dark:bg-white/8" />
           </div>
         </div>
       ))}
@@ -194,7 +194,6 @@ function LoadingRows() {
 export default function UpdatesPanel() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  // Keyed to the user so switching accounts never leaks another user's list.
   const [loaded, setLoaded] = useState<{ uid: string; list: CommunityUpdate[] } | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [dismissing, setDismissing] = useState(false);
@@ -202,9 +201,6 @@ export default function UpdatesPanel() {
   useEffect(() => {
     if (!user) return;
 
-    // Definitive end to the skeleton: if no source has emitted within a few
-    // seconds (e.g. a listener is denied or a source stalls), resolve with an
-    // empty list. Live sources still replace it the moment they emit.
     const fallbackTimer = window.setTimeout(() => {
       setLoaded((current) =>
         current && current.uid === user.uid ? current : { uid: user.uid, list: [] }
@@ -223,7 +219,6 @@ export default function UpdatesPanel() {
   }, [user]);
 
   const ready = loaded !== null && loaded.uid === user?.uid;
-  // Snapshot "now" once per list so "New" markers never jump while reading.
   const [freshSince] = useState(() => Date.now() - FRESH_WINDOW_MS);
   const visible = ready ? loaded.list : [];
   const shown = expanded ? visible.slice(0, EXPANDED_COUNT) : visible.slice(0, COLLAPSED_COUNT);
@@ -243,21 +238,25 @@ export default function UpdatesPanel() {
   }
 
   return (
-    <section aria-label="Community updates" className="px-1 py-1">
-      {/* Section header (not a card header): compact, strong, minimal spacing. */}
-      <div className="mb-1 flex items-center justify-between px-1.5">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-[#1c1d1a]/60 dark:text-neutral-400">
-          Updates
-        </h2>
+    <section aria-label="Community updates" className="w-full rounded-3xl border border-[#1c1d1a]/10 bg-white/70 p-4 shadow-sm backdrop-blur-2xl dark:border-neutral-800/90 dark:bg-[#121212]/70">
+      <div className="mb-3.5 flex items-center justify-between px-1">
+        <div className="flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#3d654c]/10 text-[#3d654c] dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
+            <Megaphone size={14} />
+          </span>
+          <h2 className="text-xs font-black uppercase tracking-widest text-[#1c1d1a]/70 dark:text-neutral-300">
+            Updates
+          </h2>
+        </div>
         {visible.length > 0 && (
           <button
             type="button"
             onClick={handleClear}
             disabled={dismissing}
             aria-label="Clear all updates for me"
-            className="rounded px-1 py-0.5 text-[11px] font-bold text-[#3d654c] transition hover:opacity-80 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400/50 dark:text-[#f2c14e] dark:focus-visible:ring-white/30"
+            className="rounded-xl px-3 py-1 text-[11px] font-black tracking-wide text-[#3d654c] transition hover:bg-[#3d654c]/10 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400/50 dark:text-[#f2c14e] dark:hover:bg-[#f2c14e]/10 dark:focus-visible:ring-white/30"
           >
-            Clear
+            Clear all
           </button>
         )}
       </div>
@@ -265,27 +264,29 @@ export default function UpdatesPanel() {
       {!ready && <LoadingRows />}
 
       {ready && visible.length === 0 && (
-        <p className="px-1.5 py-2 text-[12px] leading-5 text-[#1c1d1a]/50 dark:text-neutral-500">
-          You&apos;re all caught up
-        </p>
+        <div className="rounded-2xl border border-dashed border-[#1c1d1a]/10 bg-[#f7f7f2]/50 p-6 text-center dark:border-neutral-800 dark:bg-white/[0.02]">
+          <p className="text-xs font-semibold text-[#1c1d1a]/50 dark:text-neutral-500">
+            You&apos;re all caught up! No new community updates.
+          </p>
+        </div>
       )}
 
       {shown.length > 0 && (
-        <ul>
+        <ul className="space-y-2.5">
           {shown.map((update) => {
             const target = update.targetUrl;
             const visual = TYPE_VISUALS[update.type];
             return (
               <li
                 key={update.id}
-                className="border-b border-[#1c1d1a]/8 last:border-b-0 dark:border-white/10"
+                className="overflow-hidden rounded-2xl transition-all duration-200"
               >
                 {target ? (
                   <button
                     type="button"
                     onClick={() => navigate(target)}
                     aria-label={`${visual.label}: ${update.title}`}
-                    className="group flex w-full items-start rounded-lg px-1.5 py-2.5 text-left transition hover:bg-[#1c1d1a]/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400/60 dark:hover:bg-white/[0.04] dark:focus-visible:ring-white/30"
+                    className="group flex w-full items-start rounded-2xl border border-transparent bg-[#f7f7f2]/60 p-3.5 text-left transition-all hover:border-[#3d654c]/20 hover:bg-white hover:shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3d654c]/40 dark:border-neutral-800/40 dark:bg-white/[0.02] dark:hover:border-[#f2c14e]/30 dark:hover:bg-white/[0.06]"
                   >
                     <UpdateRow update={update} freshSince={freshSince} />
                   </button>
@@ -293,7 +294,7 @@ export default function UpdatesPanel() {
                   <div
                     role="article"
                     aria-label={`${visual.label}: ${update.title}`}
-                    className="flex w-full items-start px-1.5 py-2.5 text-left"
+                    className="flex w-full items-start rounded-2xl border border-transparent bg-[#f7f7f2]/60 p-3.5 text-left dark:border-neutral-800/40 dark:bg-white/[0.02]"
                   >
                     <UpdateRow update={update} freshSince={freshSince} />
                   </div>
@@ -304,15 +305,15 @@ export default function UpdatesPanel() {
         </ul>
       )}
 
-      {/* Simple textual control: "View all updates" or "Show less". */}
       {ready && hasMore && (
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
           aria-expanded={expanded}
-          className="mt-1 w-full rounded px-1.5 py-1.5 text-center text-[12px] font-semibold text-[#1c1d1a]/60 transition hover:text-[#1c1d1a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400/50 dark:text-neutral-400 dark:hover:text-white dark:focus-visible:ring-white/30"
+          className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#1c1d1a]/5 px-4 py-2.5 text-center text-xs font-black uppercase tracking-wider text-[#1c1d1a]/70 transition-all hover:bg-[#1c1d1a]/10 hover:text-[#1c1d1a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400/50 dark:bg-white/5 dark:text-neutral-300 dark:hover:bg-white/10 dark:hover:text-white dark:focus-visible:ring-white/30"
         >
-          {expanded ? "Show less" : "View all updates"}
+          <span>{expanded ? "Show less" : "View all updates"}</span>
+          <ChevronDown size={14} className={`transition-transform duration-300 ${expanded ? "rotate-180" : ""}`} />
         </button>
       )}
     </section>

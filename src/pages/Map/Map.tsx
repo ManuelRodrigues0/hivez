@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { LocateFixed, MapPin, Minus, Plus, X } from "lucide-react";
+import { Compass, LocateFixed, MapPin, Minus, Plus, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import HivezLoader from "@/components/common/HivezLoader";
 import type { FeedPost } from "@/components/feed/Feed";
@@ -195,24 +195,43 @@ export default function MapPage() {
 
   return (
     <div className="sticky top-0 h-[calc(100dvh-9.5rem)] min-h-[420px] overflow-hidden bg-zinc-100 dark:bg-zinc-950 lg:top-16 lg:h-[calc(100dvh-64px)] lg:min-h-[520px]">
-      <div className="absolute left-4 top-4 z-20 flex gap-2">
-        <button className="app-icon-button bg-white/90 dark:bg-zinc-900/90" onClick={() => navigate(-1)} aria-label="Close map">
+      {/* Top Left Floating Actions */}
+      <div className="absolute left-4 top-4 z-20 flex gap-2.5">
+        <button 
+          className="flex h-10 w-10 items-center justify-center rounded-2xl border border-zinc-200/80 bg-white/90 text-zinc-700 shadow-lg backdrop-blur-md transition-all hover:bg-white hover:scale-105 active:scale-95 dark:border-zinc-800/80 dark:bg-zinc-900/90 dark:text-zinc-200 dark:hover:bg-zinc-900" 
+          onClick={() => navigate(-1)} 
+          aria-label="Close map"
+        >
           <X size={18} />
         </button>
-        <button className="app-icon-button bg-white/90 dark:bg-zinc-900/90" onClick={goToCurrentLocation} aria-label="Current location">
+        <button 
+          className="flex h-10 w-10 items-center justify-center rounded-2xl border border-zinc-200/80 bg-white/90 text-zinc-700 shadow-lg backdrop-blur-md transition-all hover:bg-white hover:scale-105 active:scale-95 dark:border-zinc-800/80 dark:bg-zinc-900/90 dark:text-zinc-200 dark:hover:bg-zinc-900" 
+          onClick={goToCurrentLocation} 
+          aria-label="Current location"
+        >
           <LocateFixed size={18} />
         </button>
       </div>
 
-      <div className="absolute right-4 top-4 z-20 grid gap-2">
-        <button className="app-icon-button bg-white/90 dark:bg-zinc-900/90" onClick={() => setZoom((z) => Math.min(18, z + 1))} aria-label="Zoom in">
+      {/* Top Right Zoom Controls */}
+      <div className="absolute right-4 top-4 z-20 flex flex-col gap-2">
+        <button 
+          className="flex h-10 w-10 items-center justify-center rounded-2xl border border-zinc-200/80 bg-white/90 text-zinc-700 shadow-lg backdrop-blur-md transition-all hover:bg-white hover:scale-105 active:scale-95 dark:border-zinc-800/80 dark:bg-zinc-900/90 dark:text-zinc-200 dark:hover:bg-zinc-900" 
+          onClick={() => setZoom((z) => Math.min(18, z + 1))} 
+          aria-label="Zoom in"
+        >
           <Plus size={18} />
         </button>
-        <button className="app-icon-button bg-white/90 dark:bg-zinc-900/90" onClick={() => setZoom((z) => Math.max(4, z - 1))} aria-label="Zoom out">
+        <button 
+          className="flex h-10 w-10 items-center justify-center rounded-2xl border border-zinc-200/80 bg-white/90 text-zinc-700 shadow-lg backdrop-blur-md transition-all hover:bg-white hover:scale-105 active:scale-95 dark:border-zinc-800/80 dark:bg-zinc-900/90 dark:text-zinc-200 dark:hover:bg-zinc-900" 
+          onClick={() => setZoom((z) => Math.max(4, z - 1))} 
+          aria-label="Zoom out"
+        >
           <Minus size={18} />
         </button>
       </div>
 
+      {/* Map Pan / Drag Canvas */}
       <div
         className={`absolute inset-0 touch-none select-none ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
         onPointerDown={startDrag}
@@ -239,23 +258,34 @@ export default function MapPage() {
             type="button"
             onPointerDown={(event) => event.stopPropagation()}
             onClick={() => (cluster.posts.length === 1 ? setSelected(cluster.posts[0]) : setZoom((z) => Math.min(18, z + 2)))}
-            className="absolute z-10 grid h-9 min-w-9 -translate-x-1/2 -translate-y-full place-items-center rounded-full border border-white bg-amber-400 px-2 text-xs font-black text-black shadow-lg"
+            className="absolute z-10 grid h-10 min-w-10 -translate-x-1/2 -translate-y-full place-items-center rounded-2xl border-2 border-white bg-amber-400 px-3 text-xs font-black text-zinc-950 shadow-xl transition-transform hover:scale-110 active:scale-95 dark:border-zinc-900"
             style={{ left: cluster.x, top: cluster.y }}
             aria-label={`${cluster.posts.length} posts`}
           >
-            {cluster.posts.length > 1 ? cluster.posts.length : <MapPin size={17} />}
+            {cluster.posts.length > 1 ? cluster.posts.length : <MapPin size={18} />}
           </button>
         ))}
       </div>
 
-      <div className="absolute bottom-28 left-1/2 z-20 flex -translate-x-1/2 gap-2 lg:bottom-5">
-        <button className="rounded-full bg-white/90 px-3 py-2 text-xs font-semibold text-zinc-700 shadow dark:bg-zinc-900/90 dark:text-zinc-200" onClick={() => pan(0, 0.2)}>North</button>
-        <button className="rounded-full bg-white/90 px-3 py-2 text-xs font-semibold text-zinc-700 shadow dark:bg-zinc-900/90 dark:text-zinc-200" onClick={() => pan(-0.2, 0)}>West</button>
-        <button className="rounded-full bg-white/90 px-3 py-2 text-xs font-semibold text-zinc-700 shadow dark:bg-zinc-900/90 dark:text-zinc-200" onClick={() => pan(0.2, 0)}>East</button>
-        <button className="rounded-full bg-white/90 px-3 py-2 text-xs font-semibold text-zinc-700 shadow dark:bg-zinc-900/90 dark:text-zinc-200" onClick={() => pan(0, -0.2)}>South</button>
+      {/* Bottom Directional Panning Toolbar */}
+      <div className="absolute bottom-24 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-2xl border border-zinc-200/80 bg-white/90 p-1.5 shadow-xl backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-900/90 lg:bottom-6">
+        <button className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800" onClick={() => pan(0, 0.2)}>North</button>
+        <span className="h-4 w-px bg-zinc-200 dark:bg-zinc-800" />
+        <button className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800" onClick={() => pan(-0.2, 0)}>West</button>
+        <span className="h-4 w-px bg-zinc-200 dark:bg-zinc-800" />
+        <button className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800" onClick={() => pan(0.2, 0)}>East</button>
+        <span className="h-4 w-px bg-zinc-200 dark:bg-zinc-800" />
+        <button className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800" onClick={() => pan(0, -0.2)}>South</button>
       </div>
 
-      {loading && <div className="absolute inset-x-0 top-20 z-20 flex justify-center"><HivezLoader size="sm" label="Loading nearby posts" /></div>}
+      {loading && (
+        <div className="absolute inset-x-0 top-20 z-20 flex justify-center pointer-events-none">
+          <div className="rounded-2xl border border-zinc-200/60 bg-white/90 px-4 py-2 shadow-lg backdrop-blur-md dark:border-zinc-800/60 dark:bg-zinc-900/90">
+            <HivezLoader size="sm" label="Loading nearby posts" />
+          </div>
+        </div>
+      )}
+
       {selected && <PostPreview post={selected} onClose={() => setSelected(null)} onOpen={() => navigate(`/post/${selected.id}`)} />}
     </div>
   );
@@ -264,20 +294,32 @@ export default function MapPage() {
 function PostPreview({ post, onClose, onOpen }: { post: FeedPost; onClose: () => void; onOpen: () => void }) {
   const location = normalizeLocation(post.locationSnapshot);
   return (
-    <div className="absolute inset-x-3 bottom-20 z-30 mx-auto max-w-md rounded-2xl border border-zinc-200 bg-white p-4 shadow-xl dark:border-zinc-800 dark:bg-zinc-950">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{post.category || "Community"}</p>
-          <h2 className="mt-1 line-clamp-2 text-sm font-bold text-zinc-900 dark:text-white">{post.caption || "Local report"}</h2>
-          <p className="mt-2 text-xs text-zinc-500">
-            {locationLabel(location, post.location)}
-            {typeof post.distanceKm === "number" ? ` · ${formatDistance(post.distanceKm)}` : ""}
+    <div className="absolute inset-x-4 bottom-20 z-30 mx-auto max-w-md rounded-3xl border border-zinc-200/80 bg-white/95 p-5 shadow-2xl backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-900/95 animate-in fade-in slide-in-from-bottom-4 duration-200">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <span className="inline-block rounded-full bg-amber-400/10 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">
+            {post.category || "Community"}
+          </span>
+          <h2 className="mt-2 line-clamp-2 text-sm font-bold text-zinc-900 dark:text-white">{post.caption || "Local report"}</h2>
+          <p className="mt-1.5 flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
+            <MapPin size={13} className="shrink-0" />
+            <span className="truncate">{locationLabel(location, post.location)}</span>
+            {typeof post.distanceKm === "number" ? <span className="shrink-0">· {formatDistance(post.distanceKm)}</span> : ""}
           </p>
         </div>
-        {post.mediaUrl && <img src={post.mediaUrl} alt="" className="h-16 w-16 rounded-lg object-cover" />}
-        <button onClick={onClose} className="rounded-full p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800"><X size={16} /></button>
+        {post.mediaUrl && <img src={post.mediaUrl} alt="" className="h-20 w-20 shrink-0 rounded-2xl object-cover shadow-md" />}
+        <button 
+          onClick={onClose} 
+          className="rounded-full p-2 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+          aria-label="Close preview"
+        >
+          <X size={16} />
+        </button>
       </div>
-      <button onClick={onOpen} className="mt-4 w-full rounded-full bg-zinc-900 px-4 py-2 text-sm font-bold text-white dark:bg-white dark:text-black">
+      <button 
+        onClick={onOpen} 
+        className="mt-4 w-full rounded-2xl bg-zinc-900 px-4 py-3 text-sm font-extrabold text-white shadow-lg transition-all hover:scale-[1.01] active:scale-[0.99] dark:bg-white dark:text-zinc-950"
+      >
         Open Post
       </button>
     </div>

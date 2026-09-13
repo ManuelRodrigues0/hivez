@@ -1,17 +1,17 @@
 // HIVEZ — SETTINGS · canonical page layer (ONE FILE, MANY COMPONENTS)
 // Drill-down model, NO persistent sidebar:
-//   /settings               → Settings (hub)
-//   /settings (layout)      → SettingsLayout (wraps sub-routes via <Outlet/>)
-//   /settings/account       → AccountSettings
-//   /settings/privacy       → PrivacySettings
-//   /settings/security      → SecuritySettings
-//   /settings/notifications → NotificationsSettings
-//   /settings/content       → ContentPreferencesSettings
-//   /settings/appearance    → AppearanceSettings
-//   /settings/accessibility → AccessibilitySettings
-//   /settings/language      → LanguageSettings
-//   /settings/data          → DataSettings
-//   /settings/delete        → DeleteAccountSettings
+//   /settings                 → Settings (hub)
+//   /settings (layout)        → SettingsLayout (wraps sub-routes via <Outlet/>)
+//   /settings/account         → AccountSettings
+//   /settings/privacy         → PrivacySettings
+//   /settings/security        → SecuritySettings
+//   /settings/notifications   → NotificationsSettings
+//   /settings/content         → ContentPreferencesSettings
+//   /settings/appearance      → AppearanceSettings
+//   /settings/accessibility   → AccessibilitySettings
+//   /settings/language        → LanguageSettings
+//   /settings/data            → DataSettings
+//   /settings/delete          → DeleteAccountSettings
 // Consolidated verbatim from 14 former page files. Behavior, state, listeners,
 // styling and routes unchanged — structural merge only.
 
@@ -59,9 +59,10 @@ import {
   User,
   type LucideIcon,
 } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import gsap from "gsap";
 import { useAuth } from "@/context/AuthContext.tsx";
 import { useTheme } from "@/context/ThemeContext.tsx";
 import { db } from "@/firebase/firebase.ts";
@@ -131,7 +132,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
 
 export function SectionTitle({ title }: { title: string }) {
   return (
-    <h2 className="px-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#1c1d1a]/45 dark:text-neutral-500">
+    <h2 className="px-2 text-[11px] font-black uppercase tracking-[0.2em] text-[#3d654c]/70 dark:text-[#f2c14e]/80">
       {title}
     </h2>
   );
@@ -139,7 +140,7 @@ export function SectionTitle({ title }: { title: string }) {
 
 export function SettingsSection({ children }: { children: ReactNode }) {
   return (
-    <section className="rounded-2xl border border-[#1c1d1a]/10 bg-white p-4 shadow-xs dark:border-neutral-800/90 dark:bg-[#121212]">
+    <section className="rounded-3xl border border-[#1c1d1a]/10 bg-white/80 p-2 shadow-sm backdrop-blur-xl dark:border-neutral-800/90 dark:bg-[#161616]/80">
       {children}
     </section>
   );
@@ -157,14 +158,14 @@ export function SettingRow({
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-2.5 border-b border-[#1c1d1a]/5 py-2.5 last:border-b-0 dark:border-neutral-800/60 sm:flex-row sm:items-center">
-      <div className="flex min-w-0 flex-1 items-center gap-3">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#1c1d1a]/10 bg-[#f7f7f2] text-[#3d654c] dark:border-neutral-800 dark:bg-[#1a1a1a] dark:text-[#f2c14e]">
-          <Icon size={16} />
+    <div className="flex flex-col gap-3 rounded-2xl p-3 transition hover:bg-[#f7f7f2]/80 dark:hover:bg-white/5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex min-w-0 flex-1 items-center gap-3.5">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#3d654c]/15 bg-[#3d654c]/10 text-[#3d654c] shadow-xs dark:border-[#f2c14e]/25 dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
+          <Icon size={18} />
         </div>
         <div className="min-w-0">
-          <p className="truncate text-[13px] font-bold text-[#1c1d1a] dark:text-white">{title}</p>
-          <p className="mt-0.5 truncate text-[11px] font-medium leading-4 text-[#1c1d1a]/55 dark:text-neutral-400">{subtitle}</p>
+          <p className="truncate text-sm font-bold text-[#1c1d1a] dark:text-white">{title}</p>
+          <p className="mt-0.5 text-xs font-medium leading-relaxed text-[#1c1d1a]/60 dark:text-neutral-400">{subtitle}</p>
         </div>
       </div>
       <div className="sm:shrink-0">{children}</div>
@@ -189,16 +190,16 @@ export function OptionRow<T extends string>({
 }) {
   return (
     <SettingRow icon={icon} title={title} subtitle={subtitle}>
-      <div className="grid min-w-[240px] grid-cols-2 gap-1 rounded-xl bg-[#f7f7f2] p-1 dark:bg-[#1a1a1a] sm:grid-cols-4">
+      <div className="grid min-w-[240px] grid-cols-2 gap-1.5 rounded-2xl bg-[#f7f7f2] p-1.5 dark:bg-[#1a1a1a] sm:grid-cols-4">
         {options.map((option) => (
           <button
             key={option.value}
             type="button"
             onClick={() => onChange(option.value)}
-            className={`rounded-lg px-2 py-1.5 text-[11px] font-black transition ${
+            className={`rounded-xl px-3 py-2 text-xs font-black transition-all duration-200 ${
               value === option.value
-                ? "bg-[#3d654c] text-white dark:bg-[#f2c14e] dark:text-[#121212]"
-                : "text-[#1c1d1a]/60 dark:text-neutral-400"
+                ? "bg-[#3d654c] text-white shadow-md dark:bg-[#f2c14e] dark:text-[#121212]"
+                : "text-[#1c1d1a]/60 hover:text-[#1c1d1a] dark:text-neutral-400 dark:hover:text-white"
             }`}
           >
             {option.label}
@@ -223,14 +224,14 @@ export function Switch({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200 disabled:opacity-50 ${
+      className={`relative h-7 w-12 shrink-0 rounded-full transition-colors duration-300 disabled:opacity-50 shadow-inner ${
         checked ? "bg-[#3d654c] dark:bg-[#f2c14e]" : "bg-neutral-200 dark:bg-neutral-800"
       }`}
       aria-pressed={checked}
     >
       <span
-        className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 dark:bg-[#121212] ${
-          checked ? "translate-x-5" : "translate-x-0.5"
+        className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-md transition-transform duration-300 dark:bg-[#121212] ${
+          checked ? "translate-x-6" : "translate-x-1"
         }`}
       />
     </button>
@@ -250,7 +251,7 @@ export function PlannedRow({
 }) {
   return (
     <SettingRow icon={Icon} title={title} subtitle={subtitle}>
-      <span className="rounded-full bg-[#1c1d1a]/5 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-[#1c1d1a]/45 dark:bg-white/10 dark:text-neutral-400">
+      <span className="inline-flex items-center rounded-full bg-[#1c1d1a]/5 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-[#1c1d1a]/45 dark:bg-white/10 dark:text-neutral-400">
         {note}
       </span>
     </SettingRow>
@@ -272,18 +273,20 @@ export function NavRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 border-b border-[#1c1d1a]/5 py-2.5 text-left transition last:border-b-0 hover:bg-[#f7f7f2]/70 focus-visible:ring-2 focus-visible:ring-[#3d654c]/40 focus-visible:ring-offset-1 dark:border-neutral-800/60 dark:hover:bg-white/5"
+      className="group flex w-full items-center gap-3.5 rounded-2xl p-3 text-left transition-all duration-200 hover:bg-[#f7f7f2] focus-visible:ring-2 focus-visible:ring-[#3d654c]/40 dark:hover:bg-white/5"
     >
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#1c1d1a]/10 bg-[#f7f7f2] text-[#3d654c] dark:border-neutral-800 dark:bg-[#1a1a1a] dark:text-[#f2c14e]">
-        <Icon size={16} />
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#3d654c]/15 bg-[#3d654c]/10 text-[#3d654c] shadow-xs transition group-hover:scale-105 dark:border-[#f2c14e]/25 dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
+        <Icon size={18} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-bold text-[#1c1d1a] dark:text-white">{title}</p>
+        <p className="truncate text-sm font-bold text-[#1c1d1a] dark:text-white group-hover:text-[#3d654c] dark:group-hover:text-[#f2c14e] transition-colors">{title}</p>
         {subtitle ? (
-          <p className="mt-0.5 truncate text-[11px] font-medium leading-4 text-[#1c1d1a]/55 dark:text-neutral-400">{subtitle}</p>
+          <p className="mt-0.5 truncate text-xs font-medium text-[#1c1d1a]/55 dark:text-neutral-400">{subtitle}</p>
         ) : null}
       </div>
-      <ChevronRight size={16} className="shrink-0 text-[#1c1d1a]/35 dark:text-neutral-500" />
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#1c1d1a]/5 text-[#1c1d1a]/40 transition group-hover:translate-x-0.5 group-hover:bg-[#3d654c] group-hover:text-white dark:bg-white/5 dark:text-neutral-400 dark:group-hover:bg-[#f2c14e] dark:group-hover:text-[#121212]">
+        <ChevronRight size={16} />
+      </div>
     </button>
   );
 }
@@ -303,6 +306,19 @@ function SettingsLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const isRoot = location.pathname === "/settings";
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Cinematic GSAP Entrance for Layout
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        containerRef.current,
+        { opacity: 0, y: 15 },
+        { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }
+      );
+    }, containerRef);
+    return () => ctx.revert();
+  }, [location.pathname]);
 
   const activeCategory = [...SETTINGS_CATEGORIES]
     .reverse()
@@ -313,31 +329,33 @@ function SettingsLayout() {
     );
 
   return (
-    <div className="app-settings-page w-full min-h-screen select-none">
-      <div className="mb-3 lg:mb-5">
-        <div className="flex items-center gap-3">
+    <div ref={containerRef} className="app-settings-page w-full min-h-screen select-none px-4 sm:px-6 py-6 max-w-5xl mx-auto">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[#1c1d1a]/10 dark:border-neutral-800/80 pb-6">
+        <div className="flex items-center gap-3.5">
           {!isRoot && (
             <button
               type="button"
               onClick={() => navigate("/settings")}
               aria-label="Back to settings"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#1c1d1a]/10 bg-white text-[#1c1d1a] shadow-2xs transition hover:bg-[#ecece5] focus-visible:ring-2 focus-visible:ring-[#3d654c]/40 dark:border-neutral-800 dark:bg-[#141414] dark:text-white dark:hover:bg-neutral-800"
+              className="group flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#1c1d1a]/10 bg-white text-[#1c1d1a] shadow-xs transition hover:bg-[#3d654c] hover:text-white hover:border-[#3d654c] focus-visible:ring-2 focus-visible:ring-[#3d654c]/40 dark:border-neutral-800 dark:bg-[#161616] dark:text-white dark:hover:bg-[#f2c14e] dark:hover:text-[#121212]"
             >
-              <ArrowLeft size={18} />
+              <ArrowLeft size={18} className="transition-transform group-hover:-translate-x-0.5" />
             </button>
           )}
-          <h1 className="text-lg font-black tracking-tight text-[#1c1d1a] dark:text-white">
-            {isRoot ? "Settings" : (activeCategory?.label || "Settings")}
-          </h1>
+          <div>
+            <h1 className="text-2xl font-black tracking-tight text-[#1c1d1a] dark:text-white">
+              {isRoot ? "Settings" : (activeCategory?.label || "Settings")}
+            </h1>
+            <p className="mt-1 text-xs font-medium text-[#1c1d1a]/60 dark:text-neutral-400">
+              {isRoot
+                ? "Manage your account, privacy and Hivez preferences"
+                : (activeCategory?.description || "Manage your Hivez preferences")}
+            </p>
+          </div>
         </div>
-        <p className="mt-1 truncate text-[11px] font-medium text-[#1c1d1a]/55 dark:text-neutral-400">
-          {isRoot
-            ? "Manage your account, privacy and Hivez preferences"
-            : (activeCategory?.description || "Manage your Hivez preferences")}
-        </p>
       </div>
 
-      <div className="mx-auto w-full max-w-4xl space-y-4 pb-8">
+      <div className="mx-auto w-full space-y-6 pb-16">
         <Outlet />
       </div>
     </div>
@@ -368,39 +386,43 @@ function Settings() {
   }
 
   return (
-    <>
+    <div className="space-y-8">
       <section className="w-full">
         <SectionTitle title="Profile" />
-        <SettingsSection>
-          <button
-            type="button"
-            onClick={() => navigate("/profile/edit")}
-            className="flex w-full items-center gap-3 text-left transition hover:bg-[#f7f7f2]/70 focus-visible:ring-2 focus-visible:ring-[#3d654c]/40 focus-visible:ring-offset-1 dark:hover:bg-white/5"
-          >
-            <div className="relative shrink-0">
-              <img
-                src={profile?.photoURL || user?.photoURL || "https://ui-avatars.com/api/?name=Hivez&background=3d654c&color=fff"}
-                alt=""
-                className="h-11 w-11 rounded-2xl border-2 border-[#3d654c]/20 object-cover shadow-xs dark:border-[#f2c14e]/20"
-              />
-              <span className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[#3d654c] text-white dark:bg-[#f2c14e] dark:text-[#121212]">
-                <Sparkles size={8} />
+        <div className="mt-2.5">
+          <SettingsSection>
+            <button
+              type="button"
+              onClick={() => navigate("/profile/edit")}
+              className="group flex w-full items-center gap-4 rounded-2xl p-3 text-left transition-all duration-300 hover:bg-[#f7f7f2] focus-visible:ring-2 focus-visible:ring-[#3d654c]/40 dark:hover:bg-white/5"
+            >
+              <div className="relative shrink-0">
+                <img
+                  src={profile?.photoURL || user?.photoURL || "https://ui-avatars.com/api/?name=Hivez&background=3d654c&color=fff"}
+                  alt=""
+                  className="h-12 w-12 rounded-2xl border-2 border-[#3d654c]/30 object-cover shadow-sm transition group-hover:scale-105 dark:border-[#f2c14e]/30"
+                />
+                <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#3d654c] text-white shadow-xs dark:bg-[#f2c14e] dark:text-[#121212]">
+                  <Sparkles size={9} />
+                </span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-black text-[#1c1d1a] dark:text-white">
+                  {profile?.displayName || user?.displayName || "Hivez Contributor"}
+                </p>
+                <p className="truncate text-xs font-semibold text-[#1c1d1a]/60 dark:text-neutral-400">
+                  @{profile?.username || user?.email?.split("@")[0] || "user"}
+                </p>
+              </div>
+              <span className="shrink-0 rounded-full bg-[#3d654c]/10 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-[#3d654c] dark:bg-[#f2c14e]/15 dark:text-[#f2c14e]">
+                {privacy.account === "private" ? "Private" : "Public"}
               </span>
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-black text-[#1c1d1a] dark:text-white">
-                {profile?.displayName || user?.displayName || "Hivez Contributor"}
-              </p>
-              <p className="truncate text-[11px] font-medium text-[#1c1d1a]/60 dark:text-neutral-400">
-                @{profile?.username || user?.email?.split("@")[0] || "user"}
-              </p>
-            </div>
-            <span className="shrink-0 rounded-full bg-[#3d654c]/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-[#3d654c] dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
-              {privacy.account === "private" ? "Private" : "Public"}
-            </span>
-            <ChevronRight size={16} className="shrink-0 text-[#1c1d1a]/35 dark:text-neutral-500" />
-          </button>
-        </SettingsSection>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#1c1d1a]/5 text-[#1c1d1a]/40 transition group-hover:translate-x-0.5 group-hover:bg-[#3d654c] group-hover:text-white dark:bg-white/5 dark:text-neutral-400 dark:group-hover:bg-[#f2c14e] dark:group-hover:text-[#121212]">
+                <ChevronRight size={16} />
+              </div>
+            </button>
+          </SettingsSection>
+        </div>
       </section>
 
       {SETTINGS_GROUPS.map((group) => {
@@ -409,33 +431,35 @@ function Settings() {
         return (
           <section key={group.key} className="w-full">
             <SectionTitle title={group.label} />
-            <SettingsSection>
-              {categories.map((cat) => (
-                <NavRow
-                  key={cat.key}
-                  icon={cat.icon}
-                  title={cat.label}
-                  subtitle={cat.description}
-                  onClick={() => navigate(cat.path)}
-                />
-              ))}
-            </SettingsSection>
+            <div className="mt-2.5">
+              <SettingsSection>
+                {categories.map((cat) => (
+                  <NavRow
+                    key={cat.key}
+                    icon={cat.icon}
+                    title={cat.label}
+                    subtitle={cat.description}
+                    onClick={() => navigate(cat.path)}
+                  />
+                ))}
+              </SettingsSection>
+            </div>
           </section>
         );
       })}
 
-      <div className="w-full pb-10 pt-2">
+      <div className="w-full pt-4">
         <button
           type="button"
           onClick={() => void handleLogout()}
           disabled={loggingOut}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50/70 px-4 py-3.5 text-xs font-bold text-rose-700 shadow-xs transition hover:bg-rose-100 disabled:opacity-50 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-400 dark:hover:bg-rose-950/40"
+          className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-rose-200 bg-rose-50/80 px-5 py-4 text-xs font-black uppercase tracking-wider text-rose-700 shadow-xs transition hover:bg-rose-100 disabled:opacity-50 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-400 dark:hover:bg-rose-950/40"
         >
           <LogOut size={16} />
           <span>{loggingOut ? "Logging out..." : "Sign Out from Hivez"}</span>
         </button>
       </div>
-    </>
+    </div>
   );
 }
 // ============================================================
@@ -475,135 +499,144 @@ function AccountSettings() {
     : "-";
 
   return (
-    <>
-      <SectionTitle title="Profile" />
-      <SettingsSection>
-        <NavRow
-          icon={User}
-          title="Personal information"
-          subtitle="Update your display name and profile photo"
-          onClick={() => navigate("/profile/edit")}
-        />
-        <NavRow
-          icon={AtSign}
-          title="Username"
-          subtitle={profile?.username ? `@${profile.username}` : "Set a username"}
-          onClick={() => navigate("/profile/edit")}
-        />
-      </SettingsSection>
+    <div className="space-y-6">
+      <section className="space-y-2.5">
+        <SectionTitle title="Profile" />
+        <SettingsSection>
+          <NavRow
+            icon={User}
+            title="Personal information"
+            subtitle="Update your display name and profile photo"
+            onClick={() => navigate("/profile/edit")}
+          />
+          <NavRow
+            icon={AtSign}
+            title="Username"
+            subtitle={profile?.username ? `@${profile.username}` : "Set a username"}
+            onClick={() => navigate("/profile/edit")}
+          />
+        </SettingsSection>
+      </section>
 
-      <SectionTitle title="Contact & credentials" />
-      <SettingsSection>
-        <div className="flex w-full items-center gap-3.5 border-b border-[#1c1d1a]/5 py-3.5 last:border-b-0 dark:border-neutral-800/60">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#1c1d1a]/10 bg-[#f7f7f2] text-[#3d654c] dark:border-neutral-800 dark:bg-[#1a1a1a] dark:text-[#f2c14e]">
-            <Mail size={17} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold text-[#1c1d1a] dark:text-white">Email</p>
-            <p className="mt-0.5 truncate text-[11px] font-medium leading-4 text-[#1c1d1a]/55 dark:text-neutral-400">
-              {user?.email || "-"} - managed by your sign-in provider
-            </p>
-          </div>
-        </div>
-        <div className="flex w-full items-center gap-3.5 border-b border-[#1c1d1a]/5 py-3.5 last:border-b-0 dark:border-neutral-800/60">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#1c1d1a]/10 bg-[#f7f7f2] text-[#3d654c] dark:border-neutral-800 dark:bg-[#1a1a1a] dark:text-[#f2c14e]">
-            <Phone size={17} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold text-[#1c1d1a] dark:text-white">Phone</p>
-            <p className="mt-0.5 truncate text-[11px] font-medium leading-4 text-[#1c1d1a]/55 dark:text-neutral-400">
-              {user?.phoneNumber || "Not yet linked"}
-            </p>
-          </div>
-          <span className="rounded-full bg-[#1c1d1a]/5 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-[#1c1d1a]/45 dark:bg-white/10 dark:text-neutral-400">
-            Unavailable
-          </span>
-        </div>
-        <div className="flex w-full items-center gap-3.5 py-3.5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#1c1d1a]/10 bg-[#f7f7f2] text-[#3d654c] dark:border-neutral-800 dark:bg-[#1a1a1a] dark:text-[#f2c14e]">
-            <KeyRound size={17} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold text-[#1c1d1a] dark:text-white">Password</p>
-            <p className="mt-0.5 text-[11px] font-medium leading-4 text-[#1c1d1a]/55 dark:text-neutral-400">
-              Password changes require reauthentication and are not available yet.
-            </p>
-          </div>
-          <span className="rounded-full bg-[#1c1d1a]/5 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-[#1c1d1a]/45 dark:bg-white/10 dark:text-neutral-400">
-            Unavailable
-          </span>
-        </div>
-      </SettingsSection>
-<SectionTitle title="Account status" />
-      <SettingsSection>
-        <div className="flex w-full items-center gap-3.5 border-b border-[#1c1d1a]/5 py-3.5 last:border-b-0 dark:border-neutral-800/60">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#1c1d1a]/10 bg-[#f7f7f2] text-[#3d654c] dark:border-neutral-800 dark:bg-[#1a1a1a] dark:text-[#f2c14e]">
-            <ShieldCheck size={17} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold text-[#1c1d1a] dark:text-white">Account status</p>
-            <p className="mt-0.5 text-[11px] font-medium leading-4 text-[#1c1d1a]/55 dark:text-neutral-400">
-              Your Hivez account is healthy and active.
-            </p>
-          </div>
-          <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
-            Active
-          </span>
-        </div>
-        <div className="flex w-full items-center gap-3.5 py-3.5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#1c1d1a]/10 bg-[#f7f7f2] text-[#3d654c] dark:border-neutral-800 dark:bg-[#1a1a1a] dark:text-[#f2c14e]">
-            <CalendarDays size={17} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold text-[#1c1d1a] dark:text-white">Join date</p>
-            <p className="mt-0.5 text-[11px] font-medium leading-4 text-[#1c1d1a]/55 dark:text-neutral-400">
-              {joinDate}
-            </p>
-          </div>
-        </div>
-      </SettingsSection>
-
-      <SectionTitle title="Account privacy" />
-      <SettingsSection>
-        <div className="flex w-full flex-col gap-3 border-b border-[#1c1d1a]/5 py-3.5 last:border-b-0 dark:border-neutral-800/60 sm:flex-row sm:items-center">
-          <div className="flex min-w-0 flex-1 items-center gap-3.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#1c1d1a]/10 bg-[#f7f7f2] text-[#3d654c] dark:border-neutral-800 dark:bg-[#1a1a1a] dark:text-[#f2c14e]">
-              <Lock size={17} />
+      <section className="space-y-2.5">
+        <SectionTitle title="Contact & credentials" />
+        <SettingsSection>
+          <div className="flex w-full items-center gap-3.5 rounded-2xl p-3 border-b border-[#1c1d1a]/5 last:border-b-0 dark:border-neutral-800/60">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#3d654c]/15 bg-[#3d654c]/10 text-[#3d654c] dark:border-[#f2c14e]/25 dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
+              <Mail size={18} />
             </div>
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-[#1c1d1a] dark:text-white">Public / Private account</p>
-              <p className="mt-0.5 text-[11px] font-medium leading-4 text-[#1c1d1a]/55 dark:text-neutral-400">
-                Private accounts require approval before protected posts and ReHives are visible.
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-[#1c1d1a] dark:text-white">Email</p>
+              <p className="mt-0.5 truncate text-xs font-medium text-[#1c1d1a]/55 dark:text-neutral-400">
+                {user?.email || "-"} — managed by your sign-in provider
               </p>
             </div>
           </div>
-          <div className="grid w-full max-w-[220px] shrink-0 grid-cols-2 rounded-xl bg-[#f7f7f2] p-1 dark:bg-[#1a1a1a]">
-            {(["public", "private"] as const).map((value) => (
-              <button
-                key={value}
-                type="button"
-                disabled={savingKey === "account-privacy"}
-                onClick={() =>
-                  updateAccount({
-                    ...privacy,
-                    account: value,
-                    messages:
-                      value === "private" && privacy.messages === "everyone" ? "followers" : privacy.messages,
-                  })
-                }
-                className={`rounded-lg px-3 py-1.5 text-xs font-black capitalize transition ${
-                  privacy.account === value
-                    ? "bg-[#3d654c] text-white dark:bg-[#f2c14e] dark:text-[#121212]"
-                    : "text-[#1c1d1a]/60 dark:text-neutral-400"
-                }`}
-              >
-                {value}
-              </button>
-            ))}
+          <div className="flex w-full items-center gap-3.5 rounded-2xl p-3 border-b border-[#1c1d1a]/5 last:border-b-0 dark:border-neutral-800/60">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#3d654c]/15 bg-[#3d654c]/10 text-[#3d654c] dark:border-[#f2c14e]/25 dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
+              <Phone size={18} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-[#1c1d1a] dark:text-white">Phone</p>
+              <p className="mt-0.5 truncate text-xs font-medium text-[#1c1d1a]/55 dark:text-neutral-400">
+                {user?.phoneNumber || "Not yet linked"}
+              </p>
+            </div>
+            <span className="rounded-full bg-[#1c1d1a]/5 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-[#1c1d1a]/45 dark:bg-white/10 dark:text-neutral-400">
+              Unavailable
+            </span>
           </div>
-        </div>
-      </SettingsSection>
-    </>
+          <div className="flex w-full items-center gap-3.5 rounded-2xl p-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#3d654c]/15 bg-[#3d654c]/10 text-[#3d654c] dark:border-[#f2c14e]/25 dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
+              <KeyRound size={18} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-[#1c1d1a] dark:text-white">Password</p>
+              <p className="mt-0.5 text-xs font-medium text-[#1c1d1a]/55 dark:text-neutral-400">
+                Password changes require reauthentication and are not available yet.
+              </p>
+            </div>
+            <span className="rounded-full bg-[#1c1d1a]/5 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-[#1c1d1a]/45 dark:bg-white/10 dark:text-neutral-400">
+              Unavailable
+            </span>
+          </div>
+        </SettingsSection>
+      </section>
+
+      <section className="space-y-2.5">
+        <SectionTitle title="Account status" />
+        <SettingsSection>
+          <div className="flex w-full items-center gap-3.5 rounded-2xl p-3 border-b border-[#1c1d1a]/5 last:border-b-0 dark:border-neutral-800/60">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#3d654c]/15 bg-[#3d654c]/10 text-[#3d654c] dark:border-[#f2c14e]/25 dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
+              <ShieldCheck size={18} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-[#1c1d1a] dark:text-white">Account status</p>
+              <p className="mt-0.5 text-xs font-medium text-[#1c1d1a]/55 dark:text-neutral-400">
+                Your Hivez account is healthy and active.
+              </p>
+            </div>
+            <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
+              Active
+            </span>
+          </div>
+          <div className="flex w-full items-center gap-3.5 rounded-2xl p-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#3d654c]/15 bg-[#3d654c]/10 text-[#3d654c] dark:border-[#f2c14e]/25 dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
+              <CalendarDays size={18} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-[#1c1d1a] dark:text-white">Join date</p>
+              <p className="mt-0.5 text-xs font-medium text-[#1c1d1a]/55 dark:text-neutral-400">
+                {joinDate}
+              </p>
+            </div>
+          </div>
+        </SettingsSection>
+      </section>
+
+      <section className="space-y-2.5">
+        <SectionTitle title="Account privacy" />
+        <SettingsSection>
+          <div className="flex w-full flex-col gap-3 rounded-2xl p-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 flex-1 items-center gap-3.5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#3d654c]/15 bg-[#3d654c]/10 text-[#3d654c] dark:border-[#f2c14e]/25 dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
+                <Lock size={18} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-[#1c1d1a] dark:text-white">Public / Private account</p>
+                <p className="mt-0.5 text-xs font-medium text-[#1c1d1a]/55 dark:text-neutral-400">
+                  Private accounts require approval before protected posts and ReHives are visible.
+                </p>
+              </div>
+            </div>
+            <div className="grid w-full max-w-[220px] shrink-0 grid-cols-2 rounded-xl bg-[#f7f7f2] p-1.5 dark:bg-[#1a1a1a]">
+              {(["public", "private"] as const).map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  disabled={savingKey === "account-privacy"}
+                  onClick={() =>
+                    updateAccount({
+                      ...privacy,
+                      account: value,
+                      messages:
+                        value === "private" && privacy.messages === "everyone" ? "followers" : privacy.messages,
+                    })
+                  }
+                  className={`rounded-lg px-3 py-2 text-xs font-black capitalize transition-all ${
+                    privacy.account === value
+                      ? "bg-[#3d654c] text-white shadow-sm dark:bg-[#f2c14e] dark:text-[#121212]"
+                      : "text-[#1c1d1a]/60 dark:text-neutral-400"
+                  }`}
+                >
+                  {value}
+                </button>
+              ))}
+            </div>
+          </div>
+        </SettingsSection>
+      </section>
+    </div>
   );
 }
 
@@ -648,86 +681,88 @@ function PrivacySettings() {
   }
 
   return (
-    <>
-      <SectionTitle title="Privacy" />
-      <SettingsSection>
-        <SettingRow
-          icon={Lock}
-          title="Account privacy"
-          subtitle="Private accounts require approval before protected posts and ReHives are visible."
-        >
-          <div className="grid w-full max-w-[220px] grid-cols-2 rounded-xl bg-[#f7f7f2] p-1 dark:bg-[#1a1a1a]">
-            {(["public", "private"] as const).map((value) => (
-              <button
-                key={value}
-                type="button"
-                disabled={savingKey === "account"}
-                onClick={() =>
-                  updatePrivacy(
-                    {
-                      ...privacy,
-                      account: value,
-                      messages:
-                        value === "private" && privacy.messages === "everyone" ? "followers" : privacy.messages,
-                    },
-                    "account"
-                  )
-                }
-                className={`rounded-lg px-3 py-1.5 text-xs font-black capitalize transition ${
-                  privacy.account === value
-                    ? "bg-[#3d654c] text-white dark:bg-[#f2c14e] dark:text-[#121212]"
-                    : "text-[#1c1d1a]/60 dark:text-neutral-400"
-                }`}
-              >
-                {value}
-              </button>
-            ))}
-          </div>
-        </SettingRow>
+    <div className="space-y-6">
+      <section className="space-y-2.5">
+        <SectionTitle title="Privacy" />
+        <SettingsSection>
+          <SettingRow
+            icon={Lock}
+            title="Account privacy"
+            subtitle="Private accounts require approval before protected posts and ReHives are visible."
+          >
+            <div className="grid w-full max-w-[220px] grid-cols-2 rounded-xl bg-[#f7f7f2] p-1.5 dark:bg-[#1a1a1a]">
+              {(["public", "private"] as const).map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  disabled={savingKey === "account"}
+                  onClick={() =>
+                    updatePrivacy(
+                      {
+                        ...privacy,
+                        account: value,
+                        messages:
+                          value === "private" && privacy.messages === "everyone" ? "followers" : privacy.messages,
+                      },
+                      "account"
+                    )
+                  }
+                  className={`rounded-lg px-3 py-2 text-xs font-black capitalize transition-all ${
+                    privacy.account === value
+                      ? "bg-[#3d654c] text-white shadow-sm dark:bg-[#f2c14e] dark:text-[#121212]"
+                      : "text-[#1c1d1a]/60 dark:text-neutral-400"
+                  }`}
+                >
+                  {value}
+                </button>
+              ))}
+            </div>
+          </SettingRow>
 
-        <OptionRow
-          icon={MessageCircle}
-          title="Messages"
-          subtitle="Controls who can start or receive post shares through Direct Messages."
-          options={MESSAGE_OPTIONS}
-          value={privacy.messages}
-          onChange={(messages) => updatePrivacy({ ...privacy, messages }, "messages")}
-        />
-
-        <OptionRow
-          icon={AtSign}
-          title="Mentions"
-          subtitle="Controls who can notify you with comment mentions."
-          options={INTERACTION_OPTIONS}
-          value={privacy.mentions}
-          onChange={(mentions) => updatePrivacy({ ...privacy, mentions }, "mentions")}
-        />
-
-        <OptionRow
-          icon={MessageCircle}
-          title="Comments"
-          subtitle="Controls who can comment on your posts."
-          options={INTERACTION_OPTIONS}
-          value={privacy.comments}
-          onChange={(comments) => updatePrivacy({ ...privacy, comments }, "comments")}
-        />
-
-        <SettingRow
-          icon={Eye}
-          title="Discoverability"
-          subtitle="Allow your profile to appear in people search suggestions."
-        >
-          <Switch
-            checked={privacy.discoverable}
-            disabled={savingKey === "discoverable"}
-            onClick={() => updatePrivacy({ ...privacy, discoverable: !privacy.discoverable }, "discoverable")}
+          <OptionRow
+            icon={MessageCircle}
+            title="Messages"
+            subtitle="Controls who can start or receive post shares through Direct Messages."
+            options={MESSAGE_OPTIONS}
+            value={privacy.messages}
+            onChange={(messages) => updatePrivacy({ ...privacy, messages }, "messages")}
           />
-        </SettingRow>
 
-        <PlannedRow icon={Tag} title="Tags" subtitle="Control who can tag you in posts." note="Not available yet" />
-        <PlannedRow icon={MapPin} title="Location" subtitle="Control where your location is shared on Hivez." note="Not available yet" />
-      </SettingsSection>
-    </>
+          <OptionRow
+            icon={AtSign}
+            title="Mentions"
+            subtitle="Controls who can notify you with comment mentions."
+            options={INTERACTION_OPTIONS}
+            value={privacy.mentions}
+            onChange={(mentions) => updatePrivacy({ ...privacy, mentions }, "mentions")}
+          />
+
+          <OptionRow
+            icon={MessageCircle}
+            title="Comments"
+            subtitle="Controls who can comment on your posts."
+            options={INTERACTION_OPTIONS}
+            value={privacy.comments}
+            onChange={(comments) => updatePrivacy({ ...privacy, comments }, "comments")}
+          />
+
+          <SettingRow
+            icon={Eye}
+            title="Discoverability"
+            subtitle="Allow your profile to appear in people search suggestions."
+          >
+            <Switch
+              checked={privacy.discoverable}
+              disabled={savingKey === "discoverable"}
+              onClick={() => updatePrivacy({ ...privacy, discoverable: !privacy.discoverable }, "discoverable")}
+            />
+          </SettingRow>
+
+          <PlannedRow icon={Tag} title="Tags" subtitle="Control who can tag you in posts." note="Not available yet" />
+          <PlannedRow icon={MapPin} title="Location" subtitle="Control where your location is shared on Hivez." note="Not available yet" />
+        </SettingsSection>
+      </section>
+    </div>
   );
 }
 // ============================================================
@@ -741,20 +776,22 @@ function PrivacySettings() {
  */
 function SecuritySettings() {
   return (
-    <>
-      <SectionTitle title="Security" />
-      <SettingsSection>
-        <PlannedRow
-          icon={Lock}
-          title="Two-factor authentication"
-          subtitle="Add a second verification step when you sign in."
-          note="Coming soon"
-        />
-        <PlannedRow icon={Fingerprint} title="Passkeys" subtitle="Sign in with a passkey or your device." note="Not available yet" />
-        <PlannedRow icon={Laptop} title="Devices" subtitle="Review and manage devices signed in to your account." note="Not available yet" />
-        <PlannedRow icon={ShieldCheck} title="Login activity" subtitle="Review recent sign-ins to your account." note="Not available yet" />
-      </SettingsSection>
-    </>
+    <div className="space-y-6">
+      <section className="space-y-2.5">
+        <SectionTitle title="Security" />
+        <SettingsSection>
+          <PlannedRow
+            icon={Lock}
+            title="Two-factor authentication"
+            subtitle="Add a second verification step when you sign in."
+            note="Coming soon"
+          />
+          <PlannedRow icon={Fingerprint} title="Passkeys" subtitle="Sign in with a passkey or your device." note="Not available yet" />
+          <PlannedRow icon={Laptop} title="Devices" subtitle="Review and manage devices signed in to your account." note="Not available yet" />
+          <PlannedRow icon={ShieldCheck} title="Login activity" subtitle="Review recent sign-ins to your account." note="Not available yet" />
+        </SettingsSection>
+      </section>
+    </div>
   );
 }
 // ============================================================
@@ -823,46 +860,50 @@ function NotificationsSettings() {
   }
 
   return (
-    <>
-      <SectionTitle title="In-app" />
-      <SettingsSection>
-        <SettingRow icon={Bell} title="In-app notifications" subtitle="Alert channels Hivez creates for your account.">
-          <span className="rounded-full bg-[#3d654c]/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-[#3d654c] dark:bg-[#f2c14e]/15 dark:text-[#f2c14e]">
-            On
-          </span>
-        </SettingRow>
-        {NOTIFICATION_LABELS.map((item) => (
-          <SettingRow
-            key={item.key}
-            icon={Bell}
-            title={item.label}
-            subtitle="Controls whether Hivez creates this alert for your account."
-          >
-            <Switch
-              checked={notificationPrefs[item.key] !== false}
-              disabled={savingKey === `notification-${item.key}`}
-              onClick={() => updateNotificationPreference(item.key, notificationPrefs[item.key] === false)}
-            />
+    <div className="space-y-6">
+      <section className="space-y-2.5">
+        <SectionTitle title="In-app" />
+        <SettingsSection>
+          <SettingRow icon={Bell} title="In-app notifications" subtitle="Alert channels Hivez creates for your account.">
+            <span className="inline-flex items-center rounded-full bg-[#3d654c]/10 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-[#3d654c] dark:bg-[#f2c14e]/15 dark:text-[#f2c14e]">
+              On
+            </span>
           </SettingRow>
-        ))}
-      </SettingsSection>
+          {NOTIFICATION_LABELS.map((item) => (
+            <SettingRow
+              key={item.key}
+              icon={Bell}
+              title={item.label}
+              subtitle="Controls whether Hivez creates this alert for your account."
+            >
+              <Switch
+                checked={notificationPrefs[item.key] !== false}
+                disabled={savingKey === `notification-${item.key}`}
+                onClick={() => updateNotificationPreference(item.key, notificationPrefs[item.key] === false)}
+              />
+            </SettingRow>
+          ))}
+        </SettingsSection>
+      </section>
 
-      <SectionTitle title="Delivery channels" />
-      <SettingsSection>
-        <SettingRow icon={Bell} title="Push notifications" subtitle="Enable device alerts for Hivez activity.">
-          <button
-            type="button"
-            onClick={() => void handleEnableNotifications()}
-            disabled={savingKey === "push"}
-            className="rounded-xl bg-[#3d654c] px-3.5 py-2 text-xs font-bold text-white transition hover:bg-[#32533e] disabled:opacity-50 dark:bg-[#f2c14e] dark:text-[#121212]"
-          >
-            {savingKey === "push" ? "Enabling..." : "Enable"}
-          </button>
-        </SettingRow>
-        <PlannedRow icon={Bell} title="Email notifications" subtitle="Receive activity digests by email." note="Coming soon" />
-        <PlannedRow icon={Bell} title="SMS notifications" subtitle="Receive important alerts by text message." note="Coming soon" />
-      </SettingsSection>
-    </>
+      <section className="space-y-2.5">
+        <SectionTitle title="Delivery channels" />
+        <SettingsSection>
+          <SettingRow icon={Bell} title="Push notifications" subtitle="Enable device alerts for Hivez activity.">
+            <button
+              type="button"
+              onClick={() => void handleEnableNotifications()}
+              disabled={savingKey === "push"}
+              className="rounded-xl bg-[#3d654c] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#32533e] disabled:opacity-50 dark:bg-[#f2c14e] dark:text-[#121212]"
+            >
+              {savingKey === "push" ? "Enabling..." : "Enable"}
+            </button>
+          </SettingRow>
+          <PlannedRow icon={Bell} title="Email notifications" subtitle="Receive activity digests by email." note="Coming soon" />
+          <PlannedRow icon={Bell} title="SMS notifications" subtitle="Receive important alerts by text message." note="Coming soon" />
+        </SettingsSection>
+      </section>
+    </div>
   );
 }
 // ============================================================
@@ -889,40 +930,44 @@ function ContentPreferencesSettings() {
   }
 
   return (
-    <>
-      <SectionTitle title="Content" />
-      <SettingsSection>
-        <OptionRow
-          icon={Eye}
-          title="Sensitive content"
-          subtitle="How posts the author flagged as sensitive appear to you."
-          options={[
-            { value: "show" as SensitiveContentPreference, label: "Show" },
-            { value: "blur" as SensitiveContentPreference, label: "Blur" },
-            { value: "hide" as SensitiveContentPreference, label: "Hide" },
-          ]}
-          value={contentPref}
-          onChange={(value) => void updatePreference(value)}
-        />
-      </SettingsSection>
+    <div className="space-y-6">
+      <section className="space-y-2.5">
+        <SectionTitle title="Content" />
+        <SettingsSection>
+          <OptionRow
+            icon={Eye}
+            title="Sensitive content"
+            subtitle="How posts the author flagged as sensitive appear to you."
+            options={[
+              { value: "show" as SensitiveContentPreference, label: "Show" },
+              { value: "blur" as SensitiveContentPreference, label: "Blur" },
+              { value: "hide" as SensitiveContentPreference, label: "Hide" },
+            ]}
+            value={contentPref}
+            onChange={(value) => void updatePreference(value)}
+          />
+        </SettingsSection>
+      </section>
 
-      <SectionTitle title="Preferences" />
-      <SettingsSection>
-        <PlannedRow
-          icon={Globe}
-          title="Languages"
-          subtitle="Which languages you prefer seeing on Hivez."
-          note="Coming soon"
-        />
-        <PlannedRow icon={Hash} title="Topics" subtitle="Topics you follow for a more relevant feed." note="Coming soon" />
-        <PlannedRow
-          icon={HeartHandshake}
-          title="Interests"
-          subtitle="Personalised volunteering and community interests."
-          note="Coming soon"
-        />
-      </SettingsSection>
-    </>
+      <section className="space-y-2.5">
+        <SectionTitle title="Preferences" />
+        <SettingsSection>
+          <PlannedRow
+            icon={Globe}
+            title="Languages"
+            subtitle="Which languages you prefer seeing on Hivez."
+            note="Coming soon"
+          />
+          <PlannedRow icon={Hash} title="Topics" subtitle="Topics you follow for a more relevant feed." note="Coming soon" />
+          <PlannedRow
+            icon={HeartHandshake}
+            title="Interests"
+            subtitle="Personalised volunteering and community interests."
+            note="Coming soon"
+          />
+        </SettingsSection>
+      </section>
+    </div>
   );
 }
 // ============================================================
@@ -934,65 +979,69 @@ function AppearanceSettings() {
   const reducedMotion = useReducedMotion();
 
   return (
-    <>
-      <SectionTitle title="Theme" />
-      <SettingsSection>
-        <SettingRow
-          icon={theme === "dark" ? Moon : Sun}
-          title={theme === "dark" ? "Dark mode" : "Light mode"}
-          subtitle="Switch Hivez between light and dark appearance."
-        >
-          <div className="grid shrink-0 grid-cols-2 rounded-xl bg-[#f7f7f2] p-1 dark:bg-[#1a1a1a]">
-            <button
-              type="button"
-              onClick={() => {
-                if (theme !== "light") toggleTheme();
-              }}
-              className={`rounded-lg px-3 py-1.5 text-xs font-black transition ${
-                theme === "light"
-                  ? "bg-[#3d654c] text-white dark:bg-[#f2c14e] dark:text-[#121212]"
-                  : "text-[#1c1d1a]/60 dark:text-neutral-400"
-              }`}
-            >
-              Light
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (theme !== "dark") toggleTheme();
-              }}
-              className={`rounded-lg px-3 py-1.5 text-xs font-black transition ${
-                theme === "dark"
-                  ? "bg-[#3d654c] text-white dark:bg-[#f2c14e] dark:text-[#121212]"
-                  : "text-[#1c1d1a]/60 dark:text-neutral-400"
-              }`}
-            >
-              Dark
-            </button>
-          </div>
-        </SettingRow>
-        <PlannedRow
-          icon={Sun}
-          title="System theme"
-          subtitle="Automatically follow your device appearance."
-          note="Coming soon"
-        />
-      </SettingsSection>
+    <div className="space-y-6">
+      <section className="space-y-2.5">
+        <SectionTitle title="Theme" />
+        <SettingsSection>
+          <SettingRow
+            icon={theme === "dark" ? Moon : Sun}
+            title={theme === "dark" ? "Dark mode" : "Light mode"}
+            subtitle="Switch Hivez between light and dark appearance."
+          >
+            <div className="grid shrink-0 grid-cols-2 rounded-xl bg-[#f7f7f2] p-1.5 dark:bg-[#1a1a1a]">
+              <button
+                type="button"
+                onClick={() => {
+                  if (theme !== "light") toggleTheme();
+                }}
+                className={`rounded-lg px-3 py-1.5 text-xs font-black transition-all ${
+                  theme === "light"
+                    ? "bg-[#3d654c] text-white shadow-sm dark:bg-[#f2c14e] dark:text-[#121212]"
+                    : "text-[#1c1d1a]/60 dark:text-neutral-400"
+                }`}
+              >
+                Light
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (theme !== "dark") toggleTheme();
+                }}
+                className={`rounded-lg px-3 py-1.5 text-xs font-black transition-all ${
+                  theme === "dark"
+                    ? "bg-[#3d654c] text-white shadow-sm dark:bg-[#f2c14e] dark:text-[#121212]"
+                    : "text-[#1c1d1a]/60 dark:text-neutral-400"
+                }`}
+              >
+                Dark
+              </button>
+            </div>
+          </SettingRow>
+          <PlannedRow
+            icon={Sun}
+            title="System theme"
+            subtitle="Automatically follow your device appearance."
+            note="Coming soon"
+          />
+        </SettingsSection>
+      </section>
 
-      <SectionTitle title="Typography & motion" />
-      <SettingsSection>
-        <PlannedRow icon={Type} title="Font size" subtitle="Adjust text size across Hivez." note="Coming soon" />
-        <SettingRow
-          icon={Sparkles}
-          title="Reduce motion"
-          subtitle={`Your device preference: ${reducedMotion ? "reduced motion is on" : "standard motion is on"}.`}
-        >
-          <span className="rounded-full bg-[#1c1d1a]/5 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-[#1c1d1a]/45 dark:bg-white/10 dark:text-neutral-400">
-            Follows system
-          </span>
-        </SettingRow>
-      </SettingsSection>
-    </>
+      <section className="space-y-2.5">
+        <SectionTitle title="Typography & motion" />
+        <SettingsSection>
+          <PlannedRow icon={Type} title="Font size" subtitle="Adjust text size across Hivez." note="Coming soon" />
+          <SettingRow
+            icon={Sparkles}
+            title="Reduce motion"
+            subtitle={`Your device preference: ${reducedMotion ? "reduced motion is on" : "standard motion is on"}.`}
+          >
+            <span className="inline-flex items-center rounded-full bg-[#1c1d1a]/5 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-[#1c1d1a]/45 dark:bg-white/10 dark:text-neutral-400">
+              Follows system
+            </span>
+          </SettingRow>
+        </SettingsSection>
+      </section>
+    </div>
   );
 }
 // ============================================================
@@ -1003,22 +1052,24 @@ function AccessibilitySettings() {
   const reducedMotion = useReducedMotion();
 
   return (
-    <>
-      <SectionTitle title="Accessibility" />
-      <SettingsSection>
-        <SettingRow
-          icon={Accessibility}
-          title="Reduce motion"
-          subtitle={`Device setting: ${reducedMotion ? "reduced motion is enabled" : "standard motion is enabled"}.`}
-        >
-          <span className="rounded-full bg-[#3d654c]/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-[#3d654c] dark:bg-[#f2c14e]/15 dark:text-[#f2c14e]">
-            Follows system
-          </span>
-        </SettingRow>
-        <PlannedRow icon={Type} title="Text size" subtitle="Adjust interface text size without zooming the whole page." note="Coming soon" />
-        <PlannedRow icon={Contrast} title="High contrast" subtitle="Increase the contrast of surfaces and text." note="Coming soon" />
-      </SettingsSection>
-    </>
+    <div className="space-y-6">
+      <section className="space-y-2.5">
+        <SectionTitle title="Accessibility" />
+        <SettingsSection>
+          <SettingRow
+            icon={Accessibility}
+            title="Reduce motion"
+            subtitle={`Device setting: ${reducedMotion ? "reduced motion is enabled" : "standard motion is enabled"}.`}
+          >
+            <span className="inline-flex items-center rounded-full bg-[#3d654c]/10 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-[#3d654c] dark:bg-[#f2c14e]/15 dark:text-[#f2c14e]">
+              Follows system
+            </span>
+          </SettingRow>
+          <PlannedRow icon={Type} title="Text size" subtitle="Adjust interface text size without zooming the whole page." note="Coming soon" />
+          <PlannedRow icon={Contrast} title="High contrast" subtitle="Increase the contrast of surfaces and text." note="Coming soon" />
+        </SettingsSection>
+      </section>
+    </div>
   );
 }
 // ============================================================
@@ -1033,34 +1084,36 @@ const LANGUAGES = [
 
 function LanguageSettings() {
   return (
-    <>
-      <SectionTitle title="Language" />
-      <SettingsSection>
-        {LANGUAGES.map((lang) => (
-          <div
-            key={lang.code}
-            className="flex w-full items-center gap-3.5 border-b border-[#1c1d1a]/5 py-3.5 last:border-b-0 dark:border-neutral-800/60"
-          >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#1c1d1a]/10 bg-[#f7f7f2] text-[#3d654c] dark:border-neutral-800 dark:bg-[#1a1a1a] dark:text-[#f2c14e]">
-              <Languages size={17} />
+    <div className="space-y-6">
+      <section className="space-y-2.5">
+        <SectionTitle title="Language" />
+        <SettingsSection>
+          {LANGUAGES.map((lang) => (
+            <div
+              key={lang.code}
+              className="flex w-full items-center gap-3.5 rounded-2xl p-3 border-b border-[#1c1d1a]/5 last:border-b-0 dark:border-neutral-800/60"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#3d654c]/15 bg-[#3d654c]/10 text-[#3d654c] dark:border-[#f2c14e]/25 dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
+                <Languages size={18} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-[#1c1d1a] dark:text-white">{lang.label}</p>
+                <p className="mt-0.5 text-xs font-medium text-[#1c1d1a]/55 dark:text-neutral-400">
+                  {lang.available ? "Currently active" : "Localized UI not available yet"}
+                </p>
+              </div>
+              {lang.available ? (
+                <Check size={18} className="text-[#3d654c] dark:text-[#f2c14e]" />
+              ) : (
+                <span className="inline-flex items-center rounded-full bg-[#1c1d1a]/5 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-[#1c1d1a]/45 dark:bg-white/10 dark:text-neutral-400">
+                  Soon
+                </span>
+              )}
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold text-[#1c1d1a] dark:text-white">{lang.label}</p>
-              <p className="mt-0.5 text-[11px] font-medium leading-4 text-[#1c1d1a]/55 dark:text-neutral-400">
-                {lang.available ? "Currently active" : "Localized UI not available yet"}
-              </p>
-            </div>
-            {lang.available ? (
-              <Check size={16} className="text-[#3d654c] dark:text-[#f2c14e]" />
-            ) : (
-              <span className="rounded-full bg-[#1c1d1a]/5 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-[#1c1d1a]/45 dark:bg-white/10 dark:text-neutral-400">
-                Soon
-              </span>
-            )}
-          </div>
-        ))}
-      </SettingsSection>
-    </>
+          ))}
+        </SettingsSection>
+      </section>
+    </div>
   );
 }
 // ============================================================
@@ -1098,37 +1151,39 @@ function DataSettings() {
   }
 
   return (
-    <>
-      <SectionTitle title="Your data" />
-      <SettingsSection>
-        <PlannedRow
-          icon={Download}
-          title="Download data"
-          subtitle="Get an export of your posts, activity and settings."
-          note="Coming soon"
-        />
-        <PlannedRow
-          icon={Database}
-          title="Data usage"
-          subtitle="See storage used by photos, videos and drafts on this device."
-          note="Coming soon"
-        />
-        <SettingRow
-          icon={Trash2}
-          title="Clear cache"
-          subtitle="Clears photos, drafts and other on-device caches. Your posts and data in Firestore stay untouched."
-        >
-          <button
-            type="button"
-            onClick={() => void handleClearCache()}
-            disabled={clearing}
-            className="rounded-xl bg-[#1c1d1a]/5 px-3.5 py-2 text-xs font-bold text-[#1c1d1a] transition hover:bg-[#1c1d1a]/10 disabled:opacity-50 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
+    <div className="space-y-6">
+      <section className="space-y-2.5">
+        <SectionTitle title="Your data" />
+        <SettingsSection>
+          <PlannedRow
+            icon={Download}
+            title="Download data"
+            subtitle="Get an export of your posts, activity and settings."
+            note="Coming soon"
+          />
+          <PlannedRow
+            icon={Database}
+            title="Data usage"
+            subtitle="See storage used by photos, videos and drafts on this device."
+            note="Coming soon"
+          />
+          <SettingRow
+            icon={Trash2}
+            title="Clear cache"
+            subtitle="Clears photos, drafts and other on-device caches. Your posts and data in Firestore stay untouched."
           >
-            {clearing ? "Clearing..." : "Clear cache"}
-          </button>
-        </SettingRow>
-      </SettingsSection>
-    </>
+            <button
+              type="button"
+              onClick={() => void handleClearCache()}
+              disabled={clearing}
+              className="rounded-xl bg-[#1c1d1a]/5 px-4 py-2 text-xs font-bold text-[#1c1d1a] transition hover:bg-[#1c1d1a]/10 disabled:opacity-50 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
+            >
+              {clearing ? "Clearing..." : "Clear cache"}
+            </button>
+          </SettingRow>
+        </SettingsSection>
+      </section>
+    </div>
   );
 }
 // ============================================================
@@ -1150,66 +1205,68 @@ function DeleteAccountSettings() {
   }
 
   return (
-    <>
-      <SectionTitle title="Deactivate or delete account" />
-      <SettingsSection>
-        <div className="flex items-start gap-3.5 rounded-xl border border-rose-200 bg-rose-50/70 p-4 text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-400">
-          <AlertTriangle size={18} className="mt-0.5 shrink-0" />
-          <div className="min-w-0 space-y-1 text-[12px] leading-5">
-            <p className="font-bold">This area controls the future of your Hivez account.</p>
-            <p>
-              Deactivation and permanent deletion are not available in-app yet. If you need to close your
-              account, contact Hivez support with your username. Nothing will be deleted unless you confirm it.
-            </p>
-          </div>
-        </div>
-
-        {confirming ? (
-          <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50/70 p-4 dark:border-rose-900/40 dark:bg-rose-950/20">
-            <p className="text-xs font-bold text-rose-700 dark:text-rose-400">Sign out and continue later?</p>
-            <p className="mt-1 text-[11px] text-rose-700/80 dark:text-rose-400/80">
-              Account deletion is not automatic. You will be signed out only; your data stays in Hivez.
-            </p>
-            <div className="mt-3 flex gap-2">
-              <button
-                type="button"
-                onClick={() => setConfirming(false)}
-                className="rounded-xl border border-[#1c1d1a]/10 bg-white px-3.5 py-2 text-xs font-bold text-[#1c1d1a] transition hover:bg-[#ecece5] disabled:opacity-50 dark:border-neutral-800 dark:bg-[#141414] dark:text-white dark:hover:bg-neutral-800"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleConfirm()}
-                disabled={loggingOut}
-                className="rounded-xl bg-[#1c1d1a] px-3.5 py-2 text-xs font-bold text-white transition hover:bg-[#32533e] disabled:opacity-50 dark:bg-[#f2c14e] dark:text-[#121212]"
-              >
-                {loggingOut ? "Signing out..." : "Sign out"}
-              </button>
+    <div className="space-y-6">
+      <section className="space-y-2.5">
+        <SectionTitle title="Deactivate or delete account" />
+        <SettingsSection>
+          <div className="flex items-start gap-3.5 rounded-2xl border border-rose-200 bg-rose-50/70 p-4 text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-400">
+            <AlertTriangle size={18} className="mt-0.5 shrink-0" />
+            <div className="min-w-0 space-y-1 text-xs leading-relaxed">
+              <p className="font-bold">This area controls the future of your Hivez account.</p>
+              <p>
+                Deactivation and permanent deletion are not available in-app yet. If you need to close your
+                account, contact Hivez support with your username. Nothing will be deleted unless you confirm it.
+              </p>
             </div>
           </div>
-        ) : (
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setConfirming(true)}
-              className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50/70 px-3.5 py-2.5 text-xs font-bold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-400 dark:hover:bg-rose-950/40"
-            >
-              <LogOut size={15} />
-              Deactivate account
-            </button>
-            <button
-              type="button"
-              onClick={() => setConfirming(true)}
-              className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50/70 px-3.5 py-2.5 text-xs font-bold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-400 dark:hover:bg-rose-950/40"
-            >
-              <Trash2 size={15} />
-              Delete account
-            </button>
-          </div>
-        )}
-      </SettingsSection>
-    </>
+
+          {confirming ? (
+            <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50/70 p-4 dark:border-rose-900/40 dark:bg-rose-950/20">
+              <p className="text-xs font-bold text-rose-700 dark:text-rose-400">Sign out and continue later?</p>
+              <p className="mt-1 text-xs text-rose-700/80 dark:text-rose-400/80">
+                Account deletion is not automatic. You will be signed out only; your data stays in Hivez.
+              </p>
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirming(false)}
+                  className="rounded-xl border border-[#1c1d1a]/10 bg-white px-4 py-2 text-xs font-bold text-[#1c1d1a] transition hover:bg-[#ecece5] disabled:opacity-50 dark:border-neutral-800 dark:bg-[#141414] dark:text-white dark:hover:bg-neutral-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleConfirm()}
+                  disabled={loggingOut}
+                  className="rounded-xl bg-[#1c1d1a] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#32533e] disabled:opacity-50 dark:bg-[#f2c14e] dark:text-[#121212]"
+                >
+                  {loggingOut ? "Signing out..." : "Sign out"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-4 flex flex-wrap gap-2.5 p-2">
+              <button
+                type="button"
+                onClick={() => setConfirming(true)}
+                className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50/70 px-4 py-3 text-xs font-bold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-400 dark:hover:bg-rose-950/40"
+              >
+                <LogOut size={15} />
+                Deactivate account
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirming(true)}
+                className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50/70 px-4 py-3 text-xs font-bold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-400 dark:hover:bg-rose-950/40"
+              >
+                <Trash2 size={15} />
+                Delete account
+              </button>
+            </div>
+          )}
+        </SettingsSection>
+      </section>
+    </div>
   );
 }
 // ============================================================
