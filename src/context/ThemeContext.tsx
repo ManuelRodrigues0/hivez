@@ -81,6 +81,7 @@ function runFallbackWipe(theme: Theme) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  const [systemTheme, setSystemTheme] = useState(getSystemTheme);
   const [theme, setThemeState] = useState<Theme>(() => {
     const saved = localStorage.getItem("hivez-theme");
     return saved === "light" || saved === "dark" || saved === "system" ? saved : "dark";
@@ -102,7 +103,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const animating = useRef(false);
 
   // Compute resolved theme (system → actual)
-  const resolvedTheme: "dark" | "light" = theme === "system" ? getSystemTheme() : theme;
+  const resolvedTheme: "dark" | "light" = theme === "system" ? systemTheme : theme;
 
   // Keep the DOM class + storage in sync
   useEffect(() => {
@@ -134,7 +135,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (theme !== "system") return;
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = () => applyThemeClass(getSystemTheme());
+    const handler = () => setSystemTheme(getSystemTheme());
+    handler();
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
   }, [theme]);
@@ -220,6 +222,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// The provider and its hook intentionally share this context module.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useTheme() {
   return useContext(ThemeContext);
 }

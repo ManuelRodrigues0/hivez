@@ -1,0 +1,132 @@
+/* Updates is an optional, non-blocking side sheet opened from the app bar. */
+.app-updates.app-updates-drawer {
+  position: fixed;
+  top: 72px !important;
+  right: 0 !important;
+  bottom: 0;
+  z-index: 45;
+  width: min(384px, 100vw) !important;
+  height: calc(100vh - 72px) !important;
+  overflow-y: auto !important;
+  padding: 14px !important;
+  border-left: 1px solid var(--hivez-border) !important;
+  background: var(--hivez-bg) !important;
+  box-shadow: none !important;
+  animation: updates-sheet-in 180ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+.app-updates.app-updates-drawer .app-updates-card {
+  width: 100%;
+  margin: 0 !important;
+  padding: 2px 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.app-updates-panel .app-updates-heading {
+  min-height: 40px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--hivez-border);
+}
+
+.app-updates-panel .app-updates-heading-mark {
+  background: color-mix(in srgb, var(--hivez-accent) 10%, transparent);
+  color: var(--hivez-accent);
+}
+
+.app-updates-panel .app-updates-clear,
+.app-updates-panel .app-updates-close {
+  color: var(--hivez-accent);
+}
+
+.app-updates-panel .app-updates-clear:hover,
+.app-updates-panel .app-updates-close:hover {
+  background: color-mix(in srgb, var(--hivez-accent) 10%, transparent);
+}
+
+.app-updates-panel .app-updates-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.app-updates-panel .app-updates-item {
+  border-bottom: 1px solid color-mix(in srgb, var(--hivez-border) 75%, transparent);
+}
+
+.app-updates-panel .app-updates-item:last-child {
+  border-bottom: 0;
+}
+
+.app-updates-panel .app-updates-row {
+  min-height: 86px;
+  gap: 12px;
+  padding: 14px 3px;
+  border-left: 2px solid transparent;
+  background: transparent;
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+
+.app-updates-panel button.app-updates-row:hover {
+  border-left-color: var(--hivez-accent);
+  background: color-mix(in srgb, var(--hivez-accent) 5%, transparent);
+}
+
+.app-updates-panel .app-updates-source {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--hivez-accent) 9%, transparent);
+}
+
+.app-updates-panel .app-updates-empty {
+  border-bottom: 1px solid var(--hivez-border);
+  color: var(--hivez-muted);
+}
+
+.app-updates-panel .app-updates-more {
+  color: var(--hivez-muted);
+  border-bottom: 1px solid var(--hivez-border);
+}
+
+.app-updates-panel .app-updates-more:hover {
+  color: var(--hivez-accent);
+}
+
+.app-updates-panel .app-updates-skeleton > div {
+  border-bottom: 1px solid color-mix(in srgb, var(--hivez-border) 75%, transparent);
+}
+
+@keyframes updates-sheet-in {
+  from {
+    opacity: 0.6;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 1023px) {
+  .app-updates.app-updates-drawer {
+    top: 64px !important;
+    height: calc(100dvh - 64px) !important;
+    width: min(384px, 100vw) !important;
+    padding: 12px !important;
+    z-index: 60;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-updates.app-updates-drawer {
+    animation: none;
+  }
+
+  .app-updates-panel .app-updates-row {
+    transition: none;
+  }
+}

@@ -13,6 +13,7 @@ import {
   HandHeart,
   MessageCircle,
   Map,
+  Megaphone,
 } from "lucide-react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import gsap from "gsap";
@@ -25,6 +26,7 @@ import { db } from "@/firebase/firebase";
 import { listenToNotifications, listenToUnreadNotificationsCount } from "@/services/notifications";
 import { listenForForegroundPushNotifications } from "@/services/pushNotifications";
 import UpdatesPanel from "./UpdatesPanel";
+import "./updatesPanel.css";
 
 const ultraBeeSrc = "/assets/hivez-ultra-bee.webm";
 
@@ -72,15 +74,31 @@ export default function MainLayout() {
   const { user, profile } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [desktopViewport, setDesktopViewport] = useState(() => window.innerWidth >= 1024);
+  const [updatesCollapsed, setUpdatesCollapsed] = useState(() => {
+    const saved = localStorage.getItem("hivez-updates-collapsed");
+    return saved === null ? true : saved === "true";
+  });
   const [isHoveringSidebar, setIsHoveringSidebar] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [communityUpdatesCount, setCommunityUpdatesCount] = useState(0);
   const seenNotificationIds = useRef<Set<string>>(new Set());
   const notificationsReady = useRef(false);
   const seenChatTimes = useRef<Record<string, number>>({});
   const chatsReady = useRef(false);
   const hoverTimeoutRef = useRef<number | null>(null);
   const sidebarRef = useRef<HTMLElement>(null);
+  const desktopUpdatesTriggerRef = useRef<HTMLButtonElement>(null);
+  const mobileUpdatesTriggerRef = useRef<HTMLButtonElement>(null);
+  const updatesCloseRef = useRef<HTMLButtonElement>(null);
+  const updatesReturnFocusRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    const updateViewport = () => setDesktopViewport(window.innerWidth >= 1024);
+    window.addEventListener("resize", updateViewport);
+    return () => window.removeEventListener("resize", updateViewport);
+  }, []);
 
   const handleSidebarMouseEnter = () => {
     if (window.innerWidth >= 1024 && sidebarCollapsed) {
@@ -105,10 +123,40 @@ export default function MainLayout() {
 
   const layoutVars = {
     "--layout-left": isSidebarExpanded ? "280px" : "72px",
-    "--layout-right": "384px",
+    // Desktop Updates is a persistent side rail while open, so page layouts
+    // reflow into the remaining space instead of being covered by the panel.
+    "--layout-right": updatesCollapsed || !desktopViewport ? "0px" : "384px",
     "--layout-gap": "16px",
     "--media-card-width": "236px",
   } as CSSProperties;
+
+  const openUpdates = (trigger: HTMLButtonElement) => {
+    updatesReturnFocusRef.current = trigger;
+    setUpdatesCollapsed(false);
+    localStorage.setItem("hivez-updates-collapsed", "false");
+    requestAnimationFrame(() => updatesCloseRef.current?.focus());
+  };
+
+  const closeUpdates = (restoreFocus = true) => {
+    setUpdatesCollapsed(true);
+    localStorage.setItem("hivez-updates-collapsed", "true");
+    if (restoreFocus) {
+      requestAnimationFrame(() => updatesReturnFocusRef.current?.focus());
+    }
+  };
+
+  useEffect(() => {
+    if (updatesCollapsed) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setUpdatesCollapsed(true);
+        localStorage.setItem("hivez-updates-collapsed", "true");
+        requestAnimationFrame(() => updatesReturnFocusRef.current?.focus());
+      }
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [updatesCollapsed]);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -222,6 +270,22 @@ export default function MainLayout() {
       case "/profile/edit":
         return "Edit Profile";
       default:
+        if (pathname.startsWith("/settings/")) {
+          const section = pathname.split("/")[2];
+          const settingsTitles: Record<string, string> = {
+            account: "Account",
+            privacy: "Privacy",
+            security: "Security",
+            notifications: "Notifications",
+            content: "Content preferences",
+            appearance: "Appearance",
+            accessibility: "Accessibility",
+            language: "Language",
+            data: "Data",
+            delete: "Delete / deactivate",
+          };
+          return settingsTitles[section] || "Settings";
+        }
         if (pathname.startsWith("/hive/")) {
           return "Community";
         }
@@ -362,6 +426,19 @@ export default function MainLayout() {
             <Bell size={20} className="text-[#1c1d1a] dark:text-white" />
             {unreadNotifications > 0 && <Badge count={unreadNotifications} />}
           </button>
+          <button
+            ref={desktopUpdatesTriggerRef}
+            type="button"
+            onClick={(event) => updatesCollapsed ? openUpdates(event.currentTarget) : closeUpdates()}
+            aria-label={updatesCollapsed ? "Open community updates" : "Close community updates"}
+            aria-expanded={!updatesCollapsed}
+            aria-controls="community-updates-drawer"
+            title="Community updates"
+            className={`relative rounded-full p-2 transition hover:bg-[#1c1d1a]/5 dark:hover:bg-white/10 ${updatesCollapsed ? "" : "bg-[#3d654c]/10 dark:bg-[#f2c14e]/10"}`}
+          >
+            <Megaphone size={20} className="text-[#3d654c] dark:text-[#f2c14e]" />
+            {communityUpdatesCount > 0 && <Badge count={communityUpdatesCount} />}
+          </button>
           <button 
             onClick={() => navigate("/search")}
             className="rounded-full p-2 transition hover:bg-[#1c1d1a]/5 dark:hover:bg-white/10"
@@ -470,13 +547,21 @@ export default function MainLayout() {
 
       {/* Main Content Area */}
       <div className="flex w-full flex-col transition-[margin] duration-300 lg:ml-[var(--layout-left)]">
-        {/* Updates Sidebar (Desktop) */}
-        <aside className="app-updates fixed right-0 top-16 hidden h-[calc(100vh-64px)] w-[var(--layout-right)] overflow-y-auto px-4 py-6 lg:block">
-          <UpdatesPanel />
+        <aside
+          id="community-updates-drawer"
+          hidden={updatesCollapsed}
+          className="app-updates app-updates-drawer"
+          aria-label="Community updates"
+        >
+          <UpdatesPanel
+            onClose={closeUpdates}
+            closeButtonRef={updatesCloseRef}
+            onCountChange={setCommunityUpdatesCount}
+          />
         </aside>
 
         {/* Content wrapper */}
-        <div className="flex w-full flex-col transition-[padding] duration-300 lg:pr-[var(--layout-right)]">
+        <div className="flex w-full flex-col">
           {/* Mobile Top Bar */}
           <header className="app-mobile-header sticky top-0 z-40 border-b border-[#1c1d1a]/10 bg-[#f7f7f2]/95 backdrop-blur dark:border-neutral-800 dark:bg-[#0a0a0a]/95 lg:hidden">
             <div className="flex items-center justify-between px-4 py-3">
@@ -487,13 +572,30 @@ export default function MainLayout() {
                 <h1 className="text-lg font-bold tracking-wide text-[#1c1d1a] dark:text-white">Hivez</h1>
                 <UltraBeeMark />
               </div>
-              <button 
-                onClick={() => navigate("/notifications")}
-                className="relative rounded-full p-2 transition hover:bg-[#1c1d1a]/5 dark:hover:bg-white/10"
-              >
-                <Bell size={22} className="text-[#1c1d1a] dark:text-white" />
-                {unreadNotifications > 0 && <Badge count={unreadNotifications} />}
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  ref={mobileUpdatesTriggerRef}
+                  type="button"
+                  onClick={(event) => updatesCollapsed ? openUpdates(event.currentTarget) : closeUpdates()}
+                  aria-label={updatesCollapsed ? "Open community updates" : "Close community updates"}
+                  aria-expanded={!updatesCollapsed}
+                  aria-controls="community-updates-drawer"
+                  title="Community updates"
+                  className="relative rounded-full p-2 text-[#3d654c] transition hover:bg-[#1c1d1a]/5 dark:text-[#f2c14e] dark:hover:bg-white/10"
+                >
+                  <Megaphone size={20} />
+                  {communityUpdatesCount > 0 && <Badge count={communityUpdatesCount} />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/notifications")}
+                  aria-label="Notifications"
+                  className="relative rounded-full p-2 transition hover:bg-[#1c1d1a]/5 dark:hover:bg-white/10"
+                >
+                  <Bell size={22} className="text-[#1c1d1a] dark:text-white" />
+                  {unreadNotifications > 0 && <Badge count={unreadNotifications} />}
+                </button>
+              </div>
             </div>
           </header>
 

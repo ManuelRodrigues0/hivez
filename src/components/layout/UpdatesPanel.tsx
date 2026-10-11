@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, Megaphone, Sparkles, ChevronDown } from "lucide-react";
+import {
+  Check,
+  Megaphone,
+  Sparkles,
+  ChevronDown,
+  X,
+} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import {
   dismissUpdates,
@@ -11,7 +17,7 @@ import {
   type CommunityUpdateType,
 } from "@/services/communityUpdates";
 
-/** Right-rail "Updates" feed. Max 3 updates by default (8 via "View all updates"). */
+/** Side-drawer "Updates" feed. Max 3 updates by default (8 via "View all updates"). */
 const COLLAPSED_COUNT = 3;
 const EXPANDED_COUNT = 8;
 
@@ -81,10 +87,7 @@ function UpdateRow({ update, freshSince }: { update: CommunityUpdate; freshSince
   return (
     <div className="flex min-w-0 flex-1 items-start gap-3.5">
       {/* Source identity: compact structured emblem */}
-      <div
-        aria-hidden="true"
-        className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl border border-[#3d654c]/15 bg-[#3d654c]/10 text-xs shadow-2xs dark:border-[#f2c14e]/25 dark:bg-[#f2c14e]/10"
-      >
+      <div aria-hidden="true" className="app-updates-source mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center text-xs">
         {meta?.emoji ? (
           meta.emoji
         ) : update.type === "announcement" ? (
@@ -174,13 +177,13 @@ function StatusPill({ status }: { status: string }) {
 /** Subtle feed skeleton rows */
 function LoadingRows() {
   return (
-    <div aria-hidden="true" className="animate-pulse space-y-3">
+    <div aria-hidden="true" className="app-updates-skeleton animate-pulse">
       {[0, 1, 2].map((row) => (
         <div
           key={row}
-          className="flex items-start gap-3.5 rounded-2xl border border-[#1c1d1a]/5 bg-white/40 p-3.5 dark:border-white/5 dark:bg-[#161616]/40"
+          className="flex items-start gap-3.5 border-b border-[#1c1d1a]/[0.07] py-4 last:border-0 dark:border-white/[0.08]"
         >
-          <div className="h-8 w-8 shrink-0 rounded-2xl bg-[#1c1d1a]/10 dark:bg-white/10" />
+          <div className="h-8 w-8 shrink-0 rounded-lg bg-[#1c1d1a]/10 dark:bg-white/10" />
           <div className="min-w-0 flex-1 space-y-2">
             <div className="h-3.5 w-3/4 rounded-md bg-[#1c1d1a]/10 dark:bg-white/10" />
             <div className="h-3 w-1/2 rounded-md bg-[#1c1d1a]/8 dark:bg-white/8" />
@@ -191,7 +194,15 @@ function LoadingRows() {
   );
 }
 
-export default function UpdatesPanel() {
+export default function UpdatesPanel({
+  onClose,
+  closeButtonRef,
+  onCountChange,
+}: {
+  onClose?: (restoreFocus?: boolean) => void;
+  closeButtonRef?: { current: HTMLButtonElement | null };
+  onCountChange?: (count: number) => void;
+}) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loaded, setLoaded] = useState<{ uid: string; list: CommunityUpdate[] } | null>(null);
@@ -224,6 +235,10 @@ export default function UpdatesPanel() {
   const shown = expanded ? visible.slice(0, EXPANDED_COUNT) : visible.slice(0, COLLAPSED_COUNT);
   const hasMore = visible.length > COLLAPSED_COUNT;
 
+  useEffect(() => {
+    if (ready) onCountChange?.(visible.length);
+  }, [onCountChange, ready, visible.length]);
+
   async function handleClear() {
     if (!user || visible.length === 0 || dismissing) return;
     setDismissing(true);
@@ -238,33 +253,45 @@ export default function UpdatesPanel() {
   }
 
   return (
-    <section aria-label="Community updates" className="w-full rounded-3xl border border-[#1c1d1a]/10 bg-white/70 p-4 shadow-sm backdrop-blur-2xl dark:border-neutral-800/90 dark:bg-[#121212]/70">
-      <div className="mb-3.5 flex items-center justify-between px-1">
+    <section aria-label="Community updates" className="app-updates-card app-updates-panel w-full">
+      <div className="app-updates-heading mb-3.5 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#3d654c]/10 text-[#3d654c] dark:bg-[#f2c14e]/10 dark:text-[#f2c14e]">
+          <span className="app-updates-heading-mark flex h-7 w-7 items-center justify-center rounded-lg">
             <Megaphone size={14} />
           </span>
           <h2 className="text-xs font-black uppercase tracking-widest text-[#1c1d1a]/70 dark:text-neutral-300">
             Updates
           </h2>
         </div>
-        {visible.length > 0 && (
+        <div className="flex items-center gap-1">
+          {visible.length > 0 && (
+            <button
+              type="button"
+              onClick={handleClear}
+              disabled={dismissing}
+              aria-label="Clear all updates for me"
+            className="app-updates-clear rounded-lg px-2.5 py-1 text-[11px] font-black tracking-wide transition disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400/50"
+            >
+              Clear all
+            </button>
+          )}
           <button
+            ref={closeButtonRef}
             type="button"
-            onClick={handleClear}
-            disabled={dismissing}
-            aria-label="Clear all updates for me"
-            className="rounded-xl px-3 py-1 text-[11px] font-black tracking-wide text-[#3d654c] transition hover:bg-[#3d654c]/10 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400/50 dark:text-[#f2c14e] dark:hover:bg-[#f2c14e]/10 dark:focus-visible:ring-white/30"
+            onClick={() => onClose?.()}
+            aria-label="Close community updates"
+            title="Close community updates"
+            className="app-updates-close flex h-8 w-8 items-center justify-center rounded-lg transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3d654c]/40 dark:focus-visible:ring-white/30"
           >
-            Clear all
+            <X size={17} />
           </button>
-        )}
+        </div>
       </div>
 
       {!ready && <LoadingRows />}
 
       {ready && visible.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-[#1c1d1a]/10 bg-[#f7f7f2]/50 p-6 text-center dark:border-neutral-800 dark:bg-white/[0.02]">
+        <div className="app-updates-empty py-8 text-center">
           <p className="text-xs font-semibold text-[#1c1d1a]/50 dark:text-neutral-500">
             You&apos;re all caught up! No new community updates.
           </p>
@@ -272,21 +299,24 @@ export default function UpdatesPanel() {
       )}
 
       {shown.length > 0 && (
-        <ul className="space-y-2.5">
+        <ul className="app-updates-list">
           {shown.map((update) => {
             const target = update.targetUrl;
             const visual = TYPE_VISUALS[update.type];
             return (
               <li
                 key={update.id}
-                className="overflow-hidden rounded-2xl transition-all duration-200"
+                className="app-updates-item"
               >
                 {target ? (
                   <button
                     type="button"
-                    onClick={() => navigate(target)}
+                    onClick={() => {
+                      navigate(target);
+                      onClose?.(false);
+                    }}
                     aria-label={`${visual.label}: ${update.title}`}
-                    className="group flex w-full items-start rounded-2xl border border-transparent bg-[#f7f7f2]/60 p-3.5 text-left transition-all hover:border-[#3d654c]/20 hover:bg-white hover:shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3d654c]/40 dark:border-neutral-800/40 dark:bg-white/[0.02] dark:hover:border-[#f2c14e]/30 dark:hover:bg-white/[0.06]"
+                    className="app-updates-row group flex w-full items-start text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#3d654c]/40 dark:focus-visible:ring-[#f2c14e]/50"
                   >
                     <UpdateRow update={update} freshSince={freshSince} />
                   </button>
@@ -294,7 +324,7 @@ export default function UpdatesPanel() {
                   <div
                     role="article"
                     aria-label={`${visual.label}: ${update.title}`}
-                    className="flex w-full items-start rounded-2xl border border-transparent bg-[#f7f7f2]/60 p-3.5 text-left dark:border-neutral-800/40 dark:bg-white/[0.02]"
+                    className="app-updates-row flex w-full items-start text-left"
                   >
                     <UpdateRow update={update} freshSince={freshSince} />
                   </div>
@@ -310,7 +340,7 @@ export default function UpdatesPanel() {
           type="button"
           onClick={() => setExpanded(!expanded)}
           aria-expanded={expanded}
-          className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#1c1d1a]/5 px-4 py-2.5 text-center text-xs font-black uppercase tracking-wider text-[#1c1d1a]/70 transition-all hover:bg-[#1c1d1a]/10 hover:text-[#1c1d1a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400/50 dark:bg-white/5 dark:text-neutral-300 dark:hover:bg-white/10 dark:hover:text-white dark:focus-visible:ring-white/30"
+          className="app-updates-more mt-1 flex w-full items-center justify-between gap-2 px-1 py-3 text-xs font-black uppercase tracking-wider transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400/50"
         >
           <span>{expanded ? "Show less" : "View all updates"}</span>
           <ChevronDown size={14} className={`transition-transform duration-300 ${expanded ? "rotate-180" : ""}`} />

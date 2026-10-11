@@ -1611,8 +1611,10 @@ body,
   }
 
   .app-feed-shell {
-    width: calc(100vw - var(--layout-left) - var(--layout-right));
-    max-width: calc(100vw - var(--layout-left) - var(--layout-right));
+    /* The shell lives inside .app-main, whose width already excludes the
+       sidebar and Updates rail. Keep it bounded by that actual column. */
+    width: 100% !important;
+    max-width: 100% !important;
     min-width: 0;
     margin-left: 0;
     margin-right: 0;
