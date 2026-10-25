@@ -1,0 +1,40 @@
+{
+  "method": "WCAG sRGB relative luminance; source colours inspected in scoped CSS",
+  "pairs": [
+    {
+      "context": "Highlighted headline",
+      "foreground": "#293326",
+      "background": "#d9f279",
+      "contrast": 10.61
+    },
+    {
+      "context": "Light supporting copy on surface",
+      "foreground": "#5c6855",
+      "background": "#eeeddf",
+      "contrast": 5
+    },
+    {
+      "context": "Dark supporting copy on surface",
+      "foreground": "#bac2af",
+      "background": "#2d3829",
+      "contrast": 6.68
+    },
+    {
+      "context": "Photo caption",
+      "foreground": "#ffffff",
+      "background": "#202b1c",
+      "contrast": 14.75
+    }
+  ],
+  "video": {
+    "muted": true,
+    "loop": true,
+    "source": "/assets/bee-fly.webm"
+  },
+  "notes": [
+    "SVG street labels and the minus indicator are decorative and aria-hidden.",
+    "Rotated map text sits on solid theme surfaces; visually inspected in both themes.",
+    "Photo caption has a solid dark background.",
+    "No screen-reader certification or reference-site accessibility audit is claimed."
+  ]
+}

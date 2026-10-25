@@ -1,0 +1,238 @@
+{
+  "base": "http://localhost:5173",
+  "checkedAt": "2026-10-25T07:24:45.668Z",
+  "checks": [
+    {
+      "name": "Correct checkout and landing render",
+      "evidence": {
+        "title": "Hivez — Small acts. Big local change.",
+        "url": "http://localhost:5173/"
+      }
+    },
+    {
+      "name": "Keyboard skip link",
+      "evidence": "Main content receives focus"
+    },
+    {
+      "name": "All three map pins",
+      "evidence": "Selected story and pressed state update"
+    },
+    {
+      "name": "All four journey steps",
+      "evidence": "Expanded text, panel, and progress update"
+    },
+    {
+      "name": "All four Hive topics",
+      "evidence": "Copy, artwork icon, tags and pressed states update"
+    },
+    {
+      "name": "All FAQ disclosures by keyboard",
+      "evidence": "Each opens and closes with Enter"
+    },
+    {
+      "name": "Original bee movement and chroma rendering",
+      "evidence": {
+        "positions": [
+          {
+            "x": 900,
+            "y": 440,
+            "scaleX": 0.939693
+          },
+          {
+            "x": 200,
+            "y": 240,
+            "scaleX": -0.939693
+          }
+        ],
+        "media": {
+          "opaque": 15997,
+          "transparent": 41603,
+          "time": 3.520539,
+          "paused": false,
+          "source": "/assets/bee-fly.webm"
+        }
+      }
+    },
+    {
+      "name": "Reduced motion",
+      "evidence": "Bee animation pauses; cursor following remains immediate"
+    },
+    {
+      "name": "Navigation destinations",
+      "evidence": {
+        "anchors": [
+          "#hz-main",
+          "#discover",
+          "#how",
+          "#hives",
+          "#discover",
+          "#how",
+          "#hives",
+          "#how",
+          "#discover",
+          "#how",
+          "#hives",
+          "#hz-main"
+        ],
+        "destinations": [
+          "/",
+          "/login",
+          "/signup"
+        ]
+      }
+    },
+    {
+      "name": "Accessibility: desktop light",
+      "evidence": {
+        "violations": 0,
+        "manualReviewItems": [
+          {
+            "id": "color-contrast",
+            "nodes": 9
+          },
+          {
+            "id": "no-autoplay-audio",
+            "nodes": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "Accessibility: desktop dark",
+      "evidence": {
+        "violations": 0,
+        "manualReviewItems": [
+          {
+            "id": "color-contrast",
+            "nodes": 9
+          },
+          {
+            "id": "no-autoplay-audio",
+            "nodes": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "Signup/login handoff and event cleanup",
+      "evidence": "Four real CTA navigations; auth email fields render; mouse listener count 1 → 0 → 1"
+    },
+    {
+      "name": "Responsive widths",
+      "evidence": "No document overflow at 320, 390, 620, 768, 1024, 1440, 1920 pixels"
+    },
+    {
+      "name": "Touch and mobile menu",
+      "evidence": "No hidden bee video; native dialog traps focus, Escape restores focus, anchor navigation works"
+    },
+    {
+      "name": "Accessibility: mobile dark, system reduced motion",
+      "evidence": {
+        "violations": 0,
+        "manualReviewItems": [
+          {
+            "id": "color-contrast",
+            "nodes": 10
+          }
+        ]
+      }
+    },
+    {
+      "name": "Accessibility: mobile light",
+      "evidence": {
+        "violations": 0,
+        "manualReviewItems": [
+          {
+            "id": "color-contrast",
+            "nodes": 10
+          }
+        ]
+      }
+    },
+    {
+      "name": "Large font setting",
+      "evidence": "390 px mobile remains within viewport at 18 px root font"
+    },
+    {
+      "name": "Accessibility: mobile high contrast and large font",
+      "evidence": {
+        "violations": 0,
+        "manualReviewItems": [
+          {
+            "id": "color-contrast",
+            "nodes": 10
+          }
+        ]
+      }
+    },
+    {
+      "name": "Runtime and network",
+      "evidence": {
+        "consoleAndPageErrors": [],
+        "failedResponses": []
+      }
+    }
+  ],
+  "errors": [],
+  "failedRequests": [],
+  "accessibility": [
+    {
+      "label": "desktop light",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 9
+        },
+        {
+          "id": "no-autoplay-audio",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "label": "desktop dark",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 9
+        },
+        {
+          "id": "no-autoplay-audio",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "label": "mobile dark, system reduced motion",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 10
+        }
+      ]
+    },
+    {
+      "label": "mobile light",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 10
+        }
+      ]
+    },
+    {
+      "label": "mobile high contrast and large font",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 10
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,125 @@
+{
+  "base": "http://localhost:5173",
+  "checkedAt": "2026-10-25T08:04:50.703Z",
+  "checks": [
+    {
+      "name": "Correct checkout and landing render",
+      "evidence": {
+        "title": "Hivez — Small acts. Big local change.",
+        "url": "http://localhost:5173/"
+      }
+    },
+    {
+      "name": "Keyboard skip link",
+      "evidence": "Main content receives focus"
+    },
+    {
+      "name": "All three map pins",
+      "evidence": "Selected story and pressed state update"
+    },
+    {
+      "name": "All four journey steps",
+      "evidence": "Expanded text, panel, and progress update"
+    },
+    {
+      "name": "All four Hive topics",
+      "evidence": "Copy, artwork icon, tags and pressed states update"
+    },
+    {
+      "name": "All FAQ disclosures by keyboard",
+      "evidence": "Each opens and closes with Enter"
+    },
+    {
+      "name": "Original bee movement and chroma rendering",
+      "evidence": {
+        "positions": [
+          {
+            "x": 743.755126953125,
+            "y": 244.75363159179688,
+            "width": 208,
+            "height": 128
+          },
+          {
+            "x": 721.0431518554688,
+            "y": 249.73861694335938,
+            "width": 208,
+            "height": 128
+          },
+          {
+            "x": 689.0391845703125,
+            "y": 257.3276062011719,
+            "width": 208,
+            "height": 128
+          },
+          {
+            "x": 649.9668579101562,
+            "y": 270.9927062988281,
+            "width": 208,
+            "height": 128
+          }
+        ],
+        "media": {
+          "opaque": 15675,
+          "transparent": 41925,
+          "time": 2.869204,
+          "paused": false,
+          "source": "/assets/bee-fly.webm"
+        }
+      }
+    },
+    {
+      "name": "Reduced motion",
+      "evidence": "Bee and honeycomb remain stationary, independent of mouse movement"
+    },
+    {
+      "name": "Navigation destinations",
+      "evidence": {
+        "anchors": [
+          "#hz-main",
+          "#discover",
+          "#how",
+          "#hives",
+          "#discover",
+          "#how",
+          "#hives",
+          "#how",
+          "#discover",
+          "#how",
+          "#hives",
+          "#hz-main"
+        ],
+        "destinations": [
+          "/",
+          "/login",
+          "/signup"
+        ]
+      }
+    },
+    {
+      "name": "Signup/login handoff and event cleanup",
+      "evidence": "Four real CTA navigations; auth email fields render; mouse listener count 1 → 0 → 1"
+    },
+    {
+      "name": "Responsive widths",
+      "evidence": "No document overflow at 320, 390, 620, 768, 1024, 1440, 1920 pixels"
+    },
+    {
+      "name": "Touch and mobile menu",
+      "evidence": "One calm touch mascot; native dialog traps focus, Escape restores focus, anchor navigation works"
+    },
+    {
+      "name": "Large font setting",
+      "evidence": "390 px mobile remains within viewport at 18 px root font"
+    },
+    {
+      "name": "Runtime and network",
+      "evidence": {
+        "consoleAndPageErrors": [],
+        "failedResponses": []
+      }
+    }
+  ],
+  "errors": [],
+  "failedRequests": [],
+  "accessibility": []
+}
