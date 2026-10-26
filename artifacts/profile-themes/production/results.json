@@ -1,0 +1,36 @@
+{
+  "base": "http://localhost:5175",
+  "builtEntry": "/assets/index-C1Je9b4z.js",
+  "routes": [
+    {
+      "route": "/",
+      "modes": [
+        "light",
+        "forest",
+        "midnight"
+      ],
+      "status": 200
+    },
+    {
+      "route": "/login",
+      "modes": [
+        "light",
+        "forest",
+        "midnight"
+      ],
+      "status": 200
+    },
+    {
+      "route": "/signup",
+      "modes": [
+        "light",
+        "forest",
+        "midnight"
+      ],
+      "status": 200
+    }
+  ],
+  "errors": [],
+  "failedLocalRequests": [],
+  "fixtureExcluded": true
+}

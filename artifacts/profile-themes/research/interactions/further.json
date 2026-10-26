@@ -1,0 +1,21 @@
+[
+  {
+    "url": "https://www.studiolenzing.com/contact",
+    "action": "Start Project opened",
+    "text": "Studio\nServices\nUpdates\nLatest updates\nView all\nConnected to Create: Designing with Culture, Not Just for It\nOpinion\nStudio Partnerships: Why Growing Together Makes Sense\nOpinion\nIntuitive Design: The Balance Between Data and Creativity\nOpinion\nWork\nStart Project\nE-mail copied to clipboard\nWe'd love to get a first impression of you, your business, project or idea — feel free to drop us a line.\nStudio Hamburg\nLeander Lenzing\nCEO & Designer\nStudio Barcelona\nDavid Reina\nStrategy Director\nE-mail\nhi@studiolenzing.com\n\nSubscribe to The Click to stay informed about our latest work, projects and studio news.\n\nWe use Mailchimp as our newsletter distribution tool. By subscribing, you confirm that your information will be transferred to Mailchimp. If you want to learn more about Mailchimp's privacy practices click here﻿﻿.\n\nStudio\nWork\nStudio Lenzing is an interactive design studio focused on crafting better experiences for brands and for people.\nJOBS\nPRICING\nCOLOPHON\nPRINCIPLES\nNEWSLETTER\nINSTAGRAM\nREAD.CV\nTWITTER\nSPOTIFY\n19:02:49 local time\n\nHamburg & Barcelona\nWorking internationally\n\nhi@studiolenzing.com\nContact\nStart project\n© 2026 Studio Lenzing\nPrivacy policy\nImprint",
+    "inputs": [
+      {
+        "type": "text",
+        "placeholder": "First name"
+      },
+      {
+        "type": "email",
+        "placeholder": "E-Mail address"
+      },
+      {
+        "type": "submit",
+        "placeholder": ""
+      }
+    ]
+  }
+]

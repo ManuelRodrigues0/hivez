@@ -1,0 +1,49 @@
+[
+  {
+    "route": "/",
+    "mode": "light",
+    "overflow": false,
+    "background": "rgb(255, 255, 255)",
+    "violations": []
+  },
+  {
+    "route": "/",
+    "mode": "forest",
+    "overflow": false,
+    "background": "rgb(0, 0, 0)",
+    "violations": []
+  },
+  {
+    "route": "/",
+    "mode": "midnight",
+    "overflow": false,
+    "background": "rgb(0, 0, 0)",
+    "violations": []
+  },
+  {
+    "route": "/tests/browser/profile-preview.html",
+    "mode": "light",
+    "overflow": false,
+    "background": "rgb(247, 246, 238)",
+    "violations": []
+  },
+  {
+    "route": "/tests/browser/profile-preview.html",
+    "mode": "forest",
+    "overflow": false,
+    "background": "rgb(36, 45, 34)",
+    "violations": []
+  },
+  {
+    "route": "/tests/browser/profile-preview.html",
+    "mode": "midnight",
+    "overflow": false,
+    "background": "rgb(11, 13, 14)",
+    "violations": []
+  },
+  {
+    "check": "Avatar Escape",
+    "expanded": "false",
+    "focus": "Avatar"
+  }
+]

@@ -1,0 +1,96 @@
+{
+  "base": "http://localhost:5173",
+  "checkedAt": "2026-10-25T18:05:12.518Z",
+  "checks": [
+    {
+      "name": "Auth layout and keyboard entry",
+      "evidence": "One original bee, no roaming layer; keyboard skip link focuses the form."
+    },
+    {
+      "name": "Login validation",
+      "evidence": "Empty and malformed inputs focus the first invalid field and expose associated inline errors."
+    },
+    {
+      "name": "Password privacy",
+      "evidence": "Both visibility states work and the supplied shy clip responds to password focus/reveal."
+    },
+    {
+      "name": "Real Firebase login error round trip",
+      "evidence": {
+        "httpStatus": 400,
+        "message": "That email and password didn’t match. Check your details and try again.",
+        "note": "Reserved nonexistent account; successful sign-in not claimed."
+      }
+    },
+    {
+      "name": "Password recovery UI and Firebase request",
+      "evidence": "Reset API request type/email verified with an intercepted success response; neutral confirmation and return focus work. No real reset email sent."
+    },
+    {
+      "name": "Google Sign-In initiation",
+      "evidence": "Existing Firebase signInWithPopup opened its google.com provider handler. Provider page intercepted, popup closed, and retry feedback verified; no Google account authenticated."
+    },
+    {
+      "name": "Signup validation and page transition",
+      "evidence": "SPA switch preserves the document. Both signup steps, required name/email, Edit details with retained values, six-character minimum, mismatch/match feedback, length guide and confirm-password visibility work."
+    },
+    {
+      "name": "Registration service boundary and loading",
+      "evidence": "Existing signup service received entered email/password; request intercepted with EMAIL_EXISTS to avoid creating production data. Loading disables submit; useful retry error appears."
+    },
+    {
+      "name": "Original bee interactions",
+      "evidence": {
+        "emailAcknowledgement": "original wave plays once and returns to still",
+        "tap": "wave clip, loop=false",
+        "password": "original shy clip holds its real closed-eye pose at 1.7 seconds while focused",
+        "fixedComposition": true,
+        "waveDuration": 7.5
+      }
+    },
+    {
+      "name": "Photographic story interaction",
+      "evidence": "Notice, Connect and Act update their real local photograph and explanatory copy; images loaded successfully."
+    },
+    {
+      "name": "Responsive composition and themes",
+      "evidence": "Both routes checked at 320, 390, 768, 1024 and 1440px; no horizontal overflow and bee never intersects fields, provider button, submit or mode links. Warm light, forest and black/yellow screenshots saved."
+    },
+    {
+      "name": "Reduced motion",
+      "evidence": "Live system preference and application motion switch both suppress original video reactions and CSS entry transitions."
+    },
+    {
+      "name": "Large text and contrast",
+      "evidence": "390px viewport at 20px root font size has no horizontal overflow; high-contrast styling inspected."
+    },
+    {
+      "name": "Asset integrity",
+      "evidence": {
+        "newbee2.png": "c7bcb068e22434f6f74d854702150b9ca29f771e07e77a8097f245e2f7b47e68",
+        "bee-wave.webm": "c905afa9419b828d61c8dddb24e15566841283ecaf4078ec49654256fc494c89",
+        "bee-fly.webm": "501111bc4a6a1b1d1ed6a752aea9d70a61705301001437600948834eac7355fd",
+        "bee-shy.webm": "fd174ab9bbe3eec023eb20c9d35d434b57a9334df6c7347999feb124d7ffa0a6"
+      }
+    },
+    {
+      "name": "Browser runtime",
+      "evidence": "No unhandled page exceptions or unexpected console errors; Firebase 400 test responses accounted for."
+    }
+  ],
+  "errors": [],
+  "requests": [
+    {
+      "endpoint": "/v1/accounts:signInWithPassword",
+      "method": "POST"
+    },
+    {
+      "endpoint": "/v1/accounts:sendOobCode",
+      "method": "POST"
+    },
+    {
+      "endpoint": "/v1/accounts:signUp",
+      "method": "POST"
+    }
+  ]
+}

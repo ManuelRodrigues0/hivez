@@ -1,0 +1,181 @@
+{
+  "base": "http://localhost:5173",
+  "checks": [
+    {
+      "name": "Profile entry and validation",
+      "evidence": "Keyboard skip targets the form; short/empty handles focus the username with an associated error. One anchored original bee, no roaming layer."
+    },
+    {
+      "name": "Profile photo controls",
+      "evidence": "All 12 local avatars loaded; select/remove works. Invalid type and >5MB are rejected. Upload failure recovers. Camera opens the capture file input; selected image updates preview through an isolated callback. Native mobile camera and real Cloudinary upload not claimed."
+    },
+    {
+      "name": "Save response states",
+      "evidence": "Unavailable username and general failures retain entered details, clear loading and allow retry. Success callback receives normalized username, selected photo and bio. Fixture makes no account writes; service/gate contract verified separately in Vitest."
+    },
+    {
+      "name": "Original bee reactions",
+      "evidence": "Actual original wave video advances on click; reduced motion replaces playback with the unchanged still artwork. No autonomous flight on onboarding."
+    },
+    {
+      "name": "Profile responsive layouts",
+      "evidence": "No horizontal overflow at 320, 390, 768, 1024 and 1440px; all three palettes captured at desktop and mobile sizes."
+    },
+    {
+      "name": "Three-way public themes",
+      "evidence": "Landing, login, signup and profile completion cycle warm light → forest → black/yellow → warm light. All three audited at 1440/390px. Choice survives route navigation and reload. App's hivez-theme remains dark."
+    },
+    {
+      "name": "Auth navigation retains theme",
+      "evidence": "Client-side login → signup switch keeps black/yellow selected."
+    }
+  ],
+  "errors": [],
+  "localFailures": [],
+  "accessibility": [
+    {
+      "view": "complete-profile",
+      "mode": "light",
+      "width": 1440,
+      "violations": []
+    },
+    {
+      "view": "complete-profile",
+      "mode": "light",
+      "width": 390,
+      "violations": []
+    },
+    {
+      "view": "complete-profile",
+      "mode": "forest",
+      "width": 1440,
+      "violations": []
+    },
+    {
+      "view": "complete-profile",
+      "mode": "forest",
+      "width": 390,
+      "violations": []
+    },
+    {
+      "view": "complete-profile",
+      "mode": "midnight",
+      "width": 1440,
+      "violations": []
+    },
+    {
+      "view": "complete-profile",
+      "mode": "midnight",
+      "width": 390,
+      "violations": []
+    },
+    {
+      "view": "/",
+      "mode": "light",
+      "width": 1440,
+      "violations": []
+    },
+    {
+      "view": "/",
+      "mode": "light",
+      "width": 390,
+      "violations": []
+    },
+    {
+      "view": "/",
+      "mode": "forest",
+      "width": 1440,
+      "violations": []
+    },
+    {
+      "view": "/",
+      "mode": "forest",
+      "width": 390,
+      "violations": []
+    },
+    {
+      "view": "/",
+      "mode": "midnight",
+      "width": 1440,
+      "violations": []
+    },
+    {
+      "view": "/",
+      "mode": "midnight",
+      "width": 390,
+      "violations": []
+    },
+    {
+      "view": "/login",
+      "mode": "light",
+      "width": 1440,
+      "violations": []
+    },
+    {
+      "view": "/login",
+      "mode": "light",
+      "width": 390,
+      "violations": []
+    },
+    {
+      "view": "/login",
+      "mode": "forest",
+      "width": 1440,
+      "violations": []
+    },
+    {
+      "view": "/login",
+      "mode": "forest",
+      "width": 390,
+      "violations": []
+    },
+    {
+      "view": "/login",
+      "mode": "midnight",
+      "width": 1440,
+      "violations": []
+    },
+    {
+      "view": "/login",
+      "mode": "midnight",
+      "width": 390,
+      "violations": []
+    },
+    {
+      "view": "/signup",
+      "mode": "light",
+      "width": 1440,
+      "violations": []
+    },
+    {
+      "view": "/signup",
+      "mode": "light",
+      "width": 390,
+      "violations": []
+    },
+    {
+      "view": "/signup",
+      "mode": "forest",
+      "width": 1440,
+      "violations": []
+    },
+    {
+      "view": "/signup",
+      "mode": "forest",
+      "width": 390,
+      "violations": []
+    },
+    {
+      "view": "/signup",
+      "mode": "midnight",
+      "width": 1440,
+      "violations": []
+    },
+    {
+      "view": "/signup",
+      "mode": "midnight",
+      "width": 390,
+      "violations": []
+    }
+  ]
+}

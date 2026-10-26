@@ -1,0 +1,81 @@
+[
+  {
+    "name": "cash-color",
+    "url": "https://design.cash.app/color",
+    "status": 200,
+    "text": "Foundations \nLogo\nColor\nCash Green\nSupporting colors\nColor modes\nAccessibility\nIncorrect usage\nResources\nTypography\nMotion\nIconography\nVoice & Tone\n\n\nExpressions\nResources\n\n﻿Brand Guidelines﻿\n\nColor\n\nOur brand color palette is centered around Cash Green, a bold distillation of how we redefine money. Though one singular color, our usage of green pushes boundaries, from simple and straightforward, to textured and sensorial.\n\nName:\nCash Green\nCMYK:\n65/0/100/0\nRGB:\n0/224/19\nHEX:\n#00E013\nPMS:\n802 C / U C\n\nCash Green\n\nCash Green should be omnipresent across all brand touchpoints and used strategically such that it stands out as the hero color. Floods of green can be powerful, but that shouldn't be the only way green shows up, Cash Green’s inclusion should be done thoughtfully and intentionally. Challenge yourself to meet this criteria in unexpected ways. Consider materiality, lighting, props, and styling as avenues to explore, and approach Cash Green with nuance and refinement. \n\nPrepaid debit cards issued by Sutton Bank, Member FDIC.\n\nPrepaid debit cards issued by Sutton Bank, Member FDIC.\n\nSupporting colors\n\nBlack and white provide balance to Cash Green, helping maintain visual clarity and avoid overuse of our signature color. They bring structure and contrast to compositions, allowing green to stand out where it matters most. Citron can be used sparingly as a high-impact accent to introduce depth and energy—but should never be used as a full background fill.\n\nName:\nBlack\nCMYK:\n60/40/40/100\nRGB:\n0/0/0\nHEX:\n#000000\nPMS:\nBlack C / U C\nName:\nWhite\nCMYK:\n0/0/0/0\nRGB:\n255/255/255\nHEX:\n#FFFFFF\nPMS:\nBright White C\nName:\nCitron\nCMYK:\n11/0/91/0\nRGB:\n216/255/20\nHEX:\n#D8FF14\nPMS:\n388 C / 387 U C\n\nRelated product design sections\n\nResources\n\nTokens, components, product illustrations, avatars, download links, and more.\n\nColor tokens\n\nGuidelines on how we structure colors in our design system.\n\nColor Modes\n\nNo color system can perfectly represent the full extent of what we see with our eyes in the wider world. Different color modes serve different purposes depending on medium. RGB and Pantone offer the most vibrant on-screen color, while CMYK is used for print, with some limitations in vibrancy and range.\n\nColor Mode\n\nApplication\n\nNotes\n\nRGB\n\nScreen\n\nMost vibrant, the truest depiction of the Cash color system\n\nPantone\n\nPrint\n\nVibrant, preferred method for printing\n\nCMYK\n\nPrint\n\nNot as vibrant, printers should match Pantones where possible\n\nAccessibility\n\nGood accessibility starts with legible text. In digital design, this means ensuring strong contrast between text and background colors. Cash App follows WCAG guidelines, aiming for AAA compliance—the highest standard. This means a contrast ratio of at least 7:1 for normal text to ensure maximum readability.\n\n \n\nCash Green is specifically created to work with black text, not green text. Avoid using Cash Green as a critical design element where contrast requirements are not met.\n\nText\n\nPass, AAA (7:1+)\n\nText\n\nPass, AAA (7:1+)\n\nText\n\nFail\n\nResources\n\n﻿A11y Project website >﻿\n\n﻿A11y Color Contrast Checker plugin for Figma >﻿\n\nIncorrect Usage\n\nDon’t use the wrong color\n\nDon’t use colors that are obviously not part of the CashApp color palette — brown, mint green, golf green, and so on.\n\nDon’t substitute Cash Green\n\nUse only the Cash Green provided unless you have a specific UI or accessibility need.\n\nDon’t eyedrop CMYK or RGB / Hex values\n\nSmall color shifts in RGB can cause headaches for developers. Using the wrong CMYK values can cause unexepected results in print. \n\nDon’t make muddy gradients\n\nGradients should be bright. If you are using gradients, make sure they do not turn brown or grey in between the start and end colors.\n\nDon’t forget Cash Green for \n\nexternal facing brand applications\n\nCash Green should be present in most circumstances where color ambiguity would hinder brand recognition.\n\nDon’t use the wrong color mode\n\nUse RGB for screens, CMYK and Pantone for print. Using the wrong color modes will cause serious consistency problems.\n\nResources\n\nAdobe Color Libraries\n\n﻿RGB﻿\n\n﻿CMYK﻿\n\n﻿Pantone﻿\n\nCash App, the Cash App logo and all other trademarks are owned by Block Inc., formerly known as Square, Inc., or are the property of the respective owners\n\n﻿Design foundations     Resources     Voice & tone﻿",
+    "inputs": [
+      {
+        "tag": "BUTTON",
+        "type": "submit",
+        "text": "\n"
+      },
+      {
+        "tag": "BUTTON",
+        "type": "submit",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "type": "submit",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "type": "submit",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "type": "submit",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "type": "submit",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "type": "submit",
+        "text": ""
+      }
+    ]
+  },
+  {
+    "name": "lenzing-contact",
+    "url": "https://www.studiolenzing.com/contact",
+    "status": 200,
+    "text": "Studio\nServices\nUpdates\nLatest updates\nView all\nConnected to Create: Designing with Culture, Not Just for It\nOpinion\nStudio Partnerships: Why Growing Together Makes Sense\nOpinion\nIntuitive Design: The Balance Between Data and Creativity\nOpinion\nWork\nStart Project\nE-mail copied to clipboard\nWe'd love to get a first impression of you, your business, project or idea — feel free to drop us a line.\nStudio Hamburg\nLeander Lenzing\nCEO & Designer\nStudio Barcelona\nDavid Reina\nStrategy Director\nE-mail\nhi@studiolenzing.com\n\nSubscribe to The Click to stay informed about our latest work, projects and studio news.\n\nWe use Mailchimp as our newsletter distribution tool. By subscribing, you confirm that your information will be transferred to Mailchimp. If you want to learn more about Mailchimp's privacy practices click here﻿﻿.\n\nStudio\nWork\nStudio Lenzing is an interactive design studio focused on crafting better experiences for brands and for people.\nJOBS\nPRICING\nCOLOPHON\nPRINCIPLES\nNEWSLETTER\nINSTAGRAM\nREAD.CV\nTWITTER\nSPOTIFY\n19:01:51 local time\n\nHamburg & Barcelona\nWorking internationally\n\nhi@studiolenzing.com\nContact\nStart project\n© 2026 Studio Lenzing\nPrivacy policy\nImprint",
+    "inputs": [
+      {
+        "tag": "BUTTON",
+        "type": "submit",
+        "text": "\n\n"
+      },
+      {
+        "tag": "BUTTON",
+        "type": "submit",
+        "text": "\n\n"
+      },
+      {
+        "tag": "INPUT",
+        "type": "text",
+        "text": "",
+        "placeholder": "First name"
+      },
+      {
+        "tag": "INPUT",
+        "type": "email",
+        "text": "",
+        "placeholder": "E-Mail address"
+      },
+      {
+        "tag": "INPUT",
+        "type": "submit",
+        "text": "",
+        "placeholder": ""
+      }
+    ]
+  }
+]
