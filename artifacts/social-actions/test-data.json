@@ -1,0 +1,10 @@
+{
+  "project": "demo-hivez-design",
+  "uid": "dPTnF3Uotfy0poXOBiIc3jb2PRga",
+  "notice": "Synthetic data in local emulators only",
+  "postIds": [
+    "local-cleanup",
+    "local-street",
+    "local-help"
+  ]
+}

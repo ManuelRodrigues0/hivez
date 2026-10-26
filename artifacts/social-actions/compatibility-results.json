@@ -1,0 +1,223 @@
+{
+  "project": "demo-hivez-design",
+  "rules": "repository firestore.rules, emulator only",
+  "results": [
+    {
+      "name": "missing: read",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "name": "missing: like",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "name": "old-public: read",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "name": "old-public: like",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "name": "null-privacy: read",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "name": "null-privacy: like",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "name": "partial-privacy: read",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "name": "partial-privacy: like",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "name": "public-account: read",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "name": "public-account: like",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "name": "nested-public: read",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "name": "nested-public: like",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "name": "old-private: read",
+      "status": "passed",
+      "httpStatus": 403
+    },
+    {
+      "name": "old-private: like",
+      "status": "passed",
+      "httpStatus": 403
+    },
+    {
+      "name": "old-private: approved follower can read",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "name": "legacy-private: read",
+      "status": "passed",
+      "httpStatus": 403
+    },
+    {
+      "name": "legacy-private: like",
+      "status": "passed",
+      "httpStatus": 403
+    },
+    {
+      "name": "legacy-private: approved follower can read",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "name": "private-account: read",
+      "status": "passed",
+      "httpStatus": 403
+    },
+    {
+      "name": "private-account: like",
+      "status": "passed",
+      "httpStatus": 403
+    },
+    {
+      "name": "private-account: approved follower can read",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "name": "nested-private: read",
+      "status": "passed",
+      "httpStatus": 403
+    },
+    {
+      "name": "nested-private: like",
+      "status": "passed",
+      "httpStatus": 403
+    },
+    {
+      "name": "nested-private: approved follower can read",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "name": "Unauthenticated read stays denied",
+      "status": "passed",
+      "httpStatus": 403
+    },
+    {
+      "name": "Explicit follower-only post stays restricted",
+      "status": "passed",
+      "httpStatus": 403
+    },
+    {
+      "name": "Block still prevents liking a public legacy post",
+      "status": "passed",
+      "httpStatus": 403
+    },
+    {
+      "name": "ReHive profile query: public allowed",
+      "status": "passed"
+    },
+    {
+      "name": "ReHive profile query: private denied",
+      "status": "passed"
+    },
+    {
+      "name": "ReHive profile query: approved follower allowed",
+      "status": "passed"
+    },
+    {
+      "name": "Existing session permission: owner can create",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "name": "Existing session permission: owner can read",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "name": "Existing session permission: edits remain denied",
+      "status": "passed",
+      "httpStatus": 403
+    },
+    {
+      "name": "Existing session permission: owner can delete",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "name": "Existing session permission: another user cannot read",
+      "status": "passed",
+      "httpStatus": 403
+    },
+    {
+      "name": "Existing session permission: another user cannot create",
+      "status": "passed",
+      "httpStatus": 403
+    },
+    {
+      "name": "Existing push-token permission: owner can register",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "name": "Existing push-token permission: owner can read",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "name": "Existing push-token permission: owner can refresh",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "name": "Existing push-token permission: empty token rejected",
+      "status": "passed",
+      "httpStatus": 403
+    },
+    {
+      "name": "Existing push-token permission: oversized token rejected",
+      "status": "passed",
+      "httpStatus": 403
+    },
+    {
+      "name": "Existing push-token permission: owner can revoke",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "name": "Existing push-token permission: another user cannot read",
+      "status": "passed",
+      "httpStatus": 403
+    },
+    {
+      "name": "Existing push-token permission: another user cannot register",
+      "status": "passed",
+      "httpStatus": 403
+    }
+  ]
+}

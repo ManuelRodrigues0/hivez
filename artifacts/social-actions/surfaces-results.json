@@ -1,0 +1,70 @@
+{
+  "project": "demo-hivez-design",
+  "postId": "all-surfaces-1793000357307",
+  "realRepositoryRules": true,
+  "results": [
+    {
+      "name": "feed: all seven controls on a legacy photo post",
+      "status": "passed"
+    },
+    {
+      "name": "Hive: all seven controls on a legacy photo post",
+      "status": "passed"
+    },
+    {
+      "name": "saved posts: all seven controls on a legacy photo post",
+      "status": "passed"
+    },
+    {
+      "name": "post detail: all seven controls on a legacy photo post",
+      "status": "passed"
+    },
+    {
+      "name": "profile Posts: real like, reply and ReHive buttons",
+      "status": "passed"
+    },
+    {
+      "name": "profile Media: real like, reply and ReHive buttons",
+      "status": "passed"
+    },
+    {
+      "name": "own ReHives: real like, reply and ReHive buttons",
+      "status": "passed"
+    },
+    {
+      "name": "Explore: real like, reply and ReHive buttons",
+      "status": "passed"
+    },
+    {
+      "name": "search results: real like, reply and ReHive buttons",
+      "status": "passed"
+    },
+    {
+      "name": "Mobile profile and Explore controls remain reachable without overflow",
+      "status": "passed"
+    },
+    {
+      "name": "Deleted detail clears the post and its toolbar",
+      "status": "passed"
+    }
+  ],
+  "evidence": {
+    "errors": [],
+    "console": [],
+    "blocked": [],
+    "failed": [
+      {
+        "url": "http://localhost:5174/assets/hivez-ultra-bee.webm",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5174/assets/hivez-ultra-bee.webm",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5174/assets/hivez-ultra-bee.webm",
+        "reason": "net::ERR_ABORTED"
+      }
+    ]
+  }
+}

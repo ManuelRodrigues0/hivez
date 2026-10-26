@@ -1,0 +1,59 @@
+{
+  "project": "demo-hivez-design",
+  "uid": "PRbcVygLMsFHYXu1yLw3oO5vd7eE",
+  "postId": "local-cleanup",
+  "realRepositoryRules": true,
+  "results": [
+    {
+      "name": "Phone share menu stays on screen and Escape restores focus",
+      "status": "passed"
+    },
+    {
+      "name": "Send dialog supports Escape and keyboard focus stays inside",
+      "status": "passed"
+    },
+    {
+      "name": "Partial DM failures retain only failed recipients and retry does not duplicate successful sends",
+      "status": "passed"
+    },
+    {
+      "name": "Native-share success, cancellation and copy fallback follow the expected contracts",
+      "status": "passed"
+    },
+    {
+      "name": "Comment privacy errors preserve the draft and allow retry",
+      "status": "passed"
+    },
+    {
+      "name": "A private post cannot be sent to a recipient outside its audience",
+      "status": "passed"
+    },
+    {
+      "name": "Mobile action row has no horizontal overflow in either theme at 320px",
+      "status": "passed"
+    }
+  ],
+  "fixtures": [
+    "Native Web Share API success/cancel/unavailable; real clipboard used"
+  ],
+  "evidence": {
+    "errors": [],
+    "console": [
+      {
+        "type": "error",
+        "text": "Failed to send comment: Error: This author limits who can comment.\n    at addPostComment (http://localhost:5174/src/services/comments.ts?t=1792997809943:45:9)\n    at async sendComment (http://localhost:5174/src/components/comments/CommentsSheet.tsx?t=1793000236812:109:4)"
+      }
+    ],
+    "blocked": [],
+    "failed": [
+      {
+        "url": "http://localhost:5174/assets/hivez-ultra-bee.webm",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5174/assets/hivez-ultra-bee.webm",
+        "reason": "net::ERR_ABORTED"
+      }
+    ]
+  }
+}

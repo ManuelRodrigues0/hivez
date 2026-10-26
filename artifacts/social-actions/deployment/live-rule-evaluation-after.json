@@ -1,0 +1,113 @@
+{
+  "project": "hivez-21680",
+  "checkedAt": "2026-10-26T07:58:33.140Z",
+  "nonMutating": true,
+  "description": "Firebase Rules API evaluations using masked existing cloud post and profile fields. No actual likes, messages, or documents are written.",
+  "samples": [
+    {
+      "sample": 0,
+      "postIdHash": "8f3a6a5569e4",
+      "visibilityMissing": true,
+      "privacyMissing": false,
+      "legacyFlagsMissing": false
+    },
+    {
+      "sample": 1,
+      "postIdHash": "5ae12ae7686a",
+      "visibilityMissing": true,
+      "privacyMissing": true,
+      "legacyFlagsMissing": true
+    },
+    {
+      "sample": 2,
+      "postIdHash": "a4259e010992",
+      "visibilityMissing": true,
+      "privacyMissing": true,
+      "legacyFlagsMissing": true
+    },
+    {
+      "sample": 3,
+      "postIdHash": "6d12824804e9",
+      "visibilityMissing": true,
+      "privacyMissing": true,
+      "legacyFlagsMissing": true
+    },
+    {
+      "sample": 4,
+      "postIdHash": "2461aaf4d5a5",
+      "visibilityMissing": true,
+      "privacyMissing": false,
+      "legacyFlagsMissing": false
+    }
+  ],
+  "results": [
+    {
+      "stage": "deployed",
+      "sha256": "b28d0dc1bb238d5efee2f8ab12a41830bc04a6ecae25f14d4c9b5cf4f76c2e1c",
+      "httpStatus": 200,
+      "issues": [],
+      "tests": [
+        {
+          "sample": 0,
+          "operation": "read permission (simulated)",
+          "state": "SUCCESS",
+          "debugMessages": []
+        },
+        {
+          "sample": 0,
+          "operation": "like permission (simulated)",
+          "state": "SUCCESS",
+          "debugMessages": []
+        },
+        {
+          "sample": 1,
+          "operation": "read permission (simulated)",
+          "state": "SUCCESS",
+          "debugMessages": []
+        },
+        {
+          "sample": 1,
+          "operation": "like permission (simulated)",
+          "state": "SUCCESS",
+          "debugMessages": []
+        },
+        {
+          "sample": 2,
+          "operation": "read permission (simulated)",
+          "state": "SUCCESS",
+          "debugMessages": []
+        },
+        {
+          "sample": 2,
+          "operation": "like permission (simulated)",
+          "state": "SUCCESS",
+          "debugMessages": []
+        },
+        {
+          "sample": 3,
+          "operation": "read permission (simulated)",
+          "state": "SUCCESS",
+          "debugMessages": []
+        },
+        {
+          "sample": 3,
+          "operation": "like permission (simulated)",
+          "state": "SUCCESS",
+          "debugMessages": []
+        },
+        {
+          "sample": 4,
+          "operation": "read permission (simulated)",
+          "state": "SUCCESS",
+          "debugMessages": []
+        },
+        {
+          "sample": 4,
+          "operation": "like permission (simulated)",
+          "state": "SUCCESS",
+          "debugMessages": []
+        }
+      ]
+    }
+  ]
+}

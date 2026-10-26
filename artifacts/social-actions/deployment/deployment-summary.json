@@ -1,0 +1,16 @@
+{
+  "project": "hivez-21680",
+  "status": "published and verified",
+  "command": "firebase deploy --only firestore:rules --project hivez-21680 --non-interactive",
+  "ruleset": "projects/hivez-21680/rulesets/52aff09a-308c-428b-a538-9eb7a7865e90",
+  "activeSha256": "b28d0dc1bb238d5efee2f8ab12a41830bc04a6ecae25f14d4c9b5cf4f76c2e1c",
+  "exactMatch": true,
+  "checkedAt": "2026-10-26T07:58:30.630Z",
+  "localPermissionChecks": 44,
+  "productionNonMutatingRuleEvaluations": 10,
+  "realCloudSocialWritesPerformed": false,
+  "preservedProductionRules": [
+    "users/{uid}/sessions",
+    "users/{uid}/pushTokens"
+  ]
+}

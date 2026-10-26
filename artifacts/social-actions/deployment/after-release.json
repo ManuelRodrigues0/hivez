@@ -1,0 +1,10 @@
+{
+  "project": "hivez-21680",
+  "release": "projects/hivez-21680/releases/cloud.firestore",
+  "ruleset": "projects/hivez-21680/rulesets/52aff09a-308c-428b-a538-9eb7a7865e90",
+  "releaseUpdateTime": "2026-10-25T19:28:02.110772Z",
+  "activeSha256": "b28d0dc1bb238d5efee2f8ab12a41830bc04a6ecae25f14d4c9b5cf4f76c2e1c",
+  "testedSha256": "b28d0dc1bb238d5efee2f8ab12a41830bc04a6ecae25f14d4c9b5cf4f76c2e1c",
+  "exactMatch": true,
+  "checkedAt": "2026-10-26T07:58:30.630Z"
+}

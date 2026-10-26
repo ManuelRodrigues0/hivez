@@ -1,0 +1,55 @@
+{
+  "project": "demo-hivez-design",
+  "uid": "dPTnF3Uotfy0poXOBiIc3jb2PRga",
+  "postId": "social-action-1793001514484",
+  "realRepositoryRules": true,
+  "results": [
+    {
+      "name": "Like/unlike update the counter once and persist after reload",
+      "status": "passed"
+    },
+    {
+      "name": "Comments submit, reply in a thread, retain counts and delete own comments",
+      "status": "passed"
+    },
+    {
+      "name": "ReHive is persistent, appears in the profile and can be undone",
+      "status": "passed"
+    },
+    {
+      "name": "Volunteer creates a missing issue community, joins it once and opens it",
+      "status": "passed"
+    },
+    {
+      "name": "Save appears in Saved Posts after reload and unsave removes it",
+      "status": "passed"
+    },
+    {
+      "name": "Share copies a working post URL",
+      "status": "passed"
+    },
+    {
+      "name": "DM send to a new conversation creates the message and shows a working shared-post preview",
+      "status": "passed"
+    },
+    {
+      "name": "Like/unlike another person’s comment without editing their comment document",
+      "status": "passed"
+    }
+  ],
+  "evidence": {
+    "errors": [],
+    "console": [],
+    "blocked": [],
+    "failed": [
+      {
+        "url": "http://localhost:5174/assets/hivez-ultra-bee.webm",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5174/assets/hivez-ultra-bee.webm",
+        "reason": "net::ERR_ABORTED"
+      }
+    ]
+  }
+}
