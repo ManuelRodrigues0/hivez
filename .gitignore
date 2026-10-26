@@ -27,3 +27,4 @@ functions/lib
 
 .vercel
 .env*
+.audit/
