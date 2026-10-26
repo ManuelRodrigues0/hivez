@@ -1,0 +1,98 @@
+[
+  {
+    "route": "/login",
+    "view": "login",
+    "theme": "light",
+    "width": 1440,
+    "violations": [],
+    "passes": 19
+  },
+  {
+    "route": "/login",
+    "view": "login",
+    "theme": "light",
+    "width": 390,
+    "violations": [],
+    "passes": 16
+  },
+  {
+    "route": "/login",
+    "view": "login",
+    "theme": "dark",
+    "width": 1440,
+    "violations": [],
+    "passes": 19
+  },
+  {
+    "route": "/login",
+    "view": "login",
+    "theme": "dark",
+    "width": 390,
+    "violations": [],
+    "passes": 16
+  },
+  {
+    "route": "/signup",
+    "view": "signup",
+    "theme": "light",
+    "width": 1440,
+    "violations": [],
+    "passes": 19
+  },
+  {
+    "route": "/signup",
+    "view": "signup",
+    "theme": "light",
+    "width": 390,
+    "violations": [],
+    "passes": 16
+  },
+  {
+    "route": "/signup",
+    "view": "signup",
+    "theme": "dark",
+    "width": 1440,
+    "violations": [],
+    "passes": 19
+  },
+  {
+    "route": "/signup",
+    "view": "signup",
+    "theme": "dark",
+    "width": 390,
+    "violations": [],
+    "passes": 16
+  },
+  {
+    "route": "/signup",
+    "view": "signup-passwords",
+    "theme": "light",
+    "width": 1440,
+    "violations": [],
+    "passes": 19
+  },
+  {
+    "route": "/signup",
+    "view": "signup-passwords",
+    "theme": "light",
+    "width": 390,
+    "violations": [],
+    "passes": 16
+  },
+  {
+    "route": "/signup",
+    "view": "signup-passwords",
+    "theme": "dark",
+    "width": 1440,
+    "violations": [],
+    "passes": 19
+  },
+  {
+    "route": "/signup",
+    "view": "signup-passwords",
+    "theme": "dark",
+    "width": 390,
+    "violations": [],
+    "passes": 16
+  }
+]

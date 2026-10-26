@@ -1,0 +1,38 @@
+{
+  "base": "http://localhost:5173",
+  "checkedAt": "2026-10-25T16:47:15.819Z",
+  "checks": [
+    {
+      "name": "Auth layout and keyboard entry",
+      "evidence": "One original bee, no roaming layer; keyboard skip link focuses the form."
+    },
+    {
+      "name": "Login validation",
+      "evidence": "Empty and malformed inputs focus the first invalid field and expose associated inline errors."
+    },
+    {
+      "name": "Password privacy",
+      "evidence": "Both visibility states work and the supplied shy clip responds to password focus/reveal."
+    },
+    {
+      "name": "Real Firebase login error round trip",
+      "evidence": {
+        "httpStatus": 400,
+        "message": "That email and password didn’t match. Check your details and try again.",
+        "note": "Reserved nonexistent account; successful sign-in not claimed."
+      }
+    }
+  ],
+  "errors": [],
+  "requests": [
+    {
+      "endpoint": "/v1/accounts:signInWithPassword",
+      "method": "POST"
+    },
+    {
+      "endpoint": "/v1/accounts:sendOobCode",
+      "method": "POST"
+    }
+  ],
+  "failure": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Back to log in' })\u001b[22m\n\u001b[2m    - waiting for\" http://localhost:5173/login\" navigation to finish...\u001b[22m\n\u001b[2m    - navigated to \"http://localhost:5173/login#ha-form\"\u001b[22m\n\n    at D:\\hivez\\scripts\\verify-auth.mjs:159:62"
+}

@@ -1,0 +1,58 @@
+[
+  {
+    "route": "/login",
+    "theme": "light",
+    "width": 1440,
+    "violations": [],
+    "passes": 16
+  },
+  {
+    "route": "/login",
+    "theme": "light",
+    "width": 390,
+    "violations": [],
+    "passes": 16
+  },
+  {
+    "route": "/login",
+    "theme": "dark",
+    "width": 1440,
+    "violations": [],
+    "passes": 16
+  },
+  {
+    "route": "/login",
+    "theme": "dark",
+    "width": 390,
+    "violations": [],
+    "passes": 16
+  },
+  {
+    "route": "/signup",
+    "theme": "light",
+    "width": 1440,
+    "violations": [],
+    "passes": 16
+  },
+  {
+    "route": "/signup",
+    "theme": "light",
+    "width": 390,
+    "violations": [],
+    "passes": 16
+  },
+  {
+    "route": "/signup",
+    "theme": "dark",
+    "width": 1440,
+    "violations": [],
+    "passes": 16
+  },
+  {
+    "route": "/signup",
+    "theme": "dark",
+    "width": 390,
+    "violations": [],
+    "passes": 16
+  }
+]

@@ -1,0 +1,24 @@
+[
+  {
+    "name": "signal-contact",
+    "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('a[href=\"/contact\"]').first()\u001b[22m\n\u001b[2m    - locator resolved to <a href=\"/contact\" class=\"s-a-menu-mobile-link\">Contact</a>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    56 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is not visible\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n"
+  },
+  {
+    "name": "brandon-menu",
+    "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByText('MENU', { exact: true }).first()\u001b[22m\n"
+  },
+  {
+    "name": "goshuin-next",
+    "url": "https://aestudio.studio/goshuin/en#discover-en",
+    "text": "Skip to content\nGoShuin\n御朱印帳\nContents\n日本語\n/\nEN\n\nINSIDE GOSHUIN\n\nExplore GoShuin\n01\nKeep the page\nKeep your goshuin photos together.\n↗\n02\nFind your next visit\nFind temples and shrines. Save places to visit.\n↗\n03\nRead its history\nRead a place’s history and follow its sources.\n↗\n04\nConnect the memory\nLink each scan to the place you visited.\n↗\nView screenshot\nScan library · Japanese interface\n\nKeep your goshuin photos together.\n\nAE STUDIO / GOSHUIN JOURNAL\n\nGoShuin\n\nEvery stamp, a memory.\n\nApp Store\nExplore the app\n\nGOSHUIN MAP & JOURNAL FOR IPHONE\n\n旅の記録\nGOSHUIN · A JOURNAL OF JAPAN\n御朱印帳\nGoShuin\nA JOURNAL OF JAPAN\n↗ Lift the cover to begin\nTap or swipe to open\n\nAE STUDIO / GOSHUIN JOURNAL\n\nGoShuin\n\nEvery stamp, a memory.\n\nApp Store\nExplore the app\n\nGOSHUIN MAP & JOURNAL FOR IPHONE\n\n旅の記録\nGOSHUIN · A JOURNAL OF JAPAN\n御朱印帳\nGoShuin\nA JOURNAL OF JAPAN\n↗ Lift the cover to begin\nTap or swipe to open\n\nAE STUDIO / GOSHUIN JOURNAL\n\nGoShuin\n\nEvery stamp, a memory.\n\nApp Store\nExplore the app\n\nGOSHUIN MAP & JOURNAL FOR IPHONE\n\n旅の記録\nGOSHUIN · A JOURNAL OF JAPAN\n御朱印帳\nGoShuin\nA JOURNAL OF JAPAN\n↗ Lift the cover to begin\nTap or swipe to open\n←\nPrevious\nPage\n01 / 14 · Every Stamp, A Memory\n02 / 14 · Explore GoShuin\n03 / 14 · Your Travel Journal\n04 / 14 · Scan & Save\n05 / 14 · Why GoShuin\n06 / 14 · Create Your Own Goshuin\n07 / 14 · Visiting with Care\n08 / 14 · Temples, Shrines & Goshuin\n09 / 14 · Meiji Jingu\n10 / 14 · Japan’s Temples & Shrines\n11 / 14 · Temple & Shrine Trends\n12 / 14 · Sources & Notes\n13 / 14 · Help & Support\n14 / 14 · Start Your Journal\nPage 2 / 14. Explore GoShuin\nNext\n→\nPause motion"
+  },
+  {
+    "name": "goshuin-mobile",
+    "url": "https://aestudio.studio/goshuin/en#discover-en",
+    "text": "Skip to content\nGoShuin\nContents\n日本語\n/\nEN\n\nINSIDE GOSHUIN\n\nExplore GoShuin\n01\nKeep the page\n02\nFind your next visit\n03\nRead its history\n04\nConnect the memory\nView screenshot\nScan library · Japanese interface\n\nKeep your goshuin photos together.\n\n↑\nPrevious\n01 / 14 · Every Stamp, A Memory\n02 / 14 · Explore GoShuin\n03 / 14 · Your Travel Journal\n04 / 14 · Scan & Save\n05 / 14 · Why GoShuin\n06 / 14 · Create Your Own Goshuin\n07 / 14 · Visiting with Care\n08 / 14 · Temples, Shrines & Goshuin\n09 / 14 · Meiji Jingu\n10 / 14 · Japan’s Temples & Shrines\n11 / 14 · Temple & Shrine Trends\n12 / 14 · Sources & Notes\n13 / 14 · Help & Support\n14 / 14 · Start Your Journal\nPage 2 / 14. Explore GoShuin\nNext\n↓\nPause motion"
+  },
+  {
+    "name": "awwwards-field-focus",
+    "error": "locator.focus: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"]').first()\u001b[22m\n"
+  }
+]
