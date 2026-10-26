@@ -14,13 +14,15 @@
  * no real OMNIROUTE_API_KEY is configured yet).
  */
 import { execSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { createServer as createViteServer } from "vite";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUT_DIR = path.join(ROOT, ".tmp-esmtest");
+mkdirSync(OUT_DIR, { recursive: true });
 
 const results = [];
 let failures = 0;
@@ -138,10 +140,10 @@ await step("A1 defaults when env vars unset", () => {
   delete process.env.OMNIROUTE_API_KEY;
   delete process.env.OMNIROUTE_MODEL;
   const config = client.getOmniRouteConfig();
-  assert(config.baseUrl === "http://localhost:20128/v1", `unexpected baseUrl: ${config.baseUrl}`);
+  assert(config.baseUrl === "", `must not silently use the old localhost URL: ${config.baseUrl}`);
   assert(config.model === "auto", `unexpected model: ${config.model}`);
   assert(config.isConfigured === false, "isConfigured should be false without a key");
-  return "baseUrl, model and isConfigured fall back to documented defaults";
+  return "URL requires explicit configuration; model defaults to auto";
 });
 
 await step("A2 env overrides applied + base URL normalized", () => {
@@ -161,6 +163,15 @@ await step("A3 [SENSITIVE] redaction guard", () => {
   assert(config.isConfigured === false, "redacted placeholder must not count as configured");
   assert(config.apiKey === "", "redacted placeholder must not be used as a key");
   return "Vercel CLI [SENSITIVE] placeholder treated as missing";
+});
+
+await step("A4 missing URL fails without a network request", async () => {
+  delete process.env.OMNIROUTE_BASE_URL;
+  process.env.OMNIROUTE_API_KEY = "test-key";
+  const chat = await client.callOmniRouteChat({ messages: [{ role: "user", content: "ping" }] });
+  const models = await client.listOmniRouteModels();
+  assert(!chat.ok && chat.error === "missing_base_url", "chat must require an explicit URL");
+  assert(!models.ok && models.error === "missing_base_url", "models must require an explicit URL");
 });
 
 console.log("");
@@ -192,6 +203,57 @@ await step("B1 chat path, Authorization header and model plumbing", async () => 
     assert(seen.auth === "Bearer test-key", `wrong Authorization header: ${seen.auth}`);
     assert(seen.body.model === "auto", `env model not used in body: ${seen.body.model}`);
     return "POST {baseUrl}/chat/completions with Bearer auth, response text normalized";
+  } finally {
+    server.close();
+  }
+});
+
+await step("B1a JSON response mode is sent when requested", async () => {
+  let body;
+  const { server, port } = await startMock(async (req, res) => {
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
+    body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+    mockJson(res, 200, { model: "mock-model", choices: [{ message: { content: '{"ok":true}' } }] });
+  });
+  try {
+    process.env.OMNIROUTE_BASE_URL = `http://127.0.0.1:${port}/v1`;
+    process.env.OMNIROUTE_API_KEY = "k";
+    const result = await client.callOmniRouteChat({
+      messages: [{ role: "user", content: "Return JSON" }],
+      responseFormat: "json_object",
+    });
+    assert(result.ok, `chat failed: ${JSON.stringify(result)}`);
+    assert(body?.response_format?.type === "json_object", `structured mode missing: ${JSON.stringify(body)}`);
+    return "OpenAI-compatible response_format is included in the first request";
+  } finally {
+    server.close();
+  }
+});
+
+await step("B1b unsupported JSON mode retries without response_format", async () => {
+  let calls = 0;
+  const requestBodies = [];
+  const { server, port } = await startMock(async (req, res) => {
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
+    requestBodies.push(JSON.parse(Buffer.concat(chunks).toString("utf8")));
+    calls++;
+    if (calls === 1) mockJson(res, 400, { error: "response_format unsupported" });
+    else mockJson(res, 200, { model: "mock-model", choices: [{ message: { content: '{"ok":true}' } }] });
+  });
+  try {
+    process.env.OMNIROUTE_BASE_URL = `http://127.0.0.1:${port}/v1`;
+    process.env.OMNIROUTE_API_KEY = "k";
+    const result = await client.callOmniRouteChat({
+      messages: [{ role: "user", content: "Return JSON" }],
+      responseFormat: "json_object",
+    });
+    assert(result.ok, `fallback chat failed: ${JSON.stringify(result)}`);
+    assert(calls === 2, `expected exactly two calls, got ${calls}`);
+    assert(requestBodies[0].response_format?.type === "json_object", "first request must ask for JSON mode");
+    assert(!("response_format" in requestBodies[1]), "compatibility retry must omit response_format");
+    return "400 compatibility retry removed only the unsupported structured-output option";
   } finally {
     server.close();
   }
@@ -334,6 +396,30 @@ await step("B10 models list endpoint parsed", async () => {
   }
 });
 
+await step("B11 diagnostic allows reasoning tokens before answer text", async () => {
+  const { server, port } = await startMock(async (req, res) => {
+    if (req.url === "/v1/models") {
+      mockJson(res, 200, { data: [{ id: "reasoning-model" }] });
+      return;
+    }
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
+    const body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+    mockJson(res, 200, {
+      model: "reasoning-model",
+      choices: [{ message: { content: body.max_tokens >= 128 ? "pong" : "" } }],
+    });
+  });
+  try {
+    process.env.OMNIROUTE_BASE_URL = `http://127.0.0.1:${port}/v1`;
+    process.env.OMNIROUTE_API_KEY = "k";
+    const report = await client.testOmniRouteConnection();
+    assert(report.ok, "reasoning-model ping must have room for a visible answer");
+  } finally {
+    server.close();
+  }
+});
+
 console.log("");
 console.log("=== C. Live OmniRoute connection ===\n");
 
@@ -422,6 +508,72 @@ await step("D2 non-GET method rejected with 405", async () => {
   await handlerModule.default({ method: "POST" }, res);
   assert(res.code === 405, `expected HTTP 405, got ${res.code}`);
   return "POST rejected with method_not_allowed";
+});
+
+console.log("\n=== E. Vite local API routing ===\n");
+
+await step("E1 local handlers use server credentials and validate HTTP bodies", async () => {
+  const key = "LOCAL-ONLY-CANARY-key";
+  const seen = [];
+  const { server: mock, port } = await startMock(async (req, res) => {
+    seen.push({ url: req.url, auth: req.headers.authorization });
+    if (req.headers.authorization !== `Bearer ${key}`) {
+      mockJson(res, 401, {});
+      return;
+    }
+    if (req.url === "/v1/models") {
+      mockJson(res, 200, { data: [{ id: "dev-mock" }] });
+      return;
+    }
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
+    const body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+    const text = body.messages[0].content === "Reply with exactly one word: pong"
+      ? "pong"
+      : JSON.stringify({ suggestion: "Water is leaking near the park.", completenessHints: [] });
+    mockJson(res, 200, { model: "dev-mock", choices: [{ message: { content: text } }] });
+  });
+  let vite;
+  try {
+    process.env.OMNIROUTE_BASE_URL = `http://127.0.0.1:${port}/v1`;
+    process.env.OMNIROUTE_API_KEY = key;
+    process.env.OMNIROUTE_MODEL = "dev-mock";
+    vite = await createViteServer({
+      root: ROOT,
+      logLevel: "silent",
+      server: { host: "127.0.0.1", port: 0, open: false },
+    });
+    await vite.listen();
+    const base = `http://127.0.0.1:${vite.httpServer.address().port}`;
+    const status = await fetch(`${base}/api/omniroute-status?check=local`);
+    const report = await status.json();
+    assert(status.status === 200 && report.ok, "status must reach the local router, not production");
+    assert(report.baseUrl === process.env.OMNIROUTE_BASE_URL, "local URL must be used");
+    assert(!JSON.stringify(report).includes(key), "status must never expose the key");
+
+    const intel = await fetch(`${base}/api/omniroute-intel`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ op: "assistDescription", payload: { description: "water leaking near park" } }),
+    });
+    const result = await intel.json();
+    assert(intel.status === 200 && result.ok && result.suggestion, "POST body must reach the real intelligence handler");
+    assert(seen.length >= 3 && seen.every((request) => request.auth === `Bearer ${key}`), "credentials must be attached server-side");
+
+    const invalid = await fetch(`${base}/api/omniroute-intel`, { method: "POST", body: "{broken" });
+    assert(invalid.status === 400, "invalid JSON must return 400");
+    const large = await fetch(`${base}/api/omniroute-intel`, { method: "POST", body: "x".repeat(2_000_001) });
+    assert(large.status === 413, "oversized JSON must return 413");
+    const method = await fetch(`${base}/api/omniroute-status`, { method: "POST" });
+    assert(method.status === 405, "unsupported method must return 405");
+    const source = await fetch(`${base}/src/services/omnirouteIntel.ts`);
+    assert(!(await source.text()).includes(key), "browser module must not contain server key");
+    return "local GET/POST, auth, JSON/body limits, methods, and secret isolation verified";
+  } finally {
+    await vite?.close();
+    mock.closeAllConnections?.();
+    mock.close();
+  }
 });
 
 console.log("\n=== Summary ===");

@@ -32,19 +32,19 @@ export const HIVE_METADATA: Record<string, { aliases?: string[]; keywords?: stri
     keywords: ["missing", "lost", "dog", "cat", "animal"],
   },
   waste: {
-    aliases: ["garbage", "trash", "rubbish", "refuse"],
+    aliases: ["garbage", "trash", "rubbish", "refuse", "trash dump", "dumped trash", "illegal dumping"],
     keywords: ["dumping", "dump", "bins", "overflowing bins", "litter", "cleanup", "waste disposal"],
   },
   "water-leakage": {
-    aliases: ["water leak", "burst pipe", "pipe leak"],
+    aliases: ["water leak", "burst pipe", "pipe leak", "broken pipe", "water pipe", "leaking pipe"],
     keywords: ["pipe", "leak", "leaking", "water", "drain", "pouring", "puddle", "tap"],
   },
   roads: {
-    aliases: ["potholes", "broken road"],
+    aliases: ["potholes", "broken road", "hole in road", "road hole", "large road hole"],
     keywords: ["pothole", "hole", "road damage", "crack", "asphalt", "street damage", "uneven road"],
   },
   "street-lights": {
-    aliases: ["street lamp", "streetlight", "street light"],
+    aliases: ["street lamp", "streetlight", "street light", "broken lamp", "lamp not working"],
     keywords: ["light", "lamp", "dark", "lighting", "broken lamp", "lamp not working"],
   },
   "illegal-parking": {

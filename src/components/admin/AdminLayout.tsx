@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -42,7 +42,58 @@ export default function AdminLayout() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [desktop, setDesktop] = useState(() => window.innerWidth >= 1024);
+  const sidebarRef = useRef<HTMLElement>(null);
+  const menuRef = useRef<HTMLButtonElement>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const resize = () => {
+      setDesktop(window.innerWidth >= 1024);
+      if (window.innerWidth >= 1024) setSidebarOpen(false);
+    };
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
+  }, []);
+  useEffect(() => {
+    if (!sidebarOpen || desktop) return;
+    const sidebar = sidebarRef.current;
+    if (!sidebar) return;
+    const returnFocus = menuRef.current;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const frame = requestAnimationFrame(() =>
+      sidebar.querySelector<HTMLButtonElement>("button")?.focus(),
+    );
+    const keydown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setSidebarOpen(false);
+      }
+      if (event.key !== "Tab") return;
+      const controls = [
+        ...sidebar.querySelectorAll<HTMLElement>(
+          "button:not(:disabled),a[href]",
+        ),
+      ].filter((item) => item.getClientRects().length);
+      const first = controls[0],
+        last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
+    };
+    document.addEventListener("keydown", keydown);
+    return () => {
+      cancelAnimationFrame(frame);
+      document.removeEventListener("keydown", keydown);
+      document.body.style.overflow = previous;
+      returnFocus?.focus();
+    };
+  }, [sidebarOpen, desktop]);
 
   useEffect(() => {
     if (!user) {
@@ -59,7 +110,11 @@ export default function AdminLayout() {
       <div className="flex h-screen items-center justify-center bg-zinc-950 text-white">
         <div className="text-center">
           <div className="mb-3 flex justify-center">
-            <HivezLoader size="md" progress={50} label="Checking admin access" />
+            <HivezLoader
+              size="md"
+              progress={50}
+              label="Checking admin access"
+            />
           </div>
           <p className="text-sm text-zinc-400">Checking admin access...</p>
         </div>
@@ -99,6 +154,12 @@ export default function AdminLayout() {
 
       {/* Sidebar */}
       <aside
+        ref={sidebarRef}
+        role={sidebarOpen && !desktop ? "dialog" : undefined}
+        aria-label="Admin navigation"
+        aria-modal={sidebarOpen && !desktop ? true : undefined}
+        aria-hidden={!desktop && !sidebarOpen ? true : undefined}
+        inert={!desktop && !sidebarOpen}
         className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-zinc-800 bg-zinc-900 transition-transform lg:static lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
@@ -106,9 +167,9 @@ export default function AdminLayout() {
         {/* Logo */}
         <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-4">
           <div className="flex items-center gap-2">
-<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500 text-sm font-black text-black">
-  H
-</div>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500 text-sm font-black text-black">
+              H
+            </div>
             <span className="text-lg font-black tracking-tight">HIVEZ</span>
             <span className="ml-1 rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] font-bold uppercase text-zinc-400">
               Admin
@@ -116,6 +177,7 @@ export default function AdminLayout() {
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
+            aria-label="Close admin navigation"
             className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-800 lg:hidden"
           >
             <X size={18} />
@@ -167,6 +229,9 @@ export default function AdminLayout() {
         <header className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900 px-4 py-3 lg:hidden">
           <button
             onClick={() => setSidebarOpen(true)}
+            ref={menuRef}
+            aria-label="Open admin navigation"
+            aria-expanded={sidebarOpen}
             className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-800"
           >
             <Menu size={20} />
@@ -176,7 +241,11 @@ export default function AdminLayout() {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto">
+        <main
+          tabIndex={0}
+          aria-label="Admin workspace"
+          className="flex-1 overflow-y-auto"
+        >
           <Outlet />
         </main>
       </div>

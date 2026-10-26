@@ -21,11 +21,38 @@ const STOP_WORDS = new Set([
   "the", "a", "an", "is", "are", "was", "there", "here", "my", "our", "in", "on", "at", "of", "and", "or",
   "to", "for", "with", "from", "near", "outside", "inside", "its", "it", "this", "that", "very", "really",
   "please", "help", "some", "be", "being", "been", "has", "have", "had", "i", "we", "you", "they",
+  "coming", "behind", "building", "house", "home", "corner", "working", "functioning", "stopped", "isn",
 ]);
+
+function canonicalToken(token: string): string {
+  const irregular: Record<string, string> = {
+    dumped: "dump",
+    dumping: "dump",
+    leakage: "leak",
+    leaking: "leak",
+    roads: "road",
+    lights: "light",
+    lamps: "lamp",
+    potholes: "pothole",
+    pets: "pet",
+    dogs: "dog",
+    cats: "cat",
+    pipes: "pipe",
+    bins: "bin",
+    cracks: "crack",
+    buses: "bus",
+  };
+  if (irregular[token]) return irregular[token];
+  if (token.length > 4 && token.endsWith("s") && !token.endsWith("ss") && !token.endsWith("us")) {
+    return token.slice(0, -1);
+  }
+  return token;
+}
 
 export function tokenize(value: string): string[] {
   return normalizeText(value)
     .split(" ")
+    .map(canonicalToken)
     .filter((token) => token.length > 1 && !STOP_WORDS.has(token));
 }
 
@@ -60,10 +87,13 @@ function scoreAgainstField(query: string, queryTokens: string[], field: string, 
   if (!normalizedField) return 0;
   if (normalizedField === query) return weight;
   if (normalizedField.includes(query)) return weight * 0.75;
-  const fieldTokens = new Set(normalizeText(field).split(" "));
+  const fieldTokens = tokenize(field);
+  if (fieldTokens.length > 0 && fieldTokens.every((token) => queryTokens.includes(token))) {
+    return weight * (fieldTokens.length > 1 ? 0.95 : 0.9);
+  }
   let hits = 0;
   for (const token of queryTokens) {
-    if (fieldTokens.has(token) || [...fieldTokens].some((fieldToken) => editDistanceAtMost2(fieldToken, token))) {
+    if (fieldTokens.includes(token) || fieldTokens.some((fieldToken) => editDistanceAtMost2(fieldToken, token))) {
       hits++;
     }
   }
@@ -123,4 +153,16 @@ export function findDeterministicCandidates(
 
   candidates.sort((a, b) => b.score - a.score || a.hive.name.localeCompare(b.hive.name));
   return candidates;
+}
+
+/** A strong result must have a clear lead over the next Hive. */
+export function hasStrongDeterministicMatch(
+  candidates: DeterministicCandidate[],
+  minimumScore = 0.82,
+  minimumLead = 0.08,
+): boolean {
+  const top = candidates[0];
+  if (!top || top.score < minimumScore) return false;
+  const second = candidates[1];
+  return !second || top.score - second.score >= minimumLead;
 }

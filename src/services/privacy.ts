@@ -144,6 +144,22 @@ export async function canUserAccessPost(
   return isFollowing(viewerId, post.uid);
 }
 
+/**
+ * Check the audience of a post before sending its reference to someone else.
+ * A sender cannot read block documents between two other people. The recipient
+ * checks their own block relationship when the shared preview is opened.
+ */
+export async function canReceiveSharedPost(
+  recipientId: string,
+  post: { uid?: string; visibility?: string; deleted?: boolean } | null | undefined,
+) {
+  if (!post?.uid || post.deleted) return false;
+  if (recipientId === post.uid) return true;
+  const author = await getUserProfileData(post.uid);
+  const protectedPost = post.visibility === "followers" || post.visibility === "private" || normalizePrivacy(author).account === "private";
+  return !protectedPost || isFollowing(recipientId, post.uid);
+}
+
 export async function filterVisiblePosts<T extends { uid?: string; visibility?: string; deleted?: boolean }>(
   viewerId: string | null | undefined,
   posts: T[]

@@ -13,6 +13,7 @@ import {
   type CommentDoc,
 } from "@/services/comments";
 import type { TimestampLike } from "@/types/timestamp";
+import { copyTextToClipboard } from "@/services/clipboard";
 
 interface Props {
   comment: CommentDoc;
@@ -47,8 +48,10 @@ export default function CommentCard({ comment, postId, depth = 0, replyCount = 0
   const navigate = useNavigate();
   const { user } = useAuth();
   const [liked, setLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(comment.likes || 0);
   const [likeBusy, setLikeBusy] = useState(false);
   const [showActions, setShowActions] = useState(false);
+  const [actionBusy, setActionBusy] = useState(false);
   // Live commenter profile falls back to the snapshot stored on the comment.
   const author = useLiveProfile(comment.uid, comment) as CommentDoc;
   const mentionMap = useMemo(
@@ -59,7 +62,7 @@ export default function CommentCard({ comment, postId, depth = 0, replyCount = 0
   const marginLeft = Math.min(depth * 16, 48);
 
   useEffect(() => {
-    return listenToCommentLikeState(user?.uid, postId, comment.id, setLiked);
+    return listenToCommentLikeState(user?.uid, postId, comment.id, setLiked, setLikesCount);
   }, [comment.id, postId, user?.uid]);
 
   async function handleLike() {
@@ -76,22 +79,33 @@ export default function CommentCard({ comment, postId, depth = 0, replyCount = 0
   }
 
   async function copyText() {
-    await navigator.clipboard.writeText(comment.text);
-    setShowActions(false);
-    toast.success("Comment copied");
+    try {
+      await copyTextToClipboard(comment.text);
+      setShowActions(false);
+      toast.success("Comment copied");
+    } catch { toast.error("Could not copy this comment."); }
   }
 
   async function report() {
-    if (!user) return;
-    await reportComment({ postId, commentId: comment.id, reporterId: user.uid });
-    setShowActions(false);
-    toast.success("Comment reported");
+    if (!user || actionBusy) return;
+    setActionBusy(true);
+    try {
+      await reportComment({ postId, commentId: comment.id, reporterId: user.uid });
+      setShowActions(false);
+      toast.success("Comment reported");
+    } catch { toast.error("Could not report this comment."); }
+    finally { setActionBusy(false); }
   }
 
   async function remove() {
-    if (!user || user.uid !== comment.uid) return;
-    await deleteComment(postId, comment.id);
-    setShowActions(false);
+    if (!user || user.uid !== comment.uid || actionBusy) return;
+    setActionBusy(true);
+    try {
+      await deleteComment(postId, comment.id);
+      setShowActions(false);
+      toast.success("Comment deleted");
+    } catch { toast.error("Could not delete this comment."); }
+    finally { setActionBusy(false); }
   }
 
   function renderCommentText() {
@@ -157,6 +171,8 @@ export default function CommentCard({ comment, postId, depth = 0, replyCount = 0
           <div className="mt-1.5 flex items-center gap-4">
             <button
               onClick={handleLike}
+              aria-label={liked ? "Unlike comment" : "Like comment"}
+              aria-pressed={liked}
               disabled={!user || likeBusy}
               className="flex items-center gap-1 rounded-full p-1 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
@@ -164,9 +180,9 @@ export default function CommentCard({ comment, postId, depth = 0, replyCount = 0
                 size={14}
                 className={liked ? "fill-red-500 text-red-500" : "text-zinc-500 dark:text-zinc-400"}
               />
-              {Boolean(comment.likes) && (
+              {Boolean(likesCount) && (
                 <span className={`text-[11px] font-bold ${liked ? "text-red-500" : "text-zinc-500 dark:text-zinc-400"}`}>
-                  {comment.likes}
+                  {likesCount}
                 </span>
               )}
             </button>
@@ -185,7 +201,9 @@ export default function CommentCard({ comment, postId, depth = 0, replyCount = 0
             <div className="relative">
               <button
                 onClick={() => setShowActions(!showActions)}
-                className="rounded-full p-1 transition hover:bg-zinc-100 dark:hover:bg-zinc-800 opacity-0 group-hover:opacity-100"
+                aria-label="Comment options"
+                aria-expanded={showActions}
+                className="rounded-full p-1 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
               >
                 <MoreHorizontal size={14} className="text-zinc-500 dark:text-zinc-400" />
               </button>

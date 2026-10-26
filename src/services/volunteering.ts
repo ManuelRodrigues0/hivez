@@ -95,49 +95,49 @@ export async function createIssueCommunityForPost(input: {
   locationSnapshot?: LocationSnapshot | null;
   mediaUrl?: string;
   mediaType?: string;
+  /** Only the author can attach metadata to the original post. */
+  linkPost?: boolean;
 }) {
   const communityId = issueCommunityId(input.postId);
   const communityRef = doc(db, "issueCommunities", communityId);
-  const existing = await getDoc(communityRef);
-  if (existing.exists()) return communityId;
+  await runTransaction(db, async tx => {
+    if ((await tx.get(communityRef)).exists()) return;
+    const now = serverTimestamp();
+    tx.set(communityRef, {
+      postId: input.postId,
+      issueId: input.postId,
+      title: deriveIssueTitle(input.caption, input.category),
+      description: input.caption || "Community issue",
+      category: input.category || "community",
+      location: input.location || null,
+      locationSnapshot: input.locationSnapshot || null,
+      mediaUrl: input.mediaUrl || "",
+      mediaType: input.mediaType || "text",
+      ownerId: input.ownerId,
+      owner: input.owner,
+      status: "REPORTED" satisfies IssueCommunityStatus,
+      memberCount: 1,
+      activityCount: 0,
+      rules: ["Stay respectful", "Keep discussion relevant", "No spam or harassment"],
+      archived: false,
+      createdAt: now,
+      updatedAt: now,
+    });
 
-  const batch = writeBatch(db);
-  const now = serverTimestamp();
+    tx.set(doc(db, "communityMembers", memberId(communityId, input.ownerId)), {
+      communityId,
+      uid: input.ownerId,
+      role: "owner" satisfies CommunityRole,
+      user: input.owner,
+      joinedAt: now,
+    });
 
-  batch.set(communityRef, {
-    postId: input.postId,
-    issueId: input.postId,
-    title: deriveIssueTitle(input.caption, input.category),
-    description: input.caption || "Community issue",
-    category: input.category || "community",
-    location: input.location || null,
-    locationSnapshot: input.locationSnapshot || null,
-    mediaUrl: input.mediaUrl || "",
-    mediaType: input.mediaType || "text",
-    ownerId: input.ownerId,
-    owner: input.owner,
-    status: "REPORTED" satisfies IssueCommunityStatus,
-    memberCount: 1,
-    activityCount: 0,
-    rules: ["Stay respectful", "Keep discussion relevant", "No spam or harassment"],
-    archived: false,
-    createdAt: now,
-    updatedAt: now,
+    // Legacy posts may acquire their community when a neighbour volunteers.
+    // Its deterministic id works without editing another author's post.
+    if (input.linkPost !== false) tx.update(doc(db, "posts", input.postId), {
+      issueCommunityId: communityId,
+    });
   });
-
-  batch.set(doc(db, "communityMembers", memberId(communityId, input.ownerId)), {
-    communityId,
-    uid: input.ownerId,
-    role: "owner" satisfies CommunityRole,
-    user: input.owner,
-    joinedAt: now,
-  });
-
-  batch.update(doc(db, "posts", input.postId), {
-    issueCommunityId: communityId,
-  });
-
-  await batch.commit();
   return communityId;
 }
 
@@ -200,13 +200,17 @@ export async function joinIssueCommunity(community: IssueCommunity, user: Volunt
 
   if (!joined) return;
 
-  await createNotification({
-    recipientId: community.ownerId,
-    actor: user,
-    type: "broadcast",
-    text: `${user.displayName} joined ${community.title}`,
-    link: `/issue-community/${community.id}`,
-  });
+  try {
+    await createNotification({
+      recipientId: community.ownerId,
+      actor: user,
+      type: "broadcast",
+      text: `${user.displayName} joined ${community.title}`,
+      link: `/issue-community/${community.id}`,
+    });
+  } catch (error) {
+    console.warn("Community membership was saved, but its notification could not be recorded.", error);
+  }
 }
 
 export async function leaveIssueCommunity(community: IssueCommunity, member: CommunityMember) {

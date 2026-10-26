@@ -18,7 +18,7 @@ export default function BeeRoamer() {
   const fieldRef = useRef<HTMLCanvasElement>(null);
   const flightRef = useRef<BeeFlight | null>(null);
   const boundsRef = useRef<FlightBounds | null>(null);
-  const { reducedMotion, resolvedTheme } = useTheme();
+  const { reducedMotion, publicTheme } = useTheme();
   const [visible, setVisible] = useState(() => !document.hidden);
   const [systemReduced, setSystemReduced] = useState(
     () => matchMedia("(prefers-reduced-motion: reduce)").matches,
@@ -131,7 +131,7 @@ export default function BeeRoamer() {
           else ctx.lineTo(dx, dy);
         }
         ctx.closePath();
-        ctx.strokeStyle = `rgba(${resolvedTheme === "dark" ? "206,224,156" : "61,101,76"},${Math.max(0.01, alpha)})`;
+        ctx.strokeStyle = `rgba(${publicTheme === "midnight" ? "255,212,59" : publicTheme === "forest" ? "206,224,156" : "61,101,76"},${Math.max(0.01, alpha)})`;
         ctx.lineWidth = 1;
         ctx.stroke();
       }
@@ -166,7 +166,11 @@ export default function BeeRoamer() {
       layer.style.inset = `${originY}px auto auto ${originX}px`;
       layer.style.width = `${width}px`;
       layer.style.height = `${height}px`;
-      const margin = Math.min(calmFlight ? 14 : 20, width * 0.045, height * 0.04);
+      const margin = Math.min(
+        calmFlight ? 14 : 20,
+        width * 0.045,
+        height * 0.04,
+      );
       const header = document.querySelector(".hz-nav")?.getBoundingClientRect();
       const top = Math.min(
         Math.max(margin, (header?.bottom || 0) - originY + 12),
@@ -256,7 +260,7 @@ export default function BeeRoamer() {
       viewport?.removeEventListener("resize", measureViewport);
       viewport?.removeEventListener("scroll", measureViewport);
     };
-  }, [still, resolvedTheme, visible, touch]);
+  }, [still, publicTheme, visible, touch]);
 
   return (
     <div ref={layerRef} aria-hidden="true" className="hz-mascot-layer">

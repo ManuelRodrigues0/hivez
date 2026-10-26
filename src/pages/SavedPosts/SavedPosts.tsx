@@ -54,7 +54,7 @@ export default function SavedPosts() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#f4f4ef] dark:bg-black">
+    <div className="hv-route hv-saved min-h-screen w-full bg-[#f4f4ef] dark:bg-black">
       <div className="mx-auto w-full max-w-2xl px-4 py-5">
         <div className="flex items-center gap-3 pb-4">
           <button

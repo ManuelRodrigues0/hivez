@@ -1,7 +1,6 @@
 import {
   addDoc,
   collection,
-  deleteDoc,
   doc,
   getDoc,
   increment,
@@ -10,7 +9,6 @@ import {
   query,
   runTransaction,
   serverTimestamp,
-  updateDoc,
   writeBatch,
 } from "firebase/firestore";
 
@@ -141,19 +139,18 @@ export async function addPostComment(input: {
   batch.update(doc(db, "posts", input.post.id), { comments: increment(1) });
   await batch.commit();
 
-  await recordPostEngagement({
-    postId: input.post.id,
-    actorId: input.actor.uid,
-    authorId: input.post.uid,
-    type: "comment",
-    category: input.post.category,
-  });
-
   const recipients = new Set([input.post.uid, ...mentions.map((mention) => mention.uid)]);
   if (parentAuthorId) recipients.add(parentAuthorId);
   recipients.delete(input.actor.uid);
-  await Promise.all(
-    [...recipients].map((recipientId) =>
+  const sideEffects = await Promise.allSettled([
+    recordPostEngagement({
+      postId: input.post.id,
+      actorId: input.actor.uid,
+      authorId: input.post.uid,
+      type: "comment",
+      category: input.post.category,
+    }),
+    ...[...recipients].map((recipientId) =>
       createNotification({
         recipientId,
         actor: input.actor,
@@ -164,7 +161,10 @@ export async function addPostComment(input: {
         commentId: commentRef.id,
       })
     )
-  );
+  ]);
+  if (sideEffects.some((result) => result.status === "rejected")) {
+    console.warn("Comment was posted, but a notification or engagement event could not be recorded.");
+  }
 
   return commentRef.id;
 }
@@ -173,33 +173,42 @@ export function listenToCommentLikeState(
   userId: string | null | undefined,
   postId: string,
   commentId: string,
-  onNext: (liked: boolean) => void
+  onNext: (liked: boolean) => void,
+  onCount?: (count: number) => void,
 ) {
   if (!userId) {
     onNext(false);
     return () => {};
   }
-  return onSnapshot(doc(db, "posts", postId, "comments", commentId, "likes", userId), (snap) => onNext(snap.exists()));
+  // Like documents are the source of truth. Other people cannot update the
+  // author's comment document under the existing rules, including its counter.
+  return onSnapshot(collection(db, "posts", postId, "comments", commentId, "likes"), snapshot => {
+    onNext(snapshot.docs.some(record => record.id === userId));
+    onCount?.(snapshot.size);
+  });
 }
 
 export async function toggleCommentLike(postId: string, commentId: string, userId: string) {
   const commentRef = doc(db, "posts", postId, "comments", commentId);
   const likeRef = doc(db, "posts", postId, "comments", commentId, "likes", userId);
   await runTransaction(db, async (tx) => {
-    const likeSnap = await tx.get(likeRef);
+    const [commentSnap, likeSnap] = await Promise.all([tx.get(commentRef), tx.get(likeRef)]);
+    if (!commentSnap.exists()) throw new Error("This comment is unavailable.");
     if (likeSnap.exists()) {
       tx.delete(likeRef);
-      tx.update(commentRef, { likes: increment(-1) });
     } else {
       tx.set(likeRef, { userId, createdAt: serverTimestamp() });
-      tx.update(commentRef, { likes: increment(1) });
     }
   });
 }
 
 export async function deleteComment(postId: string, commentId: string) {
-  await deleteDoc(doc(db, "posts", postId, "comments", commentId));
-  await updateDoc(doc(db, "posts", postId), { comments: increment(-1) });
+  const commentRef = doc(db, "posts", postId, "comments", commentId);
+  await runTransaction(db, async tx => {
+    if (!(await tx.get(commentRef)).exists()) return;
+    tx.delete(commentRef);
+    tx.update(doc(db, "posts", postId), { comments: increment(-1) });
+  });
 }
 
 export async function reportComment(input: { postId: string; commentId: string; reporterId: string; reason?: string }) {

@@ -12,7 +12,8 @@
  *
  * Required server-side environment variables (never VITE_ prefixed):
  *   OMNIROUTE_BASE_URL - OpenAI-compatible base URL,
- *                        e.g. http://localhost:20128/v1 (default when unset)
+ *                        e.g. http://localhost:20128/v1 for local development;
+ *                        required explicitly, with a reachable host in production
  *   OMNIROUTE_API_KEY  - server-side OmniRoute secret
  *   OMNIROUTE_MODEL    - optional default model, "auto" when unset
  */

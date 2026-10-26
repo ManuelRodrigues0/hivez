@@ -1,0 +1,24 @@
+# Local secrets and tooling
+.env*
+!.env.example
+*.local
+.git/
+.vercel/
+.vscode/
+.idea/
+node_modules/
+*.log
+
+# Generated output and local audit/browser sessions
+dist/
+dist-ssr/
+functions/lib/
+.tmp-esmtest/
+.audit
+_sp3
+,
+
+# Design references and local diagnostic notes are not application inputs
+reference
+*.zip
+AI_API_VERIFICATION_REPORT.md

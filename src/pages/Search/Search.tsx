@@ -1,12 +1,11 @@
+import PostActions from "@/components/feed/PostActions";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getDocs } from "firebase/firestore";
 import {
   BadgeCheck,
   Flame,
-  Heart,
   Image as ImageIcon,
-  MessageCircle,
   Search as SearchIcon,
   Sparkles,
   User,
@@ -20,6 +19,7 @@ import { useLiveProfiles } from "@/hooks/useLiveProfile";
 import type { FeedPost } from "@/components/feed/Feed";
 import { recentPostsQuery } from "@/services/feedRanking";
 import { filterVisiblePosts, searchUsers, type SearchableUser } from "@/services/privacy";
+import PageIntro from "@/components/layout/PageIntro";
 
 const TRENDING_TOPICS = ["Lost Pets", "Road Safety", "Water Leakage", "Street Lights", "Blood Requests"];
 
@@ -74,8 +74,7 @@ export default function SearchPage() {
         ]);
 
         const candidates = postsSnapshot.docs.map((postDoc) => ({
-          id: postDoc.id,
-          ...(postDoc.data() as Omit<FeedPost, "id">),
+          ...(postDoc.data() as Omit<FeedPost, "id">), id: postDoc.id,
         }));
         const visiblePosts = await filterVisiblePosts(user?.uid, candidates);
         const matchedPosts = visiblePosts.filter((post) => {
@@ -120,7 +119,8 @@ export default function SearchPage() {
   const hasResults = users.length > 0 || posts.length > 0;
 
   return (
-    <div className="app-page app-search-page flex flex-col">
+    <div className="app-page app-search-page hv-search-page flex flex-col">
+      <PageIntro eyebrow="FOLLOW YOUR CURIOSITY" title={<>Find a little <em>common ground.</em></>} description="Discover people, shared concerns, and conversations worth joining."/>
       <div className="app-sticky-header">
         <div className="px-4 pb-3 pt-4">
           <div className="relative">
@@ -131,6 +131,7 @@ export default function SearchPage() {
               value={queryText}
               onChange={(event) => handleQueryChange(event.target.value)}
               placeholder="Search people, posts, and hives"
+              aria-label="Search people, posts, and hives"
               className="w-full rounded-full border border-transparent bg-zinc-100 py-3 pl-12 pr-12 text-sm outline-none transition placeholder:text-zinc-400 focus:border-zinc-300 dark:bg-zinc-900 dark:text-white dark:focus:border-zinc-700"
             />
             {queryText && (
@@ -269,12 +270,13 @@ export default function SearchPage() {
                     const isVideo = mediaItem?.type === "video" || post.mediaType === "video";
 
                     return (
-                      <button
+                      <article
                         key={post.id}
-                        type="button"
-                        onClick={() => navigate(`/post/${post.id}`)}
-                        className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                        className="relative flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-zinc-50 dark:hover:bg-zinc-900"
                       >
+                        <button type="button" className="absolute inset-0 z-0"
+                          aria-label={`Open post by ${authorName}: ${post.caption?.slice(0, 100) || "Community update"}`}
+                          onClick={() => navigate(`/post/${post.id}`)} />
                         {mediaUrl ? (
                           <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-zinc-100 dark:bg-zinc-900">
                             {isVideo ? (
@@ -298,16 +300,11 @@ export default function SearchPage() {
                             <span className="truncate text-xs font-medium text-zinc-500 dark:text-zinc-400">{authorName}</span>
                           </div>
                           <p className="mt-1 line-clamp-2 text-sm text-zinc-900 dark:text-white">{post.caption || "Community update"}</p>
-                          <div className="mt-1 flex items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400">
-                            <span className="inline-flex items-center gap-1">
-                              <Heart size={12} /> {post.likes || 0}
-                            </span>
-                            <span className="inline-flex items-center gap-1">
-                              <MessageCircle size={12} /> {post.comments || 0}
-                            </span>
+                          <div className="relative z-10 mt-1 w-fit">
+                            <PostActions post={post} compact />
                           </div>
                         </div>
-                      </button>
+                      </article>
                     );
                   })}
                 </div>

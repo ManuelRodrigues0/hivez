@@ -17,6 +17,7 @@ import {
 import type { LocationSnapshot } from "@/services/location";
 import { filterVisiblePosts } from "@/services/privacy";
 import type { TimestampLike } from "@/types/timestamp";
+import { MessageCircle } from "lucide-react";
 
 export interface FeedPost {
   id: string;
@@ -128,8 +129,7 @@ export default function Feed({ category, hashtag, onCommentClick }: FeedProps) {
       recentPostsQuery(category),
       async (snapshot) => {
         const live = snapshot.docs.map((docSnapshot) => ({
-          id: docSnapshot.id,
-          ...docSnapshot.data(),
+          ...docSnapshot.data(), id: docSnapshot.id,
         })) as FeedPost[];
         const visibleLive = await filterVisiblePosts(user?.uid, live);
         if (!active) return;
@@ -189,12 +189,10 @@ export default function Feed({ category, hashtag, onCommentClick }: FeedProps) {
 
   if (!posts.length) {
     return (
-      <div className="py-20 text-center text-zinc-500 dark:text-zinc-400">
-        {category
-          ? "No posts in this Hive yet."
-          : hashtag
-          ? `No posts with #${hashtag} yet.`
-          : "No posts yet."}
+      <div className="hv-feed-empty">
+        <MessageCircle size={25} strokeWidth={1.4} aria-hidden="true"/>
+        <h3>{category ? "Every hive starts somewhere." : "There’s room for your story."}</h3>
+        <p>{hashtag ? `No posts with #${hashtag} yet.` : category ? "No posts in this hive yet. Share a concern, an idea, or a little good news." : "No posts yet. Your neighbours’ reports and updates will appear here."}</p>
       </div>
     );
   }

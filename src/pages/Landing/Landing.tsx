@@ -42,7 +42,7 @@ const questions = [
 
 export default function Landing() {
   const rootRef = useRef<HTMLDivElement>(null);
-  const { reducedMotion } = useTheme();
+  const { reducedMotion, publicTheme } = useTheme();
 
   useEffect(() => {
     const title = document.title;
@@ -87,7 +87,7 @@ export default function Landing() {
   }, [reducedMotion]);
 
   return (
-    <div ref={rootRef} className="hz-landing">
+    <div ref={rootRef} className="hz-landing" data-public-theme={publicTheme}>
       <a href="#hz-main" className="hz-skip-link">
         Skip to content
       </a>

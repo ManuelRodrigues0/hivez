@@ -1,733 +1,956 @@
-.auth-page {
-  min-height: 100svh;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(420px, 0.92fr);
-  background: #f7f7f2;
-  color: #101010;
-  font-family: "Geist Variable", Inter, system-ui, sans-serif;
+@font-face {
+  font-family: "Hivez Bricolage";
+  src: url("/fonts/bricolage-grotesque-latin.woff2") format("woff2");
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
 }
 
-.auth-page * {
+/* Authentication only. The photographic story and bee share one clear stage. */
+.ha-page {
+  --ha-bg: #f7f6ee;
+  --ha-paper: #fffef9;
+  --ha-ink: #293326;
+  --ha-muted: #626c5a;
+  --ha-line: #cbd1c3;
+  --ha-accent: #355c43;
+  --ha-danger: #a5322b;
+  --ha-input: #eeeee5;
+  --ha-button: var(--ha-ink);
+  --ha-button-text: var(--ha-bg);
+  background: var(--ha-bg);
+  color: var(--ha-ink);
+  font-family: "Geist Variable", Arial, sans-serif;
+  line-height: 1.5;
+  position: relative;
+  min-height: 100dvh;
+  isolation: isolate;
+}
+.ha-page[data-public-theme="forest"] {
+  --ha-bg: #242d22;
+  --ha-paper: #303b2c;
+  --ha-ink: #f3f2e5;
+  --ha-muted: #bec7b6;
+  --ha-line: #53614b;
+  --ha-accent: #c6d6b5;
+  --ha-danger: #ffb5a6;
+  --ha-input: #2c3628;
+}
+.ha-page[data-public-theme="midnight"] {
+  --ha-bg: #0b0d0e;
+  --ha-paper: #141719;
+  --ha-ink: #eef3f6;
+  --ha-muted: #a7b2ba;
+  --ha-line: #394147;
+  --ha-accent: #ffd43b;
+  --ha-danger: #ff8d84;
+  --ha-input: #1a1e21;
+  --ha-button: #ffd43b;
+  --ha-button-text: #0b0d0e;
+}
+.ha-page[data-public-theme="midnight"] .ha-story-shade {
+  background: linear-gradient(
+    180deg,
+    #0b0d0eb3,
+    transparent 28%,
+    #0b0d0e50 45%,
+    #0b0d0eeb 80%,
+    #0b0d0e
+  );
+}
+.ha-page,
+.ha-page * {
   box-sizing: border-box;
 }
-
-.auth-page a {
+.ha-page h1,
+.ha-page h2,
+.ha-page p {
+  margin: 0;
+}
+.ha-page a {
   color: inherit;
   text-decoration: none;
 }
-
-.auth-page :focus-visible {
-  outline: 2px solid #101010;
+.ha-page button,
+.ha-page input {
+  font: inherit;
+}
+.ha-page button {
+  cursor: pointer;
+}
+.ha-page button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+.ha-page :focus-visible {
+  outline: 3px solid var(--ha-accent);
   outline-offset: 4px;
 }
-
-  .auth-brand-panel {
-    position: relative;
-    display: grid;
-    align-content: space-between;
-    min-height: 100svh;
-    overflow: hidden;
-    padding: clamp(28px, 5vw, 64px);
-    background: #172119;
-    color: #fff;
-    isolation: isolate;
-  }
-
-  .auth-brand-panel::before {
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    content: "";
-    background: rgba(255, 255, 255, 0);
-    opacity: 1;
-  }
-
-.auth-brand-top {
+.ha-page ::selection {
+  background: var(--ha-ink);
+  color: var(--ha-bg);
+}
+.ha-skip {
+  position: fixed;
+  z-index: 30;
+  top: 12px;
+  left: 20px;
+  padding: 12px 20px;
+  background: var(--ha-ink);
+  color: var(--ha-bg) !important;
+  transform: translateY(-160%);
+}
+.ha-skip:focus {
+  transform: none;
+}
+.ha-header {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
+  gap: 20px;
+  height: 92px;
+  padding: 0 44px;
+  pointer-events: none;
 }
-
-.auth-logo {
-  font-size: 25px;
-  font-weight: 950;
-  letter-spacing: 0;
+.ha-header a,
+.ha-header button {
+  pointer-events: auto;
 }
-
-.auth-home-link {
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 999px;
-  padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.82);
-  font-size: 13px;
-  font-weight: 800;
-  backdrop-filter: blur(16px);
-}
-
-.auth-brand-copy {
-  max-width: 620px;
-  padding: 70px 0;
-}
-
-.auth-brand-copy span {
+.ha-brand {
   display: inline-flex;
-  margin-bottom: 18px;
-  border-radius: 999px;
-  padding: 9px 13px;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.auth-brand-copy h1 {
-  margin: 0;
-  max-width: 620px;
-  font-size: clamp(48px, 6vw, 88px);
-  font-weight: 950;
-  line-height: 0.92;
-  letter-spacing: 0;
-}
-
-.auth-brand-copy p {
-  max-width: 520px;
-  margin: 22px 0 0;
-  color: rgba(255, 255, 255, 0.72);
-  font-size: clamp(17px, 2vw, 21px);
-  line-height: 1.45;
-}
-
-  .auth-preview-card {
-    width: min(460px, 100%);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 28px;
-    padding: 16px;
-    background: #080808;
-    box-shadow: none;
-  }
-
-  .auth-preview-card__media {
-    display: flex;
-    align-items: end;
-    min-height: 210px;
-    border-radius: 20px;
-    padding: 18px;
-    background: #617063;
-  }
-
-.auth-preview-card__media strong {
-  max-width: 280px;
-  font-size: 31px;
-  font-weight: 930;
-  line-height: 0.95;
-}
-
-.auth-preview-card__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 9px;
-  margin-top: 12px;
-}
-
-.auth-preview-card__meta span {
-  border-radius: 999px;
-  padding: 8px 10px;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 12px;
-  font-weight: 780;
-}
-
-.auth-form-panel {
-  display: grid;
-  align-content: center;
-  min-height: 100svh;
-  padding: clamp(24px, 5vw, 70px);
-  background: #f7f7f2;
-}
-
-.auth-card {
-  width: min(430px, 100%);
-  justify-self: center;
-}
-
-.auth-card__header {
-  margin-bottom: 28px;
-}
-
-.auth-card__header p:first-child {
-  margin: 0 0 10px;
-  color: #497a56;
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.auth-card h2 {
-  margin: 0;
-  color: #101010;
-  font-size: clamp(34px, 4vw, 48px);
-  font-weight: 950;
-  line-height: 1;
-  letter-spacing: 0;
-  text-wrap: balance;
-}
-
-.auth-card__header p:last-child {
-  margin: 14px 0 0;
-  color: rgba(16, 16, 16, 0.62);
-  font-size: 16px;
-  line-height: 1.45;
-}
-
-.auth-error {
-  margin: 0 0 16px;
-  border: 1px solid rgba(185, 28, 28, 0.2);
-  border-radius: 16px;
-  padding: 12px 14px;
-  background: rgba(254, 226, 226, 0.78);
-  color: #8a1c1c;
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1.35;
-}
-
-.auth-form {
-  display: grid;
-  gap: 14px;
-}
-
-.auth-field {
-  display: grid;
-  gap: 8px;
-}
-
-.auth-field label {
-  color: rgba(16, 16, 16, 0.72);
-  font-size: 13px;
-  font-weight: 850;
-}
-
-.auth-field input {
-  width: 100%;
-  min-height: 52px;
-  border: 1px solid rgba(16, 16, 16, 0.14);
-  border-radius: 16px;
-  padding: 0 16px;
-  background: #fff;
-  color: #101010;
-  font: inherit;
-  font-size: 15px;
-  font-weight: 650;
-  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
-}
-
-.auth-field input::placeholder {
-  color: rgba(16, 16, 16, 0.35);
-}
-
-.auth-field input:focus {
-  border-color: rgba(73, 122, 86, 0.72);
-  box-shadow: 0 0 0 4px rgba(73, 122, 86, 0.12);
-  outline: none;
-}
-
-.auth-submit,
-.auth-google {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  width: 100%;
-  min-height: 52px;
-  border-radius: 999px;
-  font: inherit;
-  font-size: 15px;
-  font-weight: 900;
-  cursor: pointer;
-  transition: transform 180ms ease, background 180ms ease, opacity 180ms ease;
-}
-
-.auth-submit {
-  margin-top: 6px;
-  border: 0;
-  background: #101010;
-  color: #fff;
-}
-
-.auth-submit:hover,
-.auth-google:hover {
-  transform: translateY(-2px);
-}
-
-.auth-submit:disabled,
-.auth-google:disabled {
-  cursor: not-allowed;
-  opacity: 0.65;
-  transform: none;
-}
-
-.auth-divider {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 12px;
-  margin: 20px 0;
-  color: rgba(16, 16, 16, 0.42);
-  font-size: 12px;
-  font-weight: 850;
-  text-transform: uppercase;
+  font-family: "Hivez Bricolage", sans-serif;
+  font-size: 2.65rem;
+  font-weight: 750;
+  letter-spacing: -0.07em;
+  color: #fffef6 !important;
+  line-height: 1;
 }
-
-.auth-divider::before,
-.auth-divider::after {
-  height: 1px;
-  content: "";
-  background: rgba(16, 16, 16, 0.1);
+.ha-brand svg {
+  height: 32px;
+  width: 34px;
+  fill: currentColor;
 }
-
-.auth-google {
-  border: 1px solid rgba(16, 16, 16, 0.13);
-  background: #fff;
-  color: #101010;
+.ha-brand > span {
+  margin-left: -10px;
 }
-
-.auth-google-icon {
+.ha-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.ha-icon-button {
   display: grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #101010;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  width: 42px;
+  height: 44px;
+  border-radius: 5px;
+}
+.ha-icon-button:hover {
+  background: var(--ha-input);
+}
+.ha-home {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-size: 0.8rem;
+  margin-left: 15px;
+}
+.ha-home:hover {
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+.ha-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(460px, 0.92fr);
+  min-height: calc(100dvh - 56px);
+}
+.ha-story {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: #23352b;
+  min-height: calc(100dvh - 56px);
+  color: #fffef8;
+}
+.ha-story-images,
+.ha-story-shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.ha-story-images img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 43% center;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+.ha-story-images img.is-active {
+  opacity: 1;
+}
+.ha-story-images img:nth-child(2) {
+  object-position: 48% center;
+}
+.ha-story-images img:nth-child(1) {
+  object-position: 40% center;
+}
+.ha-story-shade {
+  background: linear-gradient(
+    180deg,
+    rgba(13, 30, 21, 0.6),
+    transparent 25%,
+    rgba(14, 30, 21, 0.12) 42%,
+    rgba(13, 29, 20, 0.9) 78%,
+    #12271de8
+  );
+}
+.ha-story-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: end;
+  min-height: 100%;
+  padding: 210px clamp(36px, 4vw, 70px) 28px;
+}
+.ha-story-overline {
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.025em;
+  margin-bottom: 24px !important;
+}
+.ha-story-copy {
+  animation: ha-copy-in 0.55s ease both;
+}
+.ha-story-copy h2 {
+  font-family: "Hivez Bricolage", sans-serif;
+  font-weight: 600;
+  font-size: clamp(3rem, 5vw, 5.4rem);
+  letter-spacing: -0.055em;
+  line-height: 1.02;
+}
+.ha-story-copy p {
+  margin-top: 24px;
+  font-size: 0.98rem;
+  line-height: 1.7;
+  max-width: 410px;
+  color: #f4f5ed;
+}
+.ha-story-controls {
+  display: flex;
+  gap: 24px;
+  margin-top: 42px;
+}
+.ha-story-controls button {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 50px;
+  padding: 12px 0;
+  border: 0;
+  border-top: 1px solid #ffffff69;
+  background: transparent;
   color: #fff;
-  font-size: 13px;
-  font-weight: 950;
+  font-size: 0.83rem;
+  opacity: 0.75;
 }
-
-.auth-switch {
-  margin: 24px 0 0;
-  color: rgba(16, 16, 16, 0.58);
-  font-size: 15px;
+.ha-story-controls button[aria-pressed="true"] {
+  border-top-color: #fff;
+  box-shadow: 0 -1px 0 #fff;
+  opacity: 1;
+}
+.ha-story-controls button:hover {
+  opacity: 1;
+}
+.ha-story :focus-visible,
+.ha-brand:focus-visible {
+  outline-color: white;
+}
+.ha-photo-credit {
+  align-self: flex-start;
+  font-size: 0.61rem;
+  color: #e2e8df !important;
+  margin-top: 22px;
+}
+.ha-photo-credit:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.ha-form-section {
+  min-width: 0;
+  width: 100%;
+  max-width: 690px;
+  justify-self: center;
+  padding: 100px clamp(40px, 5vw, 85px) 32px;
+}
+.ha-mode-nav {
+  display: flex;
+  gap: 32px;
+  justify-content: center;
+}
+.ha-mode-nav a {
+  min-height: 36px;
+  padding: 4px 1px 8px;
+  font-size: 0.85rem;
+  color: var(--ha-muted);
+  border-bottom: 2px solid transparent;
+}
+.ha-mode-nav a[aria-current] {
+  color: var(--ha-ink);
+  border-color: var(--ha-ink);
+  font-weight: 600;
+}
+.ha-mode-nav a:hover {
+  color: var(--ha-ink);
+}
+.ha-companion {
+  position: relative;
+  height: 184px;
+  width: 100%;
+  margin: 8px 0 20px;
+  display: flex;
+  align-items: end;
+  justify-content: center;
+}
+.ha-companion .ha-bee {
+  position: absolute;
+  top: -88px;
+  left: 50%;
+  margin-left: -190px;
+  flex: none;
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: ha-bee-arrive 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.ha-companion--privacy .ha-bee {
+  transform: translate(12px, 4px);
+}
+.ha-bee-button {
+  position: absolute;
+  top: 30%;
+  left: 25%;
+  width: 50%;
+  height: 45%;
+  min-width: 44px;
+  min-height: 44px;
+  z-index: 2;
+  background: none;
+  border: 0;
+  border-radius: 50%;
+  padding: 0;
+  pointer-events: auto;
+}
+.ha-bee {
+  pointer-events: none;
+}
+.ha-bee img,
+.ha-bee video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  transition: opacity 0.12s ease;
+}
+.ha-companion-message {
+  position: relative;
+  z-index: 3;
+  font-size: 0.73rem;
+  color: var(--ha-muted);
+  text-align: center;
+  pointer-events: none;
+}
+.ha-form-content {
+  animation: ha-copy-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.ha-form-heading {
+  margin-bottom: 20px;
+  text-align: center;
+}
+.ha-form-heading h1 {
+  font-family: "Hivez Bricolage", sans-serif;
+  font-size: clamp(2rem, 2.7vw, 2.65rem);
   font-weight: 650;
-  text-align: center;
+  letter-spacing: -0.055em;
+  line-height: 1.12;
 }
-
-.auth-switch a {
-  color: #101010;
-  font-weight: 900;
-}
-
-.auth-footnote {
-  margin: 18px 0 0;
-  color: rgba(16, 16, 16, 0.42);
-  font-size: 12px;
-  line-height: 1.45;
-  text-align: center;
-}
-
-@media (max-width: 900px) {
-  .auth-page {
-    min-height: 100svh;
-    grid-template-columns: 1fr;
-    background: #f7f7f2;
-  }
-
-  .auth-brand-panel {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    min-height: auto;
-    padding: max(14px, env(safe-area-inset-top)) 20px 12px;
-    border-bottom: 1px solid rgba(16, 16, 16, 0.08);
-    background: rgba(247, 247, 242, 0.86);
-    color: #101010;
-    backdrop-filter: blur(18px);
-  }
-
-  .auth-brand-panel::before,
-  .auth-brand-copy,
-  .auth-preview-card {
-    display: none;
-  }
-
-  .auth-home-link {
-    border-color: rgba(16, 16, 16, 0.1);
-    background: rgba(255, 255, 255, 0.7);
-    color: rgba(16, 16, 16, 0.72);
-  }
-
-  .auth-form-panel {
-    align-content: start;
-    min-height: calc(100svh - 69px);
-    padding: 30px 20px max(28px, env(safe-area-inset-bottom));
-  }
-
-  .auth-card {
-    width: min(440px, 100%);
-    justify-self: center;
-    border: 1px solid rgba(16, 16, 16, 0.08);
-    border-radius: 28px;
-    padding: 22px;
-    background: #ffffff;
-    box-shadow: 0 0 0 1px rgba(16, 16, 16, 0.06);
-  }
-
-  .auth-card__header {
-    margin-bottom: 22px;
-  }
-
-  .auth-card h2 {
-    font-size: clamp(34px, 9vw, 44px);
-  }
-
-  .auth-card__header p:last-child {
-    font-size: 15px;
-  }
-
-  .auth-field input,
-  .auth-submit,
-  .auth-google {
-    min-height: 50px;
-  }
-}
-
-@media (max-width: 420px) {
-  .auth-brand-panel {
-    padding-inline: 14px;
-  }
-
-  .auth-logo {
-    font-size: 23px;
-  }
-
-  .auth-home-link {
-    padding: 8px 11px;
-    font-size: 12px;
-  }
-
-  .auth-form-panel {
-    padding: 18px 14px max(22px, env(safe-area-inset-bottom));
-  }
-
-  .auth-card {
-    border-radius: 24px;
-    padding: 18px;
-  }
-
-  .auth-card h2 {
-    font-size: 32px;
-  }
-
-  .auth-card__header {
-    margin-bottom: 18px;
-  }
-
-  .auth-card__header p:first-child {
-    margin-bottom: 8px;
-    font-size: 11px;
-  }
-
-  .auth-card__header p:last-child {
-    margin-top: 10px;
-    font-size: 14px;
-  }
-
-  .auth-form {
-    gap: 12px;
-  }
-
-  .auth-field {
-    gap: 7px;
-  }
-
-  .auth-field label {
-    font-size: 12px;
-  }
-
-  .auth-field input {
-    min-height: 48px;
-    border-radius: 14px;
-    padding-inline: 14px;
-    font-size: 14px;
-  }
-
-  .auth-submit,
-  .auth-google {
-    min-height: 49px;
-    font-size: 14px;
-  }
-
-  .auth-divider {
-    margin: 16px 0;
-  }
-
-  .auth-switch {
-    margin-top: 18px;
-    font-size: 14px;
-  }
-
-  .auth-footnote {
-    margin-top: 14px;
-    font-size: 11px;
-  }
-}
-
-@media (max-width: 340px) {
-  .auth-brand-top {
-    gap: 10px;
-  }
-
-  .auth-logo {
-    font-size: 21px;
-  }
-
-  .auth-home-link {
-    padding: 7px 9px;
-  }
-
-  .auth-card {
-    padding: 15px;
-  }
-
-  .auth-card h2 {
-    font-size: 29px;
-  }
-}
-
-.hivez-auth-page {
-  --background: #f7f7f2;
-  --foreground: #101010;
-  --card: #ffffff;
-  --card-foreground: #101010;
-  --primary: #3f6f4b;
-  --primary-foreground: #ffffff;
-  --secondary: #e8e6df;
-  --secondary-foreground: #101010;
-  --muted: #f0efe9;
-  --muted-foreground: #62625c;
-  --accent: #f2c14e;
-  --accent-foreground: #101010;
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: rgba(16, 16, 16, 0.1);
-  --input: rgba(16, 16, 16, 0.1);
-  --ring: #3f6f4b;
-  font-family: "Geist Variable", Inter, system-ui, sans-serif;
-}
-
-.hivez-auth-page,
-.hivez-auth-page * {
-  box-sizing: border-box;
-  letter-spacing: 0;
-}
-
-.hivez-auth-page button {
-  font: inherit;
-}
-
-.hivez-auth-page :focus-visible {
-  outline: 3px solid color-mix(in oklab, var(--primary) 30%, transparent);
-  outline-offset: 4px;
-}
-
-.hivez-auth-page .glass-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-}
-
-.hivez-auth-page .field-glow {
-  transition:
-    border-color 0.25s ease,
-    box-shadow 0.3s ease,
-    background-color 0.25s ease;
-}
-
-.hivez-auth-page .field-glow:focus {
+.ha-form-heading h1:focus {
   outline: none;
-  border-color: var(--primary);
 }
-
-.hivez-auth-page .link-underline {
+.ha-form-heading > p:not(.ha-step-status) {
+  color: var(--ha-muted);
+  font-size: 0.83rem;
+  padding-top: 11px;
+  line-height: 1.6;
+}
+.ha-step-status {
+  font-size: 0.7rem;
+  font-weight: 500;
+  margin-bottom: 12px !important;
+  color: var(--ha-accent);
+}
+.ha-step-status > span {
+  padding: 0 7px;
+}
+.ha-google {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 54px;
+  padding: 14px 18px;
+  border: 1px solid var(--ha-line);
+  border-radius: 7px;
+  color: var(--ha-ink);
+  background: var(--ha-paper);
+  font-size: 0.82rem !important;
+  font-weight: 500 !important;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+.ha-google:hover {
+  border-color: var(--ha-accent);
+  background: var(--ha-bg);
+}
+.ha-google svg {
+  flex: none;
+}
+.ha-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 0;
+  font-size: 0.66rem;
+  color: var(--ha-muted);
+}
+.ha-divider > span {
+  height: 1px;
+  background: var(--ha-line);
+  flex: 1;
+}
+.ha-field {
+  margin-bottom: 18px;
+}
+.ha-field label {
+  display: block;
+  font-size: 0.79rem;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+.ha-input-wrap {
   position: relative;
 }
-
-.hivez-auth-page .link-underline::after {
-  position: absolute;
-  left: 0;
-  bottom: -2px;
+.ha-input-wrap input {
+  display: block;
   width: 100%;
-  height: 1px;
-  content: "";
-  background: currentColor;
-  transform: scaleX(0);
-  transform-origin: right;
-  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  min-width: 0;
+  height: 54px;
+  border: 1px solid var(--ha-line);
+  border-radius: 7px;
+  background: var(--ha-paper);
+  color: var(--ha-ink);
+  padding: 13px 46px 13px 16px;
+  font-size: 0.89rem;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+.ha-input-wrap input::placeholder {
+  color: var(--ha-muted);
+  opacity: 1;
+}
+.ha-input-wrap input:focus {
+  outline: none;
+  border-color: var(--ha-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ha-accent) 15%, transparent);
+  background: var(--ha-paper);
+}
+.ha-input-wrap input:-webkit-autofill {
+  -webkit-text-fill-color: var(--ha-ink);
+  -webkit-box-shadow: 0 0 0 1000px var(--ha-paper) inset;
+}
+.ha-field--invalid .ha-input-wrap input {
+  border-color: var(--ha-danger);
+}
+.ha-field-error,
+.ha-field-hint {
+  margin-top: 7px !important;
+  font-size: 0.72rem !important;
+  color: var(--ha-muted);
+}
+.ha-field-error {
+  color: var(--ha-danger);
+}
+.ha-reveal {
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  width: 44px;
+  height: 46px;
+  border: 0;
+  display: grid;
+  place-items: center;
+  color: var(--ha-muted);
+  background: transparent;
+  border-radius: 5px;
+}
+.ha-reveal:hover {
+  color: var(--ha-ink);
+  background: var(--ha-input);
+}
+.ha-password-guide {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 0.66rem;
+  line-height: 1.5;
+  color: var(--ha-muted);
+  margin: -8px 0 22px;
+}
+.ha-strength-bars {
+  display: flex;
+  gap: 3px;
+  width: 42px;
+  flex: none;
+}
+.ha-strength-bars i {
+  height: 3px;
+  flex: 1;
+  background: var(--ha-line);
+}
+.ha-strength-bars i[data-filled="true"] {
+  background: var(--ha-accent);
+}
+.ha-forgot {
+  display: flex;
+  justify-content: end;
+  margin: -7px 0 18px;
+}
+.ha-forgot button,
+.ha-details-summary button {
+  background: none;
+  border: 0;
+  padding: 5px 0;
+  color: var(--ha-ink);
+  font-size: 0.75rem;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  min-height: 32px;
+}
+.ha-primary {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: 56px;
+  padding: 15px 20px;
+  border: 1px solid var(--ha-button);
+  border-radius: 7px;
+  background: var(--ha-button);
+  color: var(--ha-button-text);
+  font-size: 0.87rem !important;
+  font-weight: 600 !important;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+.ha-primary:hover {
+  background: var(--ha-accent);
+  border-color: var(--ha-accent);
+}
+.ha-page:is([data-public-theme="forest"], [data-public-theme="midnight"])
+  .ha-primary:hover {
+  color: var(--ha-bg);
+}
+.ha-primary svg {
+  flex: none;
+}
+.ha-details-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin: 0 0 26px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--ha-line);
+  font-size: 0.79rem;
+}
+.ha-details-summary > span {
+  overflow-wrap: anywhere;
+  min-width: 0;
+  color: var(--ha-muted);
+}
+.ha-details-summary > button {
+  flex: none;
+}
+.ha-form-footnote {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 40px;
+  margin-top: 18px !important;
+  font-size: 0.75rem;
+  color: var(--ha-muted);
+}
+.ha-form-footnote a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  color: var(--ha-ink);
+  font-weight: 500;
+}
+.ha-text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 6px;
+  border: 0;
+  background: none;
+  color: var(--ha-ink);
+}
+.ha-text-button:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.ha-recovery-help {
+  color: var(--ha-muted);
+  font-size: 0.82rem;
+  line-height: 1.7;
+  margin-bottom: 26px !important;
+}
+.ha-error {
+  margin: 10px 0 20px !important;
+  padding: 12px 14px;
+  border-left: 2px solid var(--ha-danger);
+  border-radius: 2px;
+  color: var(--ha-danger);
+  background: var(--ha-paper);
+  font-size: 0.78rem;
+  line-height: 1.7;
+}
+.ha-reset-sent > svg {
+  margin: 15px 0 20px;
+  color: var(--ha-accent);
+}
+.ha-reset-sent > p {
+  color: var(--ha-muted);
+  font-size: 0.85rem;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+  margin-bottom: 28px;
+}
+.ha-reset-sent strong {
+  color: var(--ha-ink);
+  font-weight: 500;
+}
+.ha-footer {
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 12px 44px;
+  font-size: 0.73rem;
+  color: var(--ha-muted);
+  background: var(--ha-bg);
+  border-top: 1px solid var(--ha-line);
+}
+.ha-spinner {
+  animation: ha-spin 1s linear infinite;
+}
+@keyframes ha-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes ha-copy-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes ha-bee-arrive {
+  from {
+    opacity: 0;
+    translate: -25px -12px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
 }
 
-.hivez-auth-page .link-underline:hover::after {
-  transform: scaleX(1);
-  transform-origin: left;
-}
-
-@media (max-width: 1023px) {
-  .hivez-auth-page main {
-    align-items: start;
-    padding-block: 28px;
+@media (min-width: 1700px) {
+  .ha-main {
+    grid-template-columns: minmax(0, 1.15fr) minmax(520px, 0.85fr);
   }
-
-  .hivez-auth-page section:first-child {
-    gap: 0;
+  .ha-form-section {
+    padding-top: 135px;
   }
-
-  .hivez-auth-page section:first-child h1 {
-    font-size: clamp(2.15rem, 10vw, 3.5rem);
+  .ha-companion {
+    height: 194px;
+    margin-bottom: 32px;
   }
-
-  .hivez-auth-page section:first-child > div:last-child {
-    min-height: 156px;
-    margin-top: 20px;
-  }
-
-  .hivez-auth-page section:first-child img,
-  .hivez-auth-page section:first-child video {
-    max-height: 176px;
+  .ha-story-copy h2 {
+    font-size: 5.5rem;
   }
 }
-
-@media (max-width: 520px) {
-  .hivez-auth-page main {
-    min-height: 100dvh;
-    gap: 12px;
-    padding: max(12px, env(safe-area-inset-top)) 12px max(16px, env(safe-area-inset-bottom));
+@media (max-width: 1100px) {
+  .ha-main {
+    grid-template-columns: minmax(0, 1fr) minmax(410px, 1fr);
   }
-
-  .hivez-auth-page section:first-child > span {
-    padding: 0.35rem 0.75rem;
-    font-size: 0.65rem;
-    line-height: 1.1;
+  .ha-form-section {
+    padding: 108px 35px 36px;
   }
-
-  .hivez-auth-page section:first-child h1 {
-    margin-top: 12px;
-    max-width: 22rem;
-    font-size: clamp(1.75rem, 8vw, 2.35rem);
-    line-height: 1.04;
+  .ha-story-content {
+    padding-inline: 35px;
   }
-
-  .hivez-auth-page section:first-child p {
-    margin-top: 8px;
-    max-width: 21rem;
+  .ha-story-copy h2 {
+    font-size: 3.2rem;
+  }
+  .ha-story-copy p {
+    font-size: 0.88rem;
+  }
+  .ha-header {
+    padding-inline: 30px;
+  }
+  .ha-home {
+    margin-left: 6px;
+  }
+}
+@media (max-width: 850px) and (min-width: 721px) {
+  .ha-main {
+    grid-template-columns: minmax(0, 0.8fr) minmax(390px, 1.2fr);
+  }
+  .ha-story-content {
+    padding-inline: 27px;
+  }
+  .ha-story-copy h2 {
+    font-size: 2.7rem;
+  }
+  .ha-story-overline {
+    font-size: 0.73rem;
+  }
+  .ha-story-copy p {
     font-size: 0.8rem;
-    line-height: 1.4;
   }
-
-  .hivez-auth-page .glass-card {
-    border-radius: 20px;
-    padding: 16px;
+  .ha-story-controls {
+    gap: 15px;
   }
-
-  .hivez-auth-page .glass-card h2 {
-    font-size: 1.35rem;
-    line-height: 1.1;
+  .ha-story-controls button {
+    font-size: 0.73rem;
   }
-
-  .hivez-auth-page .glass-card form {
-    margin-top: 1rem;
+  .ha-header {
+    padding-inline: 24px;
   }
-
-  .hivez-auth-page section:first-child > div:last-child,
-  .hivez-auth-page .auth-mobile-bee-home {
-    min-height: 180px;
-    margin-top: 10px;
-  }
-
-  .hivez-auth-page .auth-mobile-bee-home {
-    align-items: center;
-    justify-content: center;
-    overflow: visible;
-  }
-
-  .hivez-auth-page section:first-child img,
-  .hivez-auth-page section:first-child video {
-    max-height: 200px;
-  }
-
-  .hivez-auth-page section:first-child > div:last-child > div,
-  .hivez-auth-page .auth-mobile-bee-home > div {
-    width: min(76vw, 236px) !important;
-    height: min(66vw, 206px) !important;
-  }
-
-  .hivez-auth-page form .relative.pt-28 {
-    padding-top: 4.5rem;
-  }
-
-  .hivez-auth-page form .auth-login-submit {
-    padding-top: 0;
-  }
-
-  .hivez-auth-page .field-glow {
-    min-height: 3.05rem;
-    border-radius: 0.9rem;
-    padding-top: 1.32rem;
-    padding-bottom: 0.4rem;
-    font-size: 0.9rem;
-  }
-}
-
-@media (max-width: 380px) {
-  .hivez-auth-page main {
-    gap: 8px;
-    padding-inline: 10px;
-  }
-
-  .hivez-auth-page section:first-child h1 {
-    font-size: 1.65rem;
-  }
-
-  .hivez-auth-page section:first-child p {
+  .ha-home span {
     display: none;
   }
-
-  .hivez-auth-page section:first-child > div:last-child,
-  .hivez-auth-page .auth-mobile-bee-home {
-    min-height: 164px;
-    margin-top: 6px;
-  }
-
-  .hivez-auth-page section:first-child > div:last-child > div,
-  .hivez-auth-page .auth-mobile-bee-home > div {
-    width: 188px !important;
-    height: 164px !important;
-  }
-
-  .hivez-auth-page .glass-card {
-    padding: 14px;
-  }
-
-  .hivez-auth-page .glass-card form {
-    margin-top: 0.8rem;
-  }
-
-  .hivez-auth-page form .relative.pt-28 {
-    padding-top: 3.85rem;
-  }
-
-  .hivez-auth-page form .auth-login-submit {
-    padding-top: 0;
+  .ha-home {
+    width: 34px;
+    justify-content: center;
   }
 }
-
+@media (max-width: 720px) {
+  .ha-main {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .ha-header {
+    height: 80px;
+    padding: 0 24px;
+    color: #fffef6;
+  }
+  .ha-brand {
+    font-size: 2.2rem;
+  }
+  .ha-brand svg {
+    height: 27px;
+    width: 29px;
+  }
+  .ha-header-actions {
+    gap: 1px;
+  }
+  .ha-icon-button {
+    width: 36px;
+  }
+  .ha-icon-button:hover {
+    background: #ffffff26;
+  }
+  .ha-header :focus-visible {
+    outline-color: white;
+  }
+  .ha-home {
+    margin-left: 4px;
+    width: 35px;
+    justify-content: center;
+  }
+  .ha-home span {
+    display: none;
+  }
+  .ha-story {
+    height: 250px;
+    min-height: 250px;
+    flex: none;
+  }
+  .ha-story-content {
+    padding: 100px 24px 22px;
+    justify-content: end;
+  }
+  .ha-story-shade {
+    background: linear-gradient(180deg, #172e23b8, #172e2340 35%, #10271bdb);
+  }
+  .ha-story-copy h2 {
+    font-size: 2.2rem;
+    line-height: 1.05;
+    letter-spacing: -0.045em;
+  }
+  .ha-story-copy h2 br {
+    display: initial;
+  }
+  .ha-story-overline,
+  .ha-story-copy p,
+  .ha-story-controls,
+  .ha-photo-credit {
+    display: none;
+  }
+  .ha-story-images img {
+    object-position: 50% 46%;
+  }
+  .ha-story-images img:nth-child(2) {
+    object-position: 50% 40%;
+  }
+  .ha-form-section {
+    padding: 25px 26px 30px;
+    max-width: 520px;
+    margin: auto;
+  }
+  .ha-mode-nav {
+    gap: 34px;
+  }
+  .ha-companion {
+    height: 155px;
+    margin: 12px 0 20px;
+  }
+  .ha-companion .ha-bee {
+    width: 340px !important;
+    height: 296px !important;
+    top: -83px;
+    margin-left: -170px;
+  }
+  .ha-form-heading {
+    margin-bottom: 24px;
+  }
+  .ha-form-heading h1 {
+    font-size: 2.05rem;
+  }
+  .ha-form-heading > p:not(.ha-step-status) {
+    font-size: 0.8rem;
+  }
+  .ha-input-wrap input {
+    font-size: 1rem;
+  }
+  .ha-field label {
+    font-size: 0.8rem;
+  }
+  .ha-footer {
+    padding: 17px 24px;
+    font-size: 0.66rem;
+  }
+  .ha-companion-message {
+    font-size: 0.7rem;
+  }
+}
+@media (max-width: 380px) {
+  .ha-header {
+    padding-inline: 20px;
+  }
+  .ha-story {
+    height: 210px;
+    min-height: 210px;
+  }
+  .ha-story-content {
+    padding: 85px 20px 19px;
+  }
+  .ha-story-copy h2 {
+    font-size: 1.9rem;
+  }
+  .ha-form-section {
+    padding-inline: 20px;
+  }
+  .ha-companion {
+    height: 140px;
+  }
+  .ha-companion .ha-bee {
+    width: 310px !important;
+    height: 270px !important;
+    top: -77px;
+    margin-left: -155px;
+  }
+  .ha-form-heading h1 {
+    font-size: 1.8rem;
+  }
+  .ha-password-guide {
+    font-size: 0.61rem;
+  }
+  .ha-footer {
+    font-size: 0.6rem;
+    padding-inline: 20px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
-  .hivez-auth-page *,
-  .hivez-auth-page *::before,
-  .hivez-auth-page *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
+  .ha-page *,
+  .ha-page *::before,
+  .ha-page *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+.reduce-motion .ha-page * {
+  animation: none !important;
+  transition: none !important;
+}
+.high-contrast .ha-page {
+  --ha-muted: var(--ha-ink);
+  --ha-line: var(--ha-ink);
+}
+@media (forced-colors: active) {
+  .ha-primary,
+  .ha-google {
+    border: 1px solid ButtonText;
+  }
+  .ha-input-wrap input {
+    border-color: FieldText;
+  }
+  .ha-strength-bars i[data-filled="true"] {
+    background: Highlight;
   }
 }

@@ -228,7 +228,7 @@ async function loadRecentPosts(category?: string) {
     ? query(collection(db, "posts"), where("category", "==", category), orderBy("createdAt", "desc"), limit(160))
     : query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(220));
   const snap = await getDocs(q);
-  return snap.docs.map((item) => ({ id: item.id, ...item.data() }) as FeedPost);
+  return snap.docs.map((item) => ({ ...item.data(), id: item.id, }) as FeedPost);
 }
 
 async function loadFollowingIds(uid?: string) {

@@ -34,6 +34,7 @@ export default function CommentHeader({
 
         <button
           onClick={onClose}
+          aria-label="Close replies"
           className="flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-95"
         >
           <X

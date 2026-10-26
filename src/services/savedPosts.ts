@@ -1,7 +1,6 @@
 import {
   collection,
   doc,
-  increment,
   limit,
   onSnapshot,
   orderBy,
@@ -64,7 +63,7 @@ export async function toggleSavePost(input: { userId: string; post: FeedPost }) 
 
     if (saveSnap.exists()) {
       tx.delete(saveRef);
-      tx.update(postRef, { saves: increment(-1) });
+      tx.update(postRef, { saves: Math.max(0, (Number(postData.saves) || 0) - 1) });
       saved = false;
       return;
     }
@@ -75,18 +74,22 @@ export async function toggleSavePost(input: { userId: string; post: FeedPost }) 
       postAuthorId,
       createdAt: serverTimestamp(),
     });
-    tx.update(postRef, { saves: increment(1) });
+    tx.update(postRef, { saves: Math.max(0, Number(postData.saves) || 0) + 1 });
     saved = true;
   });
 
   if (saved) {
-    await recordPostEngagement({
-      postId: input.post.id,
-      actorId: input.userId,
-      authorId: postAuthorId,
-      type: "save",
-      category: input.post.category,
-    });
+    try {
+      await recordPostEngagement({
+        postId: input.post.id,
+        actorId: input.userId,
+        authorId: postAuthorId,
+        type: "save",
+        category: input.post.category,
+      });
+    } catch (error) {
+      console.warn("Post was saved, but its engagement event could not be recorded.", error);
+    }
   }
 
   return { saved };
@@ -110,8 +113,7 @@ export function listenToUserSavedPosts(
     (snapshot) => {
       onNext(
         snapshot.docs.map((record) => ({
-          id: record.id,
-          ...(record.data() as Omit<SavedPostDoc, "id">),
+          ...(record.data() as Omit<SavedPostDoc, "id">), id: record.id,
         }))
       );
     },

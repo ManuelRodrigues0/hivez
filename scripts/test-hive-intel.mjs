@@ -136,10 +136,10 @@ function establishedRegistry() {
   };
   const metadata = {
     "lost-pets": { aliases: ["lost pet", "missing pet", "missing dog", "missing cat", "stray", "found pet"], keywords: ["missing", "lost", "dog", "cat", "animal"] },
-    waste: { aliases: ["garbage", "trash", "rubbish", "refuse"], keywords: ["dumping", "dump", "bins", "overflowing bins", "litter", "cleanup", "waste disposal"] },
-    "water-leakage": { aliases: ["water leak", "burst pipe", "pipe leak"], keywords: ["pipe", "leak", "leaking", "water", "drain", "pouring", "puddle", "tap"] },
-    roads: { aliases: ["potholes", "broken road"], keywords: ["pothole", "hole", "road damage", "crack", "asphalt", "street damage", "uneven road"] },
-    "street-lights": { aliases: ["street lamp", "streetlight", "street light"], keywords: ["light", "lamp", "dark", "lighting", "broken lamp", "lamp not working"] },
+    waste: { aliases: ["garbage", "trash", "rubbish", "refuse", "trash dump", "dumped trash", "illegal dumping"], keywords: ["dumping", "dump", "bins", "overflowing bins", "litter", "cleanup", "waste disposal"] },
+    "water-leakage": { aliases: ["water leak", "burst pipe", "pipe leak", "broken pipe", "water pipe", "leaking pipe"], keywords: ["pipe", "leak", "leaking", "water", "drain", "pouring", "puddle", "tap"] },
+    roads: { aliases: ["potholes", "broken road", "hole in road", "road hole", "large road hole"], keywords: ["pothole", "hole", "road damage", "crack", "asphalt", "street damage", "uneven road"] },
+    "street-lights": { aliases: ["street lamp", "streetlight", "street light", "broken lamp", "lamp not working"], keywords: ["light", "lamp", "dark", "lighting", "broken lamp", "lamp not working"] },
     "illegal-parking": { aliases: ["parking"], keywords: ["parked", "blocking", "blocked", "double parked", "no parking"] },
     "fallen-trees": { aliases: ["fallen tree", "tree down", "fallen branch"], keywords: ["tree", "branch", "blocked route", "hazard", "storm damage"] },
     "electric-hazards": { aliases: ["electrical hazard", "exposed wires", "damaged pole"], keywords: ["wire", "pole", "sparking", "electric", "cable"] },
@@ -330,6 +330,45 @@ await step("DESC short 'Broken pipe.' → completeness hint present", async () =
   assert(result.ok === true, `expected ok, got ${JSON.stringify(result)}`);
   assert(result.completenessHints.length > 0 || result.suggestion !== null, "should offer a hint or suggestion");
 }, { live: true });
+
+await step("DESC unprovided place names are discarded", async () => {
+  const saved = {
+    baseUrl: process.env.OMNIROUTE_BASE_URL,
+    apiKey: process.env.OMNIROUTE_API_KEY,
+    model: process.env.OMNIROUTE_MODEL,
+  };
+  const mock = createServer(async (req, res) => {
+    for await (const _chunk of req) { /* consume the request body */ }
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({
+      model: "mock-model",
+      choices: [{ message: { content: '{"suggestion":"The road near Main Street is damaged.","completenessHints":[]}' } }],
+    }));
+  });
+  const port = await freePort();
+  await new Promise((resolve, reject) => {
+    mock.once("error", reject);
+    mock.listen(port, "127.0.0.1", resolve);
+  });
+  try {
+    process.env.OMNIROUTE_BASE_URL = `http://127.0.0.1:${port}/v1`;
+    process.env.OMNIROUTE_API_KEY = "test-only-mock-key";
+    process.env.OMNIROUTE_MODEL = "mock-model";
+    const result = await assistDescription({ description: "road bad here" });
+    assert(result.ok === true, `expected safe response, got ${JSON.stringify(result)}`);
+    assert(result.suggestion === null, `unsupported place name leaked into suggestion: ${result.suggestion}`);
+    return "mocked Main Street insertion was discarded";
+  } finally {
+    mock.closeAllConnections?.();
+    await new Promise((resolve) => mock.close(resolve));
+    if (saved.baseUrl === undefined) delete process.env.OMNIROUTE_BASE_URL;
+    else process.env.OMNIROUTE_BASE_URL = saved.baseUrl;
+    if (saved.apiKey === undefined) delete process.env.OMNIROUTE_API_KEY;
+    else process.env.OMNIROUTE_API_KEY = saved.apiKey;
+    if (saved.model === undefined) delete process.env.OMNIROUTE_MODEL;
+    else process.env.OMNIROUTE_MODEL = saved.model;
+  }
+});
 
 console.log("\n=== §59 DUPLICATE / RELATED SEMANTIC ANALYSIS (live) ===\n");
 

@@ -3,7 +3,6 @@ import {
   doc,
   documentId,
   getDoc,
-  increment,
   limit,
   onSnapshot,
   orderBy,
@@ -62,7 +61,7 @@ export async function toggleReHive(input: {
 
     if (reHiveSnap.exists()) {
       tx.delete(reHiveRef);
-      tx.update(postRef, { reHives: increment(-1) });
+      tx.update(postRef, { reHives: Math.max(0, (Number(postData.reHives) || 0) - 1) });
       active = false;
       return;
     }
@@ -73,12 +72,12 @@ export async function toggleReHive(input: {
       postAuthorId,
       createdAt: serverTimestamp(),
     });
-    tx.update(postRef, { reHives: increment(1) });
+    tx.update(postRef, { reHives: Math.max(0, Number(postData.reHives) || 0) + 1 });
     active = true;
   });
 
   if (active) {
-    await Promise.all([
+    const sideEffects = await Promise.allSettled([
       createNotification({
         recipientId: postAuthorId,
         actor: input.actor,
@@ -95,6 +94,9 @@ export async function toggleReHive(input: {
         category: input.post.category,
       }),
     ]);
+    if (sideEffects.some((result) => result.status === "rejected")) {
+      console.warn("ReHive saved, but a notification or engagement event could not be recorded.");
+    }
   }
 
   return { active };
@@ -112,8 +114,7 @@ export function listenToUserReHives(
     (snapshot) => {
       onNext(
         snapshot.docs.map((record) => ({
-          id: record.id,
-          ...(record.data() as Omit<ReHiveDoc, "id">),
+          ...(record.data() as Omit<ReHiveDoc, "id">), id: record.id,
         }))
       );
     },
@@ -145,7 +146,7 @@ export function listenToPostsByIds(postIds: string[], onNext: (posts: FeedPost[]
       (snapshot) => {
         chunk.forEach((id) => postMap.delete(id));
         snapshot.docs.forEach((postDoc) => {
-          postMap.set(postDoc.id, { id: postDoc.id, ...(postDoc.data() as Omit<FeedPost, "id">) });
+          postMap.set(postDoc.id, { ...(postDoc.data() as Omit<FeedPost, "id">), id: postDoc.id, });
         });
         notify();
       },
@@ -158,5 +159,5 @@ export function listenToPostsByIds(postIds: string[], onNext: (posts: FeedPost[]
 
 export async function getReHivedPost(postId: string) {
   const snap = await getDoc(doc(db, "posts", postId));
-  return snap.exists() ? ({ id: snap.id, ...(snap.data() as Omit<FeedPost, "id">) } as FeedPost) : null;
+  return snap.exists() ? ({ ...(snap.data() as Omit<FeedPost, "id">), id: snap.id, } as FeedPost) : null;
 }

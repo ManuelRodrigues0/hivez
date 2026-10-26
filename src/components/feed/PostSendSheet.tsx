@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { BadgeCheck, Check, Search, Send, X } from "lucide-react";
 import { toast } from "sonner";
@@ -47,38 +47,65 @@ export default function PostSendSheet({ post, open, onClose }: Props) {
   const [selected, setSelected] = useState<Record<string, SearchableUser>>({});
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState("");
+  const sendLock = useRef(false);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!open || !dialog) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    dialog.showModal();
+    dialog.querySelector<HTMLInputElement>("input")?.focus();
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      if (dialog.open) dialog.close();
+      document.body.style.overflow = previous;
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open || !user) return;
-    return onSnapshot(query(collection(db, "chats"), where("participants", "array-contains", user.uid)), (snapshot) => {
-      const nextChats = snapshot.docs
-        .map((chatDoc) => ({ id: chatDoc.id, ...(chatDoc.data() as Omit<ChatDoc, "id">) }))
-        .filter((chat) => chat.participants?.includes(user.uid))
-        .sort((a, b) => timestampMillis(b.lastMessageAt) - timestampMillis(a.lastMessageAt))
-        .slice(0, 10);
-      setChats(nextChats);
-    });
+    return onSnapshot(
+      query(collection(db, "chats"), where("participants", "array-contains", user.uid)),
+      (snapshot) => {
+        const nextChats = snapshot.docs
+          .map((chatDoc) => ({ id: chatDoc.id, ...(chatDoc.data() as Omit<ChatDoc, "id">) }))
+          .filter((chat) => chat.participants?.includes(user.uid))
+          .sort((a, b) => timestampMillis(b.lastMessageAt) - timestampMillis(a.lastMessageAt))
+          .slice(0, 10);
+        setChats(nextChats);
+      },
+      (error) => {
+        console.error("Could not load recent chats for post sharing:", error);
+        setChats([]);
+        toast.error("Could not load recent conversations.");
+      },
+    );
   }, [open, user]);
 
   const recentIds = useMemo(() => {
     if (!user) return [];
-    return chats
+    return [...new Set(chats
       .map((chat) => chat.participants.find((id) => id !== user.uid && id !== ULTRA_BEE_ID))
-      .filter(Boolean) as string[];
+      .filter((id): id is string => Boolean(id)))];
   }, [chats, user]);
   const liveProfiles = useLiveProfiles(recentIds);
 
   const recentPeople = useMemo(() => {
     if (!user) return [];
-    return chats
-      .map((chat) => {
-        const id = chat.participants.find((participantId) => participantId !== user.uid && participantId !== ULTRA_BEE_ID);
-        if (!id) return null;
-        const stored = chat.participantProfiles?.[id];
-        const live = liveProfiles[id];
-        return live ? userSummary({ ...(stored || {}), ...live, uid: id } as SearchableUser) : stored ? userSummary({ ...stored, uid: id }) : null;
-      })
-      .filter(Boolean) as SearchableUser[];
+    const people = new Map<string, SearchableUser>();
+    for (const chat of chats) {
+      const id = chat.participants.find((participantId) => participantId !== user.uid && participantId !== ULTRA_BEE_ID);
+      if (!id || people.has(id)) continue;
+      const stored = chat.participantProfiles?.[id];
+      const live = liveProfiles[id];
+      if (live) people.set(id, userSummary({ ...(stored || {}), ...live, uid: id } as SearchableUser));
+      else if (stored) people.set(id, userSummary({ ...stored, uid: id }));
+    }
+    return [...people.values()];
   }, [chats, liveProfiles, user]);
 
   useEffect(() => {
@@ -90,16 +117,27 @@ export default function PostSendSheet({ post, open, onClose }: Props) {
       return;
     }
 
+    let active = true;
     const timeout = window.setTimeout(async () => {
-      setSearching(true);
+      if (active) setSearching(true);
       try {
-        setPeople(await searchUsers(trimmed, user?.uid, 12));
+        const results = await searchUsers(trimmed, user?.uid, 12);
+        if (active) setPeople(results);
+      } catch (error) {
+        console.error("Could not search people for post sharing:", error);
+        if (active) {
+          setPeople([]);
+          toast.error("Could not search people. Please try again.");
+        }
       } finally {
-        setSearching(false);
+        if (active) setSearching(false);
       }
     }, 240);
 
-    return () => window.clearTimeout(timeout);
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+    };
   }, [open, queryText, user?.uid]);
 
   useEffect(() => {
@@ -109,6 +147,7 @@ export default function PostSendSheet({ post, open, onClose }: Props) {
       setSelected({});
       setMessage("");
       setSending(false);
+      setSendError("");
     }
   }, [open]);
 
@@ -125,9 +164,11 @@ export default function PostSendSheet({ post, open, onClose }: Props) {
   }
 
   async function sendSelected() {
-    if (!user || sending) return;
+    if (!user || sendLock.current) return;
     const recipients = Object.values(selected);
     if (!recipients.length) return;
+    sendLock.current = true;
+    setSendError("");
 
     const actor = {
       uid: user.uid,
@@ -140,19 +181,25 @@ export default function PostSendSheet({ post, open, onClose }: Props) {
     try {
       let sent = 0;
       const failures: string[] = [];
+      const failedRecipients: Record<string, SearchableUser> = {};
       for (const recipient of recipients) {
         try {
           await sendPostViaDm({ post, sender: actor, recipient, optionalText: message });
           sent += 1;
         } catch (error) {
           failures.push(error instanceof Error ? error.message : `Could not send to ${recipient.displayName}`);
+          failedRecipients[recipient.uid] = recipient;
         }
       }
 
       if (sent) toast.success(sent === 1 ? "Post sent" : `Post sent to ${sent} people`);
-      if (failures.length) toast.error(failures[0]);
-      if (sent) onClose();
+      if (failures.length) {
+        setSendError(failures[0]);
+        setSelected(failedRecipients);
+        toast.error(failures[0]);
+      } else if (sent) onClose();
     } finally {
+      sendLock.current = false;
       setSending(false);
     }
   }
@@ -163,7 +210,24 @@ export default function PostSendSheet({ post, open, onClose }: Props) {
   const candidates = queryText.trim() ? people : recentPeople;
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-end justify-center bg-black/60 px-0 backdrop-blur-xs sm:items-center sm:px-4" role="dialog" aria-modal="true" aria-label="Send post via direct message">
+    <dialog
+      ref={dialogRef}
+      className="fixed inset-0 z-[110] flex items-end justify-center bg-black/60 px-0 backdrop-blur-xs sm:items-center sm:px-4"
+      style={{ width: "100%", maxWidth: "none", height: "100%", maxHeight: "none", margin: 0, paddingBlock: 0, border: 0, color: "inherit" }}
+      aria-label="Send post via direct message"
+      onClose={onClose}
+      onCancel={event => { if (sending) event.preventDefault(); }}
+      onClick={event => { if (!sending && event.target === dialogRef.current) onClose(); }}
+      onKeyDown={event => {
+        if (event.key !== "Tab") return;
+        const controls = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), textarea:not(:disabled), a[href], [tabindex="0"]')).filter(element => element.getClientRects().length > 0);
+        const first = controls[0];
+        const last = controls[controls.length - 1];
+        if (!first) { event.preventDefault(); return; }
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      }}
+    >
       <div className="flex max-h-[88vh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl border border-[#1c1d1a]/10 bg-white shadow-2xl dark:border-neutral-800 dark:bg-[#121212] sm:rounded-3xl">
         <div className="flex items-center justify-between border-b border-[#1c1d1a]/10 px-4 py-3.5 dark:border-neutral-800">
           <div>
@@ -173,6 +237,7 @@ export default function PostSendSheet({ post, open, onClose }: Props) {
           <button
             type="button"
             onClick={onClose}
+            disabled={sending}
             className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f7f7f2] text-[#1c1d1a] transition hover:bg-[#ecece5] dark:bg-[#1a1a1a] dark:text-white"
             aria-label="Close send sheet"
           >
@@ -186,7 +251,8 @@ export default function PostSendSheet({ post, open, onClose }: Props) {
             <input
               value={queryText}
               onChange={(event) => setQueryText(event.target.value)}
-              autoFocus
+              disabled={sending}
+              aria-label="Search people to message"
               placeholder="Search people..."
               className="flex-1 bg-transparent text-xs font-medium text-[#1c1d1a] placeholder:text-[#1c1d1a]/40 outline-none dark:text-white dark:placeholder:text-neutral-500"
             />
@@ -206,6 +272,8 @@ export default function PostSendSheet({ post, open, onClose }: Props) {
                   key={person.uid}
                   type="button"
                   onClick={() => togglePerson(person)}
+                  disabled={sending}
+                  aria-pressed={isSelected}
                   className="flex w-full items-center gap-3 rounded-2xl p-2.5 text-left transition hover:bg-[#1c1d1a]/5 dark:hover:bg-white/5"
                 >
                   <img
@@ -240,8 +308,11 @@ export default function PostSendSheet({ post, open, onClose }: Props) {
             onChange={(event) => setMessage(event.target.value)}
             rows={2}
             placeholder="Add a message..."
+            aria-label="Add a message to the shared post"
+            disabled={sending}
             className="mb-2 max-h-28 w-full resize-none rounded-2xl border border-[#1c1d1a]/10 bg-[#f7f7f2] px-3 py-2 text-xs font-medium text-[#1c1d1a] outline-none placeholder:text-[#1c1d1a]/40 focus:border-[#3d654c]/40 dark:border-neutral-800 dark:bg-[#181818] dark:text-white dark:placeholder:text-neutral-500 dark:focus:border-[#f2c14e]/40"
           />
+          {sendError && <p role="alert" className="mb-3 break-words text-xs text-red-600 dark:text-red-300">{sendError}</p>}
           <button
             type="button"
             onClick={sendSelected}
@@ -253,6 +324,6 @@ export default function PostSendSheet({ post, open, onClose }: Props) {
           </button>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }

@@ -10,8 +10,8 @@
 import { callOmniRouteChat } from "../client.js";
 import { SEARCH_THRESHOLDS, REQUEST_SETTINGS, logIntel } from "../config.js";
 import type { HiveMatch, HiveSearchResult, HiveSearchFailure, HiveSnapshot, SearchMatchType } from "../types.js";
-import { findDeterministicCandidates, tokenize } from "./registry.js";
-import { extractJsonObject, asString, asStringArray, asConfidence } from "./validation.js";
+import { findDeterministicCandidates, hasStrongDeterministicMatch, tokenize } from "./registry.js";
+import { extractJsonObject, asString, asStringArray, asConfidence, asBoolean } from "./validation.js";
 import { cacheKey, getCached, setCached, registryVersion } from "./cache.js";
 
 function buildRegistryDigest(registry: HiveSnapshot[]): string {
@@ -91,7 +91,7 @@ export async function searchHives(
   // 1. Deterministic pass (never calls AI).
   const deterministic = findDeterministicCandidates(trimmed, registry, SEARCH_THRESHOLDS.minDeterministicScore);
   const best = deterministic[0];
-  if (best && best.score >= SEARCH_THRESHOLDS.strongDeterministicScore) {
+  if (best && hasStrongDeterministicMatch(deterministic, SEARCH_THRESHOLDS.strongDeterministicScore)) {
     logIntel("HiveSearch", "Deterministic match found", { matchedVia: best.matchedVia, score: best.score });
     return {
       ok: true,
@@ -135,6 +135,7 @@ export async function searchHives(
     temperature: 0.1,
     maxTokens: 400,
     timeoutMs: REQUEST_SETTINGS.timeoutMs,
+    responseFormat: "json_object",
   });
 
   // 3. Graceful degradation: deterministic results remain available.
@@ -161,7 +162,12 @@ export async function searchHives(
     const hiveId = asString(record.hiveId, 120);
     const confidence = asConfidence(record.confidence);
     const reason = asString(record.reason, 200) ?? "Appears to match this hive.";
-    if (!hiveId || confidence === null || !byId.has(hiveId)) continue;
+    if (
+      !hiveId ||
+      confidence === null ||
+      confidence < SEARCH_THRESHOLDS.semanticMatchConfidence ||
+      !byId.has(hiveId)
+    ) continue;
     const matchType: SearchMatchType =
       semanticMatches.length === 0 && confidence >= SEARCH_THRESHOLDS.semanticMatchConfidence
         ? "semantic_hive"
@@ -174,17 +180,20 @@ export async function searchHives(
   const top = semanticMatches[0];
   const second = semanticMatches[1];
   const ambiguous =
-    asString(payload.needsClarification, 8) === "true" ||
-    (Boolean(top && second) && Boolean(top) && Boolean(second) &&
-      (top as HiveMatch).confidence < SEARCH_THRESHOLDS.strongDeterministicScore &&
-      (second as HiveMatch).confidence >= (top as HiveMatch).confidence * 0.8);
+    asBoolean(payload.needsClarification) === true ||
+    Boolean(top && second) &&
+      top.confidence < SEARCH_THRESHOLDS.strongDeterministicScore &&
+      top.confidence - second.confidence < 0.12;
 
   let matches: HiveMatch[] = semanticMatches;
-  if (ambiguous && top && top.confidence < SEARCH_THRESHOLDS.clarificationConfidence) {
+  if (ambiguous && top) {
     matches = [
       { ...top, matchType: "clarification_needed" },
       ...semanticMatches.slice(1, SEARCH_THRESHOLDS.maxAlternatives + 1),
     ];
+  }
+  if (matches.length === 0) {
+    matches = mapDeterministicToMatches(deterministic, SEARCH_THRESHOLDS.maxAlternatives);
   }
   matches = matches.slice(0, SEARCH_THRESHOLDS.maxAlternatives + 1);
 

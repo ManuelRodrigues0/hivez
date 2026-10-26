@@ -204,7 +204,7 @@ export default function EditProfile() {
   }
 
   return (
-    <div className="w-full min-h-screen px-4 py-5 md:px-8 space-y-6 select-none">
+    <div className="hv-edit-profile w-full min-h-screen px-4 py-5 md:px-8 space-y-6 select-none">
       {/* Top Banner Header */}
       <div className="flex items-center justify-between pb-3 border-b border-[#1c1d1a]/10 dark:border-neutral-800">
         <div className="flex items-center gap-3">

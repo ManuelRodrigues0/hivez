@@ -1,11 +1,5 @@
-import { useRef, useState } from "react";
-import {
-  Camera,
-  Check,
-  Sparkles,
-  Trash2,
-  Upload,
-} from "lucide-react";
+import { useId, useRef, useState } from "react";
+import { Camera, Check, Sparkles, Trash2, Upload } from "lucide-react";
 import { profileAvatarOptions } from "@/data/profileAvatars";
 
 type ProfileImagePickerProps = {
@@ -15,6 +9,9 @@ type ProfileImagePickerProps = {
   onFileError?: (message: string) => void;
   onRemove?: () => void;
   uploading?: boolean;
+  disabled?: boolean;
+  variant?: "default" | "onboarding";
+  initial?: string;
 };
 
 const fallbackProfileSvg = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
@@ -41,13 +38,19 @@ export function ProfileImagePicker({
   onFileError,
   onRemove,
   uploading = false,
+  disabled = false,
+  variant = "default",
+  initial = "?",
 }: ProfileImagePickerProps) {
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const avatarButtonRef = useRef<HTMLButtonElement>(null);
+  const avatarPanelId = useId();
   const [avatarOpen, setAvatarOpen] = useState(false);
+  const busy = uploading || disabled;
 
   const selectedAvatar = profileAvatarOptions.find(
-    (option) => option.src === value
+    (option) => option.src === value,
   );
 
   const handleFile = async (file: File | undefined) => {
@@ -77,13 +80,25 @@ export function ProfileImagePicker({
   };
 
   return (
-    <div className="hivez-profile-photo-panel">
+    <div
+      className={`hivez-profile-photo-panel ${variant === "onboarding" ? "cp-photo-picker" : ""}`}
+    >
       <div className="hivez-profile-preview-shell">
-        <img
-          src={value || fallbackProfileSvg}
-          alt="Profile preview"
-          className="hivez-profile-preview-image"
-        />
+        {variant === "onboarding" && !value ? (
+          <div
+            role="img"
+            aria-label="No profile photo selected"
+            className="cp-avatar-placeholder"
+          >
+            {initial}
+          </div>
+        ) : (
+          <img
+            src={value || fallbackProfileSvg}
+            alt="Profile preview"
+            className="hivez-profile-preview-image"
+          />
+        )}
         <div className="hivez-profile-preview-badge">Profile photo</div>
       </div>
 
@@ -92,7 +107,7 @@ export function ProfileImagePicker({
           type="button"
           className="hivez-profile-picker-button"
           onClick={() => galleryInputRef.current?.click()}
-          disabled={uploading}
+          disabled={busy}
         >
           <Upload size={16} />
           Upload
@@ -102,7 +117,7 @@ export function ProfileImagePicker({
           type="button"
           className="hivez-profile-picker-button"
           onClick={() => cameraInputRef.current?.click()}
-          disabled={uploading}
+          disabled={busy}
         >
           <Camera size={16} />
           Camera
@@ -111,7 +126,11 @@ export function ProfileImagePicker({
         <button
           type="button"
           className="hivez-profile-picker-button"
+          ref={avatarButtonRef}
           onClick={() => setAvatarOpen((open) => !open)}
+          disabled={busy}
+          aria-expanded={avatarOpen}
+          aria-controls={avatarPanelId}
         >
           <Sparkles size={16} />
           Avatar
@@ -119,7 +138,12 @@ export function ProfileImagePicker({
       </div>
 
       {(value || selectedAvatar) && onRemove && (
-        <button type="button" className="hivez-profile-remove-button" onClick={onRemove}>
+        <button
+          type="button"
+          className="hivez-profile-remove-button"
+          onClick={onRemove}
+          disabled={busy}
+        >
           <Trash2 size={14} />
           Remove image
         </button>
@@ -128,6 +152,9 @@ export function ProfileImagePicker({
       <input
         ref={galleryInputRef}
         type="file"
+        aria-label="Upload profile photo"
+        tabIndex={-1}
+        disabled={busy}
         accept="image/*"
         className="sr-only"
         onChange={(event) => {
@@ -139,6 +166,9 @@ export function ProfileImagePicker({
       <input
         ref={cameraInputRef}
         type="file"
+        aria-label="Take profile photo"
+        tabIndex={-1}
+        disabled={busy}
         accept="image/*"
         capture="environment"
         className="sr-only"
@@ -149,7 +179,19 @@ export function ProfileImagePicker({
       />
 
       {avatarOpen && (
-        <div className="hivez-profile-avatar-panel">
+        <div
+          id={avatarPanelId}
+          className="hivez-profile-avatar-panel"
+          role="group"
+          aria-label="Choose a profile avatar"
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.stopPropagation();
+              setAvatarOpen(false);
+              avatarButtonRef.current?.focus();
+            }
+          }}
+        >
           <div className="hivez-profile-avatar-grid">
             {profileAvatarOptions.map((avatar) => {
               const selected = value === avatar.src;
@@ -162,8 +204,11 @@ export function ProfileImagePicker({
                   onClick={() => {
                     onChange(avatar.src);
                     setAvatarOpen(false);
+                    avatarButtonRef.current?.focus();
                   }}
                   aria-label={`Choose ${avatar.name}`}
+                  aria-pressed={selected}
+                  disabled={busy}
                   title={avatar.name}
                 >
                   <img src={avatar.src} alt={avatar.name} />

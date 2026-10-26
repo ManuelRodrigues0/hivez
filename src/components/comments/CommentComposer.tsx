@@ -91,15 +91,19 @@ const CommentComposer = forwardRef<
           <textarea
             ref={ref}
             value={value}
+            disabled={sending}
             rows={1}
             placeholder="Write a reply..."
+            aria-label="Write a reply"
             onChange={(e) =>
               onChange(e.target.value)
             }
             onKeyDown={(e) => {
               if (
                 e.key === "Enter" &&
-                !e.shiftKey
+                !e.shiftKey &&
+                !e.nativeEvent.isComposing &&
+                !sending
               ) {
                 e.preventDefault();
                 onSend();
@@ -110,6 +114,7 @@ const CommentComposer = forwardRef<
 
           <button
             onClick={onSend}
+            aria-label="Send reply"
             disabled={
               sending ||
               !value.trim()

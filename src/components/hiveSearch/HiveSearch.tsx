@@ -7,9 +7,10 @@
  * The UI only ever shows Hivez-level results — never provider/model internals.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Search, X } from "lucide-react";
+import { ArrowUpRight, Loader2, Search, X } from "lucide-react";
 import { buildHiveRegistry, intelSearchHives, type HiveRegistryEntry } from "@/services/omnirouteIntel";
 import { hiveStatusLabel } from "@/services/hives";
+import { findDeterministicCandidates, hasStrongDeterministicMatch } from "../../../lib/omniroute/intelligence/registry";
 
 interface HiveSearchProps {
   onSelect: (hiveId: string, hive: HiveRegistryEntry) => void;
@@ -17,6 +18,7 @@ interface HiveSearchProps {
   placeholder?: string;
   maxResults?: number;
   autoFocus?: boolean;
+  showSuggestions?: boolean;
 }
 
 interface RankedResult {
@@ -28,43 +30,7 @@ interface RankedResult {
 
 const MIN_QUERY_LENGTH = 2;
 
-/** Lightweight deterministic scorer over hive metadata (never calls AI). */
-function scoreHive(queryTokens: string[], hive: HiveRegistryEntry): number {
-  const name = hive.name.toLowerCase();
-  const aliases = (hive.aliases ?? []).map((alias) => alias.toLowerCase());
-  const keywords = (hive.keywords ?? []).map((keyword) => keyword.toLowerCase());
-  const fullText = [name, ...aliases, ...keywords].join(" | ");
-  let best = 0;
-  for (const token of queryTokens) {
-    if (!token) continue;
-    if (name === token) best = Math.max(best, 1.0);
-    else if (name.startsWith(token)) best = Math.max(best, 0.92);
-    else if (aliases.some((alias) => alias === token)) best = Math.max(best, 0.95);
-    else if (aliases.some((alias) => alias.startsWith(token))) best = Math.max(best, 0.85);
-    else if (keywords.some((keyword) => keyword.includes(token))) best = Math.max(best, 0.8);
-    else if (name.includes(token)) best = Math.max(best, 0.75);
-    else if (fullText.includes(token)) best = Math.max(best, 0.6);
-  }
-  return best;
-}
-
-function deterministicResults(query: string, registry: HiveRegistryEntry[], maxResults: number): RankedResult[] {
-  const tokens = query.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
-  if (!tokens.length) return [];
-  return registry
-    .map((hive) => {
-      const combined = `${hive.name} ${(hive.aliases ?? []).join(" ")} ${(hive.keywords ?? []).join(" ")}`.toLowerCase();
-      const score = scoreHive(tokens, hive);
-      const reason = combined.includes(tokens.join(" ")) || hive.name.toLowerCase().includes(tokens.join(" "))
-        ? "Matches this hive"
-        : "Related to your search";
-      return { hive, score, reason, matchType: score >= 0.82 ? "existing_hive" : score >= 0.4 ? "related_hive" : "semantic_hive" };
-    })
-    .filter((entry) => entry.score >= 0.4)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, maxResults);
-}
-export default function HiveSearch({ onSelect, onCreateNewIssue, placeholder = "Search Hives...", maxResults = 6, autoFocus = false }: HiveSearchProps) {
+export default function HiveSearch({ onSelect, onCreateNewIssue, placeholder = "Search Hives...", maxResults = 6, autoFocus = false, showSuggestions = true }: HiveSearchProps) {
   const [query, setQuery] = useState("");
   const [registry, setRegistry] = useState<HiveRegistryEntry[]>([]);
   const [registryLoading, setRegistryLoading] = useState(true);
@@ -96,8 +62,20 @@ export default function HiveSearch({ onSelect, onCreateNewIssue, placeholder = "
   }, []);
 
   const trimmed = query.trim();
-  const local = useMemo(() => (trimmed.length >= MIN_QUERY_LENGTH ? deterministicResults(trimmed, registry, maxResults) : []), [trimmed, registry, maxResults]);
-  const strongMatch = local.length > 0 && local[0].score >= 0.82;
+  const localCandidates = useMemo(
+    () => (trimmed.length >= MIN_QUERY_LENGTH ? findDeterministicCandidates(trimmed, registry, 0.18) : []),
+    [trimmed, registry],
+  );
+  const local = useMemo(
+    () => localCandidates.slice(0, maxResults).map(({ hive, score, matchedVia }) => ({
+      hive,
+      score,
+      reason: matchedVia === "exact_name" ? "Matches this Hive" : "Related to your search",
+      matchType: score >= 0.82 ? "existing_hive" : "related_hive",
+    })),
+    [localCandidates, maxResults],
+  );
+  const strongMatch = hasStrongDeterministicMatch(localCandidates);
 
   // Semantic fallback: only for non-empty weak queries, debounced + cancellable.
   // All state updates happen inside callbacks/timeouts, never synchronously.
@@ -140,11 +118,16 @@ export default function HiveSearch({ onSelect, onCreateNewIssue, placeholder = "
     }, 300);
   }, [trimmed, strongMatch, registry, maxResults]);
 
-  const results: RankedResult[] = trimmed.length < MIN_QUERY_LENGTH ? [] : local.length > 0 ? local : semanticMatches;
-  const showSemanticNote = semanticUsed && results.length > 0 && local.length === 0;
+  const results: RankedResult[] =
+    trimmed.length < MIN_QUERY_LENGTH
+      ? []
+      : semanticUsed && semanticMatches.length > 0 && !strongMatch
+        ? semanticMatches
+        : local;
+  const showSemanticNote = semanticUsed && results.length > 0 && !strongMatch;
 
   return (
-    <div>
+    <div className="hv-hive-search">
       <div className="relative">
         <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <input
@@ -153,16 +136,17 @@ export default function HiveSearch({ onSelect, onCreateNewIssue, placeholder = "
           autoFocus={autoFocus}
           onChange={(event) => setQuery(event.target.value)}
           placeholder={placeholder}
+          aria-label={placeholder}
           className="w-full rounded-xl border border-border bg-card py-2 pl-9 pr-8 text-sm text-foreground outline-none transition focus:border-primary/50"
         />
         {query ? (
-          <button type="button" onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+          <button type="button" onClick={() => setQuery("")} aria-label="Clear hive search" className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
             <X size={14} />
           </button>
         ) : null}
       </div>
 
-      {trimmed.length < MIN_QUERY_LENGTH ? (
+      {trimmed.length < MIN_QUERY_LENGTH ? (showSuggestions ? (
         <div className="mt-2">
           {registryLoading ? (
             <div className="flex items-center gap-2 px-2 py-2 text-xs text-muted-foreground">
@@ -177,16 +161,20 @@ export default function HiveSearch({ onSelect, onCreateNewIssue, placeholder = "
                   key={hive.id}
                   type="button"
                   onClick={() => onSelect(hive.id, hive)}
-                  className="flex w-full items-center rounded-lg px-2 py-2 text-left text-sm font-medium transition hover:bg-muted"
+                  className="hv-hive-result flex w-full items-center rounded-lg px-2 py-2 text-left text-sm font-medium transition hover:bg-muted"
                 >
-                  {hive.name}
+                  <span className="hv-hive-result-copy">
+                    <span className="hv-hive-result-name">{hive.name}</span>
+                    <span className="hv-hive-result-description">{hive.description}</span>
+                  </span>
                   {hiveStatusLabel(hive.status) ? <span className="ml-auto text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{hiveStatusLabel(hive.status)}</span> : null}
+                  <ArrowUpRight className="hv-hive-result-arrow" size={16} aria-hidden="true" />
                 </button>
               ))}
             </>
           )}
         </div>
-      ) : (
+      ) : null) : (
         <div className="mt-2">
           {searching && results.length === 0 ? (
             <div className="flex items-center gap-2 px-2 py-2 text-xs text-muted-foreground">
@@ -202,15 +190,16 @@ export default function HiveSearch({ onSelect, onCreateNewIssue, placeholder = "
                 key={result.hive.id}
                 type="button"
                 onClick={() => onSelect(result.hive.id, result.hive)}
-                className="flex w-full items-start gap-2 rounded-lg px-2 py-2 text-left transition hover:bg-muted"
+                className="hv-hive-result flex w-full items-start gap-2 rounded-lg px-2 py-2 text-left transition hover:bg-muted"
               >
-                <span className="min-w-0 flex-1">
-                  <span className="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
+                <span className="hv-hive-result-copy min-w-0 flex-1">
+                  <span className="hv-hive-result-title flex flex-wrap items-center gap-1.5 text-sm font-semibold">
                     {result.hive.name}
                     {status ? <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{status}</span> : null}
                   </span>
-                  <span className="mt-0.5 block truncate text-xs text-muted-foreground">{result.reason}</span>
+                  <span className="hv-hive-result-description">{result.hive.description || result.reason}</span>
                 </span>
+                <ArrowUpRight className="hv-hive-result-arrow" size={16} aria-hidden="true" />
               </button>
             );
           })}

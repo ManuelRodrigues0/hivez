@@ -457,7 +457,7 @@ function SettingsLayout() {
   }, []);
 
   return (
-    <div className="hivez-settings">
+    <div className="hv-settings-size"><div className="hivez-settings">
       <a className="settings-skip" href="#settings-content">
         Skip to settings content
       </a>
@@ -617,7 +617,7 @@ function SettingsLayout() {
           </footer>
         </div>
       </div>
-    </div>
+    </div></div>
   );
 }
 

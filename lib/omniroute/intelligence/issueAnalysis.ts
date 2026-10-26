@@ -19,7 +19,7 @@ import type {
   DescriptionAssistResponse,
   IssueMeaningfulness,
 } from "../types.js";
-import { findDeterministicCandidates, normalizeText } from "./registry.js";
+import { findDeterministicCandidates, hasStrongDeterministicMatch, normalizeText } from "./registry.js";
 import {
   extractJsonObject,
   asString,
@@ -55,7 +55,8 @@ function buildIssuePrompt(description: string, registry: HiveSnapshot[], hasImag
     "",
     "Rules:",
     "- meaningfulness: SUPPORTED (a meaningful community/civic issue), UNCERTAIN, NOT_ENOUGH_EVIDENCE, or NOT_A_MEANINGFUL_REPORTABLE_ISSUE (e.g. personal complaints with no community dimension).",
-    "- Never call the user a liar and never claim truth; assess only the provided information.",
+    "- A private preference or complaint about someone's personal property is NOT a community issue unless the description gives a clear public or shared safety/access impact. Do not call an issue meaningful just because it could be filed as a report.",
+    "- Never call the user a liar and never claim truth; assess only the provided information. Do not add location, scale, cause, authority, or urgency that the user did not state.",
     "- existingHiveId: pick an existing hive ONLY if it genuinely covers the issue; otherwise null.",
     "- proposal: only when no existing hive fits AND the issue seems meaningful. Normalize the concept (e.g. broken sign near market/school -> \"Damaged Public Signage\").",
     "- proposal.name: 3-60 chars, Title Case, no location names. proposal.description: 10-300 chars, explains what the hive covers, no invented departments/causes/statistics.",
@@ -74,7 +75,7 @@ function buildAssistPrompt(description: string): string {
     `USER'S DESCRIPTION: "${description}"`,
     "",
     "Rules:",
-    "- Suggest a clearer rewrite using ONLY information the user provided. Never invent measurements, addresses, dates, causes, people, or any facts.",
+    "- Suggest a clearer rewrite using ONLY information the user provided. Never invent measurements, addresses, dates, named places (for example, a street name), causes, people, or any facts.",
     "- Keep the user's meaning. Do not add urgency or drama.",
     "- completenessHints: up to 3 short optional pointers about what the user could add (e.g. which part is affected). Never answer the hints yourself.",
     "- If the description is already clear, return suggestion null.",
@@ -94,6 +95,44 @@ interface IssuePayload {
 interface AssistPayload {
   suggestion?: unknown;
   completenessHints?: unknown;
+}
+
+function uncertainIssueResult(): Extract<IssueAnalysisResponse, { ok: true }> {
+  return {
+    ok: true,
+    meaningfulness: "UNCERTAIN",
+    descriptionImageMatch: null,
+    consistencyNote: null,
+    existingHiveId: null,
+    existingHiveConfidence: null,
+    proposal: null,
+  };
+}
+
+/** Narrow deterministic guard for an explicitly personal complaint without a public impact. */
+function isClearlyPersonalNonCivicComplaint(description: string): boolean {
+  const text = normalizeText(description);
+  const privateItem = /\b(my|our)\s+(car|phone|laptop|computer|tablet|television|tv|room|kitchen|internet|wifi)\b/;
+  const complaint = /\b(annoying|annoys me|bothers me|hate|do not like|don't like|not happy with|wish i could)\b/;
+  const publicImpact = /\b(public|shared|street|road|sidewalk|pavement|crosswalk|bus stop|park|school|playground|neighbourhood|neighborhood|community|blocking|blocked|unsafe|hazard|leak|dump|garbage|waste|pothole|broken pipe|streetlight|street light)\b/;
+  return privateItem.test(text) && complaint.test(text) && !publicImpact.test(text);
+}
+
+/** Rejects rewrites that introduce numbers or likely proper place names absent from the source. */
+function suggestionAddsUnprovidedSpecifics(suggestion: string, source: string): boolean {
+  const sourceNormalized = normalizeText(source);
+  const numbers = suggestion.match(/\b\d+(?:[.,]\d+)?\b/g) ?? [];
+  if (numbers.some((number) => !source.includes(number))) return true;
+
+  const placeLike = /\b(?:[A-Z][a-z]+(?:['’-][A-Z]?[a-z]+)?(?:\s+[A-Z][a-z]+(?:['’-][A-Z]?[a-z]+)?){0,2})\b/g;
+  for (const match of suggestion.matchAll(placeLike)) {
+    const value = match[0];
+    const offset = match.index ?? 0;
+    const atSentenceStart = offset === 0 || /[.!?]\s*$/.test(suggestion.slice(0, offset));
+    if (atSentenceStart && value.split(/\s+/).length === 1) continue;
+    if (!sourceNormalized.includes(normalizeText(value))) return true;
+  }
+  return false;
 }
 
 /** Validates and normalizes an AI hive proposal; null when not acceptable. */
@@ -132,10 +171,22 @@ export async function analyzeIssue(input: AnalyzeIssueInput): Promise<IssueAnaly
     return { ok: false, error: "invalid_input", message: "Image is too large to analyze." };
   }
 
+  if (isClearlyPersonalNonCivicComplaint(description)) {
+    return {
+      ok: true,
+      meaningfulness: "NOT_A_MEANINGFUL_REPORTABLE_ISSUE",
+      descriptionImageMatch: null,
+      consistencyNote: null,
+      existingHiveId: null,
+      existingHiveConfidence: null,
+      proposal: null,
+    };
+  }
+
   // 1. Deterministic existing-hive check (no AI).
   const deterministic = findDeterministicCandidates(description, input.registry, SEARCH_THRESHOLDS.minDeterministicScore);
   const best = deterministic[0];
-  if (best && best.score >= SEARCH_THRESHOLDS.strongDeterministicScore) {
+  if (best && hasStrongDeterministicMatch(deterministic, SEARCH_THRESHOLDS.strongDeterministicScore)) {
     logIntel("NewHive", "Existing Hive match found", { hiveId: best.hive.id, via: best.matchedVia });
     return {
       ok: true,
@@ -164,6 +215,7 @@ export async function analyzeIssue(input: AnalyzeIssueInput): Promise<IssueAnaly
     temperature: 0.2,
     maxTokens: 700,
     timeoutMs: REQUEST_SETTINGS.timeoutMs,
+    responseFormat: "json_object",
   });
 
   // Graceful image fallback: some upstreams cannot process image_url content
@@ -176,6 +228,7 @@ export async function analyzeIssue(input: AnalyzeIssueInput): Promise<IssueAnaly
       temperature: 0.2,
       maxTokens: 700,
       timeoutMs: REQUEST_SETTINGS.timeoutMs,
+      responseFormat: "json_object",
     });
   }
 
@@ -186,13 +239,15 @@ export async function analyzeIssue(input: AnalyzeIssueInput): Promise<IssueAnaly
 
   const payload = extractJsonObject(response.text) as IssuePayload | null;
   if (!payload) {
-    return { ok: false, error: "invalid_response", message: "Analysis returned an unexpected response." };
+    logIntel("NewHive", "Analysis response could not be parsed; returning a safe uncertain result");
+    return uncertainIssueResult();
   }
 
   const byId = new Map(input.registry.map((hive) => [hive.id, hive]));
   const meaningfulness = asEnum<IssueMeaningfulness>(payload.meaningfulness, MEANINGFULNESS_VALUES);
   if (!meaningfulness) {
-    return { ok: false, error: "invalid_response", message: "Analysis returned an unexpected response." };
+    logIntel("NewHive", "Analysis meaning was missing; returning a safe uncertain result");
+    return uncertainIssueResult();
   }
 
   // Existing-hive answer is only kept when the id really exists in the registry.
@@ -261,6 +316,8 @@ function proposalIsDuplicate(name: string, registry: HiveSnapshot[]): boolean {
 
 const BRIEF_DESCRIPTION_HINT =
   "Your description is very brief. Adding what is happening, where it is, and what is affected may make the report clearer.";
+const SAFE_ASSIST_FALLBACK_HINT =
+  "If you can, add what is affected and where it is. Only include details you know.";
 
 export interface AssistDescriptionInput {
   description: string;
@@ -286,6 +343,7 @@ export async function assistDescription(input: AssistDescriptionInput): Promise<
     temperature: 0.3,
     maxTokens: 350,
     timeoutMs: REQUEST_SETTINGS.timeoutMs,
+    responseFormat: "json_object",
   });
   if (!response.ok) {
     logIntel("OmniRoute", "Description assistance unavailable", { error: response.error });
@@ -294,10 +352,12 @@ export async function assistDescription(input: AssistDescriptionInput): Promise<
 
   const payload = extractJsonObject(response.text) as AssistPayload | null;
   if (!payload) {
-    return { ok: false, error: "invalid_response", message: "Assistance returned an unexpected response." };
+    logIntel("OmniRoute", "Description assistance response was invalid; returning a safe hint");
+    return { ok: true, suggestion: null, completenessHints: [SAFE_ASSIST_FALLBACK_HINT] };
   }
 
-  const suggestion = asString(payload.suggestion, ANALYSIS_THRESHOLDS.maxDescriptionLength);
+  const rawSuggestion = asString(payload.suggestion, ANALYSIS_THRESHOLDS.maxDescriptionLength);
+  const suggestion = rawSuggestion && !suggestionAddsUnprovidedSpecifics(rawSuggestion, description) ? rawSuggestion : null;
   const hints = asStringArray(payload.completenessHints, 3, 140);
   logIntel("OmniRoute", "Description assistance completed", { hasSuggestion: suggestion !== null, hints: hints.length });
   return {

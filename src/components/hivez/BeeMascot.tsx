@@ -1,184 +1,153 @@
-import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import { useTheme } from "@/context/ThemeContext";
 import stillUrl from "@/assets/auth/newbee2.png";
 import waveUrl from "@/assets/auth/bee-wave.webm";
 import flyUrl from "@/assets/auth/bee-fly.webm";
 import shyUrl from "@/assets/auth/bee-shy.webm";
-
-export type BeeMood = "idle" | "excited" | "shy" | "happy" | "sad" | "confused" | "wave" | "fly";
-
+export type BeeMood =
+  | "idle"
+  | "excited"
+  | "shy"
+  | "happy"
+  | "sad"
+  | "confused"
+  | "wave"
+  | "fly";
+type Clip = "still" | "wave" | "fly" | "shy";
+const clips = { wave: waveUrl, fly: flyUrl, shy: shyUrl };
 type Props = {
   mood?: BeeMood;
   size?: number;
   className?: string;
-  jump?: number;
+  onAnimationEnd?: () => void;
+  onGreet?: () => void;
 };
 
-type Clip = "still" | "wave" | "fly" | "shy";
-
-function getClip(mood: BeeMood, waving: boolean): Clip {
-  if (mood === "shy") return "shy";
-  if (mood === "fly") return "fly";
-  if (waving || mood === "wave") return "wave";
-  return "still";
-}
-
-function getClipSrc(clip: Clip) {
-  if (clip === "wave") return waveUrl;
-  if (clip === "fly") return flyUrl;
-  if (clip === "shy") return shyUrl;
-  return "";
-}
-
-export function BeeMascot({ mood = "idle", size = 320, className, jump = 0 }: Props) {
-  const reduce = useReducedMotion();
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [waving, setWaving] = useState(false);
-  const [videoReady, setVideoReady] = useState(false);
-  const clip = getClip(mood, waving);
-  const clipSrc = getClipSrc(clip);
-
+/** Original auth artwork and clips. Reactions play once, without reshaping art. */
+export function BeeMascot({
+  mood = "idle",
+  size = 260,
+  className = "",
+  onAnimationEnd,
+  onGreet,
+}: Props) {
+  const [systemReduced, setSystemReduced] = useState(
+    () => matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
+  const { reducedMotion } = useTheme();
+  const reduce = systemReduced || reducedMotion;
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const privacyHeld = useRef(false);
+  const [wave, setWave] = useState(0);
+  const [finishedWave, setFinishedWave] = useState(0);
+  const [ready, setReady] = useState(false);
+  const [finished, setFinished] = useState(false);
+  const [visible, setVisible] = useState(() => !document.hidden);
+  const requested: Clip =
+    mood === "shy"
+      ? "shy"
+      : wave > finishedWave
+        ? "wave"
+        : mood === "fly"
+          ? "fly"
+          : ["wave", "happy", "excited"].includes(mood)
+            ? "wave"
+            : "still";
+  const clip = reduce ? "still" : requested;
+  const src = clip === "still" ? "" : clips[clip];
   useEffect(() => {
-    for (const src of [waveUrl, flyUrl, shyUrl]) {
-      const video = document.createElement("video");
-      video.src = src;
-      video.muted = true;
-      video.playsInline = true;
-      video.preload = "auto";
-      video.load();
-    }
-
-    const img = new Image();
-    img.src = stillUrl;
+    const motionQuery = matchMedia("(prefers-reduced-motion: reduce)");
+    const handleMotion = () => setSystemReduced(motionQuery.matches);
+    const handleVisibility = () => setVisible(!document.hidden);
+    motionQuery.addEventListener("change", handleMotion);
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      motionQuery.removeEventListener("change", handleMotion);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, []);
-
   useEffect(() => {
+    // Reset playback only for a new reaction, never on form keystrokes.
     /* eslint-disable react-hooks/set-state-in-effect */
-    const video = videoRef.current;
-    setVideoReady(clip === "still");
-    if (!video || clip === "still") return;
-
-    video.currentTime = 0;
-    const play = video.play();
-    if (play) {
-      void play.catch(() => {});
-    }
+    setReady(false);
+    setFinished(false);
+    privacyHeld.current = false;
+    // Password privacy takes priority over an earlier greeting. Cancel that
+    // greeting so it cannot resume later after the field has lost focus.
+    if (src === shyUrl) setFinishedWave(wave);
     /* eslint-enable react-hooks/set-state-in-effect */
-  }, [clip, clipSrc]);
-
-  function playWave() {
-    setVideoReady(false);
-    setWaving(false);
-    window.setTimeout(() => setWaving(true), 20);
-  }
-
-  const float = reduce || clip === "still"
-    ? {}
-    : { y: [0, -14, 0], transition: { duration: 4.5, repeat: Infinity, ease: "easeInOut" as const } };
-
-  const moodMotion = reduce
-    ? {}
-    : mood === "excited"
-      ? { scale: [1, 1.06, 1.02], rotate: [0, -2, 2, 0] }
-      : mood === "happy"
-        ? { scale: [1, 1.12, 1], rotate: [0, 360] }
-        : mood === "sad"
-          ? { rotate: [0, -8, -6, -8], y: 10 }
-          : mood === "confused"
-            ? { rotate: [0, 6, -6, 0] }
-            : { scale: 1, rotate: 0 };
-
+    const video = videoRef.current;
+    if (!video || !src) return;
+    video.currentTime = 0;
+  }, [src, wave]);
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (visible && !reduce && !finished && !privacyHeld.current)
+      void video.play().catch(() => {});
+    else video.pause();
+    return () => video.pause();
+  }, [visible, reduce, src, wave, finished]);
+  const showVideo = ready && (!finished || clip === "shy");
   return (
-    <div className={className} style={{ width: size, height: size * 0.87 }}>
-      <motion.div
-        className="relative h-full w-full will-change-transform"
-        animate={{ ...float, ...(jump ? { y: [0, -70, 0] } : {}) }}
-        key={jump}
-        transition={
-          jump
-            ? { duration: 0.75, times: [0, 0.4, 1], ease: [0.34, 1.56, 0.64, 1] }
-            : { duration: 4.5, repeat: Infinity, ease: "easeInOut" }
-        }
-      >
-        <motion.div
-          className="relative h-full w-full"
-          animate={moodMotion}
-          transition={{
-            duration: mood === "happy" ? 1.1 : 0.9,
-            repeat: mood === "idle" || mood === "fly" || mood === "shy" ? 0 : Infinity,
-            repeatDelay: mood === "happy" ? 0.6 : 0.4,
-            ease: [0.22, 1, 0.36, 1],
+    <div
+      className={`ha-bee ${className}`}
+      style={{ width: size, height: size * 0.87 }}
+      data-bee-clip={clip}
+    >
+      <img
+        src={stillUrl}
+        alt="Hivez bee mascot"
+        width="320"
+        height="278"
+        draggable={false}
+        style={{ opacity: showVideo ? 0 : 1 }}
+      />
+      {src && (
+        <video
+          key={`${src}-${wave}`}
+          ref={videoRef}
+          src={src}
+          muted
+          playsInline
+          preload="auto"
+          aria-hidden="true"
+          disablePictureInPicture
+          style={{ opacity: showVideo ? 1 : 0 }}
+          onLoadedData={() => setReady(true)}
+          onTimeUpdate={(event) => {
+            const video = event.currentTarget;
+            // The original shy clip closes its eyes before opening them again.
+            // Hold its real closed-eye pose while a password field is active.
+            if (
+              clip === "shy" &&
+              !privacyHeld.current &&
+              video.currentTime >= 1.6
+            ) {
+              privacyHeld.current = true;
+              video.pause();
+              video.currentTime = 1.7;
+              video.dataset.privacyHeld = "true";
+            }
           }}
-        >
-          <button
-            type="button"
-            onClick={playWave}
-            aria-label="Say hi to the Hivez bee"
-            className="block h-full w-full cursor-pointer bg-transparent p-0"
-          >
-            <img
-              src={stillUrl}
-              alt="Hivez bee mascot"
-              className={[
-                "absolute inset-0 h-full w-full select-none object-contain transition-opacity duration-150 ease-out",
-                clip === "still" || !videoReady ? "opacity-100" : "opacity-0",
-              ].join(" ")}
-              style={{ WebkitUserSelect: "none" }}
-              draggable={false}
-            />
-
-            {clip !== "still" && (
-              <video
-                ref={videoRef}
-                key={clipSrc}
-                src={clipSrc}
-                aria-label="Hivez bee mascot animation"
-                className={[
-                  "absolute inset-0 h-full w-full select-none object-contain transition-opacity duration-150 ease-out",
-                  videoReady ? "opacity-100" : "opacity-0",
-                ].join(" ")}
-                muted
-                playsInline
-                preload="auto"
-                loop={clip !== "wave"}
-                disablePictureInPicture
-                onCanPlay={() => setVideoReady(true)}
-                onEnded={() => {
-                  if (clip === "wave") {
-                    setWaving(false);
-                    setVideoReady(false);
-                  }
-                }}
-              />
-            )}
-          </button>
-
-          {mood === "confused" && (
-            <motion.span
-              className="pointer-events-none absolute -top-2 left-[52%] text-3xl font-black text-accent"
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: [-2, -10, -2] }}
-              transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-            >
-              ?
-            </motion.span>
-          )}
-
-          {(mood === "happy" || mood === "excited") && !reduce && (
-            <div className="pointer-events-none absolute inset-0">
-              {[0, 1, 2, 3, 4].map((i) => (
-                <motion.span
-                  key={i}
-                  className="absolute h-1.5 w-1.5 rounded-full bg-accent"
-                  style={{ left: `${20 + i * 15}%`, top: "60%" }}
-                  animate={{ y: [-4, -46], opacity: [0.9, 0], scale: [1, 0.4] }}
-                  transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.16 }}
-                />
-              ))}
-            </div>
-          )}
-        </motion.div>
-      </motion.div>
+          onEnded={() => {
+            setFinished(true);
+            setFinishedWave(wave);
+            if (clip !== "shy") onAnimationEnd?.();
+          }}
+        />
+      )}
+      <button
+        type="button"
+        className="ha-bee-button"
+        aria-label="Say hi to the Hivez bee"
+        onClick={() => {
+          if (!reduce && !(clip === "wave" && !finished)) {
+            setWave((n) => n + 1);
+            onGreet?.();
+          }
+        }}
+      />
     </div>
   );
 }

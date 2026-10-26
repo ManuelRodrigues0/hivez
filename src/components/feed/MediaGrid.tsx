@@ -15,9 +15,15 @@ interface Props {
   items: PostMediaItem[];
   compact?: boolean;
   sensitive?: boolean;
+  variant?: "default" | "stream";
 }
 
-export default function MediaGrid({ items, compact = false, sensitive = false }: Props) {
+export default function MediaGrid({
+  items,
+  compact = false,
+  sensitive = false,
+  variant = "default",
+}: Props) {
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
 
   if (!items.length) return null;
@@ -25,13 +31,19 @@ export default function MediaGrid({ items, compact = false, sensitive = false }:
   const single = items.length === 1;
 
   return (
-    <div>
+    <div className={variant === "stream" ? "hv-media-stream" : undefined}>
       {single ? (
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-          <MediaItem item={items[0]} single compact={compact} sensitive={sensitive} onOpen={() => setViewerIndex(0)} />
+        <div className="hv-media-single overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <MediaItem
+            item={items[0]}
+            single
+            compact={compact}
+            sensitive={sensitive}
+            onOpen={() => setViewerIndex(0)}
+          />
         </div>
       ) : (
-        <div className="flex w-full max-w-full snap-x gap-1.5 overflow-x-auto overscroll-x-contain rounded-2xl">
+        <div className="hv-media-carousel flex w-full max-w-full snap-x gap-1.5 overflow-x-auto overscroll-x-contain rounded-2xl">
           {items.map((item, index) => (
             <div
               key={`${item.url}-${index}`}
@@ -39,12 +51,16 @@ export default function MediaGrid({ items, compact = false, sensitive = false }:
                 compact ? "h-64 w-48" : "h-[344px] w-[var(--media-card-width)]"
               }`}
             >
-              <MediaItem item={item} sensitive={sensitive} onOpen={() => setViewerIndex(index)} />
+              <MediaItem
+                item={item}
+                sensitive={sensitive}
+                onOpen={() => setViewerIndex(index)}
+              />
             </div>
           ))}
         </div>
       )}
-    {viewerIndex !== null && (
+      {viewerIndex !== null && (
         <MediaViewer
           items={items.map((item) => ({ src: item.url, mediaType: item.type }))}
           index={viewerIndex}
@@ -86,8 +102,12 @@ function MediaItem({
         aria-label="Sensitive content hidden by your content settings"
       >
         <AlertTriangle size={20} className="text-zinc-500 dark:text-zinc-400" />
-        <p className="text-xs font-bold text-zinc-600 dark:text-zinc-300">Sensitive content hidden</p>
-        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">Change this in Settings - Privacy</p>
+        <p className="text-xs font-bold text-zinc-600 dark:text-zinc-300">
+          Sensitive content hidden
+        </p>
+        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+          Change this in Settings - Privacy
+        </p>
       </div>
     );
   }
@@ -116,7 +136,9 @@ function MediaItem({
         )}
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#1c1d1a]/55 backdrop-blur-md">
           <AlertTriangle size={22} className="text-white" />
-          <p className="mt-1.5 text-xs font-bold text-white">Sensitive content</p>
+          <p className="mt-1.5 text-xs font-bold text-white">
+            Sensitive content
+          </p>
         </div>
         <button
           type="button"
@@ -134,7 +156,10 @@ function MediaItem({
 
   if (item.type === "video") {
     return (
-      <div className="relative w-full min-h-[200px]" style={{ height: single ? 'auto' : '100%' }}>
+      <div
+        className="relative w-full min-h-[200px]"
+        style={{ height: single ? "auto" : "100%" }}
+      >
         <video
           src={item.url}
           muted={muted}

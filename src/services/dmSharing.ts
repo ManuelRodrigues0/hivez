@@ -1,16 +1,16 @@
 import {
-  addDoc,
   collection,
   doc,
   increment,
+  runTransaction,
   serverTimestamp,
-  setDoc,
+  writeBatch,
 } from "firebase/firestore";
 
 import { db } from "@/firebase/firebase";
 import type { FeedPost } from "@/components/feed/Feed";
 import { createNotification, type NotificationActor } from "@/services/notifications";
-import { canMessageUser, canUserAccessPost } from "@/services/privacy";
+import { canMessageUser, canReceiveSharedPost, canUserAccessPost } from "@/services/privacy";
 import { recordPostEngagement } from "@/services/engagementEvents";
 
 export type MessageType = "TEXT" | "POST_SHARE";
@@ -27,7 +27,7 @@ export async function sendPostViaDm(input: {
 }) {
   const [senderCanView, recipientCanView, canMessage] = await Promise.all([
     canUserAccessPost(input.sender.uid, input.post),
-    canUserAccessPost(input.recipient.uid, input.post),
+    canReceiveSharedPost(input.recipient.uid, input.post),
     canMessageUser(input.sender.uid, input.recipient.uid),
   ]);
 
@@ -37,28 +37,41 @@ export async function sendPostViaDm(input: {
 
   const chatId = chatIdForUsers(input.sender.uid, input.recipient.uid);
   const chatRef = doc(db, "chats", chatId);
-  const text = input.optionalText?.trim() || "";
-  const lastMessage = text ? `Shared a post: ${text}` : "Shared a post";
-
-  await setDoc(
-    chatRef,
-    {
+  // Existing message rules require the parent chat to exist before its first
+  // message is written. Create it once without a misleading message preview.
+  await runTransaction(db, async tx => {
+    if ((await tx.get(chatRef)).exists()) return;
+    tx.set(chatRef, {
       participants: [input.sender.uid, input.recipient.uid],
       participantProfiles: {
         [input.sender.uid]: input.sender,
         [input.recipient.uid]: input.recipient,
       },
-      lastMessage,
-      lastMessageAt: serverTimestamp(),
-      lastMessageSenderId: input.sender.uid,
-      [`unreadCounts.${input.recipient.uid}`]: increment(1),
-      [`unreadCounts.${input.sender.uid}`]: 0,
       createdAt: serverTimestamp(),
-    },
-    { merge: true }
-  );
+      unreadCounts: { [input.sender.uid]: 0, [input.recipient.uid]: 0 },
+    });
+  });
+  const text = input.optionalText?.trim() || "";
+  const lastMessage = text ? `Shared a post: ${text}` : "Shared a post";
 
-  await addDoc(collection(db, "chats", chatId, "messages"), {
+  const batch = writeBatch(db);
+  batch.set(chatRef, {
+    participants: [input.sender.uid, input.recipient.uid],
+    participantProfiles: {
+      [input.sender.uid]: input.sender,
+      [input.recipient.uid]: input.recipient,
+    },
+    lastMessage,
+    lastMessageAt: serverTimestamp(),
+    lastMessageSenderId: input.sender.uid,
+    unreadCounts: {
+      [input.recipient.uid]: increment(1),
+      [input.sender.uid]: 0,
+    },
+  }, { merge: true });
+
+  const messageRef = doc(collection(db, "chats", chatId, "messages"));
+  batch.set(messageRef, {
     messageType: "POST_SHARE",
     text,
     postId: input.post.id,
@@ -69,7 +82,11 @@ export async function sendPostViaDm(input: {
     reactions: {},
   });
 
-  await Promise.all([
+  // Keep the chat preview and message in one commit. A failed write cannot
+  // leave a preview that points to a message that was never sent.
+  await batch.commit();
+
+  const sideEffects = await Promise.allSettled([
     createNotification({
       recipientId: input.recipient.uid,
       actor: input.sender,
@@ -87,6 +104,9 @@ export async function sendPostViaDm(input: {
       category: input.post.category,
     }),
   ]);
+  if (sideEffects.some((result) => result.status === "rejected")) {
+    console.warn("Post message was sent, but a notification or engagement event could not be recorded.");
+  }
 
   return chatId;
 }

@@ -26,7 +26,6 @@ import {
   CheckCheck,
   Heart,
   MessageCircle,
-  MoreHorizontal,
   Search,
   Send,
   UserPlus,
@@ -703,15 +702,15 @@ export default function Chats() {
   const showThreadOnMobile = Boolean(selectedChatId && mobileThreadOpen);
 
   return (
-    <div className="w-full min-h-[calc(100vh-64px)] bg-[#f7f7f2] font-sans text-[#1c1d1a] selection:bg-[#3d654c]/20 selection:text-[#2d4d38] dark:bg-[#0a0a0a] dark:text-neutral-100 fixed inset-0 top-[64px] bottom-[64px] md:static md:inset-auto md:h-[calc(100vh-64px)] overflow-hidden select-none">
+    <div className="hv-messages app-chats-page w-full min-h-[calc(100vh-64px)] bg-[#f7f7f2] font-sans text-[#1c1d1a] selection:bg-[#3d654c]/20 selection:text-[#2d4d38] dark:bg-[#0a0a0a] dark:text-neutral-100 overflow-hidden">
       <div className="flex h-full w-full">
         {/* Sidebar Chat List */}
         <aside className={`${showThreadOnMobile ? "hidden md:flex" : "flex"} relative w-full flex-col md:w-80 lg:w-[340px] border-r border-[#1c1d1a]/10 bg-white dark:border-neutral-800 dark:bg-[#121212]`}>
           <div className="flex items-center justify-between px-4 pb-3 pt-4">
             <div>
-              <h1 className="text-lg font-black tracking-tight text-[#1c1d1a] dark:text-white">Direct Messages</h1>
+              <h1 className="text-lg font-black tracking-tight text-[#1c1d1a] dark:text-white">Messages</h1>
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#3d654c] dark:text-[#f2c14e]">
-                Citizen Triage Network
+                A little closer to your people.
               </p>
             </div>
             <button
@@ -796,6 +795,7 @@ export default function Chats() {
           <button
             onClick={() => setSearchOpen(true)}
             className="absolute bottom-16 right-5 flex h-12 w-12 items-center justify-center rounded-full bg-[#3d654c] text-white shadow-lg transition active:scale-95 dark:bg-[#f2c14e] dark:text-[#121212] md:hidden z-10"
+            aria-label="New conversation"
           >
             <UserPlus size={20} />
           </button>
@@ -810,6 +810,7 @@ export default function Chats() {
                 <div className="flex min-w-0 items-center gap-3">
                   <button
                     onClick={() => setMobileThreadOpen(false)}
+                    aria-label="Back to conversations"
                     className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#1c1d1a]/10 bg-[#f7f7f2] text-[#1c1d1a] dark:border-neutral-800 dark:bg-[#181818] dark:text-white md:hidden"
                   >
                     <ArrowLeft size={16} />
@@ -827,13 +828,10 @@ export default function Chats() {
                     </p>
                   </div>
                 </div>
-                <button className="flex h-8 w-8 items-center justify-center rounded-xl text-[#1c1d1a]/60 hover:bg-[#1c1d1a]/5 dark:text-neutral-400 dark:hover:bg-white/10">
-                  <MoreHorizontal size={18} />
-                </button>
               </div>
 
               {/* Message List */}
-              <div className="flex-1 min-h-0 space-y-2 overflow-y-auto px-4 py-4 bg-[#f7f7f2] dark:bg-[#0a0a0a] pb-24 md:pb-6">
+              <div className="flex-1 min-h-0 space-y-2 overflow-y-auto px-4 py-4 bg-[#f7f7f2] dark:bg-[#0a0a0a] pb-6">
                 {[
                   ...new Map(
                     [...localMessages[selectedChat.id] || [], ...pendingMessages[selectedChat.id] || [], ...messages]
@@ -909,8 +907,8 @@ export default function Chats() {
                 <div ref={bottomRef} />
               </div>
 
-              {/* Chat Input Bar (Safely padded above mobile bottom navigation) */}
-              <div className="absolute bottom-0 left-0 right-0 shrink-0 border-t border-[#1c1d1a]/10 bg-white p-3 dark:border-neutral-800 dark:bg-[#121212] pb-[76px] md:pb-3 z-20">
+              {/* The composer is a flex child so it cannot cover the final message. */}
+              <div className="relative z-10 shrink-0 border-t border-[#1c1d1a]/10 bg-white p-3 dark:border-neutral-800 dark:bg-[#121212]">
                 {isUltraBeeChat && ultraBeeError && (
                   <div className="mb-2 flex items-center justify-between gap-3 rounded-xl border border-[#1c1d1a]/10 bg-[#f7f7f2] px-3 py-2 dark:border-neutral-800 dark:bg-[#181818]">
                     <p className="text-[11px] font-bold text-[#1c1d1a]/70 dark:text-neutral-300">{ultraBeeError}</p>
@@ -935,10 +933,12 @@ export default function Chats() {
                     }}
                     rows={1}
                     placeholder={`Message ${otherUser.displayName || otherUser.username}...`}
+                    aria-label={`Message ${otherUser.displayName || otherUser.username}`}
                     className="max-h-32 min-h-9 flex-1 resize-none bg-transparent px-2.5 py-1.5 text-xs font-medium text-[#1c1d1a] placeholder:text-[#1c1d1a]/40 outline-none dark:text-white dark:placeholder:text-neutral-500"
                   />
                   <button
                     onClick={sendMessage}
+                    aria-label="Send message"
                     disabled={!messageText.trim() || sending}
                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#3d654c] text-white shadow-2xs transition hover:bg-[#32533e] disabled:opacity-40 dark:bg-[#f2c14e] dark:text-[#121212] dark:hover:bg-[#dfb041]"
                   >

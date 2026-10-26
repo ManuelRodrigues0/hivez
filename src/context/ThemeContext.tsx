@@ -1,8 +1,16 @@
-import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 import { flushSync } from "react-dom";
 import type { ReactNode } from "react";
 
 type Theme = "dark" | "light" | "system";
+export type PublicTheme = "light" | "forest" | "midnight";
 type FontSize = "small" | "default" | "large";
 
 interface ThemeContextType {
@@ -10,6 +18,8 @@ interface ThemeContextType {
   resolvedTheme: "dark" | "light";
   toggleTheme: () => void;
   setTheme: (theme: Theme) => void;
+  publicTheme: PublicTheme;
+  cyclePublicTheme: () => void;
   fontSize: FontSize;
   setFontSize: (size: FontSize) => void;
   reducedMotion: boolean;
@@ -23,6 +33,8 @@ const ThemeContext = createContext<ThemeContextType>({
   resolvedTheme: "dark",
   toggleTheme: () => {},
   setTheme: () => {},
+  publicTheme: "forest",
+  cyclePublicTheme: () => {},
   fontSize: "default",
   setFontSize: () => {},
   reducedMotion: false,
@@ -36,7 +48,9 @@ const EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
 
 function getSystemTheme(): "dark" | "light" {
   if (typeof window === "undefined") return "dark";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
 }
 
 /** Lower-left origin (matches the reference video), responsive to any viewport. */
@@ -77,15 +91,44 @@ function runFallbackWipe(theme: Theme) {
   overlay.classList.remove("is-active");
   void overlay.offsetWidth;
   overlay.classList.add("is-active");
-  window.setTimeout(() => overlay.classList.remove("is-active"), TRANSITION_DURATION + 60);
+  window.setTimeout(
+    () => overlay.classList.remove("is-active"),
+    TRANSITION_DURATION + 60,
+  );
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [systemTheme, setSystemTheme] = useState(getSystemTheme);
   const [theme, setThemeState] = useState<Theme>(() => {
     const saved = localStorage.getItem("hivez-theme");
-    return saved === "light" || saved === "dark" || saved === "system" ? saved : "dark";
+    return saved === "light" || saved === "dark" || saved === "system"
+      ? saved
+      : "dark";
   });
+  // Public/onboarding palettes are independent of the authenticated app's
+  // existing light/dark/system setting. Legacy visitors keep their prior look.
+  const [publicTheme, setPublicTheme] = useState<PublicTheme>(() => {
+    const saved = localStorage.getItem("hivez-public-theme");
+    if (saved === "light" || saved === "forest" || saved === "midnight")
+      return saved;
+    const legacy = localStorage.getItem("hivez-theme");
+    return legacy === "light" ||
+      (legacy === "system" && getSystemTheme() === "light")
+      ? "light"
+      : "forest";
+  });
+  const cyclePublicTheme = useCallback(() => {
+    setPublicTheme((current) =>
+      current === "light"
+        ? "forest"
+        : current === "forest"
+          ? "midnight"
+          : "light",
+    );
+  }, []);
+  useEffect(() => {
+    localStorage.setItem("hivez-public-theme", publicTheme);
+  }, [publicTheme]);
   const [fontSize, setFontSizeState] = useState<FontSize>(() => {
     const saved = localStorage.getItem("hivez-font-size");
     return saved === "small" || saved === "large" ? saved : "default";
@@ -95,7 +138,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (saved === "true") return true;
     if (saved === "false") return false;
     // Default to system preference
-    return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    return (
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    );
   });
   const [highContrast, setHighContrastState] = useState<boolean>(() => {
     return localStorage.getItem("hivez-high-contrast") === "true";
@@ -103,7 +149,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const animating = useRef(false);
 
   // Compute resolved theme (system → actual)
-  const resolvedTheme: "dark" | "light" = theme === "system" ? systemTheme : theme;
+  const resolvedTheme: "dark" | "light" =
+    theme === "system" ? systemTheme : theme;
 
   // Keep the DOM class + storage in sync
   useEffect(() => {
@@ -115,7 +162,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem("hivez-font-size", fontSize);
     const root = document.documentElement;
-    const sizes: Record<FontSize, string> = { small: "14px", default: "16px", large: "18px" };
+    const sizes: Record<FontSize, string> = {
+      small: "14px",
+      default: "16px",
+      large: "18px",
+    };
     root.style.fontSize = sizes[fontSize];
   }, [fontSize]);
 
@@ -162,9 +213,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     // Toggle cycles: dark → light → (system if was system, otherwise dark)
     const next: Theme = resolvedTheme === "dark" ? "light" : "dark";
 
-    const userReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches || reducedMotion;
+    const userReduced =
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+      reducedMotion;
     const startViewTransition = (
-      document as Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void>; finished: Promise<void> } }
+      document as Document & {
+        startViewTransition?: (cb: () => void) => {
+          ready: Promise<void>;
+          finished: Promise<void>;
+        };
+      }
     ).startViewTransition?.bind(document);
 
     if (userReduced || !startViewTransition) {
@@ -189,7 +247,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       .then(() => {
         root.animate(
           {
-            clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`],
+            clipPath: [
+              `circle(0px at ${x}px ${y}px)`,
+              `circle(${radius}px at ${x}px ${y}px)`,
+            ],
           },
           {
             duration: TRANSITION_DURATION,
@@ -207,18 +268,24 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ThemeContext.Provider value={{
-      theme,
-      resolvedTheme,
-      toggleTheme,
-      setTheme,
-      fontSize,
-      setFontSize,
-      reducedMotion,
-      setReducedMotion,
-      highContrast,
-      setHighContrast,
-    }}>{children}</ThemeContext.Provider>
+    <ThemeContext.Provider
+      value={{
+        theme,
+        resolvedTheme,
+        toggleTheme,
+        setTheme,
+        publicTheme,
+        cyclePublicTheme,
+        fontSize,
+        setFontSize,
+        reducedMotion,
+        setReducedMotion,
+        highContrast,
+        setHighContrast,
+      }}
+    >
+      {children}
+    </ThemeContext.Provider>
   );
 }
 

@@ -377,7 +377,7 @@ function Volunteering() {
   }
 
   return (
-    <div className="app-page max-w-7xl mx-auto px-4 py-8 space-y-10 selection:bg-primary/20">
+    <div className="hv-volunteering hv-route app-page max-w-7xl mx-auto px-4 py-8 space-y-10 selection:bg-primary/20">
       {/* High-End Hero Header */}
       <header className="relative overflow-hidden rounded-[32px] border border-zinc-200/80 bg-white p-8 shadow-sm backdrop-blur-2xl dark:border-neutral-800/80 dark:bg-[#121212]">
         <div className="absolute top-0 right-0 -mt-16 -mr-16 w-80 h-80 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
@@ -451,6 +451,7 @@ function Volunteering() {
           </div>
           <select
             value={category}
+            aria-label="Filter opportunities by category"
             onChange={(e) => setCategory(e.target.value)}
             className="h-10 rounded-xl border border-zinc-200 bg-white px-4 text-xs font-black uppercase tracking-wider text-zinc-700 outline-none dark:border-neutral-800 dark:bg-zinc-950 dark:text-zinc-200"
           >
@@ -783,7 +784,7 @@ function MyVolunteering() {
   }
 
   return (
-    <div className="app-page max-w-7xl mx-auto px-4 py-8 space-y-10 selection:bg-primary/20">
+    <div className="hv-group-page hv-route app-page max-w-7xl mx-auto px-4 py-8 space-y-10 selection:bg-primary/20">
       <header className="relative overflow-hidden rounded-[32px] border border-zinc-200/80 bg-white p-8 shadow-sm backdrop-blur-2xl dark:border-neutral-800/80 dark:bg-[#121212]">
         <Link to="/volunteering" className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-zinc-500 hover:text-primary transition-colors">
           <ArrowLeft size={15} /> Volunteering Hub
@@ -1146,7 +1147,7 @@ function CommunityDetails() {
   }
 
   return (
-    <div className="app-page max-w-5xl mx-auto px-4 py-8 space-y-8 selection:bg-primary/20">
+    <div className="hv-group-page hv-route app-page max-w-5xl mx-auto px-4 py-8 space-y-8 selection:bg-primary/20">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-zinc-200/80 pb-6 dark:border-neutral-800">
         <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-wider text-zinc-700 shadow-2xs hover:bg-zinc-50 dark:border-neutral-800 dark:bg-zinc-900 dark:text-zinc-200">
@@ -1575,7 +1576,7 @@ function IssueCommunityPage() {
   }
 
   return (
-    <div className="app-page max-w-6xl mx-auto px-4 py-8 space-y-8 selection:bg-primary/20">
+    <div className="hv-group-page hv-route app-page max-w-6xl mx-auto px-4 py-8 space-y-8 selection:bg-primary/20">
       <header className="relative overflow-hidden rounded-[32px] border border-zinc-200/80 bg-white p-6 sm:p-8 shadow-sm backdrop-blur-2xl dark:border-neutral-800/80 dark:bg-[#121212]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div className="flex flex-wrap items-center gap-2">
@@ -2642,7 +2643,7 @@ function VolunteerGroupPage() {
   }
 
   return (
-    <div className="app-page max-w-6xl mx-auto px-4 py-8 space-y-8 selection:bg-primary/20">
+    <div className="hv-group-page hv-route app-page max-w-6xl mx-auto px-4 py-8 space-y-8 selection:bg-primary/20">
       <header className="relative overflow-hidden rounded-[32px] border border-zinc-200/80 bg-white p-6 sm:p-8 shadow-sm backdrop-blur-2xl dark:border-neutral-800/80 dark:bg-[#121212]">
         <Link to="/volunteering" className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-zinc-500 hover:text-primary transition-colors">
           <ArrowLeft size={15} /> Volunteering Hub

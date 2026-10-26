@@ -1,0 +1,564 @@
+.ha-page--complete {
+  --hivez-surface-soft: var(--ha-input);
+  --hivez-text: var(--ha-ink);
+  --hivez-muted: var(--ha-muted);
+  --hivez-border: var(--ha-line);
+}
+.cp-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.02fr) minmax(460px, 0.98fr);
+  min-height: calc(100dvh - 56px);
+}
+.cp-portrait {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: #fffef7;
+  background: #20352a;
+}
+.cp-community-photo,
+.cp-portrait-shade {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.cp-community-photo {
+  object-fit: cover;
+  object-position: 40% center;
+}
+.cp-portrait-shade {
+  background: linear-gradient(
+    180deg,
+    #142b20a8,
+    #142b2069 30%,
+    #142b20e6 72%,
+    #142b20
+  );
+}
+.ha-page[data-public-theme="midnight"] .cp-portrait-shade {
+  background: linear-gradient(
+    180deg,
+    #0b0d0eb0,
+    #0b0d0e80 30%,
+    #0b0d0ee8 72%,
+    #0b0d0e
+  );
+}
+.cp-portrait-content {
+  position: relative;
+  padding: 130px clamp(28px, 4.2vw, 66px) 44px;
+  max-width: 740px;
+  margin: auto;
+}
+.cp-intro-label {
+  font-size: 0.8rem;
+  color: #f4f4e8;
+  margin-bottom: 18px !important;
+}
+.cp-portrait h2 {
+  font-family: "Hivez Bricolage", sans-serif;
+  font-size: clamp(2.4rem, 3.8vw, 4.3rem);
+  line-height: 1.04;
+  letter-spacing: -0.055em;
+  font-weight: 600;
+  margin-bottom: 32px;
+}
+.cp-portrait h2 em {
+  font-family: Georgia, serif;
+  font-weight: 400;
+}
+.cp-profile-preview {
+  border-radius: 10px;
+  background: var(--ha-paper);
+  color: var(--ha-ink);
+  box-shadow: 0 18px 60px #00000024;
+  padding: 23px 26px 0;
+  border: 1px solid var(--ha-line);
+}
+.cp-preview-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  color: var(--ha-muted);
+  font-size: 0.57rem;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  padding-bottom: 21px;
+}
+.cp-live-dot {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.58rem;
+  letter-spacing: 0;
+}
+.cp-live-dot:before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ha-accent);
+}
+.cp-profile-preview .cp-photo-picker {
+  gap: 17px;
+}
+.cp-profile-preview .hivez-profile-preview-shell {
+  width: 145px;
+  height: 145px;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: var(--ha-input);
+  border: 1px solid var(--ha-line);
+  border-radius: 50%;
+}
+.cp-profile-preview .hivez-profile-preview-image {
+  width: calc(100% - 10px);
+  height: calc(100% - 10px);
+  border: 0;
+  background: transparent;
+}
+.cp-profile-preview .hivez-profile-preview-badge {
+  display: none;
+}
+.cp-avatar-placeholder {
+  font-family: "Hivez Bricolage", sans-serif;
+  font-weight: 600;
+  color: var(--ha-accent);
+  font-size: 4rem;
+  line-height: 1;
+}
+.cp-profile-preview .hivez-profile-picker-actions {
+  gap: 8px;
+}
+.cp-profile-preview .hivez-profile-picker-button {
+  min-width: 0;
+  flex: 1;
+  min-height: 43px;
+  padding: 9px 12px;
+  border-radius: 5px;
+  font-size: 0.69rem;
+  font-weight: 500;
+  background: var(--ha-paper);
+  color: var(--ha-ink);
+  border: 1px solid var(--ha-line);
+  gap: 7px;
+}
+.cp-profile-preview .hivez-profile-picker-button:hover {
+  background: var(--ha-input);
+  border-color: var(--ha-accent);
+  transform: none;
+}
+.cp-profile-preview .hivez-profile-remove-button {
+  color: var(--ha-muted);
+  background: none;
+  border: 0;
+  font-size: 0.67rem;
+  padding: 3px 8px;
+  min-height: 32px;
+  border-radius: 3px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.cp-profile-preview .hivez-profile-avatar-panel {
+  background: var(--ha-input);
+  border: 1px solid var(--ha-line);
+  border-radius: 7px;
+  padding: 13px;
+}
+.cp-profile-preview .hivez-profile-avatar-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.cp-profile-preview .hivez-profile-avatar-option {
+  border: 2px solid transparent;
+  box-shadow: none;
+  transition: border-color 0.2s;
+}
+.cp-profile-preview .hivez-profile-avatar-option:hover,
+.cp-profile-preview .hivez-profile-avatar-option.is-selected {
+  border-color: var(--ha-accent);
+  box-shadow: none;
+  transform: none;
+}
+.cp-profile-preview .hivez-profile-avatar-check {
+  background: var(--ha-accent);
+  color: var(--ha-bg);
+  right: 0;
+  bottom: 0;
+}
+.cp-preview-identity {
+  text-align: center;
+  padding: 25px 0 23px;
+  overflow-wrap: anywhere;
+}
+.cp-preview-name {
+  font-size: 0.72rem;
+  margin-bottom: 6px !important;
+  color: var(--ha-muted);
+}
+.cp-preview-identity h3 {
+  font-family: "Hivez Bricolage", sans-serif;
+  font-weight: 600;
+  font-size: 1.85rem;
+  letter-spacing: -0.055em;
+  line-height: 1.2;
+  margin: 0;
+}
+.cp-preview-bio {
+  font-size: 0.78rem;
+  line-height: 1.7;
+  max-width: 300px;
+  margin: 13px auto 0 !important;
+  white-space: pre-wrap;
+}
+.cp-preview-identity .is-placeholder {
+  color: var(--ha-muted);
+}
+.cp-preview-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  border-top: 1px solid var(--ha-line);
+  padding: 14px 0;
+  color: var(--ha-muted);
+  font-size: 0.6rem;
+}
+.cp-preview-bottom svg {
+  color: var(--ha-accent);
+  flex: none;
+}
+.cp-photo-help {
+  color: #f3f3e8;
+  font-size: 0.69rem;
+  line-height: 1.7;
+  max-width: 360px;
+  padding-top: 20px;
+}
+.cp-upload-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  margin-top: 14px !important;
+}
+.cp-image-error {
+  color: #fff;
+  background: #7f2d29;
+  padding: 12px 14px;
+  margin-top: 14px !important;
+  border-radius: 4px;
+  font-size: 0.77rem;
+}
+.cp-details {
+  padding: 115px clamp(35px, 4.6vw, 80px) 44px;
+  width: 100%;
+  max-width: 700px;
+  justify-self: center;
+  min-width: 0;
+}
+.cp-arrival {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.71rem;
+  color: var(--ha-muted);
+}
+.cp-arrival > svg {
+  color: var(--ha-accent);
+  flex: none;
+}
+.cp-arrival > span:last-child {
+  border-left: 1px solid var(--ha-line);
+  margin-left: 4px;
+  padding-left: 11px;
+}
+.cp-details .ha-companion {
+  height: 159px;
+  margin-top: 18px;
+  margin-bottom: 17px;
+}
+.cp-details .ha-companion .ha-bee {
+  width: 340px !important;
+  height: 296px !important;
+  margin-left: -170px;
+  top: -83px;
+}
+.cp-heading {
+  text-align: center;
+  margin-bottom: 31px;
+}
+.cp-heading h1 {
+  font-family: "Hivez Bricolage", sans-serif;
+  font-size: clamp(2.2rem, 3.2vw, 3.4rem);
+  font-weight: 650;
+  letter-spacing: -0.06em;
+  line-height: 1.1;
+}
+.cp-heading p {
+  color: var(--ha-muted);
+  font-size: 0.84rem;
+  line-height: 1.7;
+  margin-top: 12px;
+}
+.cp-details .ha-field {
+  margin-bottom: 23px;
+}
+.cp-details .ha-field > label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.cp-required,
+.cp-optional {
+  font-weight: 400;
+  font-size: 0.65rem;
+  color: var(--ha-muted);
+}
+.cp-username-wrap > span {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  color: var(--ha-muted);
+  font-size: 0.9rem;
+  pointer-events: none;
+}
+.cp-username-wrap input {
+  padding-left: 37px;
+  padding-right: 16px;
+}
+.cp-help {
+  color: var(--ha-muted);
+  font-size: 0.68rem;
+  line-height: 1.65;
+  margin-top: 8px !important;
+}
+.cp-details textarea {
+  font: inherit;
+  width: 100%;
+  display: block;
+  min-height: 115px;
+  max-height: 300px;
+  resize: vertical;
+  border: 1px solid var(--ha-line);
+  border-radius: 7px;
+  color: var(--ha-ink);
+  background: var(--ha-paper);
+  padding: 14px 16px;
+  font-size: 0.86rem;
+  line-height: 1.7;
+}
+.cp-details textarea::placeholder {
+  color: var(--ha-muted);
+  opacity: 1;
+}
+.cp-details textarea:focus {
+  outline: none;
+  border-color: var(--ha-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ha-accent) 15%, transparent);
+}
+.cp-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ha-muted);
+  margin: 3px 0 24px;
+}
+.cp-progress > span {
+  display: flex;
+  gap: 4px;
+  flex: none;
+  width: 50px;
+}
+.cp-progress i {
+  height: 3px;
+  background: var(--ha-line);
+  flex: 1;
+}
+.cp-progress i[data-complete="true"] {
+  background: var(--ha-accent);
+}
+.cp-progress p {
+  font-size: 0.67rem;
+}
+.cp-empty-error {
+  display: none;
+}
+.cp-privacy-note {
+  display: flex;
+  align-items: start;
+  gap: 8px;
+  color: var(--ha-muted);
+  font-size: 0.65rem;
+  line-height: 1.7;
+  margin: 18px auto 0 !important;
+  max-width: 330px;
+  justify-content: center;
+}
+.cp-privacy-note svg {
+  flex: none;
+  margin-top: 1px;
+}
+@media (min-width: 1700px) {
+  .cp-portrait-content {
+    padding-top: 155px;
+  }
+  .cp-details {
+    padding-top: 135px;
+  }
+}
+@media (max-width: 1100px) {
+  .cp-main {
+    grid-template-columns: minmax(0, 1fr) minmax(400px, 1fr);
+  }
+  .cp-details {
+    padding: 110px 30px 35px;
+  }
+  .cp-portrait-content {
+    padding: 120px 28px 35px;
+  }
+  .cp-profile-preview {
+    padding-inline: 19px;
+  }
+  .cp-preview-top {
+    font-size: 0.5rem;
+    gap: 10px;
+  }
+  .cp-live-dot {
+    font-size: 0.5rem;
+  }
+  .cp-profile-preview .hivez-profile-picker-button {
+    padding: 8px;
+    font-size: 0.62rem;
+    gap: 5px;
+  }
+  .cp-profile-preview .hivez-profile-avatar-grid {
+    gap: 7px;
+  }
+  .cp-desktop-break {
+    display: none;
+  }
+  .cp-arrival {
+    font-size: 0.64rem;
+  }
+}
+@media (max-width: 760px) {
+  .cp-main {
+    display: flex;
+    flex-direction: column;
+  }
+  .cp-portrait-content {
+    padding: 105px 24px 28px;
+    max-width: 550px;
+  }
+  .cp-intro-label {
+    font-size: 0.72rem;
+    margin-bottom: 12px !important;
+  }
+  .cp-portrait h2 {
+    font-size: 2.3rem;
+    margin-bottom: 24px;
+  }
+  .cp-portrait h2 br {
+    display: none;
+  }
+  .cp-profile-preview {
+    padding: 20px 20px 0;
+  }
+  .cp-profile-preview .hivez-profile-preview-shell {
+    width: 118px;
+    height: 118px;
+  }
+  .cp-avatar-placeholder {
+    font-size: 3.2rem;
+  }
+  .cp-preview-identity {
+    padding: 20px 0;
+  }
+  .cp-preview-identity h3 {
+    font-size: 1.7rem;
+  }
+  .cp-preview-bio {
+    font-size: 0.73rem;
+  }
+  .cp-preview-top {
+    font-size: 0.52rem;
+    padding-bottom: 17px;
+  }
+  .cp-live-dot {
+    font-size: 0.53rem;
+  }
+  .cp-photo-help {
+    font-size: 0.68rem;
+    padding-top: 17px;
+  }
+  .cp-details {
+    padding: 32px 24px 38px;
+    max-width: 550px;
+    margin: auto;
+  }
+  .cp-details .ha-companion {
+    height: 135px;
+    margin: 12px 0 15px;
+  }
+  .cp-details .ha-companion .ha-bee {
+    width: 300px !important;
+    height: 261px !important;
+    top: -80px;
+    margin-left: -150px;
+  }
+  .cp-heading h1 {
+    font-size: 2.4rem;
+  }
+  .cp-details .ha-input-wrap input,
+  .cp-details textarea {
+    font-size: 1rem;
+  }
+  .cp-arrival {
+    font-size: 0.68rem;
+  }
+  .ha-page--complete .ha-header {
+    color: #fffef6;
+  }
+  .ha-page--complete .ha-icon-button:hover {
+    background: #ffffff26;
+  }
+  .ha-page--complete .ha-header :focus-visible {
+    outline-color: white;
+  }
+  .ha-page--complete .ha-home span {
+    display: none;
+  }
+  .ha-page--complete .ha-home {
+    width: 35px;
+    justify-content: center;
+  }
+}
+@media (max-width: 380px) {
+  .cp-portrait-content,
+  .cp-details {
+    padding-inline: 20px;
+  }
+  .cp-portrait h2 {
+    font-size: 2rem;
+  }
+  .cp-profile-preview {
+    padding-inline: 15px;
+  }
+  .cp-preview-top {
+    font-size: 0.48rem;
+  }
+  .cp-live-dot {
+    font-size: 0.49rem;
+  }
+  .cp-progress {
+    gap: 8px;
+  }
+  .cp-progress p {
+    font-size: 0.6rem;
+  }
+}

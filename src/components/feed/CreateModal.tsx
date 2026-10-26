@@ -1,5 +1,7 @@
-import { Camera, Type } from "lucide-react";
+import { X } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { CreateChoices } from "@/components/create/ComposerParts";
 
 interface Props {
   open: boolean;
@@ -8,8 +10,19 @@ interface Props {
 
 export default function CreateModal({ open, onClose }: Props) {
   const navigate = useNavigate();
-
-  if (!open) return null;
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = ref.current;
+    if (!dialog) return;
+    if (open && !dialog.open) dialog.showModal();
+    if (!open && dialog.open) dialog.close();
+    if (!open) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [open]);
 
   function handlePhotoReport() {
     onClose();
@@ -22,38 +35,20 @@ export default function CreateModal({ open, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
-      <div className="mx-4 w-full max-w-sm rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6" onClick={(e) => e.stopPropagation()}>
-        <h2 className="mb-4 text-center text-lg font-semibold text-zinc-900 dark:text-white">Create Post</h2>
-        
-        <div className="space-y-3">
-          <button
-            onClick={handlePhotoReport}
-            className="flex w-full items-center gap-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 p-4 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-sky-500">
-              <Camera size={24} className="text-white" />
-            </div>
-            <div className="text-left">
-              <p className="font-semibold text-zinc-900 dark:text-white">Photo Report</p>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">Report a local issue with a photo or video</p>
-            </div>
-          </button>
-
-          <button
-            onClick={handleText}
-            className="flex w-full items-center gap-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 p-4 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-500">
-              <Type size={24} className="text-white" />
-            </div>
-            <div className="text-left">
-              <p className="font-semibold text-zinc-900 dark:text-white">Text</p>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">Write a text post</p>
-            </div>
-          </button>
-        </div>
+    <dialog
+      ref={ref}
+      className="dispatch-create-dialog"
+      aria-labelledby="hv-create-title"
+      onClose={onClose}
+      onClick={(event) => {
+        if (event.target === ref.current) onClose();
+      }}
+    >
+      <div className="dispatch-dialog-intro">
+        <div><p className="dispatch-eyebrow">YOUR CORNER. YOUR VOICE.</p><h2 id="hv-create-title">Start a little<br /><em>something local.</em></h2></div>
+        <button type="button" className="dispatch-icon" aria-label="Close create post" onClick={onClose}><X size={19} /></button>
       </div>
-    </div>
+      <CreateChoices compact onReport={handlePhotoReport} onText={handleText} />
+    </dialog>
   );
 }

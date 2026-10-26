@@ -1,7 +1,8 @@
+import PostActions from "@/components/feed/PostActions";
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { BadgeCheck, Heart, Image as ImageIcon, Layers, MessageCircle, Play, Repeat2, Sparkles } from "lucide-react";
+import { BadgeCheck, Image as ImageIcon, Layers, Play, Sparkles } from "lucide-react";
 import { onSnapshot } from "firebase/firestore";
 
 import HivezLoader from "@/components/common/HivezLoader";
@@ -71,7 +72,7 @@ export default function ExploreGrid() {
       async (snapshot) => {
         const bundle = bundleRef.current;
         if (!bundle) return;
-        const live = snapshot.docs.map((postDoc) => ({ id: postDoc.id, ...(postDoc.data() as Omit<FeedPost, "id">) }));
+        const live = snapshot.docs.map((postDoc) => ({ ...(postDoc.data() as Omit<FeedPost, "id">), id: postDoc.id, }));
         const visible = await filterVisiblePosts(user?.uid, live);
         if (!active) return;
         setPosts(rankFeedPosts(visible, bundle).slice(0, 60));
@@ -130,15 +131,15 @@ export default function ExploreGrid() {
           const mediaBroken = brokenMedia[post.id];
 
           return (
-            <button
+            <article
               key={post.id}
-              type="button"
-              onClick={() => navigate(`/post/${post.id}`)}
               className={`group relative min-w-0 overflow-hidden rounded-lg border border-[#1c1d1a]/5 bg-white text-left shadow-2xs transition hover:border-[#3d654c]/30 focus:outline-none focus:ring-2 focus:ring-[#3d654c]/30 dark:border-neutral-800/80 dark:bg-[#121212] dark:focus:ring-[#f2c14e]/30 ${
                 isLarge ? "col-span-2 row-span-2" : ""
               }`}
-              aria-label={`Open post by ${author?.username || post.username || "Hivez user"}`}
             >
+              <button type="button" className="absolute inset-0 z-10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-current"
+                aria-label={`Open post by ${author?.username || post.username || "Hivez user"}`}
+                onClick={() => navigate(`/post/${post.id}`)} />
               {media && !mediaBroken ? (
                 media.type === "video" ? (
                   <video
@@ -183,7 +184,7 @@ export default function ExploreGrid() {
                 )}
               </div>
 
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent p-2 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100">
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/75 via-black/35 to-transparent p-2 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
                 <div className="flex min-w-0 items-center gap-1.5">
                   <img
                     src={author?.photoURL || post.photoURL || "https://ui-avatars.com/api/?name=Hivez&background=3d654c&color=fff"}
@@ -194,19 +195,11 @@ export default function ExploreGrid() {
                   <span className="min-w-0 truncate text-[10px] font-bold text-white">@{author?.username || post.username || "user"}</span>
                   {(author?.verified || post.verified) && <BadgeCheck size={12} className="shrink-0 text-sky-300" />}
                 </div>
-                <div className="mt-1 flex items-center gap-3 text-[10px] font-bold text-white/90">
-                  <span className="inline-flex items-center gap-1">
-                    <Heart size={11} className="fill-white" /> {post.likes || 0}
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <MessageCircle size={11} /> {post.comments || 0}
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <Repeat2 size={11} /> {post.reHives || 0}
-                  </span>
+                <div className="pointer-events-auto relative mt-1 hv-explore-actions">
+                  <PostActions post={post} compact />
                 </div>
               </div>
-            </button>
+            </article>
           );
         })}
       </div>

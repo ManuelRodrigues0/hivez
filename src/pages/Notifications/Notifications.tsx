@@ -138,7 +138,7 @@ export default function Notifications() {
   }
 
   return (
-    <div className="w-full min-h-screen px-4 py-5 md:px-6 space-y-4 select-none">
+    <div className="hv-route hv-notifications app-notifications-page w-full min-h-screen px-4 py-5 md:px-6 space-y-4">
       {/* Top Banner Navigation Header */}
       <div className="flex items-center justify-between pb-3 border-b border-[#1c1d1a]/10 dark:border-neutral-800">
         <div className="flex items-center gap-3">

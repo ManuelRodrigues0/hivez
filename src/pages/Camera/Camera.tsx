@@ -1,5 +1,5 @@
 import { Check, RotateCcw, X, ChevronDown, Zap, Grid3x3, Timer, Monitor, Layers } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import HivezLoader from "@/components/common/HivezLoader";
 
@@ -32,8 +32,12 @@ export default function Camera() {
   const [multiSnapEnabled, setMultiSnapEnabled] = useState(false);
   const [multiSnapActive, setMultiSnapActive] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const previewUrls = useMemo(() => captures.map(file => URL.createObjectURL(file)), [captures]);
+  useEffect(() => () => previewUrls.forEach(url => URL.revokeObjectURL(url)), [previewUrls]);
 
   useEffect(() => {
+    let disposed = false;
+    let activeStream: MediaStream | null = null;
     async function startCamera() {
       try {
         const constraints: MediaStreamConstraints = {
@@ -45,6 +49,8 @@ export default function Camera() {
         };
 
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        if (disposed) { stream.getTracks().forEach(track => track.stop()); return; }
+        activeStream = stream;
         streamRef.current = stream;
         capturingRef.current = false;
 
@@ -56,10 +62,11 @@ export default function Camera() {
             } catch (error) {
               console.error(error);
             }
-            setLoading(false);
+            if (!disposed) setLoading(false);
           };
         }
       } catch (error) {
+        if (disposed) return;
         console.error(error);
         alert(error instanceof Error ? `${error.name}\n${error.message}` : String(error));
         navigate("/");
@@ -69,7 +76,9 @@ export default function Camera() {
     startCamera();
 
     return () => {
-      streamRef.current?.getTracks().forEach((track) => track.stop());
+      disposed = true;
+      activeStream?.getTracks().forEach((track) => track.stop());
+      if (holdTimeoutRef.current) clearTimeout(holdTimeoutRef.current);
       if (timerRef.current) clearInterval(timerRef.current);
       if (multiSnapTimerRef.current) clearInterval(multiSnapTimerRef.current);
     };
@@ -351,12 +360,14 @@ export default function Camera() {
         <div className="relative flex items-center justify-between px-4 pt-12 pointer-events-auto">
           <button 
             onClick={cancel} 
+            aria-label="Close camera"
             className="flex h-10 w-10 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm transition hover:bg-black/50 active:scale-90"
           >
             <X size={22} />
           </button>
 
           <div className="flex items-center gap-2">
+            {!recording && captures.length === 0 && <span className="hv-camera-title">hivez.<small>VIEWFINDER</small></span>}
             {recording && (
               <>
                 <div className="h-3 w-3 animate-pulse rounded-full bg-red-500" />
@@ -378,6 +389,8 @@ export default function Camera() {
           <div className="relative">
             <button 
               onClick={() => setMenuOpen(!menuOpen)} 
+              aria-label="Camera options"
+              aria-expanded={menuOpen}
               className="flex h-10 w-10 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm transition hover:bg-black/50 active:scale-90"
             >
               <ChevronDown size={22} className={`transition-transform duration-200 ${menuOpen ? 'rotate-180' : ''}`} />
@@ -393,6 +406,7 @@ export default function Camera() {
                       return (
                         <button
                           key={item.label}
+                          aria-pressed={item.active}
                           onClick={item.toggle}
                           className={`flex w-full items-center gap-3 px-5 py-3.5 text-sm font-medium transition ${
                             item.active
@@ -423,6 +437,7 @@ export default function Camera() {
       {/* Camera Switch Button */}
       <button
         onClick={switchCamera}
+        aria-label="Switch camera"
         className="absolute right-5 top-1/2 z-30 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60 active:scale-90"
       >
         <RotateCcw size={22} />
@@ -432,7 +447,7 @@ export default function Camera() {
       {captures.length > 0 && (
         <div className="absolute inset-x-0 bottom-36 z-30 flex justify-center gap-2 px-5">
           {captures.map((file, index) => {
-            const previewUrl = URL.createObjectURL(file);
+            const previewUrl = previewUrls[index];
             return (
               <div key={`${file.name}-${index}`} className="group relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl border-2 border-white/30 bg-zinc-900 shadow-lg transition hover:scale-105">
                 {file.type.startsWith("video") ? (
@@ -442,6 +457,7 @@ export default function Camera() {
                 )}
                 <button
                   onClick={() => removeCapture(index)}
+                  aria-label={`Remove capture ${index + 1}`}
                   className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-white opacity-0 transition group-hover:opacity-100"
                 >
                   <X size={10} />
@@ -460,6 +476,7 @@ export default function Camera() {
         <div className="flex items-center gap-3">
           <span className="text-xs font-medium text-white/60">1x</span>
           <input
+            aria-label="Camera zoom"
             type="range"
             min="1"
             max="10"
@@ -486,6 +503,8 @@ export default function Camera() {
             <div className="relative">
               <button
                 onPointerDown={handlePointerDown}
+                onClick={event => { if (event.detail === 0) { handlePointerDown(); handlePointerUp(); } }}
+                aria-label={recording ? "Stop recording" : "Take photo (hold to record)"}
                 onPointerUp={handlePointerUp}
                 onPointerLeave={handlePointerUp}
                 className={`flex h-20 w-20 items-center justify-center rounded-full transition-all select-none active:scale-90 ${
@@ -510,6 +529,7 @@ export default function Camera() {
       {captures.length > 0 && !multiSnapActive && (
         <button
           onClick={finishPost}
+          aria-label="Use captured media"
           disabled={recording}
           className="absolute bottom-12 right-6 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-white text-black shadow-2xl transition hover:scale-105 active:scale-95 disabled:opacity-40"
         >

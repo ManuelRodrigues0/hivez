@@ -22,7 +22,6 @@
 
 declare const process: { env: Record<string, string | undefined> };
 
-export const OMNIROUTE_DEFAULT_BASE_URL = "http://localhost:20128/v1";
 export const OMNIROUTE_DEFAULT_MODEL = "auto";
 export const OMNIROUTE_LOG_PREFIX = "[HIVEZ OMNIROUTE]";
 export const OMNIROUTE_DEFAULT_TIMEOUT_MS = 25_000;
@@ -30,6 +29,7 @@ export const OMNIROUTE_DEFAULT_TIMEOUT_MS = 25_000;
 const SENSITIVE_PLACEHOLDER = "[SENSITIVE]";
 
 export type OmniRouteErrorKind =
+  | "missing_base_url"
   | "missing_api_key"
   | "invalid_api_key"
   | "rate_limited"
@@ -66,6 +66,8 @@ export interface OmniRouteChatOptions {
   timeoutMs?: number;
   maxTokens?: number;
   temperature?: number;
+  /** Ask OpenAI-compatible routers/models to return a JSON object. */
+  responseFormat?: "json_object";
 }
 
 export interface OmniRouteChatSuccess {
@@ -111,6 +113,7 @@ export interface OmniRouteConnectionReport {
 }
 
 const FAILURE_MESSAGES: Record<OmniRouteErrorKind, string> = {
+  missing_base_url: "OmniRoute is not configured (missing OMNIROUTE_BASE_URL).",
   missing_api_key: "OmniRoute is not configured (missing API key).",
   invalid_api_key: "OmniRoute rejected the credentials.",
   rate_limited: "OmniRoute is rate limiting requests.",
@@ -126,7 +129,7 @@ function failure(error: OmniRouteErrorKind): OmniRouteFailure {
 }
 
 function readEnv(key: string): string {
-  const value = process.env[key];
+  const value = process.env[key]?.trim();
   return value && value !== SENSITIVE_PLACEHOLDER ? value : "";
 }
 
@@ -142,7 +145,7 @@ function normalizeBaseUrl(value: string): string {
 export function getOmniRouteConfig(): OmniRouteConfig {
   const apiKey = readEnv("OMNIROUTE_API_KEY");
   return {
-    baseUrl: normalizeBaseUrl(readEnv("OMNIROUTE_BASE_URL") || OMNIROUTE_DEFAULT_BASE_URL),
+    baseUrl: normalizeBaseUrl(readEnv("OMNIROUTE_BASE_URL")),
     apiKey,
     model: readEnv("OMNIROUTE_MODEL") || OMNIROUTE_DEFAULT_MODEL,
     isConfigured: Boolean(apiKey),
@@ -183,6 +186,7 @@ interface OpenAiModelsPayload {
  */
 export async function callOmniRouteChat(options: OmniRouteChatOptions): Promise<OmniRouteChatResponse> {
   const config = getOmniRouteConfig();
+  if (!config.baseUrl) return failure("missing_base_url");
   if (!config.apiKey) {
     return failure("missing_api_key");
   }
@@ -191,20 +195,40 @@ export async function callOmniRouteChat(options: OmniRouteChatOptions): Promise<
   const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? OMNIROUTE_DEFAULT_TIMEOUT_MS);
 
   try {
-    const response = await fetch(`${config.baseUrl}/chat/completions`, {
+    const endpoint = `${config.baseUrl}/chat/completions`;
+    const headers = {
+      Authorization: `Bearer ${config.apiKey}`,
+      "Content-Type": "application/json",
+    };
+    const requestBody: Record<string, unknown> = {
+      model: options.model || config.model,
+      temperature: options.temperature ?? 0.6,
+      max_tokens: options.maxTokens ?? 700,
+      messages: options.messages,
+    };
+    if (options.responseFormat === "json_object") {
+      requestBody.response_format = { type: "json_object" };
+    }
+
+    let response = await fetch(endpoint, {
       method: "POST",
       signal: controller.signal,
-      headers: {
-        Authorization: `Bearer ${config.apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: options.model || config.model,
-        temperature: options.temperature ?? 0.6,
-        max_tokens: options.maxTokens ?? 700,
-        messages: options.messages,
-      }),
+      headers,
+      body: JSON.stringify(requestBody),
     });
+
+    // Some routed models do not implement structured output. Retry only those
+    // explicit format errors, preserving compatibility with older providers.
+    if (options.responseFormat === "json_object" && (response.status === 400 || response.status === 422)) {
+      const compatibleBody = { ...requestBody };
+      delete compatibleBody.response_format;
+      response = await fetch(endpoint, {
+        method: "POST",
+        signal: controller.signal,
+        headers,
+        body: JSON.stringify(compatibleBody),
+      });
+    }
 
     if (!response.ok) {
       return failure(mapHttpStatus(response.status));
@@ -239,6 +263,7 @@ export async function callOmniRouteChat(options: OmniRouteChatOptions): Promise<
  */
 export async function listOmniRouteModels(options?: { timeoutMs?: number }): Promise<OmniRouteModelsResponse> {
   const config = getOmniRouteConfig();
+  if (!config.baseUrl) return failure("missing_base_url");
   if (!config.apiKey) {
     return failure("missing_api_key");
   }
@@ -260,6 +285,7 @@ type ModelsProbeResult =
  */
 async function probeOmniRouteModels(timeoutMs: number): Promise<ModelsProbeResult> {
   const config = getOmniRouteConfig();
+  if (!config.baseUrl) return { ok: false, status: null, error: "missing_base_url" };
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (config.apiKey) {
     headers.Authorization = `Bearer ${config.apiKey}`;
@@ -343,7 +369,9 @@ export async function testOmniRouteConnection(options?: {
   } else {
     const chat = await callOmniRouteChat({
       messages: [{ role: "user", content: COMPLETION_PING_PROMPT }],
-      maxTokens: 16,
+      // Reasoning models can spend the first tokens thinking and return no text
+      // with the old 16-token limit, incorrectly making a working router look down.
+      maxTokens: 256,
       temperature: 0,
       timeoutMs: options?.completionTimeoutMs ?? 20_000,
     });

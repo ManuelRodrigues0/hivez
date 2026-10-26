@@ -1,0 +1,3220 @@
+@font-face {
+  font-family: "Hivez Bricolage";
+  src: url("/fonts/bricolage-grotesque-latin.woff2") format("woff2");
+  font-weight: 200 800;
+  font-display: swap;
+}
+
+/* Signed-in workspace only. Public/onboarding pages never receive this root. */
+html:has(.hv-app),
+body:has(.hv-app),
+.hv-app,
+.hv-app * {
+  scrollbar-width: none !important;
+  scrollbar-gutter: auto;
+}
+html:has(.hv-app)::-webkit-scrollbar,
+body:has(.hv-app)::-webkit-scrollbar,
+.hv-app::-webkit-scrollbar,
+.hv-app *::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+.hv-app.app-shell[data-app-theme] {
+  --hivez-bg: #f5f3eb;
+  --hivez-surface: #fffef9;
+  --hivez-surface-solid: #fffef9;
+  --hivez-elevated: #fffef9;
+  --hivez-surface-soft: #eeede3;
+  --hivez-border: #dddfd2;
+  --hivez-border-strong: #a8b39f;
+  --hivez-text: #293326;
+  --hivez-muted: #626e5a;
+  --hivez-faint: #6c7565;
+  --hivez-accent: #365c43;
+  --hivez-accent-strong: #284a34;
+  --hv-on-accent: #fffef7;
+  --hv-tint: #e5eadc;
+  --hv-cover: #dde4d1;
+  --hv-honey: #f1d978;
+  --hivez-danger: #a73630;
+  --hivez-radius: 12px;
+  --hivez-radius-sm: 8px;
+  --hivez-shadow: none;
+  --hivez-shadow-soft: none;
+  --background: var(--hivez-bg);
+  --foreground: var(--hivez-text);
+  --card: var(--hivez-surface);
+  --card-foreground: var(--hivez-text);
+  --popover: var(--hivez-surface);
+  --popover-foreground: var(--hivez-text);
+  --primary: var(--hivez-accent);
+  --primary-foreground: var(--hv-on-accent);
+  --secondary: var(--hivez-surface-soft);
+  --secondary-foreground: var(--hivez-text);
+  --muted: var(--hivez-surface-soft);
+  --muted-foreground: var(--hivez-muted);
+  --accent: var(--hv-tint);
+  --accent-foreground: var(--hivez-text);
+  --border: var(--hivez-border);
+  --input: var(--hivez-border);
+  --ring: var(--hivez-accent);
+  color: var(--hivez-text) !important;
+  background: var(--hivez-bg) !important;
+  font-family: "Geist Variable", Arial, sans-serif;
+  font-weight: 400;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  min-height: 100dvh;
+  isolation: isolate;
+}
+.hv-app.app-shell[data-app-theme="dark"] {
+  --hivez-bg: #0b0d0e;
+  --hivez-surface: #141719;
+  --hivez-surface-solid: #141719;
+  --hivez-elevated: #141719;
+  --hivez-surface-soft: #1b2022;
+  --hivez-border: #343c3d;
+  --hivez-border-strong: #64716c;
+  --hivez-text: #eef1e9;
+  --hivez-muted: #afb9ad;
+  --hivez-faint: #a2ada2;
+  --hivez-accent: #ffd43b;
+  --hivez-accent-strong: #ffe066;
+  --hv-on-accent: #171a13;
+  --hv-tint: #30301d;
+  --hv-cover: #242c23;
+  --hv-honey: #ffd43b;
+  --hivez-danger: #ffaaa1;
+}
+.hv-app *,
+.hv-app *::before,
+.hv-app *::after {
+  box-sizing: border-box;
+}
+.hv-app :is(button, a, input, select, textarea) {
+  -webkit-tap-highlight-color: transparent;
+}
+.hv-app button {
+  cursor: pointer;
+}
+.hv-app button:disabled {
+  cursor: not-allowed;
+}
+.hv-app :is(a, button, input, textarea, select):focus-visible {
+  outline: 2px solid var(--hivez-accent);
+  outline-offset: 4px;
+}
+.hv-app ::selection {
+  background: var(--hv-tint);
+  color: var(--hivez-text);
+}
+.hv-app :is(h1, h2, h3, h4) {
+  font-family: "Hivez Bricolage", sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: 1.17;
+}
+
+/* Bridge legacy utility-based screens to the same semantic surfaces. */
+.hv-app
+  :is(
+    [class~="bg-white"],
+    [class~="bg-white/60"],
+    [class~="bg-white/70"],
+    [class~="bg-white/80"],
+    [class~="bg-white/90"],
+    [class~="dark:bg-[#121212]"],
+    [class~="dark:bg-[#141414]"],
+    [class~="dark:bg-zinc-900"],
+    [class~="bg-card"],
+    [class~="bg-zinc-950"]
+  ) {
+  background-color: var(--hivez-surface) !important;
+}
+.hv-app
+  :is(
+    [class~="bg-zinc-50"],
+    [class~="bg-zinc-100"],
+    [class~="bg-neutral-50"],
+    [class~="bg-neutral-100"],
+    [class~="bg-[#f7f7f2]"],
+    [class~="bg-[#f4f4ef]"],
+    [class~="bg-[#f7f7f2]/90"]
+  ) {
+  background-color: var(--hivez-bg) !important;
+}
+.hv-app
+  :is(
+    [class~="text-zinc-900"],
+    [class~="text-zinc-950"],
+    [class~="text-[#1c1d1a]"],
+    [class~="text-zinc-700"],
+    [class~="text-zinc-800"],
+    [class~="text-foreground"]
+  ) {
+  color: var(--hivez-text) !important;
+}
+.hv-app
+  :is(
+    [class~="text-zinc-500"],
+    [class~="text-zinc-400"],
+    [class~="text-zinc-600"],
+    [class~="text-neutral-400"],
+    [class~="text-neutral-500"],
+    [class*="text-[#1c1d1a]/"]
+  ) {
+  color: var(--hivez-muted) !important;
+}
+.hv-app
+  :is(
+    [class~="text-[#3d654c]"],
+    [class~="text-sky-500"],
+    [class~="text-primary"]
+  ) {
+  color: var(--hivez-accent) !important;
+}
+.hv-app
+  :is(
+    [class~="border-zinc-200"],
+    [class~="border-zinc-200/80"],
+    [class~="border-neutral-200"],
+    [class*="border-[#1c1d1a]/"]
+  ) {
+  border-color: var(--hivez-border) !important;
+}
+.hv-app
+  :is(
+    [class~="shadow-sm"],
+    [class~="shadow-xs"],
+    [class~="shadow-2xs"],
+    [class~="shadow-md"],
+    [class~="shadow-lg"]
+  ) {
+  box-shadow: none;
+}
+.hv-app
+  :is(
+    .app-page,
+    .app-profile-page,
+    .app-search-page,
+    .app-community-page,
+    .app-notifications-page,
+    .app-chats-page,
+    .app-create-page,
+    .hv-route
+  ) {
+  background: var(--hivez-bg) !important;
+  color: var(--hivez-text) !important;
+}
+.hv-app
+  :is(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+    textarea,
+    select
+  ) {
+  background: var(--hivez-surface) !important;
+  color: var(--hivez-text) !important;
+  border-color: var(--hivez-border) !important;
+  border-radius: 8px !important;
+  box-shadow: none;
+}
+.hv-app :is(input, textarea)::placeholder {
+  color: var(--hivez-muted) !important;
+  opacity: 0.85;
+}
+.hv-app :is(.app-primary-button, .hv-button, [class~="bg-primary"]) {
+  background: var(--hivez-accent) !important;
+  color: var(--hv-on-accent) !important;
+  border-color: var(--hivez-accent) !important;
+  box-shadow: none;
+}
+.hv-app .hv-button,
+.hv-app .hv-button-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 43px;
+  border: 1px solid var(--hivez-accent);
+  border-radius: 7px;
+  padding: 10px 17px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background 0.18s,
+    transform 0.18s;
+}
+.hv-app .hv-button:hover {
+  background: var(--hivez-accent-strong) !important;
+  transform: translateY(-1px);
+}
+.hv-app .hv-button-secondary {
+  color: var(--hivez-text);
+  background: var(--hivez-surface);
+  border-color: var(--hivez-border);
+}
+.hv-app .hv-button-secondary:hover {
+  border-color: var(--hivez-border-strong);
+  background: var(--hivez-surface-soft);
+}
+.hv-app .hv-icon {
+  position: relative;
+  width: 38px !important;
+  height: 40px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;
+  flex-shrink: 0;
+  color: var(--hivez-text);
+  background: transparent;
+  border: 0;
+  border-radius: 6px !important;
+}
+.hv-app .hv-icon:hover {
+  background: var(--hivez-surface-soft) !important;
+}
+.hv-app .hv-count {
+  position: absolute;
+  top: 2px;
+  right: 0;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  display: grid;
+  place-items: center;
+  color: var(--hv-on-accent);
+  background: var(--hivez-accent);
+  font-size: 0.5625rem;
+  font-weight: 650;
+  border-radius: 20px;
+  line-height: 1;
+}
+.hv-app .hv-skip {
+  position: fixed;
+  top: -90px;
+  left: 20px;
+  padding: 12px 18px;
+  z-index: 110;
+  background: var(--hivez-accent);
+  color: var(--hv-on-accent);
+}
+.hv-app .hv-skip:focus {
+  top: 12px;
+}
+
+/* Chrome: retain the rail + page + optional Updates arrangement. */
+.hv-app .hv-topbar.app-desktop-header {
+  display: flex;
+  position: fixed;
+  z-index: 50;
+  inset: 0 0 auto;
+  height: 72px !important;
+  padding: 0 25px 0 18px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 25px;
+  background: var(--hivez-bg) !important;
+  border-bottom: 1px solid var(--hivez-border);
+  backdrop-filter: none;
+}
+.hv-app .hv-topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+.hv-app .hv-brand {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--hivez-text);
+  text-decoration: none;
+  font-family: "Hivez Bricolage", sans-serif;
+  font-size: 2rem;
+  font-weight: 750;
+  letter-spacing: -0.065em;
+  line-height: 1;
+}
+.hv-app .hv-brand svg {
+  width: 25px;
+  height: 26px;
+  fill: currentColor;
+}
+.hv-app .hv-brand-bee {
+  width: 124px;
+  height: 72px;
+  object-fit: contain;
+  pointer-events: none;
+  flex-shrink: 0;
+  margin: 0 -14px 0 -26px;
+}
+.hv-app .hv-global-search {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: min(440px, 36vw);
+  min-height: 40px;
+  border: 1px solid var(--hivez-border);
+  border-radius: 7px;
+  color: var(--hivez-muted);
+  padding: 8px 12px;
+  background: var(--hivez-surface);
+  text-align: left;
+  font-size: 0.75rem;
+}
+.hv-app .hv-global-search:hover {
+  border-color: var(--hivez-border-strong);
+  background: var(--hivez-surface) !important;
+}
+.hv-app .hv-search-context {
+  margin-left: auto;
+  padding-left: 15px;
+  border-left: 1px solid var(--hivez-border);
+  font-size: 0.625rem;
+  white-space: nowrap;
+}
+.hv-app .hv-topbar-actions {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+}
+.hv-app .hv-create-button {
+  min-height: 38px;
+  padding: 8px 13px;
+  margin-left: 4px;
+  border-radius: 6px !important;
+}
+.hv-app .hv-account {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--hivez-border);
+  overflow: hidden;
+  margin-left: 7px;
+}
+.hv-app .hv-account img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: cover;
+}
+.hv-app .hv-sidebar.app-sidebar {
+  display: flex;
+  position: fixed;
+  top: 72px !important;
+  bottom: 0;
+  left: 0;
+  width: var(--layout-left);
+  height: calc(100dvh - 72px) !important;
+  z-index: 40;
+  border-right: 1px solid var(--hivez-border);
+  padding: 0 !important;
+  background: var(--hivez-bg) !important;
+  overflow: hidden;
+  transition: width 0.25s;
+}
+.hv-app .hv-navigation {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  padding: 29px 15px 18px;
+  scrollbar-width: none;
+}
+.hv-app .hv-rail-label {
+  font-size: 0.5625rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--hivez-muted);
+  margin: 0 10px 14px;
+  white-space: nowrap;
+}
+.hv-app .hv-nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.hv-app :is(.hv-nav-link, .hv-sidebar button.hv-nav-link) {
+  display: flex;
+  position: relative;
+  align-items: center;
+  gap: 13px;
+  min-height: 42px;
+  width: 100% !important;
+  margin: 0;
+  padding: 10px 12px !important;
+  border: 0;
+  border-radius: 6px !important;
+  text-align: left;
+  white-space: nowrap;
+  background: transparent;
+  color: var(--hivez-muted);
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 450;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.hv-app .hv-nav-link svg {
+  flex-shrink: 0;
+}
+.hv-app .hv-nav-link:hover {
+  background: var(--hivez-surface-soft) !important;
+  color: var(--hivez-text);
+}
+.hv-app .hv-nav-link.is-active {
+  background: var(--hv-tint) !important;
+  color: var(--hivez-accent);
+  font-weight: 600;
+}
+.hv-app .hv-nav-link .hv-count {
+  top: 13px;
+  right: 8px;
+}
+.hv-app .is-compact {
+  padding: 24px 16px 18px;
+}
+.hv-app .is-compact .hv-nav-link {
+  width: 43px !important;
+  height: 44px;
+  justify-content: center;
+  padding: 0 !important;
+}
+.hv-app .is-compact .hv-nav-link > span {
+  display: none;
+}
+.hv-app .hv-rail-hives {
+  margin-top: 29px;
+  padding-top: 23px;
+  border-top: 1px solid var(--hivez-border);
+}
+.hv-app .hv-rail-section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-right: 9px;
+  color: var(--hivez-muted);
+}
+.hv-app .hv-rail-hives input {
+  font-size: 0.6875rem;
+  min-height: 35px;
+  border-radius: 5px !important;
+}
+.hv-app .hv-hive-links {
+  padding: 10px 5px 6px;
+}
+.hv-app .hv-hive-links > a {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 34px;
+  font-size: 0.6875rem;
+  color: var(--hivez-muted);
+  text-decoration: none;
+}
+.hv-app .hv-hive-links > a:hover {
+  color: var(--hivez-accent);
+}
+.hv-app .hv-hive-links > a > svg {
+  margin-left: auto;
+}
+.hv-app .hv-hive-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #94a17c;
+  flex-shrink: 0;
+}
+.hv-app .hv-hive-dot--1 {
+  background: #b58d63;
+}
+.hv-app .hv-hive-dot--2 {
+  background: #7a9eac;
+}
+.hv-app .hv-hive-dot--3 {
+  background: #b4a76b;
+}
+.hv-app .hv-hive-dot--4 {
+  background: #b6a689;
+}
+.hv-app .hv-sidebar button.hv-rail-invite,
+.hv-app .hv-rail-invite {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--hivez-border);
+  background: transparent;
+  border-radius: 7px;
+  color: var(--hivez-muted);
+  padding: 13px 12px !important;
+  margin: 17px 0 0;
+  width: 100% !important;
+  font-size: 0.625rem;
+  line-height: 1.7;
+  text-align: left;
+}
+.hv-app .hv-rail-invite strong {
+  font-weight: 500;
+  color: var(--hivez-text);
+}
+.hv-app .hv-nav-bottom {
+  margin-top: auto;
+  padding-top: 28px;
+}
+.hv-app .hv-rail-signoff {
+  margin: 18px 10px 0;
+  color: var(--hivez-muted);
+  font-size: 0.5625rem;
+}
+.hv-app .hv-main.app-main {
+  margin-left: var(--layout-left);
+  padding: 72px 0 0 !important;
+  min-width: 0;
+  width: calc(100% - var(--layout-left) - var(--layout-right));
+  max-width: calc(100% - var(--layout-left) - var(--layout-right));
+  min-height: 100dvh;
+  transition:
+    width 0.25s,
+    margin 0.25s;
+  overflow: visible;
+}
+.hv-app .hv-content.app-feed-shell {
+  width: 100% !important;
+  max-width: 100% !important;
+  border: 0 !important;
+  background: transparent !important;
+  min-height: calc(100dvh - 72px);
+  overflow: visible;
+}
+.hv-app .hv-mobile-topbar,
+.hv-app .hv-bottom-nav {
+  display: none;
+}
+.hv-app .hv-mobile-menu {
+  color: var(--hivez-text);
+  background: var(--hivez-bg);
+  border: 0;
+  border-right: 1px solid var(--hivez-border);
+  padding: 0;
+  margin: 0;
+  width: min(300px, 85vw);
+  height: 100dvh;
+  max-height: 100dvh;
+  max-width: 100vw;
+  position: fixed;
+  inset: 0 auto 0 0;
+}
+.hv-app .hv-mobile-menu::backdrop {
+  background: #09140bc0;
+  backdrop-filter: blur(3px);
+}
+.hv-app .hv-mobile-menu-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 19px 22px;
+  border-bottom: 1px solid var(--hivez-border);
+}
+.hv-app .hv-mobile-menu > .hv-navigation {
+  height: calc(100dvh - 78px);
+}
+.hv-app .app-updates.app-updates-drawer {
+  top: 72px !important;
+  height: calc(100dvh - 72px) !important;
+  padding: 25px !important;
+}
+.hv-app .app-updates-heading h2 {
+  font-size: 1.375rem;
+}
+.hv-app .app-updates-item {
+  padding-block: 17px;
+}
+
+/* Shared page language. */
+.hv-app .hv-eyebrow {
+  font-size: 0.5625rem;
+  letter-spacing: 0.13em;
+  font-weight: 550;
+  color: var(--hivez-accent);
+  text-transform: uppercase;
+  margin: 0 0 14px;
+}
+.hv-app .hv-page-intro {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 25px;
+  padding: 0 0 28px;
+  margin-bottom: 27px;
+  border-bottom: 1px solid var(--hivez-border);
+}
+.hv-app .hv-page-intro h1 {
+  font-size: clamp(1.75rem, 3vw, 2.75rem);
+  margin: 0;
+  font-weight: 600;
+}
+.hv-app .hv-page-intro h1 em {
+  font-family: Georgia, serif;
+  font-weight: 400;
+  color: var(--hivez-accent);
+}
+.hv-app .hv-intro-copy {
+  color: var(--hivez-muted);
+  font-size: 0.75rem;
+  line-height: 1.8;
+  max-width: 480px;
+  margin: 12px 0 0;
+}
+.hv-app .hv-route {
+  width: 100%;
+  max-width: none;
+  padding: 28px 24px 45px;
+  margin: 0;
+}
+.hv-app .app-sticky-header {
+  background: var(--hivez-bg) !important;
+  backdrop-filter: none;
+  border-color: var(--hivez-border) !important;
+}
+.hv-app .app-sticky-header h1 {
+  font-size: 1.5625rem;
+}
+.hv-app .app-tab {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.hv-app :is(.app-primary-button, .app-secondary-button) {
+  border-radius: 7px !important;
+  font-size: 0.75rem;
+  min-height: 42px;
+  font-weight: 600;
+}
+.hv-app .app-popover-menu {
+  border-radius: 9px !important;
+  background: var(--hivez-surface) !important;
+  box-shadow: 0 14px 35px #00000012;
+}
+.hv-app .app-popover-menu button {
+  font-size: 0.75rem;
+}
+
+/* Social feed: a readable post column + useful discovery sidebar. */
+.hv-app .hv-home {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0 0 40px;
+}
+.hv-app .hv-home-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 312px;
+  gap: 0;
+  align-items: start;
+}
+.hv-app .hv-home-feed {
+  min-width: 0;
+}
+.hv-app.app-shell .app-feed-card.hv-stream-post {
+  width: 100% !important;
+  max-width: 100% !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--hivez-border) !important;
+  border-radius: 0 !important;
+  padding: 22px 24px !important;
+  background: transparent !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+.hv-app.app-shell .app-feed-card.hv-stream-post:hover {
+  border-color: var(--hivez-border) !important;
+  background: transparent !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+.hv-app .hv-post-header {
+  gap: 12px;
+}
+.hv-app .hv-post-content {
+  min-width: 0;
+  margin-left: 51px;
+}
+.hv-app .hv-post-content > div {
+  margin-top: 10px;
+}
+.hv-app .hv-post-content > div:first-child {
+  margin-top: 5px;
+}
+.hv-app .hv-post-content .hv-post-actions {
+  max-width: 720px;
+  border-top: 0;
+  padding-top: 0;
+  margin-top: 12px;
+}
+.hv-app .hv-post-media {
+  max-width: 720px;
+}
+.hv-app .hv-media-stream .hv-media-single {
+  width: fit-content;
+  max-width: 100%;
+  border: 0 !important;
+  border-radius: 10px;
+  background: transparent !important;
+  box-shadow: none;
+}
+.hv-app .hv-media-stream .hv-media-single > button {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  height: auto;
+}
+.hv-app .hv-media-stream .hv-media-single > div {
+  min-height: 0;
+}
+.hv-app .hv-post-media .hv-media-single :is(img, video) {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 440px;
+  object-fit: contain;
+  border-radius: 10px !important;
+}
+.hv-app .hv-media-stream .hv-media-carousel > div {
+  width: min(65%, 340px);
+  height: 300px;
+  box-shadow: none;
+}
+.hv-app .hv-post-identity {
+  flex-wrap: wrap;
+  row-gap: 1px;
+}
+.hv-app .hv-post-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.hv-app .hv-post-handle,
+.hv-app .hv-post-time {
+  font-size: 0.75rem;
+  color: var(--hivez-muted);
+}
+.hv-app .app-feed-card img[class*="rounded-full"] {
+  border-radius: 50% !important;
+  width: 39px;
+  height: 39px;
+  box-shadow: none;
+}
+.hv-app
+  .app-feed-card
+  :is(video, img[class*="object-cover"]):not([class*="rounded-full"]) {
+  border-radius: 5px !important;
+}
+.hv-app .app-feed-card .hv-post-caption {
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  max-width: 78ch;
+  color: var(--hivez-text);
+}
+.hv-app .app-feed-card .hv-post-category {
+  font-size: 0.6875rem;
+  font-weight: 550;
+  text-transform: none;
+  letter-spacing: 0.025em;
+  background: transparent;
+  color: var(--hivez-accent);
+  border-radius: 4px;
+  padding: 0;
+}
+.hv-app .hv-home-context {
+  position: sticky;
+  top: 72px;
+  padding: 0 24px;
+  border-left: 1px solid var(--hivez-border);
+  min-height: calc(100dvh - 72px);
+  max-height: calc(100dvh - 72px);
+  overflow-y: auto;
+}
+/* A local, account-scoped scratchpad rather than promotional sidebar cards. */
+.hv-app .hv-notebook {
+  padding-top: 25px;
+}
+.hv-app .hv-notebook-kicker {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--hivez-accent);
+  font-size: 0.5625rem;
+  letter-spacing: 0.13em;
+  font-weight: 550;
+}
+.hv-app .hv-notebook h2 {
+  margin: 22px 0 12px;
+  font-size: 2.125rem;
+  line-height: 1.03;
+  letter-spacing: -0.055em;
+  font-weight: 550;
+}
+.hv-app .hv-notebook h2 em {
+  font-family: Georgia, serif;
+  font-weight: 400;
+  color: var(--hivez-accent);
+  letter-spacing: -0.045em;
+}
+.hv-app .hv-notebook-intro {
+  margin: 0 0 24px;
+  font-size: 0.75rem;
+  color: var(--hivez-muted);
+  line-height: 1.6;
+}
+.hv-app .hv-notebook-modes {
+  display: flex;
+  border-bottom: 1px solid var(--hivez-border);
+}
+.hv-app .hv-notebook-modes button {
+  flex: 1;
+  min-height: 38px;
+  color: var(--hivez-muted);
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 8px 4px;
+  font-size: 0.6875rem;
+}
+.hv-app .hv-notebook-modes button[aria-pressed="true"] {
+  border-bottom-color: var(--hivez-accent);
+  color: var(--hivez-accent);
+  font-weight: 600;
+}
+.hv-app .hv-notebook-question {
+  min-height: 58px;
+  margin: 16px 0 12px;
+  font-size: 0.75rem;
+  color: var(--hivez-muted);
+  line-height: 1.7;
+}
+.hv-app .hv-notebook-paper {
+  position: relative;
+  padding: 20px 16px 12px;
+  border: 1px solid var(--hivez-border);
+  background: var(--hivez-surface);
+  border-radius: 2px;
+}
+.hv-app .hv-notebook-paper::before {
+  content: "";
+  position: absolute;
+  right: -1px;
+  top: -1px;
+  width: 19px;
+  height: 19px;
+  background: linear-gradient(
+    45deg,
+    var(--hivez-border) 49%,
+    var(--hivez-bg) 51%
+  );
+}
+.hv-app .hv-notebook-page-label {
+  display: block;
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  color: var(--hivez-muted);
+  margin-bottom: 16px;
+}
+.hv-app.app-shell .hv-home-context .hv-notebook-paper textarea {
+  display: block;
+  resize: vertical;
+  width: 100%;
+  min-height: 196px;
+  max-height: 360px;
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  background: repeating-linear-gradient(
+    transparent 0,
+    transparent 27px,
+    var(--hivez-border) 27px,
+    var(--hivez-border) 28px
+  ) !important;
+  color: var(--hivez-text);
+  font-family: Georgia, serif;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 28px;
+  box-shadow: none;
+}
+.hv-app.app-shell .hv-home-context .hv-notebook-paper textarea::placeholder {
+  color: var(--hivez-muted);
+  opacity: 1;
+}
+.hv-app .hv-notebook-paper:focus-within {
+  border-color: var(--hivez-accent);
+  outline: 1px solid var(--hivez-accent);
+  outline-offset: 2px;
+}
+.hv-app.app-shell .hv-home-context .hv-notebook-paper textarea:focus-visible {
+  outline: none !important;
+}
+.hv-app .hv-notebook-paper-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 15px;
+  font-size: 0.625rem;
+  color: var(--hivez-muted);
+}
+.hv-app .hv-notebook-paper-foot > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.hv-app .hv-notebook-continue {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-top: 16px;
+  min-height: 43px;
+  border: 1px solid var(--hivez-accent);
+  background: var(--hivez-accent);
+  color: var(--hv-on-accent);
+  border-radius: 5px;
+  padding: 10px 13px;
+  font-size: 0.75rem;
+  font-weight: 550;
+}
+.hv-app .hv-notebook-continue:disabled {
+  background: transparent;
+  border-color: var(--hivez-border);
+  color: var(--hivez-muted);
+  cursor: default;
+}
+.hv-app .hv-notebook-privacy {
+  margin: 11px 0 26px;
+  font-size: 0.625rem;
+  line-height: 1.7;
+  color: var(--hivez-muted);
+}
+.hv-app .hv-notebook-outside {
+  border-top: 1px solid var(--hivez-border);
+  padding-top: 22px;
+}
+.hv-app .hv-notebook-outside .hv-eyebrow {
+  font-size: 0.5rem;
+  margin-bottom: 7px;
+}
+.hv-app .hv-notebook-outside > a {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--hivez-border);
+  color: var(--hivez-text);
+  text-decoration: none;
+  font-size: 0.6875rem;
+}
+.hv-app .hv-notebook-outside > a > svg {
+  flex-shrink: 0;
+  color: var(--hivez-accent);
+}
+.hv-app .hv-notebook-outside > a > svg:last-child {
+  margin-left: auto;
+}
+.hv-app .hv-notebook-outside small {
+  display: block;
+  color: var(--hivez-muted);
+  font-size: 0.5625rem;
+  margin-top: 4px;
+}
+.hv-app .hv-notebook-outside > a:hover {
+  color: var(--hivez-accent);
+}
+.hv-app .hv-notebook-signoff {
+  margin: 24px 0;
+  font-size: 0.625rem;
+  line-height: 1.8;
+  color: var(--hivez-muted);
+}
+.hv-app .hv-feed-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 11px;
+  min-height: 260px;
+  justify-content: center;
+  border: 1px dashed var(--hivez-border-strong);
+  border-radius: 9px;
+  background: var(--hivez-surface);
+  padding: 35px;
+  text-align: center;
+}
+.hv-app .hv-feed-empty h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--hivez-text);
+}
+.hv-app .hv-feed-empty p {
+  max-width: 280px;
+  font-size: 0.75rem;
+  color: var(--hivez-muted);
+  margin: 0;
+}
+
+/* Profiles: one identity header and a consistent, compact social gallery. */
+.hv-app .hv-profile {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  min-height: calc(100dvh - 72px);
+  padding-bottom: 45px;
+}
+.hv-app .hv-profile-cover {
+  height: 190px;
+  background: var(--hv-cover) !important;
+  border-bottom: 1px solid var(--hivez-border);
+  position: relative;
+  overflow: hidden;
+}
+.hv-app .hv-profile-cover > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0 !important;
+}
+.hv-app .hv-profile-cover-words {
+  position: absolute;
+  bottom: 27px;
+  right: 32px;
+  font-family: "Hivez Bricolage", sans-serif;
+  font-size: clamp(1.75rem, 4vw, 3.1875rem);
+  line-height: 0.98;
+  letter-spacing: -0.06em;
+  font-weight: 550;
+  text-align: right;
+  color: var(--hivez-accent);
+  opacity: 0.8;
+}
+.hv-app .hv-profile-identity {
+  padding: 0 35px 28px;
+  margin-top: -49px;
+  position: relative;
+}
+.hv-app .hv-profile-avatar-row {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+}
+.hv-app .hv-profile-avatar {
+  width: 108px;
+  height: 108px;
+  border-radius: 50% !important;
+  object-fit: cover;
+  border: 5px solid var(--hivez-bg);
+  box-shadow: none;
+}
+.hv-app .hv-profile-actions {
+  display: flex;
+  gap: 8px;
+  padding-bottom: 5px;
+}
+.hv-app .hv-profile-details {
+  padding-top: 20px;
+  max-width: 640px;
+}
+.hv-app .hv-profile-details h1 {
+  margin: 0;
+  font-size: 2.375rem;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.hv-app .hv-profile-details h1 svg {
+  color: var(--hivez-accent);
+}
+.hv-app .hv-profile-handle {
+  color: var(--hivez-muted);
+  font-size: 0.75rem;
+  margin: 6px 0 16px;
+}
+.hv-app .hv-profile-bio {
+  font-size: 0.8125rem;
+  line-height: 1.9;
+  white-space: pre-wrap;
+  margin: 0 0 18px;
+}
+.hv-app .hv-profile-stats {
+  display: flex;
+  align-items: center;
+  gap: 27px;
+  margin-top: 20px;
+  color: var(--hivez-muted);
+  font-size: 0.6875rem;
+}
+.hv-app .hv-profile-stats strong {
+  color: var(--hivez-text);
+  font-size: 0.9375rem;
+  font-weight: 550;
+  margin-right: 5px;
+}
+.hv-app .hv-profile-privacy {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 0.625rem;
+  color: var(--hivez-muted);
+}
+.hv-app .hv-profile-tabs {
+  display: flex;
+  gap: 25px;
+  border-bottom: 1px solid var(--hivez-border);
+  margin: 0 35px;
+}
+.hv-app .hv-profile-tabs button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 10px 5px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  font-size: 0.75rem;
+  color: var(--hivez-muted);
+}
+.hv-app .hv-profile-tabs button.is-active {
+  color: var(--hivez-accent);
+  border-color: var(--hivez-accent);
+}
+.hv-app .hv-profile-body {
+  padding: 24px 35px;
+}
+.hv-app .hv-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 13px;
+}
+.hv-app .hv-profile-tile {
+  aspect-ratio: 1;
+  position: relative;
+  border-radius: 9px !important;
+  border: 1px solid var(--hivez-border);
+  overflow: hidden;
+  background: var(--hivez-surface) !important;
+  text-align: left;
+}
+.hv-app .hv-profile-tile img,
+.hv-app .hv-profile-tile video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0 !important;
+}
+.hv-app .hv-profile-tile-copy {
+  height: 100%;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 15px;
+}
+.hv-app .hv-profile-tile-copy p {
+  font-family: "Hivez Bricolage", sans-serif;
+  font-size: clamp(0.875rem, 1.5vw, 1.375rem);
+  line-height: 1.4;
+  letter-spacing: -0.025em;
+  font-weight: 500;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+}
+.hv-app .hv-profile-tile-copy > span {
+  font-size: 0.5625rem;
+  letter-spacing: 0.06em;
+  color: var(--hivez-accent);
+}
+.hv-app .hv-profile-tile-meta {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 20px 13px 10px;
+  color: white;
+  background: linear-gradient(transparent, #0009);
+  font-size: 0.625rem;
+}
+.hv-app .hv-profile-tile-counts {
+  position: absolute;
+  inset: auto 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: #0b0d0eb8;
+  color: white;
+  opacity: 1;
+  transition: opacity 0.2s;
+}
+.hv-app .hv-profile-tile-open {
+  display: block;
+  width: 100%;
+  height: 100%;
+  text-align: left;
+}
+.hv-app .hv-profile-tile-open:focus-visible {
+  outline: 2px solid var(--hivez-accent);
+  outline-offset: -3px;
+}
+.hv-app .hv-profile-tile-meta { bottom: 38px; }
+.hv-post-quick-actions { position: relative; }
+.hv-post-quick-actions > div { margin: 0; gap: 0; }
+.hv-post-quick-actions button {
+  min-height: 38px;
+  min-width: 38px;
+  padding: 6px;
+}
+.hv-post-quick-actions svg { width: 16px; height: 16px; }
+.hv-post-quick-actions span { font-size: 12px; }
+.hv-profile-tile-counts .hv-post-quick-actions svg,
+.hv-profile-tile-counts .hv-post-quick-actions span,
+.hv-explore-actions .hv-post-quick-actions svg,
+.hv-explore-actions .hv-post-quick-actions span { color: #fff !important; }
+.hv-profile-tile-counts .hv-post-quick-actions button[aria-pressed="true"],
+.hv-explore-actions .hv-post-quick-actions button[aria-pressed="true"] { color: #ffd936; }
+.hv-profile-tile-counts .hv-post-quick-actions button[aria-pressed="true"] :is(svg, span),
+.hv-explore-actions .hv-post-quick-actions button[aria-pressed="true"] :is(svg, span) { color: #ffd936 !important; }
+.hv-post-quick-actions button:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
+@media (max-width: 479px) {
+  .hv-profile-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .hv-explore-actions .hv-post-quick-actions button { min-width: 30px; padding: 3px; gap: 3px; }
+  .hv-explore-actions .hv-post-quick-actions svg { width: 13px; height: 13px; }
+  .hv-explore-actions .hv-post-quick-actions span { font-size: 10px; }
+}
+.hv-app .hv-profile-tile:hover .hv-profile-tile-counts,
+.hv-app .hv-profile-tile:focus-visible .hv-profile-tile-counts {
+  opacity: 1;
+}
+.hv-app .hv-profile-tile-counts span {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  font-size: 0.75rem;
+}
+
+/* Volunteering, discovery, messages and account settings share the same craft. */
+.hv-app .hv-volunteering > header {
+  background: transparent !important;
+  box-shadow: none;
+  border: 0;
+  border-bottom: 1px solid var(--hivez-border);
+  border-radius: 0;
+  padding: 0 0 28px;
+  margin-bottom: 30px;
+  overflow: visible;
+}
+.hv-app .hv-volunteering > header > .absolute {
+  display: none;
+}
+.hv-app .hv-volunteering > header h1 {
+  font-size: clamp(1.875rem, 3.5vw, 3rem);
+  font-weight: 600;
+}
+.hv-app .hv-volunteering > header p {
+  font-size: 0.75rem;
+  line-height: 1.9;
+  max-width: 570px;
+  font-weight: 400;
+}
+.hv-app .hv-volunteering .rounded-3xl,
+.hv-app .hv-volunteering .rounded-2xl {
+  border-radius: 9px;
+  box-shadow: none;
+}
+.hv-app .hv-volunteering main {
+  gap: 0;
+}
+.hv-app .hv-volunteering main > section {
+  margin-top: 30px;
+}
+.hv-app .hv-volunteering main > section:first-child {
+  gap: 0;
+  background: var(--hivez-surface);
+  border: 1px solid var(--hivez-border);
+  border-radius: 9px;
+  overflow: hidden;
+}
+.hv-app .hv-volunteering main > section:first-child > div {
+  border: 0;
+  border-right: 1px solid var(--hivez-border);
+  border-radius: 0;
+  padding: 21px;
+  background: transparent !important;
+}
+.hv-app .hv-volunteering main h2 {
+  font-size: 1.5rem;
+  font-weight: 550;
+}
+.hv-app .hv-volunteering main .font-black {
+  font-weight: 600;
+}
+.hv-app .hv-volunteering main .font-bold {
+  font-weight: 500;
+}
+.hv-app .hv-volunteering main .min-h-\[140px\] {
+  min-height: 100px;
+}
+.hv-app .hv-group-page {
+  font-size: 0.8125rem;
+}
+.hv-app .hv-group-page :is(h1, h2) {
+  font-family: "Hivez Bricolage", sans-serif;
+}
+.hv-app .hv-group-page .rounded-3xl,
+.hv-app .hv-group-page .rounded-2xl {
+  border-radius: 9px;
+  box-shadow: none;
+}
+.hv-app .hv-search-page {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 28px 24px;
+}
+.hv-app .hv-search-page .app-sticky-header {
+  border: 1px solid var(--hivez-border);
+  border-radius: 9px;
+  overflow: hidden;
+}
+.hv-app .hv-search-page .app-sticky-header > div:first-child {
+  padding: 16px;
+}
+.hv-app .hv-search-page input {
+  min-height: 48px;
+  border-radius: 6px !important;
+}
+.hv-app .hv-search-page .app-tab {
+  min-height: 44px;
+}
+.hv-app .hv-notifications {
+  max-width: none;
+}
+.hv-app .hv-notifications > div:first-child {
+  padding: 0 0 25px;
+  border-bottom: 1px solid var(--hivez-border);
+  margin-bottom: 24px;
+}
+.hv-app .hv-notifications h1 {
+  font-size: 2.1875rem;
+}
+.hv-app .hv-notifications > div:last-child > div > button {
+  border-radius: 8px;
+  box-shadow: none;
+  padding: 18px;
+}
+.hv-app .hv-notifications > div:last-child > div > button p:first-child {
+  font-size: 0.8125rem;
+  font-weight: 550;
+}
+.hv-app .hv-notifications > div:last-child > div > button p {
+  font-size: 0.75rem;
+}
+.hv-app .hv-saved {
+  max-width: none;
+}
+.hv-app .hv-saved > div {
+  padding: 0;
+  max-width: none;
+}
+.hv-app .hv-saved h1 {
+  font-size: 2.1875rem;
+}
+.hv-app .hv-saved .app-feed-card {
+  margin: 0 !important;
+}
+.hv-app .hv-messages.app-chats-page {
+  border: 0;
+  height: calc(100dvh - 72px);
+  min-height: 580px;
+  background: var(--hivez-bg) !important;
+}
+.hv-app .hv-messages aside {
+  background: var(--hivez-bg) !important;
+  border-color: var(--hivez-border);
+  width: 330px;
+}
+.hv-app .hv-messages aside h1 {
+  font-size: 1.75rem;
+}
+.hv-app .hv-messages section {
+  background: var(--hivez-surface) !important;
+}
+.hv-app .hv-messages section > div:first-child {
+  background: var(--hivez-surface) !important;
+}
+.hv-app .hv-messages :is([class*="rounded-br-lg"], [class*="rounded-bl-lg"]) {
+  border-radius: 12px !important;
+  box-shadow: none;
+  font-weight: 400;
+  line-height: 1.8;
+}
+.hv-app
+  .hv-messages
+  :is(
+    [class*="bg-zinc-900"][class*="text-white"],
+    [class*="dark:bg-white"][class*="dark:text-black"]
+  ) {
+  background: var(--hivez-accent) !important;
+  color: var(--hv-on-accent) !important;
+}
+.hv-app .hivez-settings {
+  --st-on-accent: var(--hv-on-accent);
+  --st-panel: var(--hivez-surface);
+  --st-hero: var(--hv-cover);
+}
+.hv-app .settings-content {
+  max-width: none;
+  margin: 0;
+  padding-inline: 24px;
+}
+.hv-app .hivez-settings :is(h1, h2, h3) {
+  font-family: "Hivez Bricolage", sans-serif;
+}
+.hv-app .hivez-settings .settings-hero {
+  border-radius: 10px;
+  box-shadow: none;
+}
+.hv-app .hivez-settings .settings-hero h1 {
+  font-size: clamp(1.875rem, 3.2vw, 2.875rem);
+  font-weight: 600;
+}
+.hv-app
+  .hivez-settings
+  :is(.settings-card, .settings-section, .settings-summary-card) {
+  border-radius: 9px;
+  box-shadow: none;
+}
+.hv-app .hv-edit-profile {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+.hv-app .hv-edit-profile h1 {
+  font-size: 2.25rem;
+}
+.hv-app .hv-edit-profile .hivez-profile-preview-shell {
+  width: min(100%, 250px);
+}
+.hv-app .hv-edit-profile .hivez-profile-picker-button {
+  font-size: 0.75rem;
+  border-radius: 7px;
+}
+.hv-app .hv-map {
+  top: 72px !important;
+  height: calc(100dvh - 72px) !important;
+}
+.hv-app .hv-map-caption {
+  position: absolute;
+  left: 120px;
+  top: 17px;
+  z-index: 19;
+  padding: 8px 13px;
+  background: var(--hivez-surface);
+  color: var(--hivez-text);
+  border: 1px solid var(--hivez-border);
+  border-radius: 7px;
+  font-size: 0.6875rem;
+  pointer-events: none;
+}
+.hv-app .hv-map-caption strong {
+  display: block;
+  font-family: "Hivez Bricolage", sans-serif;
+  font-size: 1rem;
+  font-weight: 550;
+}
+
+/* Standalone composer, post detail, camera and operational screens. */
+.hv-app.hv-standalone {
+  display: block;
+  min-height: 100dvh;
+}
+.hv-app.hv-standalone .app-create-page {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  background: transparent !important;
+}
+.hv-app.hv-standalone .app-create-page > div {
+  margin: 0;
+  border-radius: 0 !important;
+  box-shadow: none;
+  background: transparent !important;
+}
+.hv-app.hv-standalone .app-create-page > .sticky {
+  background: var(--hivez-bg) !important;
+  border: 0;
+  border-bottom: 1px solid var(--hivez-border);
+  padding-block: 20px;
+}
+.hv-app.hv-standalone .app-create-page h1 {
+  font-size: 1.5625rem;
+  font-weight: 600;
+}
+.hv-app.hv-standalone .app-create-page form {
+  background: var(--hivez-surface);
+  border-radius: 10px;
+}
+.hv-app.hv-standalone .app-create-page :is(.rounded-3xl, .rounded-2xl) {
+  border-radius: 9px;
+}
+.hv-app.hv-post-page {
+  max-width: none;
+}
+.hv-app.hv-post-page > div {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  background: var(--hivez-bg) !important;
+}
+.hv-app.hv-post-page .app-feed-card {
+  margin: 20px 0 !important;
+}
+.hv-app.hv-camera {
+  background: #080c09 !important;
+}
+.hv-app .hv-create-dialog {
+  border-radius: 11px !important;
+  padding: 30px;
+}
+.hv-app .hv-create-dialog h2 {
+  font-size: 1.875rem;
+  text-align: left;
+  margin: 5px 0 22px;
+}
+.hv-app .hv-create-dialog p {
+  font-size: 0.75rem;
+}
+.hv-app .hv-create-dialog > div button {
+  border-radius: 8px;
+  background: transparent !important;
+}
+.hv-app .hv-create-dialog > div button > div:first-child {
+  border-radius: 7px;
+  background: var(--hv-tint);
+  color: var(--hivez-accent);
+}
+.hv-app .hv-create-dialog > div button svg {
+  color: var(--hivez-accent) !important;
+}
+.hv-app .hv-create-dialog .hv-dialog-close {
+  float: right;
+}
+.hv-app .hv-create-modal {
+  padding: 0;
+  border: 0;
+  border-radius: 11px;
+  width: min(420px, calc(100vw - 36px));
+  max-width: none;
+  max-height: calc(100dvh - 40px);
+  margin: auto;
+  background: transparent;
+  color: var(--hivez-text);
+  overflow: auto;
+}
+.hv-app .hv-create-modal::backdrop {
+  background: #0b170ec7;
+  backdrop-filter: blur(4px);
+}
+.hv-app .hv-replies {
+  padding: 0;
+  border: 1px solid var(--hivez-border);
+  border-radius: 11px;
+  width: min(680px, calc(100vw - 40px));
+  height: min(800px, calc(100dvh - 45px));
+  max-height: calc(100dvh - 45px);
+  margin: auto;
+  color: var(--hivez-text);
+  background: var(--hivez-surface);
+  overflow: hidden;
+}
+.hv-app .hv-replies[open] {
+  display: flex;
+  flex-direction: column;
+}
+.hv-app .hv-replies::backdrop {
+  background: #0b170ec7;
+  backdrop-filter: blur(4px);
+}
+.hv-app .hv-replies > header {
+  background: var(--hivez-surface) !important;
+  flex-shrink: 0;
+}
+.hv-app .hv-replies > header h2 {
+  font-size: 1.75rem;
+}
+.hv-app .hv-reply-original {
+  max-height: 210px;
+  overflow: auto;
+  border-bottom: 1px solid var(--hivez-border);
+  flex-shrink: 0;
+}
+.hv-app .hv-reply-list {
+  overflow: auto;
+  flex: 1;
+  min-height: 100px;
+}
+.hv-app .hv-replies > div:last-child {
+  flex-shrink: 0;
+  background: var(--hivez-surface) !important;
+}
+.hv-app .hv-replies textarea {
+  min-width: 0;
+  font-size: 0.8125rem;
+}
+.hv-app .hv-replies button[aria-label="Send reply"] {
+  background: var(--hivez-accent) !important;
+  color: var(--hv-on-accent);
+  border-radius: 7px;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+}
+.hv-app .hv-replies button[aria-label="Send reply"] svg {
+  color: var(--hv-on-accent) !important;
+}
+.hv-app .hv-profile-back {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 25px;
+  font-size: 0.6875rem;
+  color: var(--hivez-muted);
+}
+.hv-app .hv-profile-initial {
+  display: grid;
+  place-items: center;
+  background: var(--hivez-surface);
+  font-family: "Hivez Bricolage", sans-serif;
+  color: var(--hivez-accent);
+  font-size: 2.5rem;
+}
+.hv-app .hv-inline-error {
+  padding: 12px 15px;
+  font-size: 0.75rem;
+  border: 1px solid var(--hivez-danger);
+  border-radius: 6px;
+  color: var(--hivez-danger);
+}
+.hv-app .hv-nav-link {
+  font-size: 0.8125rem;
+}
+.hv-app .hv-intro-copy {
+  font-size: 0.875rem;
+}
+.hv-app .hv-post-name {
+  font-size: 0.875rem;
+}
+.hv-app .hv-post-handle,
+.hv-app .hv-post-time {
+  font-size: 0.75rem;
+}
+.hv-app .app-feed-card .hv-post-caption {
+  font-size: 0.9375rem;
+  line-height: 1.65;
+}
+.hv-app .hv-rail-invite {
+  margin-top: 14px;
+}
+.hv-app .font-black {
+  font-weight: 650;
+}
+.hv-app.app-shell[data-app-theme] .hv-profile .hv-profile-tabs button {
+  border-radius: 0 !important;
+}
+.hv-app .hv-volunteering main > section[class*="rounded-"] {
+  border-radius: 9px;
+}
+.hv-app .hv-profile-body > div > h3 {
+  font-size: 1.4375rem;
+  font-weight: 550;
+}
+.hv-app .hv-profile-body > div > p {
+  font-size: 0.75rem;
+  max-width: 310px;
+  line-height: 1.8;
+}
+.hv-app .hv-hive-page {
+  max-width: none;
+}
+.hv-app .hv-hive-about {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px;
+  margin-bottom: 25px;
+  border: 1px solid var(--hivez-border);
+  border-radius: 9px;
+  background: var(--hv-tint);
+}
+.hv-app .hv-hive-about h2 {
+  font-size: 1.375rem;
+  margin: 0 0 7px;
+}
+.hv-app .hv-hive-about p {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--hivez-muted);
+}
+.hv-app .hv-hive-symbol {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  color: var(--hivez-accent);
+  flex-shrink: 0;
+}
+.hv-app .hv-create-entry {
+  max-width: none;
+  padding-top: 55px;
+}
+.hv-app .hv-create-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 25px;
+}
+.hv-app .hv-create-options > button {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  padding: 30px;
+  border: 1px solid var(--hivez-border);
+  border-radius: 10px;
+  color: var(--hivez-text);
+  background: var(--hivez-surface);
+  text-align: left;
+}
+.hv-app .hv-create-options > button:hover {
+  border-color: var(--hivez-accent);
+}
+.hv-app .hv-create-options h2 {
+  font-size: 1.8125rem;
+  margin: 25px 0 13px;
+}
+.hv-app .hv-create-options p {
+  color: var(--hivez-muted);
+  font-size: 0.8125rem;
+  line-height: 1.9;
+  margin-bottom: 29px;
+}
+.hv-app .hv-create-option-link {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  border-top: 1px solid var(--hivez-border);
+  padding-top: 18px;
+  margin-top: auto;
+  font-size: 0.75rem;
+  font-weight: 550;
+  color: var(--hivez-accent);
+}
+.hv-app .hivez-settings .settings-welcome {
+  border-radius: 10px;
+  background: var(--hv-cover);
+}
+.hv-app .hivez-settings .settings-welcome h2 {
+  font-size: clamp(1.8125rem, 3vw, 2.6875rem);
+  font-weight: 550;
+}
+.hv-app.hv-admin :is(aside, header, main) {
+  background: var(--hivez-bg) !important;
+  border-color: var(--hivez-border) !important;
+}
+.hv-app.hv-admin :is(h1, h2, h3) {
+  font-family: "Hivez Bricolage", sans-serif;
+}
+.hv-app.hv-admin main > div {
+  background: transparent !important;
+  color: var(--hivez-text);
+}
+.hv-app.hv-admin .rounded-xl {
+  border-radius: 8px;
+}
+.hv-app.hv-admin
+  :is(
+    [class~="text-white"],
+    [class~="text-zinc-100"],
+    [class~="text-zinc-200"],
+    [class~="text-zinc-300"]
+  ) {
+  color: var(--hivez-text) !important;
+}
+.hv-app.hv-admin
+  :is(
+    [class~="bg-zinc-900"],
+    [class~="bg-zinc-900/50"],
+    [class~="bg-zinc-800"],
+    [class~="bg-zinc-800/50"]
+  ) {
+  background: var(--hivez-surface) !important;
+  border-color: var(--hivez-border) !important;
+}
+.hv-app.hv-admin
+  :is(
+    [class~="border-zinc-800"],
+    [class~="border-zinc-700"],
+    [class~="divide-zinc-800"]
+  ) {
+  border-color: var(--hivez-border) !important;
+}
+.hv-app.hv-admin
+  :is(
+    [class~="bg-blue-500"],
+    [class~="bg-purple-500"],
+    [class~="bg-emerald-500"],
+    [class~="bg-orange-500"],
+    [class~="bg-amber-500"],
+    [class~="bg-green-500"]
+  ) {
+  background: var(--hv-tint) !important;
+  color: var(--hivez-accent) !important;
+}
+.hv-app.hv-admin :is(h1, h2, h3) {
+  color: var(--hivez-text) !important;
+}
+.hv-app.hv-admin main h1 {
+  font-size: 2.1875rem;
+  font-weight: 600;
+}
+.hv-app.hv-admin main [class*="rounded-2xl"] {
+  border: 1px solid var(--hivez-border);
+  border-radius: 9px;
+}
+.hv-app.hv-admin aside {
+  border-right: 1px solid var(--hivez-border);
+}
+.hv-app.hv-admin aside > div:first-child {
+  padding-block: 24px;
+}
+.hv-app.hv-admin aside nav {
+  padding-top: 20px;
+}
+.hv-app.hv-admin aside a {
+  min-height: 39px;
+  font-size: 0.75rem;
+}
+.hv-app .hv-group-page [class~="rounded-[32px]"] {
+  border-radius: 10px !important;
+}
+.hv-app .hv-group-page :is(.font-black, .font-extrabold) {
+  font-weight: 600;
+}
+.hv-app.hv-error .app-not-found-page {
+  background: var(--hivez-bg);
+  color: var(--hivez-text);
+}
+.hv-app.hv-error .app-not-found-copy h1 {
+  color: var(--hivez-text);
+  font-family: "Hivez Bricolage", sans-serif;
+}
+.hv-app.hv-error .app-not-found-copy p {
+  color: var(--hivez-muted);
+}
+.hv-app.hv-error .app-not-found-button {
+  background: var(--hivez-accent);
+  color: var(--hv-on-accent);
+  border-color: var(--hivez-accent);
+}
+.hv-app.hv-workspace .app-sticky-header {
+  top: 72px;
+}
+
+@media (max-width: 1270px) {
+  .hv-app .hv-topbar {
+    gap: 12px !important;
+    padding-right: 18px !important;
+  }
+  .hv-app .hv-brand-bee {
+    width: 104px;
+    height: 72px;
+  }
+  .hv-app .hv-global-search {
+    width: min(360px, 32vw);
+  }
+  .hv-app .hv-search-context {
+    display: none;
+  }
+  .hv-app .hv-home-columns {
+    grid-template-columns: minmax(0, 1fr) 220px;
+    gap: 0;
+  }
+  .hv-app[data-sidebar-expanded="true"] .hv-home-context {
+    display: none;
+  }
+  .hv-app[data-sidebar-expanded="true"] .hv-home-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .hv-app[data-updates-open="true"] .hv-home-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hv-app[data-updates-open="true"] .hv-home-context {
+    display: none;
+  }
+}
+@media (max-width: 1023px) {
+  .hv-app.hv-workspace .app-sticky-header {
+    top: 65px;
+  }
+  .hv-app .hv-topbar.app-desktop-header,
+  .hv-app .hv-sidebar.app-sidebar {
+    display: none;
+  }
+  .hv-app .hv-mobile-topbar.app-mobile-header {
+    position: sticky;
+    top: 0;
+    z-index: 45;
+    height: 65px !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--hivez-bg) !important;
+    border-bottom: 1px solid var(--hivez-border);
+    padding: 0 19px;
+    backdrop-filter: none;
+  }
+  .hv-app .hv-mobile-topbar .hv-brand {
+    font-size: 1.8125rem;
+    margin-right: auto;
+  }
+  .hv-app .hv-mobile-topbar .hv-brand svg {
+    height: 22px;
+    width: 23px;
+  }
+  .hv-app .hv-mobile-actions {
+    display: flex;
+    gap: 2px;
+  }
+  .hv-app .hv-main.app-main {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0 0 82px !important;
+  }
+  .hv-app .hv-content.app-feed-shell {
+    min-height: calc(100dvh - 145px);
+  }
+  .hv-app .hv-bottom-nav.app-bottom-nav {
+    display: flex;
+    position: fixed;
+    inset: auto 0 0 !important;
+    height: calc(68px + env(safe-area-inset-bottom));
+    align-items: stretch;
+    justify-content: space-around;
+    padding: 5px 9px calc(5px + env(safe-area-inset-bottom));
+    border: 0 !important;
+    border-top: 1px solid var(--hivez-border) !important;
+    border-radius: 0 !important;
+    background: var(--hivez-bg) !important;
+    z-index: 45;
+  }
+  .hv-app .hv-bottom-nav.app-bottom-nav button {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    color: var(--hivez-muted);
+    min-width: 48px;
+    min-height: 45px;
+    width: 18%;
+    border: 0;
+    border-radius: 6px !important;
+    background: transparent;
+    padding: 2px !important;
+  }
+  .hv-app .hv-bottom-nav button span {
+    font-size: 0.5625rem;
+    font-weight: 450;
+  }
+  .hv-app .hv-bottom-nav button.is-active {
+    color: var(--hivez-accent);
+    background: transparent !important;
+  }
+  .hv-app .hv-bottom-nav button.hv-mobile-create svg {
+    background: var(--hivez-accent);
+    color: var(--hv-on-accent);
+    width: 33px;
+    height: 29px;
+    padding: 5px;
+    border-radius: 6px;
+  }
+  .hv-app .hv-bottom-nav button.hv-mobile-create {
+    gap: 1px;
+  }
+  .hv-app .app-updates.app-updates-drawer {
+    top: 65px !important;
+    bottom: 68px;
+    height: calc(100dvh - 133px) !important;
+    width: min(384px, 100vw) !important;
+    border-top: 1px solid var(--hivez-border);
+  }
+  .hv-app .hv-home-columns {
+    grid-template-columns: minmax(0, 1fr) 240px;
+  }
+  .hv-app[data-sidebar-expanded="true"] .hv-home-context {
+    display: block;
+  }
+  .hv-app[data-sidebar-expanded="true"] .hv-home-columns {
+    grid-template-columns: minmax(0, 1fr) 240px;
+  }
+  .hv-app .hv-map {
+    top: 65px !important;
+    height: calc(100dvh - 136px) !important;
+  }
+  .hv-app .hv-messages.app-chats-page {
+    height: calc(100dvh - 135px);
+  }
+}
+@media (max-width: 760px) {
+  .hv-app .hv-replies {
+    width: calc(100vw - 16px);
+    height: min(780px, calc(100dvh - 20px));
+    max-height: calc(100dvh - 20px);
+  }
+  .hv-app .hv-create-options {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+  .hv-app .hv-home {
+    padding: 0 0 30px;
+  }
+  .hv-app .hv-home-columns,
+  .hv-app[data-sidebar-expanded="true"] .hv-home-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hv-app .hv-home-context,
+  .hv-app[data-sidebar-expanded="true"] .hv-home-context {
+    display: none;
+  }
+  .hv-app .hv-page-intro {
+    flex-wrap: wrap;
+    gap: 19px;
+    margin-bottom: 23px;
+    padding-bottom: 24px;
+  }
+  .hv-app .hv-intro-copy {
+    font-size: 0.6875rem;
+  }
+  .hv-app .hv-intro-action {
+    display: none;
+  }
+  .hv-app .hv-page-intro .hv-eyebrow {
+    font-size: 0.5rem;
+    margin-bottom: 12px;
+  }
+  .hv-app.app-shell .app-feed-card.hv-stream-post {
+    padding: 18px 16px !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+  }
+  .hv-app .hv-post-content {
+    margin-left: 0;
+  }
+  .hv-app .hv-post-media .hv-media-single :is(img, video) {
+    max-height: 380px;
+  }
+  .hv-app .hv-post-identity {
+    gap: 4px;
+  }
+  .hv-app .hv-post-handle {
+    display: none;
+  }
+  .hv-app .app-feed-card .hv-post-caption {
+    font-size: 0.875rem;
+  }
+  .hv-app .hv-post-actions button {
+    padding: 8px 5px !important;
+    min-width: 29px;
+    min-height: 36px;
+  }
+  .hv-app .hv-post-actions button svg {
+    width: 18px;
+    height: 18px;
+  }
+  .hv-app .hv-post-actions button > span {
+    font-size: 0.6875rem;
+  }
+  .hv-app .hv-route {
+    padding: 27px 19px 35px;
+  }
+  .hv-app .hv-page-intro h1 {
+    font-size: 2rem;
+  }
+  .hv-app .hv-search-page {
+    padding: 27px 18px;
+  }
+  .hv-app .hv-profile-cover {
+    height: 155px;
+  }
+  .hv-app .hv-profile-cover-words {
+    right: 20px;
+    bottom: 27px;
+    font-size: 2rem;
+  }
+  .hv-app .hv-profile-identity {
+    padding-inline: 21px;
+    margin-top: -41px;
+  }
+  .hv-app .hv-profile-avatar {
+    width: 90px;
+    height: 90px;
+  }
+  .hv-app .hv-profile-details h1 {
+    font-size: 1.9375rem;
+  }
+  .hv-app .hv-profile-actions .hv-button-secondary {
+    min-height: 35px;
+    padding: 7px 12px;
+    font-size: 0.625rem;
+  }
+  .hv-app .hv-profile-bio {
+    font-size: 0.75rem;
+  }
+  .hv-app .hv-profile-stats {
+    gap: 20px;
+  }
+  .hv-app .hv-profile-tabs {
+    margin-inline: 20px;
+    justify-content: space-between;
+    gap: 15px;
+  }
+  .hv-app .hv-profile-body {
+    padding: 20px;
+  }
+  .hv-app .hv-profile-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .hv-app .hv-profile-tile-copy {
+    padding: 17px;
+  }
+  .hv-app .hv-profile-tile-copy p {
+    font-size: 1rem;
+  }
+  .hv-app .hv-messages.app-chats-page {
+    min-height: 450px;
+  }
+  .hv-app .hv-messages aside {
+    width: 100%;
+  }
+  .hv-app .hv-map-caption {
+    display: none;
+  }
+  .hv-app .hv-notifications h1,
+  .hv-app .hv-saved h1 {
+    font-size: 1.8125rem;
+  }
+  .hv-app .hv-volunteering > header {
+    padding-bottom: 23px;
+  }
+  .hv-app .hv-volunteering > header h1 {
+    font-size: 2.1875rem;
+  }
+  .hv-app .hv-volunteering > header .rounded-full {
+    border-radius: 5px;
+    font-size: 0.5625rem;
+  }
+  .hv-app .hv-volunteering main > section:first-child > div {
+    padding: 16px;
+    border-bottom: 1px solid var(--hivez-border);
+  }
+  .hv-app .hv-volunteering main > section {
+    margin-top: 25px;
+  }
+  .hv-app .hv-volunteering main h2 {
+    font-size: 1.4375rem;
+  }
+  .hv-app .hv-create-dialog {
+    padding: 25px;
+  }
+}
+
+/* Refinement pass: remove the standalone screen's flush-left constraint and let
+   the report read as one centered, editorial workspace. */
+.hv-app.hv-standalone.hv-compose .hv-report-root > .hv-report-layout,
+.hv-app.hv-standalone.hv-compose .app-create-page > .hv-compose-layout {
+  width: min(calc(100% - 56px), 1180px);
+  max-width: 1180px;
+  margin: 46px auto 88px !important;
+  padding: 0;
+}
+.hv-app.hv-standalone.hv-compose .hv-report-root > .sticky > div {
+  width: min(calc(100% - 56px), 1180px);
+  max-width: 1180px !important;
+  margin: 0 auto !important;
+  padding: 0;
+}
+.hv-app.hv-standalone.hv-compose .hv-report-root .hv-report-layout {
+  grid-template-columns: minmax(255px, 0.68fr) minmax(0, 1.32fr);
+  gap: clamp(44px, 6vw, 88px);
+}
+.hv-app.hv-standalone.hv-compose .hv-report-root .hv-report-rail {
+  top: 118px;
+  padding-top: 19px;
+}
+.hv-app.hv-standalone.hv-compose .hv-report-root .hv-report-rail h1 {
+  max-width: 390px;
+  margin: 22px 0 16px;
+  font-size: clamp(2.7rem, 4.2vw, 4.35rem) !important;
+  line-height: 0.94;
+  letter-spacing: -0.075em;
+}
+.hv-app.hv-standalone.hv-compose .hv-report-root .hv-report-rail > p {
+  max-width: 34ch;
+  font-size: 0.84rem;
+  line-height: 1.85;
+}
+.hv-app.hv-standalone.hv-compose .hv-report-root .hv-report-rail ol {
+  margin-top: 32px;
+}
+.hv-app.hv-standalone.hv-compose .hv-report-root .hv-report-rail li {
+  min-height: 45px;
+  grid-template-columns: 34px 1fr 17px;
+  font-size: 0.76rem;
+}
+.hv-app.hv-standalone.hv-compose .hv-report-root .hv-report-work {
+  padding: 30px 0 34px;
+  border: 0;
+  border-top: 2px solid var(--hivez-accent);
+  border-bottom: 1px solid var(--hivez-border);
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+.hv-app.hv-standalone.hv-compose .hv-report-root .hv-report-work section > h1 {
+  margin-top: 10px;
+  font-size: clamp(2.45rem, 3.6vw, 3.6rem) !important;
+  line-height: 0.98;
+}
+.hv-app.hv-standalone.hv-compose .hv-report-kicker {
+  display: block;
+  color: var(--hivez-accent);
+  font-size: 0.66rem;
+  font-weight: 750;
+  letter-spacing: 0.14em;
+}
+.hv-app.hv-standalone.hv-compose .hv-report-step-copy {
+  max-width: 50ch;
+  margin-top: 12px;
+  color: var(--hivez-muted);
+  font-size: 0.84rem;
+  line-height: 1.75;
+}
+.hv-app.hv-standalone.hv-compose .hv-report-category-search > .hv-hive-search > div:nth-child(2) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  margin-top: 15px;
+}
+.hv-app.hv-standalone.hv-compose .hv-report-category-search > .hv-hive-search > div:nth-child(2) > p {
+  grid-column: 1 / -1;
+  padding: 4px 0 5px;
+  color: var(--hivez-muted);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+}
+.hv-app.hv-standalone.hv-compose .hv-report-category-search .hv-hive-result {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 96px;
+  padding: 14px 15px;
+  border: 1px solid var(--hivez-border);
+  border-radius: 3px;
+  background: var(--hivez-surface);
+  color: var(--hivez-text);
+  text-align: left;
+}
+.hv-app.hv-standalone.hv-compose .hv-report-category-search .hv-hive-result::before {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--hv-honey);
+  content: "";
+}
+.hv-app.hv-standalone.hv-compose .hv-report-category-search .hv-hive-result:hover {
+  border-color: var(--hivez-accent);
+  background: var(--hv-tint);
+  transform: translateY(-2px);
+}
+.hv-app.hv-standalone.hv-compose .hv-report-category-search .hv-hive-result-copy {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+}
+.hv-app.hv-standalone.hv-compose .hv-report-category-search .hv-hive-result-name {
+  color: var(--hivez-text);
+  font-family: "Hivez Bricolage", sans-serif;
+  font-size: 1rem;
+  font-weight: 650;
+  letter-spacing: -0.035em;
+}
+.hv-app.hv-standalone.hv-compose .hv-report-category-search .hv-hive-result-title {
+  color: var(--hivez-text);
+  font-size: 0.92rem;
+  line-height: 1.3;
+}
+.hv-app.hv-standalone.hv-compose .hv-report-category-search .hv-hive-result-title > span {
+  color: var(--hivez-accent);
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+}
+.hv-app.hv-standalone.hv-compose .hv-report-category-search .hv-hive-result > span:not(.hv-hive-result-copy) {
+  margin-left: 0;
+  color: var(--hivez-muted);
+  font-size: 0.55rem;
+  letter-spacing: 0.07em;
+  white-space: nowrap;
+}
+.hv-app.hv-standalone.hv-compose .hv-report-category-search .hv-hive-result-description {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--hivez-muted);
+  font-size: 0.68rem;
+  font-weight: 400;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.hv-app.hv-standalone.hv-compose .hv-report-category-search .hv-hive-result-arrow {
+  color: var(--hivez-accent);
+  transition: transform 160ms ease;
+}
+.hv-app.hv-standalone.hv-compose .hv-report-category-search .hv-hive-result:hover .hv-hive-result-arrow {
+  transform: translate(2px, -2px);
+}
+.hv-app.hv-standalone.hv-compose .hv-report-root > .sticky {
+  padding-block: 15px;
+  background: color-mix(in srgb, var(--hivez-bg) 94%, transparent) !important;
+}
+.hv-app.hv-standalone.hv-compose .hv-report-root > .sticky h1,
+.hv-app.hv-standalone.hv-compose .hv-report-root > .sticky p {
+  font-family: "Geist Variable", sans-serif;
+}
+.hv-app.hv-standalone.hv-compose .hv-report-root > .sticky h1 {
+  font-size: 0.85rem !important;
+  letter-spacing: 0;
+}
+.hv-app.hv-standalone.hv-compose .hv-report-root > .sticky button {
+  min-width: 44px;
+  min-height: 44px;
+}
+.hv-app.hv-standalone.hv-compose .app-create-page > .hv-compose-layout {
+  grid-template-columns: minmax(255px, 0.68fr) minmax(0, 1.32fr);
+  gap: clamp(44px, 6vw, 88px);
+}
+.hv-app.hv-standalone.hv-compose .app-create-page .hv-compose-aside-title {
+  font-size: clamp(2.7rem, 4.2vw, 4.1rem);
+}
+.hv-app.hv-standalone.hv-compose .app-create-page .hv-compose-main {
+  border: 0;
+  border-top: 2px solid var(--hivez-accent);
+  border-bottom: 1px solid var(--hivez-border);
+  border-radius: 0;
+  background: transparent;
+}
+.hv-app.hv-standalone.hv-compose .app-create-page .hv-compose-main textarea[aria-label="Post text"] {
+  min-height: 340px;
+  font-size: clamp(1.6rem, 2.5vw, 2.25rem) !important;
+}
+
+@media (max-width: 760px) {
+  .hv-app.hv-standalone.hv-compose .hv-report-root > .hv-report-layout,
+  .hv-app.hv-standalone.hv-compose .app-create-page > .hv-compose-layout {
+    width: min(calc(100% - 32px), 640px);
+    margin: 25px auto 55px !important;
+  }
+  .hv-app.hv-standalone.hv-compose .hv-report-root .hv-report-layout,
+  .hv-app.hv-standalone.hv-compose .app-create-page > .hv-compose-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+  .hv-app.hv-standalone.hv-compose .hv-report-root .hv-report-rail h1,
+  .hv-app.hv-standalone.hv-compose .app-create-page .hv-compose-aside-title {
+    max-width: 520px;
+    font-size: clamp(2.55rem, 10vw, 3.5rem) !important;
+  }
+  .hv-app.hv-standalone.hv-compose .hv-report-root .hv-report-rail {
+    padding-top: 0;
+  }
+  .hv-app.hv-standalone.hv-compose .hv-report-root .hv-report-rail ol {
+    margin-top: 20px;
+  }
+  .hv-app.hv-standalone.hv-compose .hv-report-category-search > .hv-hive-search > div:nth-child(2) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hv-app.hv-standalone.hv-compose .hv-report-category-search .hv-hive-result {
+    min-height: 82px;
+  }
+  .hv-app.hv-standalone.hv-compose .hv-report-root .hv-report-work {
+    padding-block: 22px 28px;
+  }
+  .hv-app.hv-standalone.hv-compose .app-create-page .hv-compose-main {
+    padding: 18px 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hv-app *,
+  .hv-app *::before,
+  .hv-app *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+.reduce-motion .hv-app *,
+.reduce-motion .hv-app *::before,
+.reduce-motion .hv-app *::after {
+  animation: none !important;
+  transition: none !important;
+}
+.high-contrast .hv-app.app-shell[data-app-theme] {
+  --hivez-muted: var(--hivez-text);
+  --hivez-faint: var(--hivez-text);
+  --hivez-border: var(--hivez-text);
+  --hivez-border-strong: var(--hivez-text);
+}
+@media (forced-colors: active) {
+  .hv-app :is(button, a, input, textarea, select) {
+    forced-color-adjust: auto;
+  }
+  .hv-app :is(.hv-nav-link.is-active, .hv-button) {
+    border: 1px solid ButtonText;
+  }
+}
+
+.hv-app
+  :is(
+    [class~="text-red-400"],
+    [class~="text-red-500"],
+    [class~="text-red-600"],
+    [class~="text-rose-500"],
+    [class~="text-rose-600"]
+  ) {
+  color: var(--hivez-danger) !important;
+}
+.hv-app
+  :is(
+    [class~="bg-[#3d654c]"],
+    [class~="bg-[#3f6f4b]"],
+    [class~="dark:bg-[#f2c14e]"]
+  ) {
+  background: var(--hivez-accent) !important;
+  color: var(--hv-on-accent) !important;
+}
+.hv-app.hv-admin
+  :is(
+    [class~="text-green-400"],
+    [class~="text-green-500"],
+    [class~="text-emerald-400"],
+    [class~="text-emerald-500"],
+    [class~="text-amber-400"],
+    [class~="text-amber-500"],
+    [class~="text-orange-400"],
+    [class~="text-orange-500"]
+  ) {
+  color: var(--hivez-accent) !important;
+}
+.hv-app .hv-nav-link.is-active,
+.hv-app .hv-nav-link.is-active > span {
+  color: var(--hivez-accent) !important;
+  font-weight: 600;
+}
+.hv-app.hv-camera [class~="bg-white"] {
+  background: #fff !important;
+  color: #0b0d0e !important;
+}
+.hv-app .hv-camera-title {
+  color: #fff;
+  font-family: "Hivez Bricolage", sans-serif;
+  font-size: 1.5rem;
+  font-weight: 650;
+  letter-spacing: -0.06em;
+  text-align: center;
+  line-height: 1;
+}
+.hv-app .hv-camera-title small {
+  display: block;
+  margin-top: 7px;
+  font-family: "Geist Variable", sans-serif;
+  font-size: 0.5rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+}
+.hv-app.hv-compose .app-create-page > .sticky > div {
+  margin: 0 auto;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none;
+  background: transparent !important;
+}
+.hv-app.app-shell[data-app-theme="light"] {
+  --hivez-muted: #53604e;
+  --hivez-faint: #53604e;
+  --hv-warning-ink: #775621;
+}
+.hv-app.app-shell[data-app-theme="dark"] {
+  --hv-warning-ink: #ffe29a;
+}
+.hv-app
+  :is(
+    [class~="text-amber-600"],
+    [class~="text-amber-500"],
+    [class~="text-orange-500"]
+  ) {
+  color: var(--hv-warning-ink) !important;
+}
+.hv-app.hv-admin [class~="bg-zinc-700"] {
+  background: var(--hivez-surface-soft) !important;
+  color: var(--hivez-muted) !important;
+}
+.hv-app.hv-admin a[aria-current="page"] {
+  background: var(--hv-tint) !important;
+  color: var(--hivez-accent) !important;
+}
+.hv-app.hv-admin button[class~="bg-white"] {
+  background: var(--hivez-accent) !important;
+  color: var(--hv-on-accent) !important;
+}
+.hv-app .hv-post-detail-actions {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.hv-app .hv-settings-size {
+  width: 100%;
+  min-width: 0;
+  container: settings-space / inline-size;
+}
+@container settings-space (max-width: 760px) {
+  .hv-app .hivez-settings {
+    display: block;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hv-app .settings-sidebar {
+    display: none;
+  }
+  .hv-app .settings-mobile-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 13px 20px;
+    border-bottom: 1px solid var(--hivez-border);
+  }
+  .hv-app .settings-mobile-nav label {
+    font-size: 0.6875rem;
+    color: var(--hivez-muted);
+  }
+  .hv-app .settings-mobile-nav select {
+    max-width: 65%;
+    padding: 8px;
+    font-size: 0.75rem;
+    border: 1px solid var(--hivez-border);
+  }
+  .hv-app .settings-toolbar {
+    padding: 15px 20px;
+    min-height: 70px;
+    gap: 10px;
+  }
+  .hv-app .settings-breadcrumb {
+    font-size: 0.65rem;
+    gap: 5px;
+  }
+  .hv-app .settings-search {
+    width: 55%;
+    min-width: 0;
+  }
+  .hv-app .settings-search kbd {
+    display: none;
+  }
+  .hv-app .settings-content {
+    padding: 28px 20px 30px;
+    min-width: 0;
+  }
+  .hv-app .settings-page-heading h1 {
+    font-size: 2rem;
+  }
+  .hv-app .settings-welcome {
+    padding: 24px;
+    grid-template-columns: 1.3fr 1fr;
+    min-height: 230px;
+  }
+  .hv-app .hivez-settings .settings-welcome h2 {
+    font-size: 1.85rem;
+  }
+  .hv-app .settings-bee-scene img {
+    width: 210px;
+    max-width: 200%;
+  }
+  .hv-app .settings-orbit {
+    width: 155px;
+    height: 155px;
+  }
+  .hv-app .settings-orbit-two {
+    width: 210px;
+    height: 210px;
+  }
+  .hv-app .settings-bee-caption {
+    display: none;
+  }
+  .hv-app .settings-feature-grid,
+  .hv-app .settings-directory {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hv-app .settings-feature {
+    display: grid;
+    grid-template-columns: 27px minmax(0, 1fr);
+    column-gap: 14px;
+    padding: 20px;
+  }
+  .hv-app .settings-feature-top {
+    grid-column: 1;
+    grid-row: 1 / 5;
+    align-self: start;
+    margin: 2px 0 0;
+  }
+  .hv-app .settings-feature-top > svg:last-child {
+    display: none;
+  }
+  .hv-app .settings-feature > :not(.settings-feature-top) {
+    grid-column: 2;
+  }
+  .hv-app .settings-feature h3 {
+    margin: 7px 0;
+  }
+  .hv-app .settings-feature-status {
+    grid-row: auto;
+    border-top: 1px solid var(--st-line);
+    margin-top: 15px;
+    padding-top: 12px;
+  }
+  .hv-app .settings-account-strip {
+    flex-wrap: wrap;
+  }
+  .hv-app .settings-directory > section:last-child .settings-panel {
+    display: block;
+  }
+  .hv-app .settings-directory .settings-records-panel .settings-nav-row {
+    border-left: 0;
+    padding-left: 0;
+    border-bottom: 0;
+  }
+  .hv-app
+    .settings-directory
+    .settings-records-panel
+    .settings-nav-row
+    + .settings-nav-row {
+    border-top: 1px solid var(--st-line);
+  }
+  .hv-app .settings-footer {
+    gap: 20px;
+  }
+}
+@media (max-width: 760px) {
+  .hv-app .hv-post-detail-actions button {
+    padding: 8px 7px !important;
+    min-width: 30px;
+    min-height: 36px;
+  }
+}
+
+/* Chat thread: keep the composer in the flex flow so the newest message always has room. */
+.hv-app .hv-messages.app-chats-page {
+  min-height: 0;
+  overflow: hidden;
+}
+.hv-app .hv-messages.app-chats-page > div {
+  height: 100%;
+  min-height: 0;
+}
+.hv-app .hv-messages.app-chats-page section {
+  min-height: 0;
+  overflow: hidden;
+}
+.hv-app .hv-messages.app-chats-page section > div:nth-child(2) {
+  overscroll-behavior: contain;
+}
+@media (max-width: 1200px) {
+  .hv-app .hv-messages.app-chats-page {
+    min-height: 0;
+    height: calc(100dvh - 135px);
+  }
+}
+@media (max-width: 760px) {
+  .hv-app .hv-messages.app-chats-page {
+    min-height: 0;
+    height: calc(100dvh - 133px);
+  }
+}
+
+/* Local updates: an editorial stream with Hivez's own ink, paper and honey accents. */
+.hv-app.app-shell .app-feed-card.hv-stream-post {
+  padding: 26px clamp(18px, 2.4vw, 34px) !important;
+}
+.hv-app .hv-post-header {
+  align-items: center;
+}
+.hv-app .hv-post-identity {
+  column-gap: 8px;
+}
+.hv-app .hv-post-content {
+  margin-left: 54px;
+}
+.hv-app .hv-post-content > div {
+  margin-top: 13px;
+}
+.hv-app .hv-post-category {
+  border: 1px solid var(--hivez-border) !important;
+  border-radius: 3px !important;
+  padding: 4px 8px !important;
+  background: var(--hivez-surface-soft) !important;
+  color: var(--hivez-accent) !important;
+  font-size: 0.625rem !important;
+  letter-spacing: 0.1em !important;
+}
+.hv-app .hv-post-caption {
+  max-width: 68ch;
+  color: var(--hivez-text) !important;
+  font-size: clamp(0.98rem, 1.1vw, 1.08rem) !important;
+  line-height: 1.75 !important;
+  letter-spacing: -0.012em;
+}
+.hv-app .hv-post-media {
+  margin-top: 18px !important;
+  max-width: 760px;
+}
+.hv-app .hv-media-stream .hv-media-single {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--hivez-border) !important;
+  border-radius: 6px !important;
+  background: var(--hivez-surface-soft) !important;
+}
+.hv-app .hv-media-stream .hv-media-single > button {
+  width: 100%;
+}
+.hv-app .hv-post-media .hv-media-single :is(img, video) {
+  width: 100%;
+  max-height: min(62vh, 620px);
+  object-fit: contain;
+  background: var(--hivez-surface-soft);
+  border-radius: 0 !important;
+}
+.hv-app .hv-post-actions {
+  max-width: 760px;
+  margin-top: 18px !important;
+  padding-top: 8px !important;
+  border-color: var(--hivez-border) !important;
+}
+.hv-app .hv-post-actions button {
+  min-height: 38px;
+}
+
+/* Create flow: separate the reflective prompt from the practical composition controls. */
+.hv-app.hv-compose .app-create-page {
+  min-height: calc(100dvh - 72px);
+  color: var(--hivez-text);
+  background:
+    radial-gradient(ellipse at 78% 8%, color-mix(in srgb, var(--hv-honey) 9%, transparent), transparent 28rem),
+    var(--hivez-bg) !important;
+}
+.hv-app .hv-create-entry {
+  padding: clamp(28px, 4vw, 64px) clamp(22px, 5vw, 84px) 80px;
+}
+.hv-app .hv-create-entry .hv-page-intro {
+  max-width: 1160px;
+  margin-inline: auto;
+  margin-bottom: clamp(30px, 5vw, 64px);
+}
+.hv-app .hv-create-entry .hv-page-intro h1 {
+  max-width: 760px;
+  font-size: clamp(3rem, 7vw, 6.7rem);
+  line-height: 0.95;
+  letter-spacing: -0.075em;
+}
+.hv-app .hv-create-options {
+  max-width: 1160px;
+  margin: 0 auto;
+  gap: 0;
+  border-top: 1px solid var(--hivez-border);
+  border-bottom: 1px solid var(--hivez-border);
+}
+.hv-app .hv-create-options > button {
+  position: relative;
+  min-height: 350px;
+  padding: clamp(22px, 3vw, 42px);
+  border: 0;
+  border-radius: 0;
+  background: color-mix(in srgb, var(--hivez-surface) 76%, transparent);
+  transition: background 180ms ease, color 180ms ease;
+}
+.hv-app .hv-create-options > button + button {
+  border-left: 1px solid var(--hivez-border);
+}
+.hv-app .hv-create-options > button::after {
+  position: absolute;
+  top: 21px;
+  right: 26px;
+  color: color-mix(in srgb, var(--hivez-accent) 18%, transparent);
+  content: "01";
+  font-family: "Hivez Bricolage", sans-serif;
+  font-size: clamp(3.5rem, 7vw, 7rem);
+  font-weight: 600;
+  letter-spacing: -0.09em;
+  line-height: 1;
+  pointer-events: none;
+}
+.hv-app .hv-create-options > button:nth-child(2)::after {
+  content: "02";
+}
+.hv-app .hv-create-options > button:hover {
+  border-color: var(--hivez-border);
+  background: var(--hivez-surface);
+}
+.hv-app .hv-create-options > button > svg {
+  width: 43px;
+  height: 43px;
+  padding: 9px;
+  border: 1px solid var(--hivez-border);
+  border-radius: 50%;
+  color: var(--hivez-accent);
+}
+.hv-app .hv-create-options h2 {
+  max-width: 360px;
+  margin: auto 0 12px;
+  font-size: clamp(1.8rem, 3vw, 2.8rem);
+  line-height: 1.04;
+  letter-spacing: -0.06em;
+}
+.hv-app .hv-create-options p {
+  max-width: 42ch;
+  margin-bottom: 25px;
+  line-height: 1.7;
+}
+
+.hv-app.hv-compose .app-create-page > .sticky {
+  position: sticky;
+  background: color-mix(in srgb, var(--hivez-bg) 90%, transparent) !important;
+  border-color: var(--hivez-border) !important;
+}
+.hv-app.hv-compose .app-create-page > .sticky h1 {
+  font-family: "Hivez Bricolage", sans-serif;
+  font-size: 1.125rem;
+  letter-spacing: -0.035em;
+}
+.hv-app.hv-compose .app-create-page > .sticky button:last-child {
+  min-height: 42px;
+  padding-inline: 20px;
+  border-radius: 3px;
+}
+.hv-app .hv-compose-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.65fr) minmax(0, 1.35fr);
+  gap: clamp(38px, 7vw, 108px);
+  align-items: start;
+  width: min(100% - 52px, 1180px);
+  margin: 48px auto 90px;
+}
+.hv-app .hv-compose-aside {
+  position: sticky;
+  top: 116px;
+  padding-top: 10px;
+}
+.hv-app .hv-compose-aside-title {
+  max-width: 360px;
+  margin: 18px 0 28px;
+  font-family: "Hivez Bricolage", sans-serif;
+  font-size: clamp(2rem, 3.8vw, 3.7rem);
+  font-weight: 550;
+  line-height: 0.99;
+  letter-spacing: -0.065em;
+}
+.hv-app .hv-compose-aside ol {
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--hivez-border);
+  list-style: none;
+}
+.hv-app .hv-compose-aside li {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 10px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--hivez-border);
+  color: var(--hivez-muted);
+  font-size: 0.78rem;
+}
+.hv-app .hv-compose-aside li span:first-child {
+  color: var(--hivez-accent);
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+.hv-app .hv-compose-aside-mark {
+  display: block;
+  width: 47px;
+  height: 47px;
+  margin-top: 30px;
+  border: 1px solid var(--hivez-border);
+  border-radius: 50%;
+  background: radial-gradient(circle at center, var(--hv-honey) 0 4px, transparent 4.5px), conic-gradient(from 15deg, transparent 0 12%, color-mix(in srgb, var(--hv-honey) 60%, transparent) 12% 13%, transparent 13% 25%, color-mix(in srgb, var(--hv-honey) 60%, transparent) 25% 26%, transparent 26% 100%);
+}
+.hv-app .hv-compose-main {
+  min-width: 0;
+  padding: clamp(20px, 3vw, 38px);
+  border-top: 2px solid var(--hivez-accent);
+  border-bottom: 1px solid var(--hivez-border);
+  background: var(--hivez-surface);
+}
+.hv-app .hv-compose-main > div:first-child {
+  padding: 0 0 22px !important;
+  border-color: var(--hivez-border) !important;
+}
+.hv-app .hv-compose-main textarea[aria-label="Post text"] {
+  min-height: 290px;
+  padding: 16px 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  border-bottom: 1px solid var(--hivez-border) !important;
+  background: transparent !important;
+  font-family: "Hivez Bricolage", sans-serif;
+  font-size: clamp(1.3rem, 2.3vw, 2rem) !important;
+  line-height: 1.35;
+  letter-spacing: -0.035em;
+}
+.hv-app .hv-compose-text textarea[aria-label="Post text"] {
+  min-height: 420px;
+}
+.hv-app .hv-compose-main label {
+  border-radius: 3px !important;
+  border-color: var(--hivez-border) !important;
+}
+.hv-app .hv-compose-main :is(input[type="text"], button) {
+  border-radius: 3px;
+}
+.hv-app .hv-compose-main input[type="text"] {
+  background: var(--hivez-bg) !important;
+  border-color: var(--hivez-border) !important;
+}
+
+/* Field report: a persistent six-step index paired with one focused working surface. */
+.hv-app.hv-compose .hv-report-root {
+  min-height: calc(100dvh - 72px);
+}
+.hv-app .hv-report-layout {
+  display: grid;
+  grid-template-columns: minmax(215px, 0.64fr) minmax(0, 1.36fr);
+  gap: clamp(38px, 7vw, 108px);
+  align-items: start;
+  width: min(100% - 52px, 1180px);
+  margin: 42px auto 90px;
+}
+.hv-app .hv-report-rail {
+  position: sticky;
+  top: 112px;
+  padding-top: 12px;
+}
+.hv-app .hv-report-rail h1 {
+  max-width: 350px;
+  margin: 17px 0 12px;
+  font-family: "Hivez Bricolage", sans-serif;
+  font-size: clamp(2rem, 3.5vw, 3.2rem);
+  font-weight: 550;
+  letter-spacing: -0.065em;
+  line-height: 0.99;
+}
+.hv-app .hv-report-rail > p {
+  max-width: 38ch;
+  color: var(--hivez-muted);
+  font-size: 0.78rem;
+  line-height: 1.8;
+}
+.hv-app .hv-report-rail ol {
+  margin: 27px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--hivez-border);
+  list-style: none;
+}
+.hv-app .hv-report-rail li {
+  display: grid;
+  grid-template-columns: 31px 1fr 16px;
+  gap: 7px;
+  align-items: center;
+  min-height: 42px;
+  border-bottom: 1px solid var(--hivez-border);
+  color: var(--hivez-muted);
+  font-size: 0.72rem;
+  transition: color 160ms ease;
+}
+.hv-app .hv-report-rail li > span:first-child {
+  color: var(--hivez-faint);
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+.hv-app .hv-report-rail li.is-current {
+  color: var(--hivez-text);
+  font-weight: 650;
+}
+.hv-app .hv-report-rail li.is-current > span:first-child,
+.hv-app .hv-report-rail li.is-complete > span:first-child,
+.hv-app .hv-report-rail li.is-complete > svg {
+  color: var(--hivez-accent);
+}
+.hv-app .hv-report-rail-foot {
+  display: block;
+  margin-top: 22px;
+  color: var(--hivez-faint);
+  font-size: 0.68rem;
+  line-height: 1.7;
+}
+.hv-app .hv-report-work {
+  min-width: 0;
+  padding: clamp(20px, 3vw, 40px);
+  border-top: 2px solid var(--hivez-accent);
+  border-bottom: 1px solid var(--hivez-border);
+  background: var(--hivez-surface);
+}
+.hv-app .hv-report-work > div:first-child {
+  gap: 3px;
+}
+.hv-app .hv-report-work > div:first-child > div {
+  height: 3px;
+  border-radius: 0;
+}
+.hv-app .hv-report-work section > h1 {
+  margin-top: 25px;
+  font-family: "Hivez Bricolage", sans-serif;
+  font-size: clamp(2rem, 3.6vw, 3.5rem);
+  font-weight: 550;
+  letter-spacing: -0.065em;
+  line-height: 1;
+}
+.hv-app .hv-report-work :is(input:not([type="checkbox"]), textarea) {
+  border-radius: 3px !important;
+  border-color: var(--hivez-border) !important;
+  background: var(--hivez-bg) !important;
+}
+.hv-app .hv-report-work button {
+  border-radius: 3px;
+}
+.hv-app .hv-report-work section > div.rounded-2xl,
+.hv-app .hv-report-work section > div > div.rounded-2xl {
+  border-radius: 5px !important;
+}
+
+@media (max-width: 760px) {
+  .hv-app .hv-create-entry {
+    padding: 26px 18px 44px;
+  }
+  .hv-app .hv-create-options {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hv-app .hv-create-options > button {
+    min-height: 275px;
+    padding: 23px 19px;
+  }
+  .hv-app .hv-create-options > button + button {
+    border-top: 1px solid var(--hivez-border);
+    border-left: 0;
+  }
+  .hv-app .hv-compose-layout,
+  .hv-app .hv-report-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 25px;
+    width: min(100% - 28px, 640px);
+    margin-top: 24px;
+  }
+  .hv-app .hv-compose-aside,
+  .hv-app .hv-report-rail {
+    position: static;
+    padding: 0 2px;
+  }
+  .hv-app .hv-compose-aside-title,
+  .hv-app .hv-report-rail h1 {
+    max-width: 520px;
+    font-size: clamp(2.1rem, 9vw, 3.1rem);
+  }
+  .hv-app .hv-compose-aside ol {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    border: 0;
+  }
+  .hv-app .hv-compose-aside li {
+    grid-template-columns: 1fr;
+    gap: 5px;
+    border-top: 1px solid var(--hivez-border);
+    border-bottom: 0;
+    font-size: 0.68rem;
+  }
+  .hv-app .hv-compose-aside-mark,
+  .hv-app .hv-report-rail > p,
+  .hv-app .hv-report-rail-foot {
+    display: none;
+  }
+  .hv-app .hv-report-rail ol {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    margin-top: 18px;
+    border: 0;
+  }
+  .hv-app .hv-report-rail li {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 7px 4px;
+    border: 0;
+    border-top: 2px solid var(--hivez-border);
+    font-size: 0.59rem;
+  }
+  .hv-app .hv-report-rail li.is-current,
+  .hv-app .hv-report-rail li.is-complete {
+    border-color: var(--hivez-accent);
+  }
+  .hv-app .hv-report-rail li > svg {
+    display: none;
+  }
+  .hv-app .hv-report-work,
+  .hv-app .hv-compose-main {
+    padding: 18px;
+  }
+  .hv-app .hv-compose-main textarea[aria-label="Post text"] {
+    min-height: 260px;
+  }
+  .hv-app .hv-compose-text textarea[aria-label="Post text"] {
+    min-height: 320px;
+  }
+  .hv-app .hv-post-content {
+    margin-left: 0;
+  }
+  .hv-app.app-shell .app-feed-card.hv-stream-post {
+    padding: 20px 16px !important;
+  }
+}

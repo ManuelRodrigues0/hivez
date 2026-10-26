@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:local": "node scripts/dev-local.mjs",
+    "omniroute:check": "node scripts/dev-local.mjs --check",
+    "test:local": "node --test scripts/dev-local.test.mjs",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test:settings": "vitest run --config tests/settings.vitest.config.mjs",

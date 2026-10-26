@@ -1,6 +1,7 @@
 import { Navigate, Routes, Route } from "react-router-dom";
 import MainLayout from "../components/layout/MainLayout";
 import MobileLayout from "../components/layout/MobileLayout";
+import WorkspaceFrame from "@/components/layout/WorkspaceFrame";
 import HivezLoader from "@/components/common/HivezLoader";
 
 import Home from "@/pages/Home/Home";
@@ -57,12 +58,12 @@ export default function AppRouter() {
   if (!user) {
     return (
       <Routes>
-        <Route path="/post/:id" element={<PostPage />} />
+        <Route path="/post/:id" element={<WorkspaceFrame className="hv-post-page"><PostPage /></WorkspaceFrame>} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/admin-setup" element={<AdminSetup />} />
+        <Route path="/admin-setup" element={<WorkspaceFrame className="hv-admin"><AdminSetup /></WorkspaceFrame>} />
         <Route path="/" element={<Landing />} />
-        <Route path="*" element={<NotFound />} />
+        <Route path="*" element={<WorkspaceFrame className="hv-error"><NotFound /></WorkspaceFrame>} />
       </Routes>
     );
   }
@@ -70,7 +71,7 @@ export default function AppRouter() {
   if (!profileCompleted) {
     return (
       <Routes>
-        <Route path="/post/:id" element={<PostPage />} />
+        <Route path="/post/:id" element={<WorkspaceFrame className="hv-post-page"><PostPage /></WorkspaceFrame>} />
         <Route path="/admin-setup" element={<AdminSetup />} />
         <Route path="*" element={<CompleteProfile />} />
       </Routes>
@@ -79,7 +80,7 @@ export default function AppRouter() {
 
   return (
     <Routes>
-      <Route path="/post/:id" element={<PostPage />} />
+      <Route path="/post/:id" element={<WorkspaceFrame className="hv-post-page"><PostPage /></WorkspaceFrame>} />
 
       <Route element={<MainLayout />}>
         <Route index element={<Home />} />
@@ -114,12 +115,12 @@ export default function AppRouter() {
         <Route path="/profile/edit" element={<EditProfile />} />
       </Route>
 
-      <Route path="/camera" element={<Camera />} />
-      <Route path="/create" element={<Create />} />
+      <Route path="/camera" element={<WorkspaceFrame className="hv-camera" dark><Camera /></WorkspaceFrame>} />
+      <Route path="/create" element={<WorkspaceFrame className="hv-compose"><Create /></WorkspaceFrame>} />
 
       <Route element={<MobileLayout />}></Route>
 
-      <Route element={<AdminLayout />}>
+      <Route element={<WorkspaceFrame className="hv-admin"><AdminLayout /></WorkspaceFrame>}>
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/users" element={<AdminUsers />} />
         <Route path="/admin/posts" element={<AdminPosts />} />
@@ -135,8 +136,8 @@ export default function AppRouter() {
         <Route path="/admin/logs" element={<AdminLogs />} />
       </Route>
 
-      <Route path="/admin-setup" element={<AdminSetup />} />
-      <Route path="*" element={<NotFound />} />
+      <Route path="/admin-setup" element={<WorkspaceFrame className="hv-admin"><AdminSetup /></WorkspaceFrame>} />
+      <Route path="*" element={<WorkspaceFrame className="hv-error"><NotFound /></WorkspaceFrame>} />
     </Routes>
   );
 }

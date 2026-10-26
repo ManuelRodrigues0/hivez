@@ -1,7 +1,8 @@
 ﻿import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowUpRight, Menu, Moon, Pause, Play, Sun, X } from "lucide-react";
+import { ArrowUpRight, Menu, Pause, Play, X } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
+import PublicThemeToggle from "@/components/common/PublicThemeToggle";
 
 const navItems = [
   { label: "The idea", href: "#discover" },
@@ -13,8 +14,7 @@ export default function LandingNavbar() {
   const [open, setOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const menuRef = useRef<HTMLButtonElement>(null);
-  const { resolvedTheme, toggleTheme, reducedMotion, setReducedMotion } =
-    useTheme();
+  const { reducedMotion, setReducedMotion } = useTheme();
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -55,15 +55,7 @@ export default function LandingNavbar() {
         >
           {reducedMotion ? <Play size={16} /> : <Pause size={16} />}
         </button>
-        <button
-          type="button"
-          className="hz-icon-button"
-          onClick={toggleTheme}
-          aria-label={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} theme`}
-          title="Change theme"
-        >
-          {resolvedTheme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
+        <PublicThemeToggle className="hz-icon-button" />
         <Link to="/login" className="hz-login">
           Log in
         </Link>

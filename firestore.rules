@@ -17,9 +17,13 @@ service cloud.firestore {
     function isPrivateAccount(userId) {
       return exists(/databases/$(database)/documents/users/$(userId))
         && (
-          userDoc(userId).data.isPrivate == true
-          || userDoc(userId).data.accountPrivacy == "private"
-          || userDoc(userId).data.privacy.account == "private"
+          userDoc(userId).data.get("isPrivate", false) == true
+          || userDoc(userId).data.get("privateAccount", false) == true
+          || userDoc(userId).data.get("accountPrivacy", "public") == "private"
+          || (
+            userDoc(userId).data.get("privacy", {}) is map
+            && userDoc(userId).data.get("privacy", {}).get("account", "public") == "private"
+          )
         );
     }
 
@@ -40,7 +44,7 @@ service cloud.firestore {
         && (
           postData.uid == request.auth.uid
           || (
-            !(postData.visibility in ["followers", "private"])
+            !(postData.get("visibility", "public") in ["followers", "private"])
             && !isPrivateAccount(postData.uid)
           )
           || isFollower(request.auth.uid, postData.uid)
@@ -153,6 +157,29 @@ service cloud.firestore {
         allow read: if isOwner(userId);
         allow write: if isOwner(userId);
       }
+
+      match /sessions/{sessionId} {
+        // Per-device app-session events recorded by the client (login activity).
+        // Owner-only; sessions are private to the user.
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && request.resource.data.uid == request.auth.uid;
+        allow update: if false;
+        allow delete: if isOwner(userId);
+      }
+
+      match /pushTokens/{token} {
+        // Web push (FCM) registration tokens for this user's devices.
+        // Owner-only: a user may register, refresh or revoke their own device
+        // tokens, and nobody (not even another signed-in user) may read them.
+        // The Cloud Functions that actually deliver pushes use the Admin SDK,
+        // which bypasses these rules, so a client never needs cross-user access.
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+          && request.resource.data.token is string
+          && request.resource.data.token.size() > 0
+          && request.resource.data.token.size() <= 4096;
+      }
     }
 
     match /posts/{postId} {
@@ -244,7 +271,7 @@ service cloud.firestore {
     }
 
     match /reHives/{reHiveId} {
-      allow read: if signedIn()
+      allow get: if signedIn()
         && (
           resource.data.userId == request.auth.uid
           // ID-split fallback: reHive ids are "{userId}_{postId}" (enforced on
@@ -255,6 +282,11 @@ service cloud.firestore {
           || reHiveId.split("_")[0] == request.auth.uid
           || canReadPostData(get(/databases/$(database)/documents/posts/$(resource.data.postId)).data)
         );
+      // Profile queries constrain userId, not each original post's visibility.
+      // Only expose ReHive references for a profile the viewer may access;
+      // reading each original post still requires its own audience check.
+      allow list: if signedIn()
+        && canReadProtectedUserContent(resource.data.userId);
       allow create: if signedIn()
         && request.resource.data.userId == request.auth.uid
         && reHiveId == request.auth.uid + "_" + request.resource.data.postId
