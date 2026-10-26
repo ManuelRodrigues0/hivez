@@ -1,0 +1,222 @@
+{
+  "protectedFiles": [
+    {
+      "path": "src/pages/Auth/Auth.css",
+      "unchanged": true
+    },
+    {
+      "path": "src/pages/Login/Login.tsx",
+      "unchanged": true
+    },
+    {
+      "path": "src/pages/Signup/Signup.tsx",
+      "unchanged": true
+    },
+    {
+      "path": "src/pages/CompleteProfile/CompleteProfile.css",
+      "unchanged": true
+    },
+    {
+      "path": "src/pages/CompleteProfile/CompleteProfile.tsx",
+      "unchanged": true
+    },
+    {
+      "path": "src/pages/CompleteProfile/CompleteProfileExperience.tsx",
+      "unchanged": true
+    },
+    {
+      "path": "src/pages/Landing/Landing.tsx",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/hivez/AuthBackdrop.tsx",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/hivez/AuthCompanion.tsx",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/hivez/AuthExperience.tsx",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/hivez/AuthField.tsx",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/hivez/AuthWelcome.tsx",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/hivez/BeeMascot.tsx",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/landing/ActionJourney.tsx",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/landing/BeeChromaVideo.tsx",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/landing/beeFlight.ts",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/landing/BeeRoamer.tsx",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/landing/HiveExplorer.tsx",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/landing/LandingNavbar.tsx",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/landing/motion-primitives.tsx",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/landing/NeighbourhoodMap.tsx",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/landing/ScrollReveal.tsx",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/landing/SplitHeading.tsx",
+      "unchanged": true
+    }
+  ],
+  "beeAssets": [
+    {
+      "path": "public/assets/bee-fly.webm",
+      "unchanged": true
+    },
+    {
+      "path": "public/assets/hivez-ultra-bee.webm",
+      "unchanged": true
+    },
+    {
+      "path": "public/assets/hivez-ultra-beehh.webm",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/bee-fly.webm",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/bee-fly.webp",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/bee-flyh.webm",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/bee-flyh.webp",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/bee-shy.webm",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/bee-shy.webp",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/bee-shyh.mp4",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/bee-shyh.webp",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/bee-shythrth.mp4",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/bee-stillhn.png",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/bee-wave.webm",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/bee-wave.webp",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/bee-wave_1.mp4",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/bee-wavefes.webm",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/bee-waveh.mp4",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/bee-waveh.webp",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/bee-wavenn.mp4",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/newbee.png",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/newbee2.png",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/stationary-bee (1).jpg",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/stationary-bee.jpg",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/stationary-bee.png",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/stationary-bee1.jpg",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/stationary-bee2.png",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/stationary-beecurr.jpg",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/stationary-beeedit.jpg",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/stationary-beeg.jpeg",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/auth/stationary-beew.jpg",
+      "unchanged": true
+    }
+  ]
+}

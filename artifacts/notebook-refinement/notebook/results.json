@@ -1,0 +1,67 @@
+{
+  "results": [
+    {
+      "name": "Marked blocks are removed; posts start directly below the navbar",
+      "status": "passed"
+    },
+    {
+      "name": "Prompt selection, keyboard focus and account-scoped device saving",
+      "status": "passed"
+    },
+    {
+      "name": "The last keystroke survives immediate handoff to the real post composer",
+      "status": "passed"
+    },
+    {
+      "name": "Different local test accounts do not see each other’s notebook",
+      "status": "passed"
+    },
+    {
+      "name": "Sidebar links retain real map and volunteering destinations",
+      "status": "passed"
+    },
+    {
+      "name": "Storage failure is honest and does not prevent continuing a draft",
+      "status": "passed"
+    }
+  ],
+  "evidence": {
+    "errors": [],
+    "console": [],
+    "blocked": [],
+    "failed": [
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      }
+    ]
+  }
+}

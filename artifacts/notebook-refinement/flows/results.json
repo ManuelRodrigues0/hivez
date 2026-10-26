@@ -1,0 +1,203 @@
+{
+  "results": [
+    {
+      "name": "Shared chrome, keyboard entry and navigation",
+      "status": "passed"
+    },
+    {
+      "name": "Real feed filtering and empty state",
+      "status": "passed"
+    },
+    {
+      "name": "Like state persists through the actual Firestore client",
+      "status": "passed"
+    },
+    {
+      "name": "Save and ReHive persistence",
+      "status": "passed"
+    },
+    {
+      "name": "Replies: native focus, actual send, live result and Escape",
+      "status": "passed"
+    },
+    {
+      "name": "Profile identity, follow/unfollow and content tabs",
+      "status": "passed"
+    },
+    {
+      "name": "Direct messages: actual send and persisted conversation",
+      "status": "passed"
+    },
+    {
+      "name": "Notifications mark-read persistence",
+      "status": "passed"
+    },
+    {
+      "name": "Volunteer group membership and community routes",
+      "status": "passed"
+    },
+    {
+      "name": "Create choices and report steps",
+      "status": "passed"
+    },
+    {
+      "name": "Mobile navigation, modal focus, Updates and viewport",
+      "status": "passed"
+    }
+  ],
+  "evidence": {
+    "errors": [],
+    "console": [],
+    "blocked": [],
+    "failed": [
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/v1/projects/demo-hivez-design/databases/(default)/documents:commit",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/v1/projects/demo-hivez-design/databases/(default)/documents:commit",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5174/assets/hivez-ultra-bee.webm",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Write/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Write/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Write/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Write/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Write/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5174/favicon.svg",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5174/assets/hivez-honeycomb-loader.webm",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5174/assets/hivez-honeycomb-loader.webm",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5174/assets/hivez-honeycomb-loader.webm",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5174/assets/hivez-honeycomb-loader.webm",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5174/assets/hivez-honeycomb-loader.webm",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5174/assets/hivez-honeycomb-loader.webm",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5174/assets/hivez-ultra-bee.webm",
+        "reason": "net::ERR_ABORTED"
+      }
+    ]
+  }
+}
