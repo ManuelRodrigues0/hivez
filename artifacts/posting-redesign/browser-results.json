@@ -1,0 +1,38 @@
+{
+  "project": "demo-hivez-design",
+  "uid": "TdpDvVl1K1sX5mc1QNq5mu87p04I",
+  "results": [
+    {
+      "name": "Create entry and modal open with keyboard focus and close with Escape",
+      "status": "passed"
+    },
+    {
+      "name": "Text compose, live preview, Hive and sensitive settings persist to emulator",
+      "status": "passed"
+    },
+    {
+      "name": "Photo attachments validate, render and remove; media post persists using a fixture upload",
+      "status": "passed"
+    },
+    {
+      "name": "Photo report: search, validation, check, location, details, preview and submit",
+      "status": "passed"
+    },
+    {
+      "name": "Dark theme and mobile layouts at 390px and 320px; text remains editable",
+      "status": "passed"
+    }
+  ],
+  "uploadRequests": 2,
+  "fixtures": [
+    "Cloudinary upload response",
+    "local image model",
+    "cloud verification decision"
+  ],
+  "evidence": {
+    "errors": [],
+    "console": [],
+    "blocked": [],
+    "failed": []
+  }
+}

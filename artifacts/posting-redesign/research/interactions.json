@@ -1,0 +1,280 @@
+[
+  {
+    "name": "contra-live",
+    "url": "https://contra.com/project-rate-hiring-calculator/",
+    "status": 200,
+    "text": "Project Calculator\n\nShare\nHire on Contra\nSTEP\n0\n1\n2\n3\n4\n— 04\nSmarter hiring,\ncalculated.\nSCROLL TO DISCOVER\n\nTake the guesswork out of project-based hiring, optimize your budget, and move faster than ever before.\n\nCALCULATOR\nCALCULATOR\nSPREADSHEET\nSPREADSHEET\nCarla Giordano\nSenior Financial Accountant at Framer\n\nAs our product evolves, project-based hiring enables us to find freelancers who are able to reach our product goals.\n\nEmily Lonetto\nDirector of Community & Agency Marketing at Webflow\n\nHiring freelancers based on project has made it so much easier to manage and use our resources exactly when we need to.\n\nAlice Pang\nPrincipal at Purpose Built Ventures\n\nProject-based hiring allows me the flexibility to book great creatives and freelancers quickly for our portfolio companies to deliver on project needs.\n\nTake your projects\nto the next level\n\nGain complete visibility over your flexible talent network, project outcomes, and spending with Contra.\n\nHire on Contra\nProject Calculator\nHire on Contra\nPrivacy Policy\nCookie Policy\n\n© 2024 Contra.Work Inc All Rights Reserved.\n\nProject Calculator\n\nDo they need\nto be US-based?\n\nYOUR RESULTS ARE IN\nMONEY SAVED\n+$3,058\nTIME SAVED\n+31 DAYS\nGET A CURATED LIST OF FREELANCERS\nFOR YOUR PROJECT\n\nBy hiring freelancers on Contra,\nyou can do more with less.\n\nEnter your email\nStart hiring\nSent\nPROJECT OUTLOOK\nPROJECT BREAKDOWN\nCookie consent\nThis website uses cookies.\nLearn more\nOkay",
+    "controls": [
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Share"
+      },
+      {
+        "tag": "BUTTON",
+        "text": " "
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Share "
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Back"
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Get the guide"
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Get Started"
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "text": "CalculatorCalculatorSpreadsheetSpreadsheet"
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "placeholder": "Enter email"
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "text": "View Methodology"
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Reset"
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      }
+    ]
+  },
+  {
+    "name": "freight-contact",
+    "url": "https://studiofreight.com/contact",
+    "status": 200,
+    "text": "Contact\n\nHome\n\n, \n\nWork\n\n, \n\nInfo\n\n, \n\nNews\n\n, \n\nAeon\n\nInquire\n\nSubmit\n\nFAQ\n\nJob inquiries\n\nShare your portfolio and why you're interested in joining us at jobs@studiofreight.com. Please use \"Job Inquiry: Role\" as the subject line.\n\nPress inquiries\n\nLooking to say mean things? Right this way please. Looking to say nice things about Studio Freight? Reach out to press@studiofreight.com.\n\nCollaboration inquiries\n\nLet’s do things together. If you’re interested in collaborating on a project or event, hit us with your wild ideas at hello@studiofreight.com.\n\nFood recommendations\n\nIf you’re in Columbus, hit up Fiery Sky and Gene's. In New York City, check out Bangkok Supper Club and Cosme. In Mexico City, don’t miss Kill Bill and Pujol. In Los Angeles, stop by Leo's Taco Food Truck and Bestia. In Margate, pop into High Dive and Pomus.\n\nBook recommendations\n\nFor design, The Vignelli Cannon and Design as Art. For history, A Little Devil in America and The Bomber Mafia. For business, Martha INC and Unreasonable Hospitality. For wisdom, White and Bird by Bird. For book club, The Alchemist and Postcards from the Edge.\n\nLinks\n\nLinkedIn\nInstagram\nTwitter\nAre.na\nVimeo\n\nCapabilities\n\nDownload\nView\nIG\n / \nLI\n\nStudio Freight\n\n©2026\n  /  \nTerms",
+    "controls": [
+      {
+        "tag": "INPUT",
+        "text": "",
+        "placeholder": ""
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "placeholder": "Your name*"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "placeholder": "Your email*"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "placeholder": "Company name*"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "placeholder": "What's your estimated budget?"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "placeholder": "How did you find us?"
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Submit"
+      }
+    ]
+  },
+  {
+    "name": "cosmos-explore",
+    "url": "https://www.cosmos.so/explore",
+    "status": 200,
+    "text": "Explore\nSequence\nShop\nSearch\nTry\n'b&w photography'\nLog in\nSign up\nFeatured\nFashion\nInteriors\nGraphic Design\nArt\nBranding\nTypography\nArchitecture\nWeddings\nInterfaces\nNature\nCinema\nMotion\nTechnology\nPortraiture\nQuotes\nEmotion\nSymbol & Myth\nSelected by Cosmos\nLast Shot of the Film\n@art\n · 40 elements\nMuseum archives: plants\n@ideas\n · 30 elements\nart nouveau lettering\n@design\n · 43 elements\nBlack cat symbolism\n@ideas\n · 37 elements\nfall phone wallpapers\n@design\n · 51 elements\nthe jersey is the brand\n@design\n · 76 elements\nCandles Everywhere\n@spaces\n · 42 elements\nDreamy Spaces in Movies\n@art\n · 48 elements\nExplore elements\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSuggestive\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSave\nSave\n\nDream with us.\n\nSign up for Cosmos\nDownload the app\nInstagram\nTikTok\nX\nSubstack\nCareers\nTerms\nPrivacy\nBack to top",
+    "controls": [
+      {
+        "tag": "BUTTON",
+        "text": "ExploreOpen"
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "placeholder": ""
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "placeholder": ""
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Save"
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Save"
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Save"
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Save"
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Save"
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Save"
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Save"
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Save"
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Save"
+      },
+      {
+        "tag": "BUTTON",
+        "text": ""
+      }
+    ]
+  },
+  {
+    "name": "self-aware-form",
+    "url": "https://www.awwwards.com/inspiration/project-inquiry-form-self-aware",
+    "status": 200,
+    "text": "The Creative Pass  Watch all courses for just $12/month\nThe Creative Pass  Watch all courses for just $12/month\nThe Creative Pass  Watch all courses for just $12/month\nThe Creative Pass  Watch all courses for just $12/month\nThe Creative Pass  Watch all courses for just $12/month\nThe Creative Pass  Watch all courses for just $12/month\nThe Creative Pass  Watch all courses for just $12/month\nThe Creative Pass  Watch all courses for just $12/month\nThe Creative Pass  Watch all courses for just $12/month\nThe Creative Pass  Watch all courses for just $12/month\nThe Creative Pass  Watch all courses for just $12/month\nExplore\nDirectory\nAcademy\nNew\nJobs\nMarket\nLog in\nSign Up\nBe Pro\nSubmit Website\nProject Inquiry Form\nby\nSelf Aware\nfrom\nSelf Aware\nProject Inquiry Form from Self Aware\n\nThis element was built with...\n\nforms &amp; inputs\nmicrointeractions\nsound effects\n\nAlso, you can view more Elements below ...\n\nvideo\nvideo\nView Self Aware\nMore inspiration\nSee more related\nelements from w.\nvideo\nvideo\n3\nvideo\nvideo\nVisit Resource\n\nWebsites\nCollections\nElements\nAcademy\nJobs\nMarket\nDirectory\nConferences\nFAQs\nAbout Us\nContact Us\nCookies Policy\nLegal Terms\nPrivacy Policy\nConnect:\nInstagram\nLinkedIn\nTwitter\nFacebook\nYouTube\nTikTok\nPinterest\n\nThis website uses cookies to ensure you get the best experience on our website. Cookies Policy\n\nGOT IT",
+    "controls": [
+      {
+        "tag": "BUTTON",
+        "text": ""
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "placeholder": "Search by Elements"
+      }
+    ]
+  }
+]

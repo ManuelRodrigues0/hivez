@@ -1,0 +1,31 @@
+{
+  "results": [
+    {
+      "name": "Optional evidence skips AI cleanly, returns to evidence, and validates details",
+      "status": "passed"
+    },
+    {
+      "name": "AI wording is optional; discard, edit and accept behave as labelled",
+      "status": "passed"
+    },
+    {
+      "name": "Image rejection keeps publishing gated; replace recovers; invalid uploads show an error",
+      "status": "passed"
+    },
+    {
+      "name": "Phone evidence, details and preview stay within the viewport; reduced motion is respected",
+      "status": "passed"
+    }
+  ],
+  "fixtures": [
+    "Local image model",
+    "Rejected cloud check",
+    "OmniRoute wording and Hive analysis"
+  ],
+  "evidence": {
+    "errors": [],
+    "console": [],
+    "blocked": [],
+    "failed": []
+  }
+}
