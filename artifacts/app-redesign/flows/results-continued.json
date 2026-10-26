@@ -1,0 +1,225 @@
+{
+  "results": [
+    {
+      "name": "Create choices and report steps",
+      "status": "passed"
+    },
+    {
+      "name": "Mobile navigation, modal focus, Updates and viewport",
+      "status": "passed"
+    },
+    {
+      "status": "failed",
+      "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n+ [\n+   {\n+     text: 'Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector',\n+     type: 'error'\n+   }\n+ ]\n- []\n"
+    }
+  ],
+  "evidence": {
+    "errors": [],
+    "console": [
+      {
+        "type": "error",
+        "text": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      }
+    ],
+    "blocked": [
+      {
+        "url": "https://ui-avatars.com/api/",
+        "method": "GET"
+      }
+    ],
+    "failed": [
+      {
+        "url": "http://localhost:5173/src/services/auth.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Create/Create.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/notifications.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/layout/UpdatesPanel.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/layout/updatesPanel.css",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/privacy.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/firebase_storage.js",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/layout/PageIntro.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/rehives.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/layout/HiveNav.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/search/ExploreGrid.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/hooks/useLiveProfile.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/firebase_app.js",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/styles/workspace.css",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/index.esm-DVeokZbq.js",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/admin/AdminPages.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Landing/Landing.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/comments/CommentsSheet.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/followRequests.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/pushNotifications.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/mapPosts.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/AdminSetup.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/constants/communities.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Signup/Signup.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/feed/CreateModal.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Chats/Chats.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Settings/settings.css",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/feedRanking.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/layout/NeighbourhoodContext.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/firebase_messaging.js",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/admin/AdminLayout.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Login/Login.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Camera/Camera.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/feed/Feed.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Volunteering/Volunteering.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Post/Post.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/SavedPosts/SavedPosts.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/lucide-react.js",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/NotFound/NotFound.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/assets/auth/newbee2.png",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/profile/EditProfile.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "https://ui-avatars.com/api/",
+        "reason": "net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/assets/hivez-ultra-bee.webm",
+        "reason": "net::ERR_ABORTED"
+      }
+    ]
+  }
+}

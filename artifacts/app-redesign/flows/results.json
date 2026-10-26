@@ -1,0 +1,327 @@
+{
+  "results": [
+    {
+      "name": "Shared chrome, keyboard entry and navigation",
+      "status": "passed"
+    },
+    {
+      "name": "Real feed filtering and empty state",
+      "status": "passed"
+    },
+    {
+      "name": "Like state persists through the actual Firestore client",
+      "status": "passed"
+    },
+    {
+      "name": "Save and ReHive persistence",
+      "status": "passed"
+    },
+    {
+      "name": "Replies: native focus, actual send, live result and Escape",
+      "status": "passed"
+    },
+    {
+      "name": "Profile identity, follow/unfollow and content tabs",
+      "status": "passed"
+    },
+    {
+      "name": "Direct messages: actual send and persisted conversation",
+      "status": "passed"
+    },
+    {
+      "name": "Notifications mark-read persistence",
+      "status": "passed"
+    },
+    {
+      "name": "Volunteer group membership and community routes",
+      "status": "passed"
+    },
+    {
+      "name": "Create choices and report steps",
+      "status": "passed"
+    },
+    {
+      "name": "Mobile navigation, modal focus, Updates and viewport",
+      "status": "passed"
+    }
+  ],
+  "evidence": {
+    "errors": [],
+    "console": [],
+    "blocked": [],
+    "failed": [
+      {
+        "url": "http://localhost:5173/src/styles/workspace.css",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Create/Create.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/layout/NeighbourhoodContext.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/pushNotifications.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/layout/UpdatesPanel.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/layout/HiveNav.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/followRequests.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Activity/Activity.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Map/Map.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/lucide-react.js",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/feed/Feed.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/feed/CreateModal.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/index.esm-DVeokZbq.js",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/admin/AdminPages.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/auth.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Settings/Settings.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/layout/PageIntro.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Landing/Landing.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/notifications.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/firebase/firebase.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/comments/CommentsSheet.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Volunteering/Volunteering.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/AdminSetup.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Signup/Signup.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Chats/Chats.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/admin/AdminLayout.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/privacy.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Notifications/Notifications.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Login/Login.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Camera/Camera.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/constants/communities.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/rehives.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Search/Search.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Post/Post.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/layout/updatesPanel.css",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/SavedPosts/SavedPosts.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/NotFound/NotFound.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/profile/EditProfile.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Write/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/v1/projects/demo-hivez-design/databases/(default)/documents:commit",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Write/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Write/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Write/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Write/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Write/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/assets/hivez-honeycomb-loader.webm",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/assets/hivez-ultra-bee.webm",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/assets/hivez-ultra-bee.webm",
+        "reason": "net::ERR_ABORTED"
+      }
+    ]
+  }
+}

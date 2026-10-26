@@ -1,0 +1,471 @@
+{
+  "results": [
+    {
+      "name": "Text post: real composer, submit, resulting feed and stored document",
+      "status": "passed"
+    },
+    {
+      "name": "Profile edit saves through the real client and preserves identity",
+      "status": "passed"
+    },
+    {
+      "name": "Map measures its actual pane, zooms, pans, previews and opens a post",
+      "status": "passed"
+    },
+    {
+      "name": "Admin mobile navigation traps focus, closes and restores focus",
+      "status": "passed"
+    },
+    {
+      "name": "Report category and evidence step remain usable and accessible",
+      "status": "passed"
+    },
+    {
+      "name": "Theme, text-size, high-contrast and reduced-motion preferences remain connected",
+      "status": "passed"
+    }
+  ],
+  "evidence": {
+    "errors": [],
+    "console": [],
+    "blocked": [],
+    "failed": [
+      {
+        "url": "http://localhost:5173/src/pages/Home/Home.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Create/Create.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/layout/UpdatesPanel.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Login/Login.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/layout/updatesPanel.css",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/auth.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/notifications.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Map/Map.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/layout/WorkspaceFrame.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Post/Post.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/firebase/firebase.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Profile/Profile.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/lucide-react.js",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/styles/workspace.css",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Settings/Settings.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/index.esm-DVeokZbq.js",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/feed/CreateModal.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Volunteering/Volunteering.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/firebase_firestore.js",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/layout/HiveNav.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Activity/Activity.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/SavedPosts/SavedPosts.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/AdminSetup.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/layout/MobileLayout.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/pushNotifications.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Notifications/Notifications.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Chats/Chats.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/admin/AdminPages.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Search/Search.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Signup/Signup.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/admin/AdminLayout.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/profile/EditProfile.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Landing/Landing.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Community/Community.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Camera/Camera.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/NotFound/NotFound.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Write/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Write/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/avatars/319cd5c2-5426-45ff-a2c8-700d41b25e97.jpg",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/assets/hivez-ultra-bee.webm",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/mapPosts.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/engagementEvents.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/assets/hero-street.jpg",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/Settings/settings.css",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/landing/BeeRoamer.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/layout/NeighbourhoodContext.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/constants/communities.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/blocks.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/layout/PageIntro.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/volunteering/EvidenceGallery.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/landing/ActionJourney.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/hiveSearch/HiveSearch.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/feedRanking.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/volunteering.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/landing/HiveExplorer.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/lucide-react.js",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/privacy.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/utils/verification.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/savedPosts.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/comments/CommentsSheet.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/notifications.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/pages/CompleteProfile/CompleteProfile.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/feed/CreateModal.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/hooks/useLiveProfile.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/styles/workspace.css",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/profile/ProfileImagePicker.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/admin.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/followRequests.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/feed/Feed.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/assets/auth/newbee2.png",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/feed/PostSendSheet.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/utils/actionTypes.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/layout/HiveNav.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/types/volunteering.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/volunteering/MediaViewer.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/mediaValidation.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/hivez/AuthExperience.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/hives.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/pushNotifications.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/mediaUpload.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/landing/NeighbourhoodMap.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/landing/LandingNavbar.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/reportVerification.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/feed/FeedCard.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/omnirouteIntel.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/styles/landing.css",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/auth.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/feed/MediaGrid.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/layout/UpdatesPanel.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/config/reportCategories.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/constants/ultraBee.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/search/ExploreGrid.tsx",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/components/layout/updatesPanel.css",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/rehives.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/utils/volunteering.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/src/services/ultraBee.ts",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://127.0.0.1:8080/google.firestore.v1.Firestore/Listen/channel",
+        "reason": "net::ERR_ABORTED"
+      },
+      {
+        "url": "http://localhost:5173/assets/hivez-ultra-bee.webm",
+        "reason": "net::ERR_ABORTED"
+      }
+    ]
+  }
+}

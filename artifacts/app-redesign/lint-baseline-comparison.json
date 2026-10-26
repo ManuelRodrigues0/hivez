@@ -1,0 +1,99 @@
+[
+  {
+    "path": "src/components/profile/EditProfile.tsx",
+    "current": {
+      "errors": 1,
+      "warnings": 0,
+      "rules": {
+        "@typescript-eslint/no-explicit-any": 1
+      }
+    },
+    "baseline": {
+      "errors": 1,
+      "warnings": 0,
+      "rules": {
+        "@typescript-eslint/no-explicit-any": 1
+      }
+    }
+  },
+  {
+    "path": "src/pages/Camera/Camera.tsx",
+    "current": {
+      "errors": 3,
+      "warnings": 0,
+      "rules": {
+        "@typescript-eslint/no-explicit-any": 2,
+        "react-hooks/refs": 1
+      }
+    },
+    "baseline": {
+      "errors": 3,
+      "warnings": 0,
+      "rules": {
+        "@typescript-eslint/no-explicit-any": 2,
+        "react-hooks/refs": 1
+      }
+    }
+  },
+  {
+    "path": "src/pages/Map/Map.tsx",
+    "current": {
+      "errors": 1,
+      "warnings": 1,
+      "rules": {
+        "react-hooks/exhaustive-deps": 1,
+        "react-hooks/set-state-in-effect": 1
+      }
+    },
+    "baseline": {
+      "errors": 1,
+      "warnings": 1,
+      "rules": {
+        "react-hooks/exhaustive-deps": 1,
+        "react-hooks/set-state-in-effect": 1
+      }
+    }
+  },
+  {
+    "path": "src/pages/Notifications/Notifications.tsx",
+    "current": {
+      "errors": 4,
+      "warnings": 0,
+      "rules": {
+        "@typescript-eslint/no-explicit-any": 1,
+        "react-hooks/set-state-in-effect": 1,
+        "no-empty": 2
+      }
+    },
+    "baseline": {
+      "errors": 4,
+      "warnings": 0,
+      "rules": {
+        "@typescript-eslint/no-explicit-any": 1,
+        "react-hooks/set-state-in-effect": 1,
+        "no-empty": 2
+      }
+    }
+  },
+  {
+    "path": "src/pages/Volunteering/Volunteering.tsx",
+    "current": {
+      "errors": 2,
+      "warnings": 1,
+      "rules": {
+        "react-hooks/exhaustive-deps": 1,
+        "react-hooks/preserve-manual-memoization": 1,
+        "@typescript-eslint/no-explicit-any": 1
+      }
+    },
+    "baseline": {
+      "errors": 2,
+      "warnings": 1,
+      "rules": {
+        "react-hooks/exhaustive-deps": 1,
+        "react-hooks/preserve-manual-memoization": 1,
+        "@typescript-eslint/no-explicit-any": 1
+      }
+    }
+  }
+]

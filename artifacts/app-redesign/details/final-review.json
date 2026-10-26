@@ -1,0 +1,119 @@
+[
+  {
+    "theme": "light",
+    "width": 1440,
+    "route": "/map",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "theme": "light",
+    "width": 1440,
+    "route": "/settings",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "theme": "light",
+    "width": 1440,
+    "route": "/create",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "theme": "light",
+    "width": 1440,
+    "route": "/post/local-cleanup",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "theme": "light",
+    "width": 390,
+    "route": "/map",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "theme": "light",
+    "width": 390,
+    "route": "/settings",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "theme": "light",
+    "width": 390,
+    "route": "/create",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "theme": "light",
+    "width": 390,
+    "route": "/post/local-cleanup",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "theme": "light",
+    "check": "Original header bee video plays and pauses with the actual reduced-motion preference",
+    "passed": true
+  },
+  {
+    "theme": "dark",
+    "width": 1440,
+    "route": "/map",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "theme": "dark",
+    "width": 1440,
+    "route": "/settings",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "theme": "dark",
+    "width": 1440,
+    "route": "/create",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "theme": "dark",
+    "width": 1440,
+    "route": "/post/local-cleanup",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "theme": "dark",
+    "width": 390,
+    "route": "/map",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "theme": "dark",
+    "width": 390,
+    "route": "/settings",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "theme": "dark",
+    "width": 390,
+    "route": "/create",
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "theme": "dark",
+    "width": 390,
+    "route": "/post/local-cleanup",
+    "overflow": false,
+    "violations": []
+  }
+]
